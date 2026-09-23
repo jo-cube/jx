@@ -108,7 +108,8 @@ fn depth_limit_and_large_shallow_records() {
         .unwrap()
         .for_each(|value| {
             assert!(selected.replace(value.as_raw().unwrap()).is_none());
-        });
+        })
+        .unwrap();
     assert_eq!(selected.unwrap().as_str(), "7");
 }
 

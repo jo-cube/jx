@@ -1,6 +1,5 @@
 use crate::expression::Path;
 use crate::{RawJson, json::Selection};
-use std::convert::Infallible;
 
 /// A borrowed, consumable result stream. Missing emits nothing; null and each
 /// array value emit once. A sequence emits its items in order, without collecting.
@@ -11,14 +10,6 @@ pub(crate) struct PathEvaluation<'expression, 'input> {
 }
 
 impl<'i> PathEvaluation<'_, 'i> {
-    pub fn for_each(self, mut output: impl FnMut(RawJson<'i>)) {
-        self.try_for_each(|value| {
-            output(value);
-            Ok::<_, Infallible>(())
-        })
-        .unwrap();
-    }
-
     /// A consumer error stops traversal immediately and is returned unchanged.
     pub fn try_for_each<E>(
         self,

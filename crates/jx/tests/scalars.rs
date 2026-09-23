@@ -23,7 +23,8 @@ fn scalar_operators_and_sequence_operands() {
                     let mut bytes = Vec::new();
                     value.write_compact(&mut bytes).unwrap();
                     items.push(serde_json::from_slice(&bytes).unwrap());
-                });
+                })
+                .unwrap();
             assert_eq!(Value::Array(items), case["items"], "{case}");
         }
     }
@@ -58,11 +59,8 @@ fn compile_errors_and_expression_depth_are_bounded() {
         "!true",
         "a in b",
         "a & b",
-        "(a).b",
-        "a.(b)",
         "'\\y'",
         "\"\\u123\"",
-        "a[1]",
         "true ? 1 : 2",
         "(1;2)",
     ] {
@@ -91,7 +89,8 @@ fn compile_errors_and_expression_depth_are_bounded() {
         .unwrap()
         .evaluate(b"null")
         .unwrap()
-        .for_each(|value| assert!(matches!(value, jx::Value::Number(128.0))));
+        .for_each(|value| assert!(matches!(value, jx::Value::Number(128.0))))
+        .unwrap();
 }
 
 fn rendered(source: &str, input: &[u8]) -> Vec<u8> {
@@ -100,7 +99,8 @@ fn rendered(source: &str, input: &[u8]) -> Vec<u8> {
         .unwrap()
         .evaluate(input)
         .unwrap()
-        .for_each(|value| value.write_compact(&mut bytes).unwrap());
+        .for_each(|value| value.write_compact(&mut bytes).unwrap())
+        .unwrap();
     bytes
 }
 
@@ -139,16 +139,20 @@ fn duplicate_keys_unicode_and_binary64_boundaries() {
 #[test]
 fn computed_scalars_and_literal_strings_need_no_owned_output() {
     let expression = jx::compile("'text'").unwrap();
-    expression.evaluate(b"null").unwrap().for_each(|value| {
-        assert!(matches!(value, jx::Value::StringLiteral(_)));
-    });
+    expression
+        .evaluate(b"null")
+        .unwrap()
+        .for_each(|value| {
+            assert!(matches!(value, jx::Value::StringLiteral(_)));
+        })
+        .unwrap();
     assert_eq!(
         jx::compile("1 + 2")
             .unwrap()
             .evaluate(b"null")
             .unwrap()
             .try_for_each(|_| Err("stop")),
-        Err("stop")
+        Err(jx::ConsumeError::Consumer("stop"))
     );
 }
 

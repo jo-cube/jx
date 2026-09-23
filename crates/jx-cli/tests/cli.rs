@@ -25,7 +25,7 @@ fn ndjson_missing_null_arrays_and_final_unterminated_record() {
 
 #[test]
 fn errors_have_distinct_exit_codes_and_record_context() {
-    let output = run(&["a[0]"], b"");
+    let output = run(&["a[]"], b"");
     assert_eq!(output.status.code(), Some(2));
     let output = run(&["$"], b"1\n[0,]\n2\n");
     assert_eq!(output.status.code(), Some(1));
@@ -115,4 +115,19 @@ fn scalar_results_and_runtime_errors_are_framed_per_record() {
     assert_eq!(output.stdout, b"null\nnull\n");
     let output = run(&["'hello'"], b"null\ntrue\n");
     assert_eq!(output.stdout, b"\"hello\"\n\"hello\"\n");
+}
+
+#[test]
+fn filters_frame_values_and_report_streamed_errors() {
+    let output = run(&["a[$ > 1]"], b"{\"a\":[0,2,3]}\n{\"a\":[]}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"2\n3\n");
+    let output = run(&["a[$+1 > 1]"], b"{\"a\":[1,null,3]}\n{\"a\":[4]}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 1:") && error.contains("TypeError"));
+    let output = run(&["a[true]"], b"{\"a\":[1,2],\"unused\":[0,]}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
 }

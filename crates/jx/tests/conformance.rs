@@ -46,7 +46,8 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                         let mut bytes = Vec::new();
                         value.write_compact(&mut bytes).unwrap();
                         values.push(serde_json::from_slice(&bytes).unwrap());
-                    });
+                    })
+                    .unwrap();
                 if case.get("undefinedResult").is_some() {
                     assert!(values.is_empty(), "{id}");
                 } else {
@@ -69,6 +70,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                     "evaluate" => compiled
                         .unwrap()
                         .evaluate(&serde_json::to_vec(&input_data(&root, case)).unwrap())
+                        .and_then(|result| result.for_each(|_| {}))
                         .unwrap_err(),
                     phase => panic!("unknown error phase: {phase}"),
                 };

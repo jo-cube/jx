@@ -1,5 +1,9 @@
 use crate::{
-    Error, RawJson, Value, evaluate::Operand, expression::Op, json::string, path::PathEvaluation,
+    Error, RawJson, Value,
+    evaluate::Operand,
+    expression::Op,
+    json::string,
+    sequence::{Halt, Stream},
     value::type_error,
 };
 use std::{
@@ -8,46 +12,53 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-pub(crate) fn equal(left: Operand<'_, '_>, right: Operand<'_, '_>, negate: bool) -> bool {
+pub(crate) fn equal(
+    left: Operand<'_, '_>,
+    right: Operand<'_, '_>,
+    negate: bool,
+) -> Result<bool, Error> {
     let equal = match (left, right) {
-        (Operand::Missing, _) | (_, Operand::Missing) => return false,
+        (Operand::Missing, _) | (_, Operand::Missing) => return Ok(false),
         (Operand::One(left), Operand::One(right)) => values(left, right),
-        (Operand::Many(path), Operand::One(value)) | (Operand::One(value), Operand::Many(path)) => {
-            value
-                .json()
-                .is_some_and(|raw| raw.is_array() && sequence(path, raw.elements()))
-        }
+        (Operand::Many(stream), Operand::One(value))
+        | (Operand::One(value), Operand::Many(stream)) => match value.json() {
+            Some(raw) if raw.is_array() => sequence(stream, raw.elements().map(Value::Raw))?,
+            _ => false,
+        },
         (Operand::Many(left), Operand::Many(right)) => {
-            // Two push streams cannot be zipped while suspended. Only this equality
-            // case retains one side; ordinary paths and other operators stay streamed.
+            // Equality retains one side so two push streams can be compared in order.
             let mut items = Vec::new();
-            right.for_each(|value| items.push(value));
-            sequence(left, items.into_iter())
+            right.visit(|value| {
+                items.push(value);
+                Ok(())
+            })?;
+            sequence(left, items.into_iter())?
         }
     };
-    equal != negate
+    Ok(equal != negate)
 }
 
-fn sequence<'a>(
-    path: PathEvaluation<'_, '_>,
-    mut other: impl Iterator<Item = RawJson<'a>>,
-) -> bool {
-    let result = path.try_for_each(|item| {
-        if other
-            .next()
-            .is_some_and(|next| values(Value::Raw(item), Value::Raw(next)))
-        {
+fn sequence<'e, 'i>(
+    stream: Stream<'_, '_>,
+    mut other: impl Iterator<Item = Value<'e, 'i>>,
+) -> Result<bool, Error> {
+    let result = stream.walk(&mut |item| {
+        if other.next().is_some_and(|next| values(item, next)) {
             Ok(())
         } else {
-            Err(())
+            Err(Halt::Stop)
         }
     });
-    result.is_ok() && other.next().is_none()
+    match result {
+        Ok(()) => Ok(other.next().is_none()),
+        Err(Halt::Stop) => Ok(false),
+        Err(Halt::Evaluation(error)) => Err(error),
+    }
 }
 
 fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
     match (left.atomic(), right.atomic()) {
-        (Value::Null, Value::Null) => true,
+        (Value::Null, Value::Null) | (Value::Undefined, Value::Undefined) => true,
         (Value::Boolean(left), Value::Boolean(right)) => left == right,
         (Value::Number(left), Value::Number(right)) => left == right,
         (left, right) => {

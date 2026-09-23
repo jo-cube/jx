@@ -43,10 +43,17 @@ pub fn run(
             let values = expression.evaluate(buffer).map_err(|error| {
                 io::Error::new(io::ErrorKind::InvalidData, format!("line {line}: {error}"))
             })?;
-            values.try_for_each(|value| {
-                value.write_compact(&mut *output)?;
-                output.write_all(b"\n")
-            })?;
+            values
+                .try_for_each(|value| {
+                    value.write_compact(&mut *output)?;
+                    output.write_all(b"\n")
+                })
+                .map_err(|error| match error {
+                    jx::ConsumeError::Consumer(error) => error,
+                    jx::ConsumeError::Evaluation(error) => {
+                        io::Error::new(io::ErrorKind::InvalidData, format!("line {line}: {error}"))
+                    }
+                })?;
         }
         line += 1;
     }

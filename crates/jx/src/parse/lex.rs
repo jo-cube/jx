@@ -11,6 +11,8 @@ pub(super) enum Token<'a> {
     Root,
     Dot,
     Open,
+    FilterOpen,
+    FilterClose,
     Close,
     End,
 }
@@ -37,6 +39,8 @@ impl<'a> Lexer<'a> {
             b'$' => Token::Root,
             b'.' => Token::Dot,
             b'(' => Token::Open,
+            b'[' => Token::FilterOpen,
+            b']' => Token::FilterClose,
             b')' => Token::Close,
             b'+' => Token::Operator(Op::Add),
             b'-' => Token::Operator(Op::Subtract),

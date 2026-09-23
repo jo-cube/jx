@@ -1,5 +1,7 @@
 // The benchmark's counting allocator is the only unsafe code in this workspace.
 #![allow(unsafe_code)]
+#[path = "workloads/filters.rs"]
+mod filters;
 #[path = "workloads/scalars.rs"]
 mod scalars;
 use std::{
@@ -100,7 +102,8 @@ fn benchmark(label: &str, input: &[u8], smoke: bool) {
                 .unwrap()
                 .for_each(|value| {
                     black_box(value.as_raw().unwrap().as_bytes());
-                });
+                })
+                .unwrap();
         });
     }
     let expression = jx::compile("$").unwrap();
@@ -118,7 +121,8 @@ fn benchmark(label: &str, input: &[u8], smoke: bool) {
                 .unwrap()
                 .for_each(|value| {
                     value.write_compact(&mut output).unwrap();
-                });
+                })
+                .unwrap();
             black_box(&output);
         },
     );
@@ -130,7 +134,8 @@ fn array_workload(name: &str, source: &str, input: &str, expected_count: usize, 
     expression
         .evaluate(input.as_bytes())
         .unwrap()
-        .for_each(|_| count += 1);
+        .for_each(|_| count += 1)
+        .unwrap();
     assert_eq!(count, expected_count, "{name}");
     measure(name, input.len(), smoke, || {
         expression
@@ -138,7 +143,8 @@ fn array_workload(name: &str, source: &str, input: &str, expected_count: usize, 
             .unwrap()
             .for_each(|value| {
                 black_box(value.as_raw().unwrap().as_bytes());
-            });
+            })
+            .unwrap();
     });
 }
 
@@ -180,7 +186,7 @@ fn arrays(smoke: bool) {
                     black_box(value.as_raw().unwrap().as_bytes());
                     Err(())
                 });
-            assert_eq!(result, Err(()));
+            assert_eq!(result, Err(jx::ConsumeError::Consumer(())));
         });
     }
     let nested = format!(
@@ -244,4 +250,5 @@ fn main() {
     benchmark("unicode_escaped_keys", unicode.as_bytes(), smoke);
     arrays(smoke);
     scalars::run(smoke);
+    filters::run(smoke);
 }

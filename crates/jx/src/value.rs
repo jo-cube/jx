@@ -9,6 +9,8 @@ pub enum Value<'expression, 'input> {
     Number(f64),
     Boolean(bool),
     Null,
+    /// Undefined retained inside a multi-item sequence; serializes as null.
+    Undefined,
     StringLiteral(RawJson<'expression>),
 }
 
@@ -32,7 +34,7 @@ impl<'i> Value<'_, 'i> {
             Self::Number(value) => write!(output, "{value}"),
             Self::Boolean(true) => output.write_all(b"true"),
             Self::Boolean(false) => output.write_all(b"false"),
-            Self::Null => output.write_all(b"null"),
+            Self::Null | Self::Undefined => output.write_all(b"null"),
         }
     }
 
@@ -60,7 +62,7 @@ impl<'i> Value<'_, 'i> {
     pub(crate) fn truth(self, offset: usize) -> Result<bool, Error> {
         match self.atomic() {
             Self::Boolean(value) => Ok(value),
-            Self::Null => Ok(false),
+            Self::Null | Self::Undefined => Ok(false),
             Self::Number(value) => {
                 if value.is_infinite() {
                     return Err(range_error(offset));

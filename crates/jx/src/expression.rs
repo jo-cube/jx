@@ -14,6 +14,9 @@ pub(crate) struct Node {
 #[derive(Clone, Debug)]
 pub(crate) enum Kind {
     Path(Path),
+    Route(Box<[Step]>),
+    Filter(Box<Node>, Box<[Node]>),
+    Group(Box<Node>),
     Number(f64),
     Boolean(bool),
     Null,
@@ -55,4 +58,11 @@ impl Op {
             Self::Multiply | Self::Divide | Self::Remainder => 60,
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct Step {
+    pub node: Node,
+    pub predicates: Box<[Node]>,
+    pub lookup: bool,
 }

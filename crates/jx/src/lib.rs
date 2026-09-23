@@ -5,7 +5,7 @@
 //! let expression = jx::compile("price * quantity")?;
 //! expression.evaluate(br#"{"price":2.5,"quantity":3}"#)?.for_each(|value| {
 //!     assert!(matches!(value, jx::Value::Number(7.5)));
-//! });
+//! })?;
 //! # Ok::<(), jx::Error>(())
 //! ```
 
@@ -13,13 +13,15 @@ mod compare;
 mod error;
 mod evaluate;
 mod expression;
+mod filter;
 mod json;
 mod parse;
 mod path;
+mod sequence;
 mod value;
 
 pub use error::{Error, ErrorKind};
-pub use evaluate::Evaluation;
+pub use evaluate::{ConsumeError, Evaluation};
 pub use json::{MAX_DEPTH, RawJson, validate};
 pub use value::Value;
 

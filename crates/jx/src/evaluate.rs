@@ -2,11 +2,12 @@ use crate::{
     Error, RawJson, Value,
     expression::{Kind, Node, Op},
     path::PathEvaluation,
+    sequence::{Context, Halt, Output, Stream, Walk},
     value::{range_error, type_error},
 };
 use std::convert::Infallible;
 
-/// A fully validated result, consumed without materializing path sequences.
+/// Results over fully validated input. Predicate failures can occur during consumption.
 #[derive(Debug)]
 pub struct Evaluation<'expression, 'input> {
     pub(crate) result: Results<'expression, 'input>,
@@ -15,65 +16,114 @@ pub struct Evaluation<'expression, 'input> {
 #[derive(Debug)]
 pub(crate) enum Results<'e, 'i> {
     Path(PathEvaluation<'e, 'i>),
+    Expression(&'e Node, Context<'e, 'i>),
     Scalar(Option<Value<'e, 'i>>),
 }
 
+/// A streamed evaluation failure or the caller's original output error.
+#[derive(Debug, PartialEq, Eq)]
+pub enum ConsumeError<E> {
+    Evaluation(Error),
+    Consumer(E),
+}
+impl<E: std::fmt::Display> std::fmt::Display for ConsumeError<E> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Evaluation(e) => e.fmt(f),
+            Self::Consumer(e) => e.fmt(f),
+        }
+    }
+}
+impl<E: std::error::Error + 'static> std::error::Error for ConsumeError<E> {}
+
 impl<'e, 'i> Evaluation<'e, 'i> {
-    pub fn for_each(self, mut output: impl FnMut(Value<'e, 'i>)) {
-        self.try_for_each(|value| {
+    /// Stream values without collecting; evaluation errors may follow earlier output.
+    pub fn for_each(self, mut output: impl FnMut(Value<'e, 'i>)) -> Result<(), Error> {
+        match self.try_for_each(|value| {
             output(value);
             Ok::<_, Infallible>(())
-        })
-        .unwrap();
+        }) {
+            Ok(()) => Ok(()),
+            Err(ConsumeError::Evaluation(error)) => Err(error),
+            Err(ConsumeError::Consumer(error)) => match error {},
+        }
     }
-
-    /// A consumer error stops traversal immediately and is returned unchanged.
-    /// JSON validation and scalar runtime errors are reported by `evaluate` first.
+    /// A consumer error stops traversal immediately, without evaluating later items.
     pub fn try_for_each<E>(
         self,
         mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
-    ) -> Result<(), E> {
+    ) -> Result<(), ConsumeError<E>> {
         match self.result {
-            Results::Path(path) => path.try_for_each(|raw| output(Value::Raw(raw))),
-            Results::Scalar(Some(value)) => output(value),
+            Results::Path(path) => path
+                .try_for_each(|raw| output(Value::Raw(raw)))
+                .map_err(ConsumeError::Consumer),
+            Results::Scalar(Some(value)) => output(value).map_err(ConsumeError::Consumer),
             Results::Scalar(None) => Ok(()),
+            Results::Expression(node, context) => {
+                let stream = Stream::Expression(node, context);
+                let mut error = None;
+                let mut consumer = |value| {
+                    output(value).map_err(|e| {
+                        error = Some(e);
+                        Halt::Stop
+                    })
+                };
+                let mut first = true;
+                let mut pending_undefined = false;
+                let result = stream.walk(&mut |value| {
+                    if first && matches!(value, Value::Undefined) {
+                        first = false;
+                        pending_undefined = true;
+                        return Ok(());
+                    }
+                    first = false;
+                    if pending_undefined {
+                        pending_undefined = false;
+                        consumer(Value::Undefined)?;
+                    }
+                    consumer(value)
+                });
+                match result {
+                    Ok(()) => Ok(()),
+                    Err(Halt::Evaluation(e)) => Err(ConsumeError::Evaluation(e)),
+                    Err(Halt::Stop) => Err(ConsumeError::Consumer(error.unwrap())),
+                }
+            }
         }
     }
 }
 
 pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
-    let input = crate::validate(input)?;
-    let value = match node.run(input)? {
-        Operand::Missing => None,
-        Operand::One(value) => Some(value),
-        Operand::Many(_) => unreachable!("scalar operators produce at most one item"),
+    let context = Context {
+        value: Value::Raw(crate::validate(input)?),
+        wrapped: true,
     };
-    Ok(Evaluation {
-        result: Results::Scalar(value),
-    })
+    let result = if matches!(node.kind, Kind::Route(_) | Kind::Filter(..)) {
+        Results::Expression(node, context)
+    } else {
+        match node.run(context)? {
+            Operand::Missing => Results::Scalar(None),
+            Operand::One(value) => Results::Scalar(Some(value)),
+            Operand::Many(Stream::Path(path)) => Results::Path(path),
+            Operand::Many(Stream::Expression(node, context)) => Results::Expression(node, context),
+        }
+    };
+    Ok(Evaluation { result })
 }
 
 #[derive(Clone, Copy)]
 pub(crate) enum Operand<'e, 'i> {
     Missing,
     One(Value<'e, 'i>),
-    Many(PathEvaluation<'e, 'i>),
+    Many(Stream<'e, 'i>),
 }
 
 impl<'e, 'i> Operand<'e, 'i> {
-    fn path(path: PathEvaluation<'e, 'i>) -> Self {
-        let mut first = None;
-        let cardinality = path.try_for_each(|value| {
-            if first.is_some() {
-                return Err(());
-            }
-            first = Some(value);
-            Ok(())
-        });
-        if cardinality.is_err() {
-            Self::Many(path)
-        } else {
-            first.map_or(Self::Missing, |raw| Self::One(Value::Raw(raw)))
+    pub(crate) fn walk(self, output: &mut Output<'_, 'e, 'i>) -> Walk {
+        match self {
+            Self::Missing => Ok(()),
+            Self::One(value) => output(value),
+            Self::Many(stream) => stream.walk(output),
         }
     }
 
@@ -83,8 +133,8 @@ impl<'e, 'i> Operand<'e, 'i> {
             Self::One(value) => value.truth(offset),
             Self::Many(path) => {
                 let mut truth = false;
-                path.try_for_each(|value| {
-                    truth |= Value::Raw(value).truth(offset)?;
+                path.visit(|value| {
+                    truth |= value.truth(offset)?;
                     Ok(())
                 })?;
                 Ok(truth)
@@ -96,6 +146,7 @@ impl<'e, 'i> Operand<'e, 'i> {
         match self {
             Self::Missing => Ok(None),
             Self::One(value) => match value.atomic() {
+                Value::Undefined => Ok(None),
                 Value::Number(value) if value.is_infinite() => Err(range_error(offset)),
                 Value::Number(value) if !value.is_nan() => Ok(Some(value)),
                 _ => Err(type_error(offset)),
@@ -106,9 +157,27 @@ impl<'e, 'i> Operand<'e, 'i> {
 }
 
 impl Node {
-    pub(crate) fn run<'e, 'i>(&'e self, input: RawJson<'i>) -> Result<Operand<'e, 'i>, Error> {
+    pub(crate) fn run<'e, 'i>(&'e self, input: Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
         let value = match &self.kind {
-            Kind::Path(path) => return Ok(Operand::path(path.select_raw(input))),
+            Kind::Path(path) => {
+                if path.fields.is_empty() {
+                    return Ok(if matches!(input.value, Value::Undefined) {
+                        Operand::Missing
+                    } else {
+                        Operand::One(input.value)
+                    });
+                }
+                let Value::Raw(raw) = input.value else {
+                    return Ok(Operand::Missing);
+                };
+                let mut selected = path.select_raw(raw);
+                if !input.wrapped {
+                    selected.root_lookup = false;
+                }
+                return Stream::Path(selected).operand();
+            }
+            Kind::Route(_) | Kind::Filter(..) => return Stream::Expression(self, input).operand(),
+            Kind::Group(child) => return child.run(input),
             Kind::Missing => return Ok(Operand::Missing),
             Kind::Number(value) => Value::Number(*value),
             Kind::Boolean(value) => Value::Boolean(*value),
@@ -139,7 +208,7 @@ impl Node {
                         left,
                         right,
                         matches!(op, Op::NotEqual),
-                    )),
+                    )?),
                     Op::Less | Op::LessEqual | Op::Greater | Op::GreaterEqual => {
                         return crate::compare::order(left, right, *op, self.offset);
                     }

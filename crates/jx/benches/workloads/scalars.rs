@@ -14,7 +14,8 @@ fn workload(
     expression
         .evaluate(input)
         .unwrap()
-        .for_each(|value| value.write_compact(&mut output).unwrap());
+        .for_each(|value| value.write_compact(&mut output).unwrap())
+        .unwrap();
     assert_eq!(output, expected, "{name}: {source}");
     measure_allocations(name, input.len(), smoke, Some(allocations), || {
         expression
@@ -22,7 +23,8 @@ fn workload(
             .unwrap()
             .for_each(|value| {
                 black_box(value);
-            });
+            })
+            .unwrap();
     });
 }
 
@@ -65,7 +67,8 @@ pub(super) fn run(smoke: bool) {
             expression
                 .evaluate(black_box(input.as_bytes()))
                 .unwrap()
-                .for_each(|value| value.write_compact(&mut output).unwrap());
+                .for_each(|value| value.write_compact(&mut output).unwrap())
+                .unwrap();
             black_box(&output);
         });
     }

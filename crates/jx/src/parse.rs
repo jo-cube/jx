@@ -1,12 +1,9 @@
 mod lex;
-
 use crate::{
     Error, ErrorKind, Expression,
-    expression::{Kind, Node, Op, Path},
+    expression::{Kind, Node, Op, Path, Step},
 };
 use lex::{Lexer, Token, error};
-
-// Bound both parser recursion and the final tree (including flat operator chains).
 const MAX_DEPTH: usize = 128;
 
 pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
@@ -23,77 +20,20 @@ pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
     }
     Ok(Expression { root })
 }
-
 struct Parser<'a> {
     lexer: Lexer<'a>,
     token: Token<'a>,
     offset: usize,
 }
-
 impl<'a> Parser<'a> {
     fn advance(&mut self) -> Result<Token<'a>, Error> {
         let (token, offset) = self.lexer.next()?;
         self.offset = offset;
         Ok(std::mem::replace(&mut self.token, token))
     }
-
     fn expression(&mut self, minimum: u8, nesting: usize) -> Result<Node, Error> {
-        if nesting >= MAX_DEPTH {
-            return Err(depth_error(self.offset));
-        }
-        let offset = self.offset;
-        let token = self.advance()?;
-        let kind = match token {
-            Token::Number(value) => Kind::Number(value),
-            Token::String(value) => Kind::String(value),
-            Token::Name("true") => Kind::Boolean(true),
-            Token::Name("false") => Kind::Boolean(false),
-            Token::Name("null") => Kind::Null,
-            Token::Name("function" | "in") => return Err(error(offset)),
-            Token::Name(field) | Token::Quoted(field) => {
-                let field: Box<str> = field.into();
-                Kind::Path(self.path(false, vec![field])?)
-            }
-            Token::Root => Kind::Path(self.path(true, Vec::new())?),
-            Token::Operator(Op::Subtract) => {
-                Kind::Negate(Box::new(self.expression(70, nesting + 1)?))
-            }
-            Token::Open => {
-                if matches!(self.token, Token::Close) {
-                    self.advance()?;
-                    Kind::Missing
-                } else {
-                    let expression = self.expression(0, nesting + 1)?;
-                    if !matches!(self.token, Token::Close) {
-                        return Err(error(self.offset));
-                    }
-                    self.advance()?;
-                    // Grouping changes precedence, not the path's sequence boundaries.
-                    return self.binary(expression, minimum, nesting);
-                }
-            }
-            _ => return Err(error(offset)),
-        };
-        let depth = if let Kind::Negate(child) = &kind {
-            child.depth + 1
-        } else {
-            1
-        };
-        if depth > MAX_DEPTH {
-            return Err(depth_error(offset));
-        }
-        self.binary(
-            Node {
-                kind,
-                offset,
-                depth,
-            },
-            minimum,
-            nesting,
-        )
-    }
-
-    fn binary(&mut self, mut lhs: Node, minimum: u8, nesting: usize) -> Result<Node, Error> {
+        let (first, lookup) = self.primary(nesting)?;
+        let mut lhs = self.navigation(first, lookup, nesting)?;
         loop {
             let op = match self.token {
                 Token::Operator(op) => op,
@@ -108,37 +48,168 @@ impl<'a> Parser<'a> {
             self.advance()?;
             let rhs = self.expression(op.precedence(), nesting + 1)?;
             let depth = 1 + lhs.depth.max(rhs.depth);
-            if depth > MAX_DEPTH {
-                return Err(depth_error(offset));
-            }
-            lhs = Node {
-                kind: Kind::Binary(op, Box::new(lhs), Box::new(rhs)),
+            lhs = node(
+                Kind::Binary(op, Box::new(lhs), Box::new(rhs)),
                 offset,
                 depth,
-            };
+            )?;
         }
         Ok(lhs)
     }
-
-    fn path(&mut self, rooted: bool, mut fields: Vec<Box<str>>) -> Result<Path, Error> {
-        while matches!(self.token, Token::Dot) {
-            self.advance()?;
-            let offset = self.offset;
-            match self.advance()? {
-                Token::Name("true" | "false" | "null" | "function" | "in") => {
-                    return Err(error(offset));
-                }
-                Token::Name(field) | Token::Quoted(field) => fields.push(field.into()),
-                _ => return Err(error(offset)),
-            }
+    fn primary(&mut self, nesting: usize) -> Result<(Node, bool), Error> {
+        if nesting >= MAX_DEPTH {
+            return Err(depth_error(self.offset));
         }
-        Ok(Path {
-            fields: fields.into_boxed_slice(),
-            rooted,
-        })
+        let offset = self.offset;
+        let mut lookup = false;
+        let kind = match self.advance()? {
+            Token::Number(n) => Kind::Number(n),
+            Token::String(s) => Kind::String(s),
+            Token::Name("true") => Kind::Boolean(true),
+            Token::Name("false") => Kind::Boolean(false),
+            Token::Name("null") => Kind::Null,
+            Token::Name("in" | "function") => return Err(error(offset)),
+            Token::Name(name) | Token::Quoted(name) => {
+                lookup = true;
+                Kind::Path(Path {
+                    fields: vec![name.into()].into_boxed_slice(),
+                    rooted: false,
+                })
+            }
+            Token::Root => Kind::Path(Path {
+                fields: Box::default(),
+                rooted: true,
+            }),
+            Token::Operator(Op::Subtract) => {
+                let child = self.expression(70, nesting + 1)?;
+                // A literal negative position preserves selected arrays; computed
+                // positions retain sequence shape, so only fold a bare number.
+                if let Kind::Number(n) = child.kind {
+                    Kind::Number(-n)
+                } else {
+                    Kind::Negate(Box::new(child))
+                }
+            }
+            Token::Open => {
+                let child = if matches!(self.token, Token::Close) {
+                    node(Kind::Missing, offset, 1)?
+                } else {
+                    self.expression(0, nesting + 1)?
+                };
+                if !matches!(self.token, Token::Close) {
+                    return Err(error(self.offset));
+                }
+                self.advance()?;
+                Kind::Group(Box::new(child))
+            }
+            _ => return Err(error(offset)),
+        };
+        let depth = match &kind {
+            Kind::Group(n) | Kind::Negate(n) => 1 + n.depth,
+            _ => 1,
+        };
+        Ok((node(kind, offset, depth)?, lookup))
+    }
+    fn predicates(&mut self, nesting: usize) -> Result<Box<[Node]>, Error> {
+        let mut predicates = Vec::new();
+        while matches!(self.token, Token::FilterOpen) {
+            if predicates.len() >= MAX_DEPTH {
+                return Err(depth_error(self.offset));
+            }
+            self.advance()?;
+            predicates.push(self.expression(0, nesting + 1)?);
+            if !matches!(self.token, Token::FilterClose) {
+                return Err(error(self.offset));
+            }
+            self.advance()?;
+        }
+        Ok(predicates.into_boxed_slice())
+    }
+    fn navigation(&mut self, first: Node, lookup: bool, nesting: usize) -> Result<Node, Error> {
+        let offset = first.offset;
+        let predicates = self.predicates(nesting)?;
+        let path_start = lookup || matches!(first.kind, Kind::Path(_));
+        let first = if !path_start && !predicates.is_empty() {
+            let depth =
+                first.depth + predicates.iter().map(|p| p.depth).max().unwrap() + predicates.len();
+            Step {
+                node: node(Kind::Filter(Box::new(first), predicates), offset, depth)?,
+                predicates: Box::default(),
+                lookup: false,
+            }
+        } else {
+            Step {
+                node: first,
+                predicates,
+                lookup,
+            }
+        };
+        let mut steps = vec![first];
+        while matches!(self.token, Token::Dot) {
+            if steps.len() >= MAX_DEPTH {
+                return Err(depth_error(self.offset));
+            }
+            self.advance()?;
+            if !matches!(
+                self.token,
+                Token::Name(_) | Token::Quoted(_) | Token::Root | Token::Open
+            ) {
+                return Err(error(self.offset));
+            }
+            let (node, lookup) = self.primary(nesting + 1)?;
+            if matches!(node.kind, Kind::Boolean(_) | Kind::Null) {
+                return Err(error(node.offset));
+            }
+            let predicates = self.predicates(nesting)?;
+            steps.push(Step {
+                node,
+                predicates,
+                lookup,
+            });
+        }
+        if steps.len() == 1 && steps[0].predicates.is_empty() {
+            return Ok(steps.pop().unwrap().node);
+        }
+        // Keep static paths in their fused validating representation.
+        if steps.iter().enumerate().all(|(index, step)| {
+            step.predicates.is_empty()
+                && matches!(&step.node.kind, Kind::Path(path)
+                    if step.lookup || (index == 0 && path.fields.is_empty()))
+        }) {
+            let rooted = !steps[0].lookup;
+            let fields = steps
+                .into_iter()
+                .flat_map(|step| match step.node.kind {
+                    Kind::Path(path) => path.fields.into_vec(),
+                    _ => unreachable!(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice();
+            return node(Kind::Path(Path { fields, rooted }), offset, 1);
+        }
+        let depth = steps.len()
+            + steps
+                .iter()
+                .map(|s| {
+                    s.node.depth
+                        + s.predicates.len()
+                        + s.predicates.iter().map(|p| p.depth).max().unwrap_or(0)
+                })
+                .max()
+                .unwrap();
+        node(Kind::Route(steps.into_boxed_slice()), offset, depth)
     }
 }
-
+fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {
+    if depth > MAX_DEPTH {
+        return Err(depth_error(offset));
+    }
+    Ok(Node {
+        kind,
+        offset,
+        depth,
+    })
+}
 fn depth_error(offset: usize) -> Error {
     Error::new(
         ErrorKind::DepthLimit,
