@@ -1,0 +1,37 @@
+--- a/crates/jx/src/evaluate.rs
++++ b/crates/jx/src/evaluate.rs
+@@ -16,7 +16,7 @@
+ #[derive(Debug)]
+ pub(crate) enum Results<'e, 'i> {
+     Path(PathEvaluation<'e, 'i>),
+-    Expression(&'e Node, Context<'e, 'i>),
++    Stream(Stream<'e, 'i>),
+     Scalar(Option<Value<'e, 'i>>),
+ }
+ 
+@@ -59,8 +59,7 @@
+                 .map_err(ConsumeError::Consumer),
+             Results::Scalar(Some(value)) => output(value).map_err(ConsumeError::Consumer),
+             Results::Scalar(None) => Ok(()),
+-            Results::Expression(node, context) => {
+-                let stream = Stream::Expression(node, context);
++            Results::Stream(stream) => {
+                 let mut error = None;
+                 let mut consumer = |value| {
+                     output(value).map_err(|e| {
+@@ -99,13 +98,12 @@
+         wrapped: true,
+     };
+     let result = if matches!(node.kind, Kind::Route(_) | Kind::Filter(..)) {
+-        Results::Expression(node, context)
++        Results::Stream(Stream::Expression(node, context))
+     } else {
+         match node.run(context)? {
+             Operand::Missing => Results::Scalar(None),
+             Operand::One(value) => Results::Scalar(Some(value)),
+-            Operand::Many(Stream::Path(path)) => Results::Path(path),
+-            Operand::Many(Stream::Expression(node, context)) => Results::Expression(node, context),
++            Operand::Many(stream) => Results::Stream(stream),
+         }
+     };
+     Ok(Evaluation { result })

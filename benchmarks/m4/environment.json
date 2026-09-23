@@ -1,0 +1,47 @@
+{
+  "date": "2026-09-23",
+  "machine": "Apple M4, arm64, 24 GiB RAM",
+  "os": "macOS 26.5.1 (25F80)",
+  "rustc": "1.98.1 (48a229cea 2026-09-01)",
+  "llvm": "22.1.8",
+  "m3_commit": "533e90b",
+  "m4_state": "Uncommitted milestone-4 source identified by hashes below",
+  "profile": "release, thin LTO, codegen-units=1; portable target CPU",
+  "environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_BUILD_TARGET": null
+  },
+  "commands": {
+    "m3-before.csv": "just bench > target/m3-before-m4.csv (clean checkout at 533e90b)",
+    "m3-repeat.csv": "cargo bench --manifest-path target/m3-reference/Cargo.toml --target-dir target/m3-reference-build -p jx --bench throughput --locked > target/m3-clean-repeat-m4.csv (detached worktree at 533e90b)",
+    "m4-nested-result.csv": "just bench > target/m4-final.csv (before flattening the public result enum)",
+    "m4-nested-result-repeat.csv": "just bench > target/m4-final-repeat.csv (same source)",
+    "m4-final.csv": "just bench > target/m4-flat.csv (final source)",
+    "m4-repeat.csv": "just bench > target/m4-flat-repeat.csv (final source)"
+  },
+  "experiment_replay": "Apply nested-result.patch to a separate copy of final source, then just bench. It restores the redundant nested stream enum in Evaluation; no input/scanner/algorithm changes.",
+  "scope": "Library only, full validation and consumption. Seven samples of at least 50 ms per workload. Benchmark processes for retained runs were sequential. An exploratory M3 run overlapping the end of an M4 run was discarded. No cross-engine, latency percentile or RSS claims.",
+  "m4_sha256": {
+    "Cargo.lock": "ec6b3593774881204c517fb7129d9175a3b1dd2e4d46e2367b8ae5c2465d7d45",
+    "Cargo.toml": "d75df22c2e5743b279d273dc53f248f1bdaa5c4b53118a1d012ab903da3cff81",
+    "crates/jx/Cargo.toml": "a926b953e0f399be30ffb6583cf93a2e9948f3a34910e4d54384455e78a530b9",
+    "crates/jx/benches/throughput.rs": "f19c00a30b046c15778fb427f78dffcc987c6cd9b603bec95373d32067f8c1c3",
+    "crates/jx/benches/workloads/filters.rs": "8db806117ccd9d0661e1e71fd074856655ae63fdcf231bc601eaaa27e97fca62",
+    "crates/jx/benches/workloads/scalars.rs": "2225047c004efdb0712c4719e3ccaf09fc03cd373e10f9725771a4faede0ce7e",
+    "crates/jx/src/compare.rs": "c22782e7b8b316b21a5653dfae50a1f7ff5de5130d24dcacaa44ae89b6b75e2e",
+    "crates/jx/src/error.rs": "121fcc54c76e1102d82a98677278629441413da43046f8e41e810dfec23028bf",
+    "crates/jx/src/evaluate.rs": "db1496464477b922dd5dbe2d9a54714a41c3a8bb77c531103dee6f5d40d16337",
+    "crates/jx/src/expression.rs": "a2c93e2d990c1e8a6dfdeecfd3fb56ccae0908c9b44b1c895a7be0677921c69c",
+    "crates/jx/src/filter.rs": "4f94981ec8133d4147ad726fba313d1eef827c3cb5b9d30d673ed032de73e49e",
+    "crates/jx/src/json/mod.rs": "fcaf13ca16678b78748e57200c879174e38e9fe11e3154cfce51ab9e81996ca1",
+    "crates/jx/src/json/scan.rs": "4e65e6a2ec4f485fd65af45a291657b47e1ea0539af69731bb0b542461125bc0",
+    "crates/jx/src/json/string.rs": "d9d66552dac96e4271e5fc2917f4af968a0e290680d9ccbaaa86056ee8530504",
+    "crates/jx/src/lib.rs": "58493f4a57c4b28f09946a3958d7ff1f827c79a2298e4f04ccde7a8bda9b3065",
+    "crates/jx/src/parse/lex.rs": "d1e54d5df9e352f621aeb95b8c8259b385f55e6896a7b7c02fd6cdb1d399c0ad",
+    "crates/jx/src/parse.rs": "5f9a1ac9cba5a4634b42c1e885c87620d98eaf516d8e4579c1e783a5db3b93c5",
+    "crates/jx/src/path.rs": "0bf6e0c3a52c7e72a27a34bd83f8d97b6b3181f1c9e173a5f7ae5b15f3c530e5",
+    "crates/jx/src/sequence.rs": "a6e4948b16842ea34295d38c369c3643ed40e4ad1e6619c2632c88cc85899b08",
+    "crates/jx/src/value.rs": "d055899e97f0d7e0f61a9b23f5f3d916e3e5bea53b44884034c107be65f8cbd3"
+  }
+}

@@ -38,11 +38,16 @@ operands, comparisons, strings, boolean logic, missing, short-circuiting, mixed
 expressions and reused output serialization. Additional workloads exercise singleton
 and multi-item sequence operands, type errors, escaped strings, stream-to-array and
 stream-to-stream equality, and objects with 8/128 fields. Expected results are checked
-before timing. Path and scalar compilation have separate rows.
+before timing. Path, scalar and filter compilation have separate rows.
+
+Filter fixtures add exact 100 B–1 MiB records for predicates, no matches, literal
+first/last positions, computed negative positions and chained predicates. Wide arrays
+(8/128/1,024 items), combined-sequence positions, nested groups, deep arrays and
+16 chained computed negative indexes expose replay and length-counting costs.
 
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
-ordinary paths, scalar operators and preallocated output must report zero. Structural
+ordinary paths, filters, scalar operators and preallocated output must report zero. Structural
 object/sequence equality has explicit per-workload allocation budgets. All assertions
 also run in `just all` via `--smoke`. The wrapper delegates to `System`;
 it is the only unsafe code, isolated to the benchmark. Engine and CLI forbid unsafe.
@@ -50,7 +55,7 @@ Counter overhead affects allocating compilation; counts are not retained RSS.
 
 ## Extending evidence
 
-Add filters, aggregates, constructors and functions with their semantics. Use selected purpose-written
+Add aggregates, constructors and functions with their semantics. Use selected purpose-written
 Rust controls when they clarify overhead. Add realistic whole-CLI pipelines and
 latency distributions separately; sample duration is not per-record tail latency.
 Fair cross-engine comparisons must use identical input, expression semantics,
@@ -187,3 +192,57 @@ To replay the equality or dispatch alternatives, use the accompanying patches in
 separate copy of the final source and run `just bench`. The metadata states the
 variant scope; these patches are benchmark artifacts, never built into the engine.
 No cross-engine speedup or latency-distribution claim follows from these results.
+
+## Milestone 4 — filters
+
+Same machine/compiler/profile. **220 workloads** now include three compilation
+cases and 217 repeated evaluations. Both final runs report zero allocations for
+**213 evaluation workloads**, including all **50 filter workloads**. The four
+structural-equality allocation counts are unchanged; 16-item stream equality now
+requests 672 bytes (previously 448), retaining borrowed `Value` items so primitive
+and undefined sequence items can participate too. No filter collects its candidates.
+
+Selected medians across 14 samples, including validation and full consumption:
+
+| Workload | Input bytes | Records/s | Input MB/s |
+| --- | ---: | ---: | ---: |
+| filter/predicate | 100 | 2,343,252 | 234.3 |
+| filter/predicate | 500 | 1,180,120 | 590.1 |
+| filter/predicate | 1,024 | 722,773 | 740.1 |
+| filter/predicate | 1,048,576 | 944 | 989.3 |
+| filter/wide_predicate | 2,736 | 44,706 | 122.3 |
+| filter/sequence_last | 23,392 | 5,865 | 137.2 |
+| filter/nested | 892 | 89,826 | 80.1 |
+| filter/negative_chain | 20 | 100,152 | 2.0 |
+
+Final M4 versus two fresh M3 (`533e90b`) runs:
+
+| Existing workload | Bytes | Run 1 change | Run 2 change |
+| --- | ---: | ---: | ---: |
+| ascii/nested | 100 | -2.82% | -0.92% |
+| ascii/nested | 500 | -3.12% | -2.41% |
+| ascii/nested | 1,024 | -0.97% | -1.10% |
+| array/shallow | 1,074 | +0.28% | +1.22% |
+| array/deep | 136 | -0.29% | -0.21% |
+| scalar/strings | 100 | -5.41% | -6.07% |
+| scalar/sequence_equality | 330 | -4.31% | -4.98% |
+
+The first filter implementation redundantly nested the stream enum inside the public
+result enum, which already had a direct path variant. Storing expression/context
+directly removes that duplication. The paired tiny nested-path improvements are
+2.18% and 4.04% versus that variant; there is no consistent improvement at
+larger sizes. The final path dispatch remains inlined. Remaining tiny projection
+and scalar costs are recorded above, including the earlier M1→M2 regression.
+Deep-array rescanning remains around 80k records/s; no scanner index or trusted
+skipper was added.
+
+Negative positions count and replay their input without collecting it. Scoped stage
+lengths keep chained computed negative positions from recursively recounting the
+same input. Filtered scalar operands and grouped expressions can replay to normalize
+cardinality and preserve error behavior. These costs remain explicit workloads,
+not a promise that every expression makes one pass.
+
+[Raw runs, commands and source hashes](benchmarks/m4/environment.json) preserve two
+M3 baselines, two nested-result runs and two final runs. The accompanying
+[nested-result patch](benchmarks/m4/nested-result.patch) replays the layout comparison
+in a separate copy. No cross-engine speedup, tail-latency or RSS claim is made.
