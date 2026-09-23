@@ -1,0 +1,115 @@
+{
+  "revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+  "cases": [
+    {
+      "file": "groups/fields/case000.json",
+      "status": "supported",
+      "reason": "Identity/object path subset"
+    },
+    {
+      "file": "groups/fields/case001.json",
+      "status": "supported",
+      "reason": "Identity/object path subset"
+    },
+    {
+      "file": "groups/fields/case002.json",
+      "status": "array",
+      "reason": "M2: array mapping and result sequences"
+    },
+    {
+      "file": "groups/fields/case003.json",
+      "status": "array",
+      "reason": "M2: array mapping and result sequences"
+    },
+    {
+      "file": "groups/fields/case004.json",
+      "status": "array",
+      "reason": "M2: array mapping and result sequences"
+    },
+    {
+      "file": "groups/fields/case005.json",
+      "status": "supported",
+      "reason": "Identity/object path subset"
+    },
+    {
+      "file": "groups/fields/case006.json",
+      "status": "array",
+      "reason": "M2: array mapping and result sequences"
+    },
+    {
+      "file": "groups/fields/case007.json",
+      "status": "array",
+      "reason": "M2: array mapping and result sequences"
+    },
+    {
+      "file": "groups/missing-paths/case000.json",
+      "status": "supported",
+      "reason": "Identity/object path subset"
+    },
+    {
+      "file": "groups/missing-paths/case001.json",
+      "status": "supported",
+      "reason": "Identity/object path subset"
+    },
+    {
+      "file": "groups/missing-paths/case002.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/missing-paths/case003.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/missing-paths/case004.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/missing-paths/case005.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/quoted-selectors/case000.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/quoted-selectors/case001.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/quoted-selectors/case002.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/quoted-selectors/case003.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/quoted-selectors/case004.json",
+      "status": "supported",
+      "reason": "Identity/object path subset"
+    },
+    {
+      "file": "groups/quoted-selectors/case005.json",
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/quoted-selectors/case006.json",
+      "status": "array",
+      "reason": "M2: array mapping and result sequences"
+    },
+    {
+      "file": "groups/quoted-selectors/case007.json",
+      "status": "supported",
+      "reason": "Identity/object path subset"
+    }
+  ]
+}
