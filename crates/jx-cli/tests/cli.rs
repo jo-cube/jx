@@ -1,0 +1,88 @@
+use std::{
+    io::Write,
+    process::{Command, Output, Stdio},
+};
+
+fn run(args: &[&str], input: &[u8]) -> Output {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_jx"))
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child.stdin.take().unwrap().write_all(input).unwrap();
+    child.wait_with_output().unwrap()
+}
+
+#[test]
+fn ndjson_missing_null_arrays_and_final_unterminated_record() {
+    let output = run(&["a"], b"\n {}\r\n{\"a\":null}\n{\"a\":[1, 2]}\n{\"a\":3}");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"null\n[1,2]\n3\n");
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn errors_have_distinct_exit_codes_and_record_context() {
+    let output = run(&["a+1"], b"");
+    assert_eq!(output.status.code(), Some(2));
+    let output = run(&["$"], b"1\n[0,]\n2\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("-: line 2:")
+    );
+    let output = run(&["a.b"], b"{\"a\":[{\"b\":1},{\"b\":2}]}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("ArrayTraversal")
+    );
+}
+
+#[test]
+fn exact_record_limit_including_cr_but_excluding_lf() {
+    for input in [&b"1234\n"[..], &b"1234"[..]] {
+        assert!(
+            run(&["--max-record-bytes", "4", "$"], input)
+                .status
+                .success()
+        );
+    }
+    for input in [&b"12345\n"[..], &b"12345"[..], &b"1234\r\n"[..]] {
+        let output = run(&["--max-record-bytes", "4", "$"], input);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(output.stdout.is_empty());
+    }
+    assert_eq!(
+        run(&["--max-record-bytes", "0", "$"], b"").status.code(),
+        Some(2)
+    );
+}
+
+#[test]
+fn streams_multiple_files_and_stdin_in_order() {
+    let path = std::env::temp_dir().join(format!("jx-cli-{}.ndjson", std::process::id()));
+    std::fs::write(&path, b"{\"a\":1}\n{\"a\":2}").unwrap();
+    let output = run(
+        &["a", path.to_str().unwrap(), "-", path.to_str().unwrap()],
+        b"{\"a\":3}\n",
+    );
+    std::fs::remove_file(path).unwrap();
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"1\n2\n3\n1\n2\n");
+}
+
+#[test]
+fn help_empty_input_options_and_invalid_utf8() {
+    assert!(run(&["--help"], b"").status.success());
+    assert!(run(&["--", "$"], b"").status.success());
+    assert_eq!(run(&[], b"").status.code(), Some(2));
+    assert_eq!(run(&["--unknown"], b"").status.code(), Some(2));
+    assert_eq!(run(&["$"], b"\"\xff\"\n").status.code(), Some(1));
+}

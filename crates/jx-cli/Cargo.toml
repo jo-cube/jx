@@ -1,0 +1,18 @@
+[package]
+name = "jx-cli"
+description = "Streaming NDJSON command-line interface for jx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "jx"
+path = "src/main.rs"
+
+[dependencies]
+jx = { path = "../jx" }
+
+[lints]
+workspace = true

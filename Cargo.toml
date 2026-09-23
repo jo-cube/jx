@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/jx"]
+members = ["crates/jx", "crates/jx-cli"]
 resolver = "3"
 
 [workspace.package]
