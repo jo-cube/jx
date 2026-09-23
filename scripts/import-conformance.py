@@ -9,13 +9,15 @@ import sys
 REVISION = "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03"  # JSONata v2.2.0
 GROUPS = {
     "fields": ["supported"] * 8,
-    "missing-paths": ["supported", "supported", "syntax", "syntax", "supported", "syntax"],
+    "missing-paths": ["supported"] * 5 + ["syntax"],
     "quoted-selectors": ["syntax", "syntax", "syntax", "syntax", "supported", "syntax", "supported", "supported"],
 }
 FLATTENING_SUPPORTED = {"case001.json", "case002.json", "case016.json", "case024.json",
-                        "case026.json", "case028.json", "case030.json", "case032.json"}
+                        "case026.json", "case028.json", "case030.json", "case032.json",
+                        *(f"case{i:03}.json" for i in range(3, 9)),
+                        "case034.json", "case034a.json", "case035.json", "case036.json"}
 REASONS = {
-    "supported": "Implemented paths, sequences or scalar semantics",
+    "supported": "Implemented paths, sequences, filters or scalar semantics",
     "error": "Implemented compile/runtime error; local kind mapped from upstream code",
     "syntax": "Deferred expression syntax; see CONFORMANCE.md",
 }
@@ -23,11 +25,14 @@ REASONS = {
 # Complete scalar groups, with reviewed unsupported cases kept explicit.
 SCALAR_GROUPS = {
     "numeric-operators": (19, {18}),
-    "comparison-operators": (29, {21, 22, 23, 24, 26, 27, 28}),
+    "comparison-operators": (29, {26, 27, 28}),
     "boolean-expresssions": (31, {10, 11, 16, 27, 28, 29, 30}),
     "literals": (20, {18, 19}),
     "null": (7, {1, 2, 3, 6}),
-    "parentheses": (8, {0, 1, 2, 3, 5, 6}),
+    "parentheses": (8, set()),
+    "predicates": (4, {3}),
+    "simple-array-selectors": (23, {14}),
+    "multiple-array-selectors": (3, {0, 1, 2}),
 }
 ERROR_KINDS = {
     "D1001": "NumericRange", "T2001": "TypeError", "T2002": "TypeError",
@@ -52,7 +57,8 @@ def inventory(suite):
         if path.name in FLATTENING_SUPPORTED:
             statuses = ["supported"]
         if path.name == "array-inputs.json":
-            statuses[0] = "supported"
+            for i in (0, 1, 3, 4, 5):
+                statuses[i] = "supported"
         yield path, statuses
 
     for group, (count, deferred) in SCALAR_GROUPS.items():
@@ -65,7 +71,7 @@ def inventory(suite):
             cases = spec if isinstance(spec, list) else [spec]
             if path.name == "deep-equals.json":
                 assert len(cases) == 19
-                statuses = ["supported" if i in range(11, 17) else "syntax" for i in range(19)]
+                statuses = ["supported" if i in {6, *range(11, 19)} else "syntax" for i in range(19)]
             elif path.name == "array-inputs.json":
                 assert len(cases) == 4
                 statuses = ["syntax"] * 4

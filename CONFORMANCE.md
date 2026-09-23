@@ -15,11 +15,12 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Raw arrays/objects | Borrowed values; path mapping applies the cardinality rules below |
 | Duplicate input keys | Last decoded matching key wins for lookup |
 | Root/intermediate/nested array mapping | Supported, input order; missing/scalar contexts drop out |
-| Result sequences / flattening | Supported for field paths; streamed without collecting |
-| Indexes, predicates, wildcards, parent/descendant, order/group/join | Unsupported syntax; incremental follow-up |
+| Result sequences / flattening | Supported for paths and filters; streamed without collecting |
+| Indexes / predicates | Literal/computed indexes, numeric lists from input, effective-boolean predicates, chained filters |
+| Wildcards, parent/descendant, order/group/join | Unsupported syntax; incremental follow-up |
 | Literals | Binary64 numbers, booleans, null, single/double quoted strings |
 | Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
-| Parentheses | Expression grouping; `()` is missing; grouped path steps/blocks deferred |
+| Parentheses | Expression grouping and grouped path steps; `()` is missing; multi-expression blocks deferred |
 | Other operators | `in`, `&`, conditionals, ranges, coalescing/default and assignment deferred |
 | Constructors, variables, functions, closures, transforms, regex, standard library | Unsupported syntax; later milestones |
 | Comments, general unquoted Unicode names, single/double quoted selectors | Deferred syntax; compile error |
@@ -52,6 +53,46 @@ Leading `$` introduces a map stage, so `a` and `$.a` differ on root arrays.
 [The readable sequence corpus](tests/semantics/sequences.json) freezes 42 cases,
 including nested lookup, singleton and empty boundaries. Borrowing, duplicate
 keys, cancellation, depth limits and CLI line framing have separate Rust tests.
+
+## Filters
+
+Filters bind to the preceding step: `a.b[0]` selects the first `b` in each `a`
+context; `(a.b)[0]` selects from the combined result. `$` inside a predicate is the
+candidate, and ordinary names look up from it. Order is preserved. Filters use the
+same scalar operators, short-circuiting and effective-boolean rules described below.
+
+Numbers mean zero-based positions, floored toward negative infinity; negatives count
+from the end. A numeric array/sequence selects matching positions (including duplicate
+matches); mixed arrays use effective boolean value. Empty candidates yield missing.
+Non-numeric predicates use effective boolean value; a numeric `0` selects position
+zero rather than rejecting the candidate. Numeric lists can come from input/paths;
+array/range construction and `[]` singleton-array retention remain deferred syntax.
+
+Chained filters retain stage shape until the enclosing expression normalizes it.
+The upstream literal-index rule preserves a selected raw array; a computed index
+produces a sequence containing that array. These deliberately differ:
+
+| Expression | Input | Emitted items |
+| --- | --- | --- |
+| `a[0][0]` | `{"a":[[1,2],[3]]}` | `1` |
+| `a[0+0][0]` | same | `[1,2]` |
+| `(a[0+0])[0]` | same | `1` |
+| `a[true]` | same | `[1,2]`, `[3]` |
+| `a[true]` | `{}` | none |
+| `a[true]` | `{"a":null}` | `null` |
+| `a.b[true]` | `{"a":[{},{"b":1}]}` | undefined, `1` |
+
+A missing step can still supply an undefined candidate to its predicate: `a[1+null]`
+on `{}` raises a type error. One undefined result normalizes to missing. Undefined
+retained in a multi-item sequence is exposed as `Value::Undefined`; compact JSON
+output writes it as `null`, without making it equal to JSON null internally.
+
+[88 readable filter cases](tests/semantics/filters.json) cover these boundaries.
+Additional Rust regressions cover borrowing, cancellation, depth and error precedence.
+Full JSON validation always precedes output. Predicate errors may occur during
+consumption after earlier items were emitted; there is no per-record rollback.
+Earlier-stage evaluation errors take precedence over later-stage errors on complete
+consumption. Consumer cancellation deliberately stops further semantic evaluation.
 
 ## JSON boundary policies
 
@@ -112,17 +153,18 @@ Unicode, binary64 boundaries and CLI runtime errors.
 
 ## Executable coverage
 
-`just conformance` executes all **220** imported cases from complete `fields`,
+`just conformance` executes all **250** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
-`comparison-operators`, `boolean-expresssions`, `literals`, `null` and `parentheses`
+`comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
+`predicates`, `simple-array-selectors` and `multiple-array-selectors`
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 105 | Semantic JSON result or missing matches upstream |
+| Supported results | 159 | Semantic JSON result or missing matches upstream |
 | Supported errors | 11 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 104 | Exactly `UnsupportedExpression` |
+| Deferred syntax | 80 | Exactly `UnsupportedExpression` |
 
 These are selected groups, not a percentage of the full suite. No imported case
 is skipped. `tests/conformance/manifest.json` lists every case and reason; the
@@ -155,9 +197,11 @@ Optional differential check (requires Node and the pinned upstream checkout):
 just build
 node scripts/check-sequences.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-scalars.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-filters.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
 evaluations against the reference stream. The scalar check adds 1,936 curated and
 seeded generated evaluations, including runtime error kinds and raw numeric/Unicode
-boundaries. Normal `just all` needs neither Node nor the upstream checkout.
+boundaries. The filter check adds 3,820 cases, including nested contexts, chained
+positions, numeric lists and stage error precedence. Normal `just all` needs neither Node nor the upstream checkout.
