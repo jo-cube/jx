@@ -1,0 +1,89 @@
+--- a/crates/jx/src/compare.rs
++++ b/crates/jx/src/compare.rs
+@@ -2,11 +2,7 @@
+     Error, RawJson, Value, evaluate::Operand, expression::Op, json::string, path::PathEvaluation,
+     value::type_error,
+ };
+-use std::{
+-    cmp::Ordering,
+-    collections::HashMap,
+-    hash::{Hash, Hasher},
+-};
++use std::cmp::Ordering;
+ 
+ pub(crate) fn equal(left: Operand<'_, '_>, right: Operand<'_, '_>, negate: bool) -> bool {
+     let equal = match (left, right) {
+@@ -71,37 +67,28 @@
+     }
+ }
+ 
+-// Encoded keys compare and hash their UTF-16 units, including lone surrogates.
+-struct Key<'a>(&'a str);
+-impl PartialEq for Key<'_> {
+-    fn eq(&self, other: &Self) -> bool {
+-        string::units(self.0).eq(string::units(other.0))
++fn objects(left: RawJson<'_>, right: RawJson<'_>) -> bool {
++    let mut left_count = 0;
++    for (key, value) in left.members() {
++        // JSON lookup and equality both use the last decoded duplicate key.
++        if left.member(key).unwrap().as_bytes().as_ptr() != value.as_bytes().as_ptr() {
++            continue;
++        }
++        left_count += 1;
++        if !right
++            .member(key)
++            .is_some_and(|other| values(Value::Raw(value), Value::Raw(other)))
++        {
++            return false;
++        }
+     }
+-}
+-impl Eq for Key<'_> {}
+-impl Hash for Key<'_> {
+-    fn hash<H: Hasher>(&self, state: &mut H) {
+-        for unit in string::units(self.0) {
+-            state.write_u32(u32::from(unit));
+-        }
+-        state.write_u32(0x1_0000); // A terminator outside the UTF-16 unit range.
+-    }
+-}
+-
+-fn objects(left: RawJson<'_>, right: RawJson<'_>) -> bool {
+-    // Retain only borrowed left members. Later duplicate keys overwrite earlier
+-    // values on both sides, without decoding strings or building a JSON tree.
+-    let mut members = HashMap::new();
+-    for (key, value) in left.members() {
+-        members.insert(Key(key), (value, None));
+-    }
+-    for (key, value) in right.members() {
+-        let Some((expected, equal)) = members.get_mut(&Key(key)) else {
+-            return false;
+-        };
+-        *equal = Some(values(Value::Raw(*expected), Value::Raw(value)));
+-    }
+-    members.values().all(|(_, equal)| *equal == Some(true))
++    let right_count = right
++        .members()
++        .filter(|(key, value)| {
++            right.member(key).unwrap().as_bytes().as_ptr() == value.as_bytes().as_ptr()
++        })
++        .count();
++    left_count == right_count
+ }
+ 
+ pub(crate) fn order<'e, 'i>(
+--- a/crates/jx/src/json/scan.rs
++++ b/crates/jx/src/json/scan.rs
+@@ -360,3 +360,12 @@
+         }
+     }
+ }
++
++impl<'a> RawJson<'a> {
++    pub(crate) fn member(self, encoded_key: &str) -> Option<Self> {
++        self.members()
++            .filter(|(key, _)| string::units(key).eq(string::units(encoded_key)))
++            .map(|(_, value)| value)
++            .last()
++    }
++}

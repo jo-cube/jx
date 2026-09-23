@@ -33,17 +33,24 @@ sparse mixed arrays, 64 nested arrays, empty/singleton results and nested array
 values. Expected emission counts are checked before timing. Cancellation still
 includes full-record validation and any lookahead needed to identify the first item.
 
+Scalar fixtures add exact 100 B–1 MiB records for literals, arithmetic, nested
+operands, comparisons, strings, boolean logic, missing, short-circuiting, mixed
+expressions and reused output serialization. Additional workloads exercise singleton
+and multi-item sequence operands, type errors, escaped strings, stream-to-array and
+stream-to-stream equality, and objects with 8/128 fields. Expected results are checked
+before timing. Path and scalar compilation have separate rows.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
-implemented repeated evaluation and preallocated output must report zero. Allocation
-assertions also run in `just all` via `--smoke`. The wrapper delegates to `System`;
+ordinary paths, scalar operators and preallocated output must report zero. Structural
+object/sequence equality has explicit per-workload allocation budgets. All assertions
+also run in `just all` via `--smoke`. The wrapper delegates to `System`;
 it is the only unsafe code, isolated to the benchmark. Engine and CLI forbid unsafe.
 Counter overhead affects allocating compilation; counts are not retained RSS.
 
 ## Extending evidence
 
-Add arithmetic, comparisons, filters, aggregates, constructors,
-functions and mixed expressions with their semantics. Use selected purpose-written
+Add filters, aggregates, constructors and functions with their semantics. Use selected purpose-written
 Rust controls when they clarify overhead. Add realistic whole-CLI pipelines and
 latency distributions separately; sample duration is not per-record tail latency.
 Fair cross-engine comparisons must use identical input, expression semantics,
@@ -122,3 +129,61 @@ Raw paired runs: [M1 first](benchmarks/m2/m1-before-m2.csv),
 [M2 first](benchmarks/m2/m2-baseline.csv), [M1 repeat](benchmarks/m2/m1-repeat.csv),
 [M2 repeat](benchmarks/m2/m2-repeat.csv). [Environment, commands and source hashes](benchmarks/m2/environment.json)
 make the comparison reproducible. Tail latency and retained RSS remain unmeasured.
+
+## Milestone 3 — scalar expressions and operators
+
+Same machine/compiler/profile. The suite has **169 workloads**: two compilation
+cases and 167 repeated evaluations. Across two final runs, **163 evaluation workloads
+allocated zero**. The four structural-equality workloads retain borrowed data:
+16-item stream equality makes three allocation/reallocation calls (448 requested
+bytes); 8/128-field object equality makes 3/7 calls (1,172/20,884 requested bytes);
+the array of 16 one-field objects makes 16 calls (2,752 requested bytes). These
+are total requested bytes, not retained memory. Scalar serialization reuses output.
+
+Selected medians across 14 samples (validation and complete consumption included):
+
+| Workload | Input bytes | Records/s | Input MB/s |
+| --- | ---: | ---: | ---: |
+| scalar/arithmetic | 500 | 1,072,254 | 536.1 |
+| scalar/arithmetic | 1,024 | 576,620 | 590.5 |
+| scalar/strings | 500 | 1,605,014 | 802.5 |
+| scalar/mixed | 500 | 630,036 | 315.0 |
+| scalar/sequence_array_equality | 330 | 443,724 | 146.4 |
+| scalar/sequence_equality | 330 | 365,062 | 120.5 |
+| scalar/object_equality | 125 | 834,530 | 104.3 |
+| scalar/object_equality | 2,389 | 50,192 | 119.9 |
+
+Final M3 versus the two fresh M2 (`abaf664`) baselines:
+
+| Existing workload | Bytes | Run 1 change | Run 2 change |
+| --- | ---: | ---: | ---: |
+| ascii/nested | 100 | -0.89% | +0.14% |
+| ascii/nested | 500 | -5.54% | -1.74% |
+| ascii/nested | 1,024 | -2.29% | -1.39% |
+| ascii/nested | 10,240 | -1.68% | -0.87% |
+| ascii/nested | 1,048,576 | -0.16% | -0.86% |
+| array/shallow | 1,074 | +0.51% | -0.24% |
+| array/deep | 136 | -1.60% | +0.13% |
+
+The first scalar implementation added about 4–5% to the tiny nested-path cost.
+Symbol inspection showed an outlined `Expression::evaluate` where M2 had inlined
+it. An inline hint alone did not help. Keeping scalar preparation in `evaluate.rs`
+and reducing the public method to a small inline dispatch recovered that additional
+tiny-record cost. The older M1→M2 gap remains; 500 B–1 KiB projections still show
+small losses with run-to-run variation. The table records them rather than claiming
+all regressions are resolved. Deep-array rescanning is unchanged (about 80k records/s
+for 136 bytes); no trusted skipper or index was introduced.
+
+Initial object equality rescanned each object per key. On the 128-field fixture,
+the borrowed-member map moves throughput from about 1.2k to 50k records/s, trading
+zero allocation for seven allocator calls. This is scoped to structural equality;
+ordinary scalar/path operations keep their allocation contract. Scalar path operands
+still scan separately after validation, so multi-field expressions revisit unused
+payloads. Capture fusion remains a measured future opportunity, not current machinery.
+
+[Raw runs and source/environment metadata](benchmarks/m3/environment.json) include
+the initial implementation, the unsuccessful inline-only experiment and final repeats.
+To replay the equality or dispatch alternatives, use the accompanying patches in a
+separate copy of the final source and run `just bench`. The metadata states the
+variant scope; these patches are benchmark artifacts, never built into the engine.
+No cross-engine speedup or latency-distribution claim follows from these results.
