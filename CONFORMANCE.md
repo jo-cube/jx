@@ -17,10 +17,13 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Root/intermediate/nested array mapping | Supported, input order; missing/scalar contexts drop out |
 | Result sequences / flattening | Supported for field paths; streamed without collecting |
 | Indexes, predicates, wildcards, parent/descendant, order/group/join | Unsupported syntax; incremental follow-up |
-| Literals, operators, parentheses, conditionals, ranges | Unsupported syntax; scalar milestone |
+| Literals | Binary64 numbers, booleans, null, single/double quoted strings |
+| Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
+| Parentheses | Expression grouping; `()` is missing; grouped path steps/blocks deferred |
+| Other operators | `in`, `&`, conditionals, ranges, coalescing/default and assignment deferred |
 | Constructors, variables, functions, closures, transforms, regex, standard library | Unsupported syntax; later milestones |
 | Comments, general unquoted Unicode names, single/double quoted selectors | Deferred syntax; compile error |
-| `true`, `false`, `null`, `and`, `or`, `in`, `function` | Rejected unquoted; backticks can select these field names |
+| Keyword field names | `and`/`or` can be names in operand/field positions; `true`, `false`, `null`, `in`, `function` require backticks when used as fields |
 
 ## Array and sequence boundaries
 
@@ -57,8 +60,8 @@ keys, cancellation, depth limits and CLI line framing have separate Rust tests.
 - Maximum 128 nested containers; exceeding it returns `DepthLimit`. The library
   has no byte-size limit; the CLI has a configurable record-size limit.
 - All syntactically valid JSON numbers are accepted and preserved, including
-  integers outside binary64 precision and large exponents. Numeric conversion,
-  range errors and canonical number formatting are deferred.
+  integers outside binary64 precision and large exponents. Scalar operators convert
+  demanded numbers to binary64; untouched raw values retain their tokens. See below.
 - `\uXXXX` escapes permit lone surrogate units, as JSON grammar and the reference
   parser do. Raw values preserve them; field matching compares UTF-16 units.
   Expression field names are Rust UTF-8 and cannot denote an isolated surrogate.
@@ -67,16 +70,59 @@ keys, cancellation, depth limits and CLI line framing have separate Rust tests.
   like JavaScript parse/stringify. Lookups still use last-wins semantics. This is
   a deliberate raw JSON boundary policy, not a claim of byte-equivalent JS output.
 
+## Scalar semantics
+
+Precedence follows JSONata: paths/unary minus, multiplicative, additive, comparison,
+`and`, then `or`. Binary operators associate left. `and`/`or` short-circuit the RHS;
+truth conversion handles missing, null, primitives, nested arrays and objects.
+Arrays/sequences are true if any member is true; empty objects/arrays are false.
+Boolean NOT is a function (`$not`), deferred with function calls; there is no `!`
+operator or unary `+`. String concatenation and implicit string-to-number coercion
+are not implemented.
+
+| Operands | Arithmetic / unary minus | Ordering | `=` / `!=` |
+| --- | --- | --- | --- |
+| Missing | Missing, after checking other operand types | Missing, after type checks | Both false |
+| Null | Type error | Type error | Equals only null |
+| Number | Binary64 arithmetic | Same-type comparison | Numeric value |
+| String | Type error | UTF-16 lexical order; types must match | Decoded UTF-16 units |
+| Boolean | Type error | Type error | Same-type value |
+| Raw array / object | Type error | Type error | Structural equality, ordered arrays / unordered object keys |
+| Singleton result sequence | Its one value | Its one value | Its one value |
+| Multi-item result sequence | Type error | Type error | Compared as an ordered array |
+
+A raw `[1]` stays an array; a singleton path sequence containing `1` is a number.
+Equality does not coerce types. Duplicate object keys use the last decoded key.
+Arithmetic evaluates both sides; boolean short-circuiting does not bypass full
+input validation or compile-time syntax checks.
+
+Binary64 rounding follows the reference; division/remainder by zero and overflow
+can produce infinity/NaN. Computed non-finite output serializes as JSON `null`,
+but remains numeric internally: using infinity as an arithmetic/boolean operand
+returns `NumericRange`; NaN is nonnumeric for arithmetic and false for booleans.
+Out-of-range numeric literals fail compilation. Comparisons preserve IEEE NaN
+behavior. Computed finite numbers use Rust's shortest round-trip formatting, which
+can differ textually from JavaScript; negative zero serializes as `0`.
+
+`TypeError`/`NumericRange` report the operator's expression byte offset. Expression whitespace is space, tab, LF, CR or vertical tab; form feed is rejected.
+Parser nesting and expression-tree depth are capped at 128 (`DepthLimit`). Upstream error
+codes/text are not a stable API. [100 readable scalar cases](tests/semantics/scalars.json)
+and separate regression tests freeze these rules, validation order, depth limits,
+Unicode, binary64 boundaries and CLI runtime errors.
+
 ## Executable coverage
 
-`just conformance` executes all **83** imported cases from complete `fields`,
-`missing-paths`, `quoted-selectors` and `flattening` groups of JSONata **2.2.0**, revision
+`just conformance` executes all **220** imported cases from complete `fields`,
+`missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
+`comparison-operators`, `boolean-expresssions`, `literals`, `null` and `parentheses`
+groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported | 22 | Semantic JSON result or missing matches upstream |
-| Deferred syntax | 61 | Exactly `UnsupportedExpression` |
+| Supported results | 105 | Semantic JSON result or missing matches upstream |
+| Supported errors | 11 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 104 | Exactly `UnsupportedExpression` |
 
 These are selected groups, not a percentage of the full suite. No imported case
 is skipped. `tests/conformance/manifest.json` lists every case and reason; the
@@ -108,8 +154,10 @@ Optional differential check (requires Node and the pinned upstream checkout):
 ```sh
 just build
 node scripts/check-sequences.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-scalars.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
-evaluations against the reference stream. Normal `just all` needs neither Node
-nor the upstream checkout.
+evaluations against the reference stream. The scalar check adds 1,936 curated and
+seeded generated evaluations, including runtime error kinds and raw numeric/Unicode
+boundaries. Normal `just all` needs neither Node nor the upstream checkout.

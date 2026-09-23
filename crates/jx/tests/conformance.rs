@@ -10,7 +10,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance");
     let manifest = read(&root.join("manifest.json"));
     let mut seen = BTreeSet::new();
-    let mut counts = [0; 2];
+    let mut counts = [0; 3];
     for row in manifest["cases"].as_array().unwrap() {
         let file = row["file"].as_str().unwrap();
         let index = row["index"].as_u64().unwrap() as usize;
@@ -35,14 +35,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                         "unhandled bindings: {id}"
                     );
                 }
-                let data = match case.get("data") {
-                    Some(data) => data.clone(),
-                    None => read(
-                        &root
-                            .join("datasets")
-                            .join(format!("{}.json", case["dataset"].as_str().unwrap())),
-                    ),
-                };
+                let data = input_data(&root, case);
                 let input = serde_json::to_vec(&data).unwrap();
                 let mut values: Vec<Value> = Vec::new();
                 compiled
@@ -50,7 +43,9 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                     .evaluate(&input)
                     .unwrap()
                     .for_each(|value| {
-                        values.push(serde_json::from_slice(value.as_bytes()).unwrap());
+                        let mut bytes = Vec::new();
+                        value.write_compact(&mut bytes).unwrap();
+                        values.push(serde_json::from_slice(&bytes).unwrap());
                     });
                 if case.get("undefinedResult").is_some() {
                     assert!(values.is_empty(), "{id}");
@@ -66,6 +61,22 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                     };
                     assert_eq!(actual, case["result"], "{id}: {source}");
                 }
+            }
+            "error" => {
+                counts[2] += 1;
+                let error = match row["phase"].as_str().unwrap() {
+                    "compile" => compiled.unwrap_err(),
+                    "evaluate" => compiled
+                        .unwrap()
+                        .evaluate(&serde_json::to_vec(&input_data(&root, case)).unwrap())
+                        .unwrap_err(),
+                    phase => panic!("unknown error phase: {phase}"),
+                };
+                assert_eq!(
+                    format!("{:?}", error.kind),
+                    row["kind"].as_str().unwrap(),
+                    "{id}: {source}"
+                );
             }
             "syntax" => {
                 counts[1] += 1;
@@ -97,9 +108,19 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         "every imported case must be classified and executed"
     );
     println!(
-        "JSONata {}: {} supported, {} deferred syntax; no skipped cases",
+        "JSONata {}: {} supported results, {} deferred syntax, {} supported errors; no skipped cases",
         manifest["revision"].as_str().unwrap(),
         counts[0],
-        counts[1]
+        counts[1],
+        counts[2]
     );
+}
+
+fn input_data(root: &Path, case: &Value) -> Value {
+    if let Some(data) = case.get("data") {
+        return data.clone();
+    }
+    case["dataset"].as_str().map_or(Value::Null, |name| {
+        read(&root.join("datasets").join(format!("{name}.json")))
+    })
 }
