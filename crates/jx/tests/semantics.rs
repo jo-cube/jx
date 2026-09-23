@@ -8,7 +8,7 @@ fn selected(expression: &str, input: &str) -> Option<String> {
         .unwrap()
         .for_each(|value| {
             assert!(selected.is_none(), "expected at most one raw value");
-            selected = Some(value.as_str().to_owned());
+            selected = Some(value.as_raw().unwrap().as_str().to_owned());
         });
     selected
 }
@@ -83,17 +83,10 @@ fn unsupported_semantics_fail_explicitly() {
         "$$",
         "$a.b",
         "a[0]",
-        "a+b",
-        "true",
-        "null",
-        "1",
         "*",
         "a.*",
-        "a and b",
-        "(a)",
         "{\"x\":a}",
         "$sum(a)",
-        "\"a\"",
         "a.\"b\"",
         "a /* comment */",
         "a b",
@@ -137,7 +130,7 @@ fn results_borrow_input_not_the_expression() {
         expression
             .evaluate(input)
             .unwrap()
-            .for_each(|value| selected = Some(value));
+            .for_each(|value| selected = value.as_raw());
     }
     assert_eq!(selected.unwrap().as_bytes().as_ptr(), input[6..].as_ptr());
 }
@@ -156,7 +149,7 @@ fn compile_once_reuse_across_records_and_threads() {
                         .unwrap()
                         .for_each(|value| {
                             count += 1;
-                            assert_eq!(value.as_str(), "7");
+                            assert_eq!(value.as_raw().unwrap().as_str(), "7");
                         });
                     assert_eq!(count, 1);
                     expression

@@ -1,5 +1,7 @@
 // The benchmark's counting allocator is the only unsafe code in this workspace.
 #![allow(unsafe_code)]
+#[path = "workloads/scalars.rs"]
+mod scalars;
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     hint::black_box,
@@ -32,7 +34,17 @@ unsafe impl GlobalAlloc for CountingAllocator {
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
-fn measure(name: &str, bytes: usize, smoke: bool, mut operation: impl FnMut()) {
+fn measure(name: &str, bytes: usize, smoke: bool, operation: impl FnMut()) {
+    measure_allocations(name, bytes, smoke, Some(0), operation);
+}
+
+fn measure_allocations(
+    name: &str,
+    bytes: usize,
+    smoke: bool,
+    max_allocations: Option<u64>,
+    mut operation: impl FnMut(),
+) {
     for _ in 0..64 {
         operation();
     }
@@ -61,10 +73,10 @@ fn measure(name: &str, bytes: usize, smoke: bool, mut operation: impl FnMut()) {
             allocs as f64 / records as f64,
             allocated as f64 / records as f64
         );
-        if name != "compile" {
-            assert_eq!(
-                allocs, 0,
-                "implemented hot paths must remain allocation-free"
+        if let Some(limit) = max_allocations {
+            assert!(
+                allocs <= records * limit,
+                "allocation budget exceeded: {name}, {allocs} calls for {records} records"
             );
         }
     }
@@ -87,7 +99,7 @@ fn benchmark(label: &str, input: &[u8], smoke: bool) {
                 .evaluate(black_box(input))
                 .unwrap()
                 .for_each(|value| {
-                    black_box(value.as_bytes());
+                    black_box(value.as_raw().unwrap().as_bytes());
                 });
         });
     }
@@ -125,7 +137,7 @@ fn array_workload(name: &str, source: &str, input: &str, expected_count: usize, 
             .evaluate(black_box(input.as_bytes()))
             .unwrap()
             .for_each(|value| {
-                black_box(value.as_bytes());
+                black_box(value.as_raw().unwrap().as_bytes());
             });
     });
 }
@@ -165,7 +177,7 @@ fn arrays(smoke: bool) {
                 .evaluate(black_box(object.as_bytes()))
                 .unwrap()
                 .try_for_each(|value| {
-                    black_box(value.as_bytes());
+                    black_box(value.as_raw().unwrap().as_bytes());
                     Err(())
                 });
             assert_eq!(result, Err(()));
@@ -205,7 +217,7 @@ fn main() {
     println!(
         "workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record"
     );
-    measure("compile", 0, smoke, || {
+    measure_allocations("compile", 0, smoke, None, || {
         black_box(jx::compile(black_box("customer.id")).unwrap());
     });
     for size in [100, 500, 1024, 10 * 1024, 64 * 1024, 1024 * 1024] {
@@ -231,4 +243,5 @@ fn main() {
     );
     benchmark("unicode_escaped_keys", unicode.as_bytes(), smoke);
     arrays(smoke);
+    scalars::run(smoke);
 }

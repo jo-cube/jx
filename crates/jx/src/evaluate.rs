@@ -1,16 +1,25 @@
-use crate::{RawJson, json::Selection};
+use crate::{
+    Error, RawJson, Value,
+    expression::{Kind, Node, Op},
+    path::PathEvaluation,
+    value::{range_error, type_error},
+};
 use std::convert::Infallible;
 
-/// A borrowed, consumable result stream. Missing emits nothing; null and each
-/// array value emit once. A sequence emits its items in order, without collecting.
+/// A fully validated result, consumed without materializing path sequences.
 #[derive(Debug)]
 pub struct Evaluation<'expression, 'input> {
-    pub(crate) selection: Selection<'input, 'expression>,
-    pub(crate) root_lookup: bool,
+    pub(crate) result: Results<'expression, 'input>,
 }
 
-impl<'i> Evaluation<'_, 'i> {
-    pub fn for_each(self, mut output: impl FnMut(RawJson<'i>)) {
+#[derive(Debug)]
+pub(crate) enum Results<'e, 'i> {
+    Path(PathEvaluation<'e, 'i>),
+    Scalar(Option<Value<'e, 'i>>),
+}
+
+impl<'e, 'i> Evaluation<'e, 'i> {
+    pub fn for_each(self, mut output: impl FnMut(Value<'e, 'i>)) {
         self.try_for_each(|value| {
             output(value);
             Ok::<_, Infallible>(())
@@ -19,170 +28,140 @@ impl<'i> Evaluation<'_, 'i> {
     }
 
     /// A consumer error stops traversal immediately and is returned unchanged.
+    /// JSON validation and scalar runtime errors are reported by `evaluate` first.
     pub fn try_for_each<E>(
         self,
-        mut output: impl FnMut(RawJson<'i>) -> Result<(), E>,
+        mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
     ) -> Result<(), E> {
-        match self.selection {
-            Selection::Missing => Ok(()),
-            Selection::Value(value) => output(value),
-            Selection::Array(value, fields) => {
-                let mut result = Sequence {
-                    first: None,
-                    multiple: false,
-                    output: &mut output,
-                };
-                if self.root_lookup {
-                    context(value, fields, &mut result)?;
-                } else {
-                    for item in value.elements() {
-                        context(item, fields, &mut result)?;
-                    }
-                }
-                result.finish()
-            }
+        match self.result {
+            Results::Path(path) => path.try_for_each(|raw| output(Value::Raw(raw))),
+            Results::Scalar(Some(value)) => output(value),
+            Results::Scalar(None) => Ok(()),
         }
     }
 }
 
-// The last path stage preserves a sole raw array. A second defined result makes
-// both contribute their immediate contents instead. Keep only the first value
-// until that distinction is known, including an empty array as a defined result.
-struct Sequence<'i, 'o, E> {
-    first: Option<RawJson<'i>>,
-    multiple: bool,
-    output: &'o mut dyn FnMut(RawJson<'i>) -> Result<(), E>,
+pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
+    let input = crate::validate(input)?;
+    let value = match node.run(input)? {
+        Operand::Missing => None,
+        Operand::One(value) => Some(value),
+        Operand::Many(_) => unreachable!("scalar operators produce at most one item"),
+    };
+    Ok(Evaluation {
+        result: Results::Scalar(value),
+    })
 }
 
-impl<'i, E> Sequence<'i, '_, E> {
-    fn value(&mut self, value: RawJson<'i>) -> Result<(), E> {
-        if self.multiple {
-            return self.flatten(value);
-        }
-        if self.first.is_some() {
-            self.start_sequence()?;
-            self.flatten(value)
-        } else {
-            self.first = Some(value);
-            Ok(())
-        }
-    }
-
-    fn start_sequence(&mut self) -> Result<(), E> {
-        self.multiple = true;
-        if let Some(first) = self.first.take() {
-            self.flatten(first)?;
-        }
-        Ok(())
-    }
-
-    fn flatten(&mut self, value: RawJson<'i>) -> Result<(), E> {
-        if value.is_array() {
-            for item in value.elements() {
-                (self.output)(item)?;
-            }
-            Ok(())
-        } else {
-            (self.output)(value)
-        }
-    }
-
-    fn finish(self) -> Result<(), E> {
-        if let Some(first) = self.first {
-            (self.output)(first)?;
-        }
-        Ok(())
-    }
+#[derive(Clone, Copy)]
+pub(crate) enum Operand<'e, 'i> {
+    Missing,
+    One(Value<'e, 'i>),
+    Many(PathEvaluation<'e, 'i>),
 }
 
-fn context<'i, E>(
-    input: RawJson<'i>,
-    fields: &[Box<str>],
-    result: &mut Sequence<'i, '_, E>,
-) -> Result<(), E> {
-    let (field, rest) = fields.split_first().expect("remaining path step");
-    if !input.is_array() {
-        if let Some(value) = input.field(field) {
-            single(value, rest, result)?;
-        }
-        return Ok(());
-    }
-
-    // Name lookup on an array yields a sequence. Normalize its cardinality
-    // before the map stage: a singleton array item becomes a raw array again.
-    let mut first = None;
-    let mut multiple = false;
-    lookup(input, field, &mut |value| {
-        if multiple {
-            return sequence_item(value, rest, result);
-        }
-        if let Some(pending) = first.take() {
-            multiple = true;
-            if rest.is_empty() {
-                result.start_sequence()?;
+impl<'e, 'i> Operand<'e, 'i> {
+    fn path(path: PathEvaluation<'e, 'i>) -> Self {
+        let mut first = None;
+        let cardinality = path.try_for_each(|value| {
+            if first.is_some() {
+                return Err(());
             }
-            sequence_item(pending, rest, result)?;
-            sequence_item(value, rest, result)
-        } else {
             first = Some(value);
             Ok(())
-        }
-    })?;
-    if let Some(value) = first {
-        single(value, rest, result)?;
-    }
-    Ok(())
-}
-
-fn single<'i, E>(
-    value: RawJson<'i>,
-    rest: &[Box<str>],
-    result: &mut Sequence<'i, '_, E>,
-) -> Result<(), E> {
-    if rest.is_empty() {
-        return result.value(value);
-    }
-    if value.is_array() {
-        for item in value.elements() {
-            context(item, rest, result)?;
-        }
-        Ok(())
-    } else {
-        context(value, rest, result)
-    }
-}
-
-fn sequence_item<'i, E>(
-    value: RawJson<'i>,
-    rest: &[Box<str>],
-    result: &mut Sequence<'i, '_, E>,
-) -> Result<(), E> {
-    if rest.is_empty() {
-        (result.output)(value)
-    } else {
-        context(value, rest, result)
-    }
-}
-
-// Recursive array lookup flattens returned arrays once at the object boundary;
-// concatenating the recursive sequences must not flatten their array items again.
-fn lookup<'i, E>(
-    input: RawJson<'i>,
-    field: &str,
-    output: &mut dyn FnMut(RawJson<'i>) -> Result<(), E>,
-) -> Result<(), E> {
-    if input.is_array() {
-        for item in input.elements() {
-            lookup(item, field, output)?;
-        }
-    } else if let Some(value) = input.field(field) {
-        if value.is_array() {
-            for item in value.elements() {
-                output(item)?;
-            }
+        });
+        if cardinality.is_err() {
+            Self::Many(path)
         } else {
-            output(value)?;
+            first.map_or(Self::Missing, |raw| Self::One(Value::Raw(raw)))
         }
     }
-    Ok(())
+
+    pub(crate) fn truth(self, offset: usize) -> Result<bool, Error> {
+        match self {
+            Self::Missing => Ok(false),
+            Self::One(value) => value.truth(offset),
+            Self::Many(path) => {
+                let mut truth = false;
+                path.try_for_each(|value| {
+                    truth |= Value::Raw(value).truth(offset)?;
+                    Ok(())
+                })?;
+                Ok(truth)
+            }
+        }
+    }
+
+    fn number(self, offset: usize) -> Result<Option<f64>, Error> {
+        match self {
+            Self::Missing => Ok(None),
+            Self::One(value) => match value.atomic() {
+                Value::Number(value) if value.is_infinite() => Err(range_error(offset)),
+                Value::Number(value) if !value.is_nan() => Ok(Some(value)),
+                _ => Err(type_error(offset)),
+            },
+            Self::Many(_) => Err(type_error(offset)),
+        }
+    }
+}
+
+impl Node {
+    pub(crate) fn run<'e, 'i>(&'e self, input: RawJson<'i>) -> Result<Operand<'e, 'i>, Error> {
+        let value = match &self.kind {
+            Kind::Path(path) => return Ok(Operand::path(path.select_raw(input))),
+            Kind::Missing => return Ok(Operand::Missing),
+            Kind::Number(value) => Value::Number(*value),
+            Kind::Boolean(value) => Value::Boolean(*value),
+            Kind::Null => Value::Null,
+            Kind::String(value) => Value::StringLiteral(RawJson(value)),
+            Kind::Negate(child) => {
+                return Ok(child
+                    .run(input)?
+                    .number(self.offset)?
+                    .map_or(Operand::Missing, |value| {
+                        Operand::One(Value::Number(-value))
+                    }));
+            }
+            Kind::Binary(op, lhs, rhs) => {
+                let left = lhs.run(input)?;
+                if matches!(op, Op::And | Op::Or) {
+                    let truth = left.truth(self.offset)?;
+                    let value = match op {
+                        Op::And => truth && rhs.run(input)?.truth(self.offset)?,
+                        Op::Or => truth || rhs.run(input)?.truth(self.offset)?,
+                        _ => unreachable!(),
+                    };
+                    return Ok(Operand::One(Value::Boolean(value)));
+                }
+                let right = rhs.run(input)?;
+                match op {
+                    Op::Equal | Op::NotEqual => Value::Boolean(crate::compare::equal(
+                        left,
+                        right,
+                        matches!(op, Op::NotEqual),
+                    )),
+                    Op::Less | Op::LessEqual | Op::Greater | Op::GreaterEqual => {
+                        return crate::compare::order(left, right, *op, self.offset);
+                    }
+                    _ => {
+                        // Type-check both operands before propagating missing.
+                        let left = left.number(self.offset)?;
+                        let right = right.number(self.offset)?;
+                        let (Some(left), Some(right)) = (left, right) else {
+                            return Ok(Operand::Missing);
+                        };
+                        Value::Number(match op {
+                            Op::Add => left + right,
+                            Op::Subtract => left - right,
+                            Op::Multiply => left * right,
+                            Op::Divide => left / right,
+                            Op::Remainder => left % right,
+                            _ => unreachable!(),
+                        })
+                    }
+                }
+            }
+        };
+        Ok(Operand::One(value))
+    }
 }

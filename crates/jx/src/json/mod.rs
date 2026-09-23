@@ -1,5 +1,5 @@
 mod scan;
-mod string;
+pub(crate) mod string;
 
 pub use scan::MAX_DEPTH;
 pub(crate) use scan::{Selection, select};

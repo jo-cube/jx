@@ -2,29 +2,31 @@
 //! Compile once, then evaluate independent UTF-8 JSON records without a DOM.
 //!
 //! ```
-//! let expression = jx::compile("customer.id")?;
-//! for input in [br#"{"customer":{"id":42}}"#.as_slice(), b"{}"] {
-//!     expression.evaluate(input)?.for_each(|value| {
-//!         println!("{}", value.as_str());
-//!     });
-//! }
+//! let expression = jx::compile("price * quantity")?;
+//! expression.evaluate(br#"{"price":2.5,"quantity":3}"#)?.for_each(|value| {
+//!     assert!(matches!(value, jx::Value::Number(7.5)));
+//! });
 //! # Ok::<(), jx::Error>(())
 //! ```
 
+mod compare;
 mod error;
 mod evaluate;
+mod expression;
 mod json;
 mod parse;
+mod path;
+mod value;
 
 pub use error::{Error, ErrorKind};
 pub use evaluate::Evaluation;
 pub use json::{MAX_DEPTH, RawJson, validate};
+pub use value::Value;
 
 /// Immutable compiled expression; share across callers with independent inputs.
 #[derive(Clone, Debug)]
 pub struct Expression {
-    fields: Box<[Box<str>]>,
-    rooted: bool,
+    root: expression::Node,
 }
 
 pub fn compile(source: &str) -> Result<Expression, Error> {
@@ -33,15 +35,14 @@ pub fn compile(source: &str) -> Result<Expression, Error> {
 
 impl Expression {
     /// Validate the entire record before exposing results. Traversal is deferred
-    /// until consumption; values borrow the input, not the expression.
+    /// until consumption; scalar operations finish before returning results.
+    #[inline]
     pub fn evaluate<'e, 'i>(&'e self, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
-        let selection = json::select(input, &self.fields)?;
-        let root_lookup = !self.rooted
-            && matches!(&selection,
-            json::Selection::Array(_, fields) if fields.len() == self.fields.len());
-        Ok(Evaluation {
-            selection,
-            root_lookup,
-        })
+        match &self.root.kind {
+            expression::Kind::Path(path) => Ok(Evaluation {
+                result: evaluate::Results::Path(path.select(input)?),
+            }),
+            _ => evaluate::scalar(&self.root, input),
+        }
     }
 }

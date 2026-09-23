@@ -1,6 +1,6 @@
 /// Compare a validated JSON string body with a compiled field name. UTF-16
 /// units preserve JSON's escaped surrogate units without allocating a String.
-pub(super) fn matches(body: &str, field: &str) -> bool {
+pub(crate) fn matches(body: &str, field: &str) -> bool {
     if !body.as_bytes().contains(&b'\\') {
         return body == field;
     }
@@ -11,7 +11,7 @@ pub(super) fn matches(body: &str, field: &str) -> bool {
     .eq(field.encode_utf16())
 }
 
-struct Units<'a> {
+pub(crate) struct Units<'a> {
     chars: std::str::Chars<'a>,
     pending: Option<u16>,
 }
@@ -47,5 +47,12 @@ impl Iterator for Units<'_> {
             self.pending = Some(encoded[1]);
         }
         Some(encoded[0])
+    }
+}
+
+pub(crate) fn units(body: &str) -> Units<'_> {
+    Units {
+        chars: body.chars(),
+        pending: None,
     }
 }

@@ -25,7 +25,7 @@ fn ndjson_missing_null_arrays_and_final_unterminated_record() {
 
 #[test]
 fn errors_have_distinct_exit_codes_and_record_context() {
-    let output = run(&["a+1"], b"");
+    let output = run(&["a[0]"], b"");
     assert_eq!(output.status.code(), Some(2));
     let output = run(&["$"], b"1\n[0,]\n2\n");
     assert_eq!(output.status.code(), Some(1));
@@ -99,4 +99,20 @@ fn invalid_record_never_emits_a_partial_sequence() {
     );
     assert_eq!(output.status.code(), Some(1));
     assert_eq!(output.stdout, b"0\n");
+}
+
+#[test]
+fn scalar_results_and_runtime_errors_are_framed_per_record() {
+    let output = run(&["a + 1"], b"{\"a\":2}\n{}\n{\"a\":null}\n{\"a\":4}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"3\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 3:") && error.contains("TypeError"));
+    let output = run(&["--", "-a"], b"{\"a\":2}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"-2\n");
+    let output = run(&["a / 0"], b"{\"a\":1}\n{\"a\":0}\n");
+    assert_eq!(output.stdout, b"null\nnull\n");
+    let output = run(&["'hello'"], b"null\ntrue\n");
+    assert_eq!(output.stdout, b"\"hello\"\n\"hello\"\n");
 }

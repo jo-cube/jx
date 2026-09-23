@@ -4,7 +4,7 @@ use crate::{Error, ErrorKind};
 /// Maximum simultaneously nested JSON objects/arrays, bounding native stack use.
 pub const MAX_DEPTH: usize = 128;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) enum Selection<'a, 'path> {
     Missing,
     Value(RawJson<'a>),
@@ -321,5 +321,42 @@ impl<'a> RawJson<'a> {
             scanner.space();
         }
         selected
+    }
+}
+
+/// Object members retain encoded keys so comparisons need no decoded allocation.
+pub(crate) struct Members<'a> {
+    scanner: Scanner<'a>,
+}
+
+impl<'a> Iterator for Members<'a> {
+    type Item = (&'a str, RawJson<'a>);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.scanner.space();
+        if self.scanner.byte() == Some(b'}') {
+            return None;
+        }
+        let start = self.scanner.at + 1;
+        self.scanner.string().expect("validated key");
+        let key = &self.scanner.text[start..self.scanner.at - 1];
+        self.scanner.space();
+        self.scanner.at += 1;
+        self.scanner.space();
+        let value = self.scanner.raw_value();
+        self.scanner.space();
+        self.scanner.take(b',');
+        Some((key, value))
+    }
+}
+
+impl<'a> RawJson<'a> {
+    pub(crate) fn members(self) -> Members<'a> {
+        debug_assert_eq!(self.as_bytes()[0], b'{');
+        Members {
+            scanner: Scanner {
+                text: self.0,
+                at: 1,
+            },
+        }
     }
 }
