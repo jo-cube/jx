@@ -26,6 +26,13 @@ writing into a reused Vec. These are library workloads; record framing, OS I/O
 and physical output throughput are excluded. Payload-heavy fixtures alone cannot
 predict performance on wide/deep records.
 
+Array fixtures add 1, 8, 16, 128, 1,024 and 16,384 objects (78 B through 1.08 MiB),
+measuring root/shallow/nested paths, array-result flattening, missing fields and
+cancellation after the first item. Separate fixtures exercise nested contexts,
+sparse mixed arrays, 64 nested arrays, empty/singleton results and nested array
+values. Expected emission counts are checked before timing. Cancellation still
+includes full-record validation and any lookahead needed to identify the first item.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
 implemented repeated evaluation and preallocated output must report zero. Allocation
@@ -35,7 +42,7 @@ Counter overhead affects allocating compilation; counts are not retained RSS.
 
 ## Extending evidence
 
-Add arrays/sequences, arithmetic, comparisons, filters, aggregates, constructors,
+Add arithmetic, comparisons, filters, aggregates, constructors,
 functions and mixed expressions with their semantics. Use selected purpose-written
 Rust controls when they clarify overhead. Add realistic whole-CLI pipelines and
 latency distributions separately; sample duration is not per-record tail latency.
@@ -70,3 +77,48 @@ All 56 repeated-execution workloads measured zero allocations/record. Compiling
 These establish a local baseline, not a speedup or production capacity claim.
 [Raw samples](benchmarks/2026-09-23.csv) and [environment/source hashes](benchmarks/2026-09-23.json)
 are retained; rerun on the same machine before drawing regression conclusions.
+
+## Milestone 2 — array navigation and sequences
+
+Same machine/compiler/profile as the initial baseline. Two paired process runs
+compare committed milestone 1 (`a1ac257`) with milestone 2. All 98 repeated-execution
+workloads (56 existing, 42 new) measured zero allocations; compilation is separate.
+Selected array results below are medians of 14 samples across two runs. Validation
+and complete result consumption are included; serialization and physical I/O are not.
+
+| Workload | Input bytes | Median records/s | Median input MB/s |
+| --- | ---: | ---: | ---: |
+| array/shallow | 540 | 659,442 | 356.1 |
+| array/shallow | 1,074 | 323,474 | 347.4 |
+| array/nested | 1,074 | 291,119 | 312.7 |
+| array/flatten | 1,074 | 304,624 | 327.2 |
+| array/shallow | 69,558 | 5,403 | 375.8 |
+| array/shallow | 1,135,782 | 333 | 378.2 |
+| array/nested_contexts | 972 | 186,440 | 181.2 |
+| array/deep | 136 | 80,048 | 10.9 |
+
+For existing `customer.id` projections, paired median changes were:
+
+| Fixture | Run 1 | Run 2 |
+| --- | ---: | ---: |
+| ascii/nested, 100 B | -4.82% | -4.43% |
+| ascii/nested, 500 B | -1.56% | -2.17% |
+| ascii/nested, 1,024 B | -0.89% | -1.37% |
+| ascii/nested, 10,240 B | +0.52% | -0.17% |
+| ascii/nested, 1,048,576 B | -0.05% | -0.32% |
+| structured/nested, 485 B | +11.25% | +12.73% |
+| unicode_escaped_keys/nested, 960 B | +0.06% | -2.16% |
+
+The roughly 4–5% tiny-record regression repeats; it is not dismissed as noise.
+The larger selected object workloads change less, while the structured fixture
+improves. These measurements do not isolate the cause of code-generation/layout
+changes. Keep the direct representation until profiling justifies a change.
+
+Array traversal reuses validation scans for boundaries and may revisit bytes at
+successive nesting/path levels. The deep-array fixture makes this cost visible;
+these results establish a baseline for future profiling, not a full-engine speedup.
+
+Raw paired runs: [M1 first](benchmarks/m2/m1-before-m2.csv),
+[M2 first](benchmarks/m2/m2-baseline.csv), [M1 repeat](benchmarks/m2/m1-repeat.csv),
+[M2 repeat](benchmarks/m2/m2-repeat.csv). [Environment, commands and source hashes](benchmarks/m2/environment.json)
+make the comparison reproducible. Tail latency and retained RSS remain unmeasured.
