@@ -3,113 +3,501 @@
   "cases": [
     {
       "file": "groups/fields/case000.json",
+      "index": 0,
       "status": "supported",
-      "reason": "Identity/object path subset"
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/fields/case001.json",
+      "index": 0,
       "status": "supported",
-      "reason": "Identity/object path subset"
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/fields/case002.json",
-      "status": "array",
-      "reason": "M2: array mapping and result sequences"
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/fields/case003.json",
-      "status": "array",
-      "reason": "M2: array mapping and result sequences"
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/fields/case004.json",
-      "status": "array",
-      "reason": "M2: array mapping and result sequences"
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/fields/case005.json",
+      "index": 0,
       "status": "supported",
-      "reason": "Identity/object path subset"
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/fields/case006.json",
-      "status": "array",
-      "reason": "M2: array mapping and result sequences"
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/fields/case007.json",
-      "status": "array",
-      "reason": "M2: array mapping and result sequences"
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/missing-paths/case000.json",
+      "index": 0,
       "status": "supported",
-      "reason": "Identity/object path subset"
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/missing-paths/case001.json",
+      "index": 0,
       "status": "supported",
-      "reason": "Identity/object path subset"
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/missing-paths/case002.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/missing-paths/case003.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/missing-paths/case004.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/missing-paths/case005.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/quoted-selectors/case000.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/quoted-selectors/case001.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/quoted-selectors/case002.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/quoted-selectors/case003.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/quoted-selectors/case004.json",
+      "index": 0,
       "status": "supported",
-      "reason": "Identity/object path subset"
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/quoted-selectors/case005.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
       "file": "groups/quoted-selectors/case006.json",
-      "status": "array",
-      "reason": "M2: array mapping and result sequences"
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
     },
     {
       "file": "groups/quoted-selectors/case007.json",
+      "index": 0,
       "status": "supported",
-      "reason": "Identity/object path subset"
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 1,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 2,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 3,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 4,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 5,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 6,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/array-inputs.json",
+      "index": 7,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case000.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case003.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case004.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case005.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case006.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case007.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case008.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case009.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case010.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case011.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case012.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case013.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case014.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case015.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case016.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case017.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case018.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case019.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case020.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case021.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case022.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case023.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case024.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case025.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case026.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case027.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case028.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case029.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case030.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case031.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case032.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Identity, field paths, array navigation and sequences"
+    },
+    {
+      "file": "groups/flattening/case033.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case034.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case034a.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case035.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case036.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case037.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case038.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case039.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case040.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case041.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case042.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case043.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case044.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/case045.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/large.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/large.json",
+      "index": 1,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/sequence-of-arrays.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/sequence-of-arrays.json",
+      "index": 1,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/sequence-of-arrays.json",
+      "index": 2,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/flattening/sequence-of-arrays.json",
+      "index": 3,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
     }
   ]
 }
