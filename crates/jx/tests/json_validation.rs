@@ -101,16 +101,15 @@ fn depth_limit_and_large_shallow_records() {
         }
     }
     let input = format!(r#"{{"payload":"{}","id":7}}"#, "x".repeat(1024 * 1024));
-    assert_eq!(
-        jx::compile("id")
-            .unwrap()
-            .evaluate(input.as_bytes())
-            .unwrap()
-            .next()
-            .unwrap()
-            .as_str(),
-        "7"
-    );
+    let mut selected = None;
+    jx::compile("id")
+        .unwrap()
+        .evaluate(input.as_bytes())
+        .unwrap()
+        .for_each(|value| {
+            assert!(selected.replace(value).is_none());
+        });
+    assert_eq!(selected.unwrap().as_str(), "7");
 }
 
 #[test]

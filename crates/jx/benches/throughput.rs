@@ -83,9 +83,12 @@ fn benchmark(label: &str, input: &[u8], smoke: bool) {
     ] {
         let expression = jx::compile(source).unwrap();
         measure(&format!("{label}/{name}"), input.len(), smoke, || {
-            for value in expression.evaluate(black_box(input)).unwrap() {
-                black_box(value.as_bytes());
-            }
+            expression
+                .evaluate(black_box(input))
+                .unwrap()
+                .for_each(|value| {
+                    black_box(value.as_bytes());
+                });
         });
     }
     let expression = jx::compile("$").unwrap();
@@ -98,11 +101,102 @@ fn benchmark(label: &str, input: &[u8], smoke: bool) {
         smoke,
         || {
             output.clear();
-            for value in expression.evaluate(black_box(input)).unwrap() {
-                value.write_compact(&mut output).unwrap();
-            }
+            expression
+                .evaluate(black_box(input))
+                .unwrap()
+                .for_each(|value| {
+                    value.write_compact(&mut output).unwrap();
+                });
             black_box(&output);
         },
+    );
+}
+
+fn array_workload(name: &str, source: &str, input: &str, expected_count: usize, smoke: bool) {
+    let expression = jx::compile(source).unwrap();
+    let mut count = 0;
+    expression
+        .evaluate(input.as_bytes())
+        .unwrap()
+        .for_each(|_| count += 1);
+    assert_eq!(count, expected_count, "{name}");
+    measure(name, input.len(), smoke, || {
+        expression
+            .evaluate(black_box(input.as_bytes()))
+            .unwrap()
+            .for_each(|value| {
+                black_box(value.as_bytes());
+            });
+    });
+}
+
+fn arrays(smoke: bool) {
+    for width in [1, 8, 16, 128, 1024, 16384] {
+        let rows = (0..width)
+            .map(|id| {
+                format!(
+                    r#"{{"id":{id},"details":{{"price":42}},"tags":[1,2],"padding":"abcdefgh"}}"#
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        let root = format!("[{rows}]");
+        let object = format!(r#"{{"orders":{root}}}"#);
+        array_workload("array/shallow", "orders.id", &object, width, smoke);
+        array_workload(
+            "array/nested",
+            "orders.details.price",
+            &object,
+            width,
+            smoke,
+        );
+        array_workload(
+            "array/flatten",
+            "orders.tags",
+            &object,
+            if width == 1 { 1 } else { width * 2 },
+            smoke,
+        );
+        array_workload("array/missing", "orders.absent", &object, 0, smoke);
+        array_workload("array/root", "id", &root, width, smoke);
+        let expression = jx::compile("orders.id").unwrap();
+        measure("array/cancel_first", object.len(), smoke, || {
+            let result = expression
+                .evaluate(black_box(object.as_bytes()))
+                .unwrap()
+                .try_for_each(|value| {
+                    black_box(value.as_bytes());
+                    Err(())
+                });
+            assert_eq!(result, Err(()));
+        });
+    }
+    let nested = format!(
+        r#"{{"groups":[{}]}}"#,
+        vec![r#"[{"orders":[{"id":1},{"id":2}]},null,[{"orders":{"id":3}}]]"#; 16].join(",")
+    );
+    array_workload(
+        "array/nested_contexts",
+        "groups.orders.id",
+        &nested,
+        48,
+        smoke,
+    );
+    let sparse = format!(
+        "[{}]",
+        vec![r#"null,{},[],{"id":null},[{"id":1}],[{"id":[2,3]}]"#; 16].join(",")
+    );
+    array_workload("array/sparse", "id", &sparse, 64, smoke);
+    let deep = format!("{}{{\"id\":7}}{}", "[".repeat(64), "]".repeat(64));
+    array_workload("array/deep", "id", &deep, 1, smoke);
+    array_workload("array/empty", "id", "[]", 0, smoke);
+    array_workload("array/singleton", "$.id", r#"[{"id":[1]}]"#, 1, smoke);
+    array_workload(
+        "array/nested_values",
+        "id",
+        r#"[{"id":[[1],[2]]},{"id":[[3]]}]"#,
+        3,
+        smoke,
     );
 }
 
@@ -136,4 +230,5 @@ fn main() {
         "é中😀".repeat(100)
     );
     benchmark("unicode_escaped_keys", unicode.as_bytes(), smoke);
+    arrays(smoke);
 }

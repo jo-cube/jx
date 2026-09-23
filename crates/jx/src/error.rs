@@ -6,7 +6,6 @@ pub enum ErrorKind {
     UnsupportedExpression,
     InvalidJson,
     DepthLimit,
-    ArrayTraversal,
 }
 
 /// Offsets are zero-based bytes in the expression or input record.

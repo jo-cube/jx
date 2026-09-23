@@ -1,12 +1,16 @@
 use jx::{ErrorKind, compile};
 
 fn selected(expression: &str, input: &str) -> Option<String> {
+    let mut selected = None;
     compile(expression)
         .unwrap()
         .evaluate(input.as_bytes())
         .unwrap()
-        .next()
-        .map(|value| value.as_str().to_owned())
+        .for_each(|value| {
+            assert!(selected.is_none(), "expected at most one raw value");
+            selected = Some(value.as_str().to_owned());
+        });
+    selected
 }
 
 #[test]
@@ -102,23 +106,6 @@ fn unsupported_semantics_fail_explicitly() {
             "{source}"
         );
     }
-    for input in [
-        "[]",
-        "[{}]",
-        r#"{"a":[]}"#,
-        r#"{"a":[{"b":1},{"b":2}]}"#,
-        r#"{"a":{"b":1},"a":[]}"#,
-    ] {
-        assert_eq!(
-            compile("a.b")
-                .unwrap()
-                .evaluate(input.as_bytes())
-                .unwrap_err()
-                .kind,
-            ErrorKind::ArrayTraversal,
-            "{input}"
-        );
-    }
 }
 
 #[test]
@@ -144,11 +131,15 @@ fn validate_before_returning_a_selected_value_or_semantic_error() {
 #[test]
 fn results_borrow_input_not_the_expression() {
     let input = br#" {"a":123} "#;
-    let mut results = compile("a").unwrap().evaluate(input).unwrap();
-    let value = results.next().unwrap();
-    assert_eq!(value.as_bytes().as_ptr(), input[6..].as_ptr());
-    assert!(results.next().is_none());
-    assert!(results.next().is_none());
+    let mut selected = None;
+    {
+        let expression = compile("a").unwrap();
+        expression
+            .evaluate(input)
+            .unwrap()
+            .for_each(|value| selected = Some(value));
+    }
+    assert_eq!(selected.unwrap().as_bytes().as_ptr(), input[6..].as_ptr());
 }
 
 #[test]
@@ -159,16 +150,19 @@ fn compile_once_reuse_across_records_and_threads() {
             let expression = &expression;
             scope.spawn(move || {
                 for _ in 0..100 {
-                    assert_eq!(
-                        expression
-                            .evaluate(br#"{"a":{"b":7}}"#)
-                            .unwrap()
-                            .next()
-                            .unwrap()
-                            .as_str(),
-                        "7"
-                    );
-                    assert!(expression.evaluate(b"{}").unwrap().next().is_none());
+                    let mut count = 0;
+                    expression
+                        .evaluate(br#"{"a":{"b":7}}"#)
+                        .unwrap()
+                        .for_each(|value| {
+                            count += 1;
+                            assert_eq!(value.as_str(), "7");
+                        });
+                    assert_eq!(count, 1);
+                    expression
+                        .evaluate(b"{}")
+                        .unwrap()
+                        .for_each(|_| panic!("missing"));
                 }
             });
         }

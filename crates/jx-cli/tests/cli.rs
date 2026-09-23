@@ -35,14 +35,6 @@ fn errors_have_distinct_exit_codes_and_record_context() {
             .unwrap()
             .contains("-: line 2:")
     );
-    let output = run(&["a.b"], b"{\"a\":[{\"b\":1},{\"b\":2}]}\n");
-    assert_eq!(output.status.code(), Some(1));
-    assert!(output.stdout.is_empty());
-    assert!(
-        String::from_utf8(output.stderr)
-            .unwrap()
-            .contains("ArrayTraversal")
-    );
 }
 
 #[test]
@@ -85,4 +77,26 @@ fn help_empty_input_options_and_invalid_utf8() {
     assert_eq!(run(&[], b"").status.code(), Some(2));
     assert_eq!(run(&["--unknown"], b"").status.code(), Some(2));
     assert_eq!(run(&["$"], b"\"\xff\"\n").status.code(), Some(1));
+}
+
+#[test]
+fn sequences_are_separate_lines_and_raw_arrays_stay_values() {
+    let input = b"{\"a\":[{\"b\":1},{\"b\":2}]}\n{\"a\":[{\"b\":[3]}]}\n{\"a\":[{\"b\":[]},{\"b\":[]}]}\n{\"a\":[{\"b\":null}]}\n";
+    let output = run(&["a.b"], input);
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"1\n2\n[3]\nnull\n");
+    let output = run(&["a"], b"[{\"a\":[1]}]\n");
+    assert_eq!(output.stdout, b"1\n");
+    let output = run(&["$.a"], b"[{\"a\":[1]}]\n");
+    assert_eq!(output.stdout, b"[1]\n");
+}
+
+#[test]
+fn invalid_record_never_emits_a_partial_sequence() {
+    let output = run(
+        &["a.b"],
+        b"{\"a\":[{\"b\":0}]}\n{\"a\":[{\"b\":1},{\"b\":2}],\"bad\":[0,]}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"0\n");
 }

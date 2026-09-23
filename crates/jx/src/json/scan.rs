@@ -4,16 +4,17 @@ use crate::{Error, ErrorKind};
 /// Maximum simultaneously nested JSON objects/arrays, bounding native stack use.
 pub const MAX_DEPTH: usize = 128;
 
-enum Selection<'a> {
+#[derive(Debug)]
+pub(crate) enum Selection<'a, 'path> {
     Missing,
     Value(RawJson<'a>),
-    Array(usize),
+    Array(RawJson<'a>, &'path [Box<str>]),
 }
 
-pub(crate) fn select<'a>(
+pub(crate) fn select<'a, 'path>(
     input: &'a [u8],
-    fields: &[Box<str>],
-) -> Result<Option<RawJson<'a>>, Error> {
+    fields: &'path [Box<str>],
+) -> Result<Selection<'a, 'path>, Error> {
     let text = std::str::from_utf8(input).map_err(|error| {
         Error::new(ErrorKind::InvalidJson, error.valid_up_to(), "invalid UTF-8")
     })?;
@@ -24,15 +25,7 @@ pub(crate) fn select<'a>(
     if scanner.at != text.len() {
         return Err(scanner.error("trailing content after JSON value"));
     }
-    match selected {
-        Selection::Missing => Ok(None),
-        Selection::Value(value) => Ok(Some(value)),
-        Selection::Array(offset) => Err(Error::new(
-            ErrorKind::ArrayTraversal,
-            offset,
-            "array path traversal is not implemented; see CONFORMANCE.md",
-        )),
-    }
+    Ok(selected)
 }
 
 struct Scanner<'a> {
@@ -41,7 +34,11 @@ struct Scanner<'a> {
 }
 
 impl<'a> Scanner<'a> {
-    fn value(&mut self, depth: usize, path: Option<&[Box<str>]>) -> Result<Selection<'a>, Error> {
+    fn value<'path>(
+        &mut self,
+        depth: usize,
+        path: Option<&'path [Box<str>]>,
+    ) -> Result<Selection<'a, 'path>, Error> {
         let start = self.at;
         let remaining = path.filter(|fields| !fields.is_empty());
         let selection = match self.byte() {
@@ -52,8 +49,8 @@ impl<'a> Scanner<'a> {
             Some(b'[') => {
                 self.open(depth)?;
                 self.array(depth + 1)?;
-                if remaining.is_some() {
-                    Selection::Array(start)
+                if let Some(fields) = remaining {
+                    Selection::Array(RawJson(&self.text[start..self.at]), fields)
                 } else {
                     Selection::Missing
                 }
@@ -87,7 +84,11 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn object(&mut self, depth: usize, path: Option<&[Box<str>]>) -> Result<Selection<'a>, Error> {
+    fn object<'path>(
+        &mut self,
+        depth: usize,
+        path: Option<&'path [Box<str>]>,
+    ) -> Result<Selection<'a, 'path>, Error> {
         self.space();
         let mut selected = Selection::Missing;
         if self.take(b'}') {
@@ -106,8 +107,7 @@ impl<'a> Scanner<'a> {
             self.require(b':', "expected ':' after object key")?;
             self.space();
             let found = self.value(depth, tail)?;
-            // Resolve duplicates before reporting unsupported traversal. A later
-            // duplicate can replace an array with an object or a missing path.
+            // Last decoded key wins, including missing and deferred array paths.
             if tail.is_some() {
                 selected = found;
             }
@@ -248,5 +248,78 @@ impl<'a> Scanner<'a> {
 
     fn error(&self, message: &'static str) -> Error {
         Error::new(ErrorKind::InvalidJson, self.at, message)
+    }
+}
+
+// These cursors only receive validated RawJson. Reuse the scanner for value
+// boundaries; do not maintain a second JSON grammar for traversal.
+impl<'a> Scanner<'a> {
+    fn raw_value(&mut self) -> RawJson<'a> {
+        let start = self.at;
+        self.value(0, None).expect("validated subtree");
+        RawJson(&self.text[start..self.at])
+    }
+}
+
+pub(crate) struct Elements<'a> {
+    scanner: Scanner<'a>,
+}
+
+impl<'a> Iterator for Elements<'a> {
+    type Item = RawJson<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.scanner.space();
+        if self.scanner.byte() == Some(b']') {
+            return None;
+        }
+        let value = self.scanner.raw_value();
+        self.scanner.space();
+        self.scanner.take(b',');
+        Some(value)
+    }
+}
+
+impl<'a> RawJson<'a> {
+    pub(crate) fn is_array(self) -> bool {
+        self.as_bytes()[0] == b'['
+    }
+
+    pub(crate) fn elements(self) -> Elements<'a> {
+        debug_assert!(self.is_array());
+        Elements {
+            scanner: Scanner {
+                text: self.0,
+                at: 1,
+            },
+        }
+    }
+
+    pub(crate) fn field(self, name: &str) -> Option<Self> {
+        if self.as_bytes()[0] != b'{' {
+            return None;
+        }
+        let mut scanner = Scanner {
+            text: self.0,
+            at: 1,
+        };
+        let mut selected = None;
+        scanner.space();
+        while scanner.byte() != Some(b'}') {
+            let start = scanner.at + 1;
+            scanner.string().expect("validated key");
+            let matches = string::matches(&self.0[start..scanner.at - 1], name);
+            scanner.space();
+            scanner.at += 1; // validated ':'
+            scanner.space();
+            let value = scanner.raw_value();
+            if matches {
+                selected = Some(value);
+            }
+            scanner.space();
+            scanner.take(b',');
+            scanner.space();
+        }
+        selected
     }
 }

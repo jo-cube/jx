@@ -1,12 +1,16 @@
-use crate::{Error, ErrorKind};
+use crate::{Error, ErrorKind, Expression};
 
-pub(crate) fn path(source: &str) -> Result<Box<[Box<str>]>, Error> {
+pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
     let mut parser = Parser { source, at: 0 };
     parser.space();
-    if parser.take(b'$') {
+    let rooted = parser.take(b'$');
+    if rooted {
         parser.space();
         if parser.at == source.len() {
-            return Ok(Box::default());
+            return Ok(Expression {
+                fields: Box::default(),
+                rooted,
+            });
         }
         if !parser.take(b'.') {
             return Err(parser.error());
@@ -54,7 +58,10 @@ pub(crate) fn path(source: &str) -> Result<Box<[Box<str>]>, Error> {
         }
         parser.space();
         if parser.at == source.len() {
-            return Ok(fields.into_boxed_slice());
+            return Ok(Expression {
+                fields: fields.into_boxed_slice(),
+                rooted,
+            });
         }
         if !parser.take(b'.') {
             return Err(parser.error());

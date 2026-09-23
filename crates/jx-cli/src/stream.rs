@@ -43,10 +43,10 @@ pub fn run(
             let values = expression.evaluate(buffer).map_err(|error| {
                 io::Error::new(io::ErrorKind::InvalidData, format!("line {line}: {error}"))
             })?;
-            for value in values {
+            values.try_for_each(|value| {
                 value.write_compact(&mut *output)?;
-                output.write_all(b"\n")?;
-            }
+                output.write_all(b"\n")
+            })?;
         }
         line += 1;
     }

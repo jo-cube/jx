@@ -2,7 +2,7 @@ use std::{ffi::OsString, path::PathBuf};
 
 pub const HELP: &str = "Usage: jx [--max-record-bytes N] [--] EXPRESSION [FILE ...]\n\
 Compile once and process NDJSON. No files, or '-', reads stdin.\n\
-Missing results produce no line. Selected arrays stay on one line.\n\
+Missing produces no line; sequences emit one line per item; raw arrays stay on one line.\n\
 Blank lines are ignored. Default record limit: 1048576 bytes excluding LF.\n";
 
 pub struct Args {

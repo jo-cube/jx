@@ -2,7 +2,7 @@ mod scan;
 mod string;
 
 pub use scan::MAX_DEPTH;
-pub(crate) use scan::select;
+pub(crate) use scan::{Selection, select};
 
 /// A validated JSON value borrowing its original UTF-8 encoding.
 /// Arrays here are JSON values, not JSONata result sequences.
@@ -46,5 +46,8 @@ impl<'a> RawJson<'a> {
 
 /// Validate one complete UTF-8 JSON text without allocating a JSON tree.
 pub fn validate(input: &[u8]) -> Result<RawJson<'_>, crate::Error> {
-    Ok(select(input, &[])?.expect("identity always selects the validated root"))
+    match select(input, &[])? {
+        Selection::Value(value) => Ok(value),
+        _ => unreachable!("identity selects the validated root"),
+    }
 }
