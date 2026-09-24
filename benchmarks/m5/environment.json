@@ -1,0 +1,49 @@
+{
+  "date": "2026-09-24",
+  "machine": "Apple M4, arm64",
+  "memory_bytes": 25769803776,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.1\nBuildVersion:\t\t25F80",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "m4_commit": "c87ae05",
+  "m5_state": "Uncommitted milestone-5 source identified by hashes below",
+  "profile": "release, thin LTO, codegen-units=1; portable target CPU",
+  "environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_BUILD_TARGET": null
+  },
+  "commands": {
+    "m4-before.csv": "just bench > /tmp/jx-m5-before.csv (clean checkout at c87ae05)",
+    "m4-repeat.csv": "cargo bench --manifest-path target/m4-reference/Cargo.toml --target-dir target/m4-reference-build -p jx --bench throughput --locked > /tmp/jx-m5-m4-repeat.csv (detached worktree at c87ae05)",
+    "m5-outlined.csv": "just bench > /tmp/jx-m5-first.csv (before the inline hint)",
+    "m5-outlined-repeat.csv": "just bench > /tmp/jx-m5-repeat.csv (same source)",
+    "m5-final.csv": "just bench > /tmp/jx-m5-inline.csv (final source)",
+    "m5-repeat.csv": "just bench > /tmp/jx-m5-inline-repeat.csv (final source)"
+  },
+  "experiment_replay": "Apply outlined-path.patch to a separate copy of final source, then just bench. Only the Node::stream inline hint changes. Symbol inspection found a separate Node::stream before the hint and no separate symbol after it.",
+  "scope": "Library only, full validation and consumption; no physical I/O. Seven samples of at least 50 ms per workload. All retained benchmark processes were sequential. Machine activity is not controlled. No cross-engine, tail-latency or RSS claims.",
+  "m5_sha256": {
+    "Cargo.lock": "ec6b3593774881204c517fb7129d9175a3b1dd2e4d46e2367b8ae5c2465d7d45",
+    "Cargo.toml": "d75df22c2e5743b279d273dc53f248f1bdaa5c4b53118a1d012ab903da3cff81",
+    "crates/jx/Cargo.toml": "a926b953e0f399be30ffb6583cf93a2e9948f3a34910e4d54384455e78a530b9",
+    "crates/jx/benches/throughput.rs": "6ac4fab501299c7e3e1d1ec008d7ee4057ef28d1f999ba57bcc039cb847d506d",
+    "crates/jx/benches/workloads/aggregates.rs": "00b6147314358d1048e9f643be106c6d88b4d6f3b7874cd12a776c77ebc3eae7",
+    "crates/jx/benches/workloads/filters.rs": "8db806117ccd9d0661e1e71fd074856655ae63fdcf231bc601eaaa27e97fca62",
+    "crates/jx/benches/workloads/scalars.rs": "2225047c004efdb0712c4719e3ccaf09fc03cd373e10f9725771a4faede0ce7e",
+    "crates/jx/src/aggregate.rs": "809d26abe8cf2e61f92bceb3de18c0fc7feaf015b0e4c0587a3a12812759e35e",
+    "crates/jx/src/compare.rs": "c22782e7b8b316b21a5653dfae50a1f7ff5de5130d24dcacaa44ae89b6b75e2e",
+    "crates/jx/src/error.rs": "121fcc54c76e1102d82a98677278629441413da43046f8e41e810dfec23028bf",
+    "crates/jx/src/evaluate.rs": "8b52f1999d164d90173f365b9c3a3666cc3c20d5002bf67b603f3510de1e75ca",
+    "crates/jx/src/expression.rs": "673b935ab3ae3849b14ad9c416b296210554384a51e9ab4d75596efc6267026d",
+    "crates/jx/src/filter.rs": "4f94981ec8133d4147ad726fba313d1eef827c3cb5b9d30d673ed032de73e49e",
+    "crates/jx/src/json/mod.rs": "fcaf13ca16678b78748e57200c879174e38e9fe11e3154cfce51ab9e81996ca1",
+    "crates/jx/src/json/scan.rs": "4e65e6a2ec4f485fd65af45a291657b47e1ea0539af69731bb0b542461125bc0",
+    "crates/jx/src/json/string.rs": "d9d66552dac96e4271e5fc2917f4af968a0e290680d9ccbaaa86056ee8530504",
+    "crates/jx/src/lib.rs": "8599ca586a83f04d357cf5796580d34a71a1a1e9bccda57dd073140fbf47fcfc",
+    "crates/jx/src/parse/lex.rs": "cc3ffafe2c1bbef8431b9a697755dcb9be0081c8d4ce40a01728202875ef12a6",
+    "crates/jx/src/parse.rs": "11fd0bffb3aa140e15e0a376caeb3bdda3dca5f742a377ab440f263332f077ab",
+    "crates/jx/src/path.rs": "0bf6e0c3a52c7e72a27a34bd83f8d97b6b3181f1c9e173a5f7ae5b15f3c530e5",
+    "crates/jx/src/sequence.rs": "2cb1a1cf59f1c8cdcd409b5647e660aaf9ea1f66009bb84276e5639bbd866f9c",
+    "crates/jx/src/value.rs": "d055899e97f0d7e0f61a9b23f5f3d916e3e5bea53b44884034c107be65f8cbd3"
+  }
+}

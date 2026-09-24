@@ -38,16 +38,23 @@ operands, comparisons, strings, boolean logic, missing, short-circuiting, mixed
 expressions and reused output serialization. Additional workloads exercise singleton
 and multi-item sequence operands, type errors, escaped strings, stream-to-array and
 stream-to-stream equality, and objects with 8/128 fields. Expected results are checked
-before timing. Path, scalar and filter compilation have separate rows.
+before timing. Path, scalar, filter and aggregate compilation have separate rows.
 
 Filter fixtures add exact 100 B–1 MiB records for predicates, no matches, literal
 first/last positions, computed negative positions and chained predicates. Wide arrays
 (8/128/1,024 items), combined-sequence positions, nested groups, deep arrays and
 16 chained computed negative indexes expose replay and length-counting costs.
 
+Aggregate fixtures add exact 100 B–1 MiB records for count/sum/min/max, filtered
+count/sum and no matches. Raw numeric arrays (8/128/1,024/16,384 members) distinguish
+array folds from filtered sequences and computed mapped values. Nested inputs with
+16/256/16,384 groups (up to 1,048,588 bytes) measure navigated and filtered folds;
+64-deep arrays retain the scanner rescanning cost. Expected scalar results and
+missing output are asserted before timing.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
-ordinary paths, filters, scalar operators and preallocated output must report zero. Structural
+ordinary paths, filters, aggregates, scalar operators and preallocated output must report zero. Structural
 object/sequence equality has explicit per-workload allocation budgets. All assertions
 also run in `just all` via `--smoke`. The wrapper delegates to `System`;
 it is the only unsafe code, isolated to the benchmark. Engine and CLI forbid unsafe.
@@ -55,7 +62,7 @@ Counter overhead affects allocating compilation; counts are not retained RSS.
 
 ## Extending evidence
 
-Add aggregates, constructors and functions with their semantics. Use selected purpose-written
+Add constructors and further functions with their semantics. Use selected purpose-written
 Rust controls when they clarify overhead. Add realistic whole-CLI pipelines and
 latency distributions separately; sample duration is not per-record tail latency.
 Fair cross-engine comparisons must use identical input, expression semantics,
@@ -246,3 +253,57 @@ not a promise that every expression makes one pass.
 M3 baselines, two nested-result runs and two final runs. The accompanying
 [nested-result patch](benchmarks/m4/nested-result.patch) replays the layout comparison
 in a separate copy. No cross-engine speedup, tail-latency or RSS claim is made.
+
+## Milestone 5 — streaming aggregates
+
+Same machine/compiler/profile. **302 workloads** include four compilation cases and
+298 repeated evaluations. Both final runs report zero allocations for **294 evaluation
+workloads**, including all **81 aggregate workloads**. The four structural-equality
+allocation budgets are unchanged. Aggregates retain one pending value and primitive
+state; neither raw-array nor filtered-sequence folds collect their arguments.
+
+Selected medians across 14 samples, including validation and complete consumption:
+
+| Workload | Input bytes | Records/s | Input MB/s |
+| --- | ---: | ---: | ---: |
+| aggregate/sum | 500 | 1,521,966 | 761.0 |
+| aggregate/filtered_sum | 100 | 2,645,090 | 264.5 |
+| aggregate/filtered_sum | 500 | 1,238,773 | 619.4 |
+| aggregate/filtered_sum | 1,024 | 750,898 | 768.9 |
+| aggregate/filtered_sum | 1,048,576 | 943 | 988.8 |
+| aggregate/array_sum | 87,201 | 2,986 | 260.3 |
+| aggregate/nested_filtered_sum | 1,036 | 83,654 | 86.7 |
+| aggregate/nested_filtered_sum | 1,048,588 | 84 | 87.6 |
+| aggregate/deep_filtered_sum | 136 | 79,186 | 10.8 |
+
+Final M5 versus two fresh M4 (`c87ae05`) runs:
+
+| Existing workload | Bytes | Run 1 change | Run 2 change |
+| --- | ---: | ---: | ---: |
+| ascii/nested | 100 | +1.64% | -1.68% |
+| ascii/nested | 500 | +0.39% | -0.64% |
+| ascii/nested | 1,024 | -0.12% | -1.65% |
+| array/shallow | 1,074 | -1.09% | -0.82% |
+| array/deep | 136 | +1.63% | -0.70% |
+| scalar/arithmetic | 100 | +0.97% | -1.02% |
+| filter/predicate | 100 | -0.73% | -1.46% |
+| filter/chained | 100 | -2.87% | +1.59% |
+| filter/nested | 892 | -0.00% | +0.12% |
+
+The initial shared path helper was outlined. A narrow inline hint removes that call;
+versus the two outlined runs it improves the 100 B predicate fixture by 2.41%/1.39%
+and chained filters by 2.41%/4.93%. No scanner, cache or new execution framework was
+added. The table retains residual variation and losses; it does not claim to resolve
+the earlier M1→M2 tiny-record regression. Deep-array rescanning remains near 80k
+records/s. Large nested aggregate inputs expose the same traversal cost.
+
+The fold consumes the existing argument stream once without a cardinality preflight.
+Source stages can still perform lookahead, group normalization or negative-index
+replays; validation and path selection also revisit bytes. This is not a claim of
+one scan of every byte or constant time per record.
+
+[Raw runs, environment, commands and source hashes](benchmarks/m5/environment.json)
+retain two M4 baselines, two outlined-helper runs and two final runs. The
+[outlined-helper patch](benchmarks/m5/outlined-path.patch) reproduces the narrow
+comparison in a separate copy. No cross-engine speedup, tail latency or RSS claim
+is made.
