@@ -23,7 +23,9 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Parentheses | Expression grouping and grouped path steps; `()` is missing; multi-expression blocks deferred |
 | Other operators | `in`, `&`, conditionals, ranges, coalescing/default and assignment deferred |
 | Aggregates | Direct `$count`, `$sum`, `$min`, `$max` calls; streamed arguments, scalar results |
-| Constructors, variables, general functions, closures, transforms, regex, other standard functions | Unsupported syntax; later milestones |
+| Constructors | Arrays, objects, computed keys/values, nested and mapped construction; see below |
+| Postfix grouping, singleton retention | `items{key:value}` and `expr[]` deferred syntax |
+| Variables, general functions, closures, transforms, regex, other standard functions | Unsupported syntax; later milestones |
 | Comments, general unquoted Unicode names, single/double quoted selectors | Deferred syntax; compile error |
 | Keyword field names | `and`/`or` can be names in operand/field positions; `true`, `false`, `null`, `in`, `function` require backticks when used as fields |
 
@@ -66,8 +68,9 @@ Numbers mean zero-based positions, floored toward negative infinity; negatives c
 from the end. A numeric array/sequence selects matching positions (including duplicate
 matches); mixed arrays use effective boolean value. Empty candidates yield missing.
 Non-numeric predicates use effective boolean value; a numeric `0` selects position
-zero rather than rejecting the candidate. Numeric lists can come from input/paths;
-array/range construction and `[]` singleton-array retention remain deferred syntax.
+zero rather than rejecting the candidate. Numeric lists can come from input/paths and
+can also be constructed inline (`a[[0,2]]`). Ranges and `[]`
+singleton-array retention remain deferred syntax.
 
 Chained filters retain stage shape until the enclosing expression normalizes it.
 The upstream literal-index rule preserves a selected raw array; a computed index
@@ -133,6 +136,65 @@ pinned implementation and test this discrepancy. Use `$count($)` explicitly.
 [92 readable cases](tests/semantics/aggregates.json) define the remaining behavior;
 Rust regressions cover error precedence, validation, cancellation and numeric bits.
 
+## Constructors
+
+Array and object construction follows the [result structure documentation](https://docs.jsonata.org/construction)
+and [sequence rules](https://docs.jsonata.org/processing). Computed members use the
+same operators, filters, paths and four aggregates. Constructed containers own their
+structure; input leaves still borrow their original bytes. Navigation, equality,
+truth conversion and aggregation accept constructed values without serializing them.
+
+| Expression | Input | Emitted items |
+| --- | --- | --- |
+| `[missing,null]` | `{}` | `[null]` |
+| `[1,[2,3],([4,5])]` | `{}` | `[1,[2,3],4,5]` |
+| `{"gone":missing,"nil":null,"empty":[]}` | `{}` | `{"nil":null,"empty":[]}` |
+| `a.[b]` | `{"a":[{"b":1},{"b":2}]}` | `[1]`, `[2]` |
+| `a.([b])` | same | `1`, `2` |
+| `{"x":a.b}.x` | same | `1`, `2` |
+| `{"x":[a.b]}.x` | same | `[1,2]` |
+| `{"sum":$sum(a[$>1]),"values":[a[$>1]]}` | `{"a":[1,2,3]}` | `{"sum":5,"values":[2,3]}` |
+
+Arrays append normalized members one level; directly nested array constructors
+(including their predicates) retain their result. Grouping parentheses change this
+syntactic rule. A parenthesized path beginning with an explicit array retains its
+input focus when used as another path step. Explicit array steps in a path preserve their boundaries. Stored
+multi-item sequences keep their internal sequence identity when read back from an
+object; undefined remains distinct from null even though both serialize as null.
+
+Object keys must normalize to a string or missing. A missing key skips its value;
+a missing value omits the member. Keys compare decoded UTF-16 units, so `"a"` and
+`"\u0061"` collide. Different member expressions yielding the same key raise
+`DuplicateKey`, even if a value would be missing. All keys finish before any values.
+In a local array context, repeated keys from the **same** member expression group
+candidate contexts before its value is evaluated (for example `a.({k:$sum(v)})`).
+This is distinct from duplicate input keys, whose lookup remains last-wins.
+
+The top-level input array is one context; `$.{...}` explicitly maps its items.
+A leading array constructor evaluates once, even on empty input. Pinned upstream
+also preserves an empty leading constructor through following path steps and drops
+a leading filtered constructor that collapses to a number, boolean or object.
+Null collapse maps the reference's native exception to `TypeError`. Implicit
+string iteration after that collapse (`["ab"][0].$`) is explicitly deferred with
+runtime `UnsupportedExpression`; parenthesized normal navigation remains available.
+Postfix grouping (`a{k:v}`), singleton retention (`a[]`), ranges and functions beyond
+the four aggregates remain unsupported syntax.
+
+Each constructor completes before emitting a container. Mapped constructors can
+emit earlier complete containers before a later failure, and consumer cancellation
+stops there. Full JSON validation still precedes all output. Constructed values
+preserve IEEE numbers and lone UTF-16 surrogates until JSON serialization.
+[102 readable cases](tests/semantics/constructors.json), ownership/serialization/error
+regressions and CLI tests freeze these rules.
+
+Two explicit host-boundary differences from jsonata-js: prototype-related names
+such as `__proto__` are ordinary JSON keys, and object construction never mutates
+an empty input array. The reference's inherited-property behavior and empty-array
+mutation side effects are not emulated. Member values evaluate in group insertion
+order; asynchronous races between several failing reference members are not emulated. Dedicated Rust tests freeze these policies;
+the seeded differential generator excludes mutation-dependent empty-root cases,
+while isolated empty-array semantics remain covered by the readable corpus.
+
 ## JSON boundary policies
 
 - Exactly one complete UTF-8 JSON value, with standard JSON whitespace. Validate
@@ -192,19 +254,20 @@ Unicode, binary64 boundaries and CLI runtime errors.
 
 ## Executable coverage
 
-`just conformance` executes all **298** imported cases from complete `fields`,
+`just conformance` executes all **351** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
-`function-count`, `function-sum` and `function-max` (also containing min cases)
+`function-count`, `function-sum`, `function-max` (also containing min cases),
+`array-constructor` and `object-constructor`
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 175 | Semantic JSON result or missing matches upstream |
-| Supported errors | 13 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 110 | Exactly `UnsupportedExpression` |
+| Supported results | 258 | Semantic JSON result or missing matches upstream |
+| Supported errors | 30 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 63 | Exactly `UnsupportedExpression` |
 
 These are selected groups, not a percentage of the full suite. No imported case
 is skipped. `tests/conformance/manifest.json` lists every case and reason; the
@@ -214,8 +277,8 @@ implementation. Unimported language families remain deferred as listed above.
 Upstream separates reusable `datasets/` from `groups/<topic>/caseNNN.json`, with
 `expr`, `data`/`dataset`, bindings, and expected result/undefined/error fields.
 The general suite also has expression files and multi-case files; the current
-adapter handles inline/named data and multi-case files. Expression-file cases,
-host functions and nonempty bindings remain deferred.
+adapter handles inline/named data, multi-case files and expression files. Host
+functions and nonempty bindings remain deferred.
 Original files and MIT notice are preserved under `tests/conformance/`.
 
 Reimport from a checkout at the pinned revision:
@@ -239,6 +302,7 @@ node scripts/check-sequences.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-scalars.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-filters.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-aggregates.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-constructors.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -247,4 +311,5 @@ seeded generated evaluations, including runtime error kinds and raw numeric/Unic
 boundaries. The filter check adds 3,820 cases, including nested contexts, chained
 positions, numeric lists and stage error precedence. The aggregate check adds 4,948
 evaluations across raw arrays, normalized sequences, filters, nested calls and
-numeric/error boundaries. Normal `just all` needs neither Node nor the upstream checkout.
+numeric/error boundaries. The constructor check adds 5,000 evaluations including
+102 readable cases, shape matrices and 2,000 seeded expressions. Normal `just all` needs neither Node nor the upstream checkout.

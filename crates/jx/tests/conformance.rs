@@ -24,7 +24,17 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
             assert_eq!(index, 0);
             &spec
         };
-        let source = case["expr"].as_str().unwrap();
+        let expression_file;
+        let source = if let Some(source) = case["expr"].as_str() {
+            source
+        } else {
+            expression_file = fs::read_to_string(
+                root.join(file)
+                    .with_file_name(case["expr-file"].as_str().unwrap()),
+            )
+            .unwrap();
+            &expression_file
+        };
         let compiled = jx::compile(source);
         match row["status"].as_str().unwrap() {
             "supported" => {
@@ -39,7 +49,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                 let input = serde_json::to_vec(&data).unwrap();
                 let mut values: Vec<Value> = Vec::new();
                 compiled
-                    .unwrap()
+                    .unwrap_or_else(|error| panic!("{id}: {source}: {error}"))
                     .evaluate(&input)
                     .unwrap()
                     .for_each(|value| {
@@ -95,6 +105,12 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
     for group in fs::read_dir(root.join("groups")).unwrap() {
         for file in fs::read_dir(group.unwrap().path()).unwrap() {
             let path = file.unwrap().path();
+            if path
+                .extension()
+                .is_some_and(|extension| extension == "jsonata")
+            {
+                continue;
+            }
             let spec = read(&path);
             let count = spec.as_array().map_or(1, Vec::len);
             for index in 0..count {
