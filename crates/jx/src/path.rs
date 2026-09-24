@@ -1,5 +1,10 @@
 use crate::expression::Path;
-use crate::{Value, json};
+use crate::{
+    Error, Value,
+    evaluate::Operand,
+    json,
+    sequence::{Context, Stream},
+};
 
 #[derive(Clone, Debug)]
 pub(crate) enum Selection<'e, 'i> {
@@ -17,12 +22,23 @@ pub(crate) struct PathEvaluation<'expression, 'input> {
 }
 
 impl<'e, 'i> PathEvaluation<'e, 'i> {
+    pub(crate) fn operand(self) -> Result<Operand<'e, 'i>, Error> {
+        match self.selection {
+            Selection::Missing => Ok(Operand::Missing),
+            Selection::Value(value) if !value.is_sequence() => Ok(match value {
+                Value::Undefined => Operand::Missing,
+                value => Operand::One(value),
+            }),
+            _ => Stream::Path(self).operand(),
+        }
+    }
+
     /// A consumer error stops traversal immediately and is returned unchanged.
     pub fn try_for_each<E>(
         &self,
         mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
     ) -> Result<(), E> {
-        match self.selection.clone() {
+        match &self.selection {
             Selection::Missing => Ok(()),
             Selection::Value(value) if value.is_sequence() => {
                 for item in value.elements() {
@@ -30,7 +46,7 @@ impl<'e, 'i> PathEvaluation<'e, 'i> {
                 }
                 Ok(())
             }
-            Selection::Value(value) => output(value),
+            Selection::Value(value) => output(value.clone()),
             Selection::Array(value, fields) => {
                 let mut result = Sequence {
                     first: None,
@@ -41,7 +57,7 @@ impl<'e, 'i> PathEvaluation<'e, 'i> {
                     context(value, fields, &mut result)?;
                 } else {
                     for item in value.elements() {
-                        context(item, fields, &mut result)?;
+                        context(&item, fields, &mut result)?;
                     }
                 }
                 result.finish()
@@ -107,7 +123,7 @@ impl<'e, 'i, E> Sequence<'e, 'i, '_, E> {
 }
 
 fn context<'e, 'i, E>(
-    input: Value<'e, 'i>,
+    input: &Value<'e, 'i>,
     fields: &[Box<str>],
     result: &mut Sequence<'e, 'i, '_, E>,
 ) -> Result<(), E> {
@@ -155,11 +171,11 @@ fn single<'e, 'i, E>(
     }
     if value.is_array() {
         for item in value.elements() {
-            context(item, rest, result)?;
+            context(&item, rest, result)?;
         }
         Ok(())
     } else {
-        context(value, rest, result)
+        context(&value, rest, result)
     }
 }
 
@@ -171,20 +187,20 @@ fn sequence_item<'e, 'i, E>(
     if rest.is_empty() {
         (result.output)(value)
     } else {
-        context(value, rest, result)
+        context(&value, rest, result)
     }
 }
 
 // Recursive array lookup flattens returned arrays once at the object boundary;
 // concatenating the recursive sequences must not flatten their array items again.
 fn lookup<'e, 'i, E>(
-    input: Value<'e, 'i>,
+    input: &Value<'e, 'i>,
     field: &str,
     output: &mut dyn FnMut(Value<'e, 'i>) -> Result<(), E>,
 ) -> Result<(), E> {
     if input.is_array() {
         for item in input.elements() {
-            lookup(item, field, output)?;
+            lookup(&item, field, output)?;
         }
     } else if let Some(value) = input.field(field) {
         if value.is_array() {
@@ -211,10 +227,11 @@ impl Path {
         Ok(self.selection(selection))
     }
 
-    pub(crate) fn select_value<'e, 'i>(
+    pub(crate) fn select_context<'e, 'i>(
         &'e self,
-        mut input: Value<'e, 'i>,
+        context: &Context<'e, 'i>,
     ) -> PathEvaluation<'e, 'i> {
+        let mut input = context.value.clone();
         let mut fields = self.fields.as_ref();
         let selection = loop {
             if fields.is_empty() {
@@ -229,7 +246,9 @@ impl Path {
             }
             fields = &fields[1..];
         };
-        self.selection(selection)
+        let mut selected = self.selection(selection);
+        selected.root_lookup &= context.wrapped;
+        selected
     }
 
     fn selection<'e, 'i>(&'e self, selection: Selection<'e, 'i>) -> PathEvaluation<'e, 'i> {

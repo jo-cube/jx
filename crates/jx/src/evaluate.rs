@@ -187,7 +187,7 @@ impl Node {
                         Operand::One(input.value.clone())
                     });
                 }
-                return self.stream(input).unwrap().operand();
+                return path.select_context(input).operand();
             }
             Kind::Route(..) | Kind::Filter(..) => {
                 return Stream::Expression(self, input.clone()).operand();

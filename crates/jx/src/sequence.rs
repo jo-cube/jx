@@ -35,12 +35,10 @@ impl<'e, 'i> Stream<'e, 'i> {
             Self::Path(path) => path.try_for_each(output),
             Self::Expression(node, context) => match &node.kind {
                 Kind::Route(steps, array_focus) => {
-                    route(steps, *array_focus, context.clone(), &mut |view| {
-                        view.walk(output)
-                    })
+                    route(steps, *array_focus, context, &mut |view| view.walk(output))
                 }
                 Kind::Filter(base, predicates) => {
-                    crate::filter::with_filters(base, predicates, context.clone(), &mut |view| {
+                    crate::filter::with_filters(base, predicates, context, &mut |view| {
                         view.walk(output)
                     })
                 }
@@ -172,7 +170,7 @@ impl<'e, 'i> Map<'_, 'e, 'i> {
             crate::filter::with_filters(
                 &self.step.node,
                 &self.step.predicates,
-                context,
+                &context,
                 &mut |view| {
                     if matches!(view, View::Operand(Operand::Missing)) {
                         return Ok(());
@@ -216,7 +214,7 @@ fn emit_mapped<'e, 'i>(value: Value<'e, 'i>, output: &mut Output<'_, 'e, 'i>) ->
 fn route<'e, 'i>(
     steps: &'e [Step],
     array_focus: bool,
-    context: Context<'e, 'i>,
+    context: &Context<'e, 'i>,
     output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
 ) -> Walk {
     fn stages<'e, 'i>(
@@ -265,16 +263,21 @@ fn route<'e, 'i>(
             },
         );
     }
-    let single = [context.value.clone()];
     let variable =
         matches!(&steps[0].node.kind, Kind::Path(path) if path.rooted && path.fields.is_empty());
-    let operand = Operand::One(context.value);
-    let input = if context.wrapped || variable {
-        View::Items(&single)
+    if context.wrapped || variable {
+        stages(
+            View::Items(std::slice::from_ref(&context.value)),
+            steps,
+            output,
+        )
     } else {
-        View::Operand(&operand)
-    };
-    stages(input, steps, output)
+        stages(
+            View::Operand(&Operand::One(context.value.clone())),
+            steps,
+            output,
+        )
+    }
 }
 
 impl Node {
@@ -284,11 +287,7 @@ impl Node {
     pub(crate) fn stream<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Option<Stream<'e, 'i>> {
         match &self.kind {
             Kind::Path(path) if !path.fields.is_empty() => {
-                let mut selected = path.select_value(input.value.clone());
-                if !input.wrapped {
-                    selected.root_lookup = false;
-                }
-                Some(Stream::Path(selected))
+                Some(Stream::Path(path.select_context(input)))
             }
             Kind::Route(..) | Kind::Filter(..) => Some(Stream::Expression(self, input.clone())),
             Kind::Group(child) => child.stream(input),

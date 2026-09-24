@@ -10,11 +10,11 @@ use std::cell::Cell;
 pub(crate) fn with_filters<'e, 'i>(
     base: &'e Node,
     predicates: &'e [Node],
-    context: Context<'e, 'i>,
+    context: &Context<'e, 'i>,
     output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
 ) -> Walk {
     let Some((predicate, previous)) = predicates.split_last() else {
-        return output(View::Operand(&base.run(&context)?));
+        return output(View::Operand(&base.run(context)?));
     };
     with_filters(base, previous, context, &mut |input| {
         if let Kind::Number(index) = predicate.kind {
@@ -65,10 +65,11 @@ impl<'e, 'i> Filter<'_, 'e, 'i> {
     pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         let mut index = 0;
         self.input.transform(true, output, |value, output| {
-            let predicate = self.predicate.run(&Context {
-                value: value.clone(),
+            let context = Context {
+                value,
                 wrapped: false,
-            })?;
+            };
+            let predicate = self.predicate.run(&context)?;
             let numeric = numbers(&predicate, self.predicate.offset, &mut |_| Ok(()))?;
             if numeric {
                 numbers(&predicate, self.predicate.offset, &mut |number| {
@@ -79,12 +80,12 @@ impl<'e, 'i> Filter<'_, 'e, 'i> {
                         number
                     };
                     if target == index as f64 {
-                        output(value.clone())?;
+                        output(context.value.clone())?;
                     }
                     Ok(())
                 })?;
             } else if predicate.truth(self.predicate.offset)? {
-                output(value.clone())?;
+                output(context.value)?;
             }
             index += 1;
             Ok(())

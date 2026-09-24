@@ -18,8 +18,10 @@
   lookup retains at most one pending value. A sole final raw array is preserved;
   combined results flatten one level. Leading `$` matters for root-array mapping.
 - Scalar trees validate the record first, then execute directly in `evaluate.rs`.
-  Path operands use borrowed field/element cursors over validated input. A stream
-  is inspected up to its second item to distinguish missing, singleton and multiple;
+  Path operands use borrowed field/element cursors over validated input. Known
+  missing/single-value selections return directly; array navigation and retained
+  sequences normalize through a stream. A path stream is inspected up to its second
+  item to distinguish missing, singleton and multiple;
   multiple items remain a replayable stream, not an eagerly collected vector.
   Filtered operands are inspected completely before scalar use to preserve errors.
 - `sequence.rs` composes mapped steps and `filter.rs` applies predicates using the
@@ -91,9 +93,10 @@ for ordered equality would require iterator machinery; retaining one side only i
 that operation is simpler. Object equality initially rescanned objects per key;
 measuring 128-field objects justified a borrowed-member map confined to that case.
 Neither choice imposes allocation on ordinary paths, filters, aggregates or scalar
-operators without construction. Evaluation borrows contexts and scoped stage views
-borrow operands. Values clone where a candidate, deferred stream or retained member
-needs ownership.
+operators without construction. Routes, predicates and recursive lookups borrow
+scoped contexts and values; stage views borrow operands. A predicate owns its candidate
+once and moves it to output on a boolean match. Values clone where a deferred stream,
+retained member or repeated positional match actually needs ownership.
 
 Filters fuse with navigation and later filters. If a downstream stage fails, earlier
 stages finish checking for errors; an error can replay its input to preserve upstream
@@ -106,6 +109,22 @@ O(bytes × input depth). Scalar operands also rescan demanded paths separately a
 validation. The benchmarks retain deep arrays, tiny records, multi-field scalars
 and structural equality so these costs remain visible. Add capture fusion, indexes,
 trusted skipping or specialization only for a measured benefit with a simple design.
+
+## Consolidation review
+
+Keep direct tree evaluation. Parsing already resolves precedence, static paths and
+array focus; execution separates scalar operands, replayable streams and retained
+containers. Those distinctions encode observable shape and error behavior. Flattening
+them into one owned result or one generic iterator would reintroduce collection or
+move complexity elsewhere. Modules remain small and cohesive; no new layer is needed.
+
+Profiles locate the current costs in scanning and the scalar/stream ownership boundary,
+not instruction decoding. Returning known selections directly removes a redundant
+stream walk; borrowing removes temporary ownership within live stages. Neither needs
+an IR. An IR should next earn its place through concrete field-demand fusion or
+function/control-flow requirements, with a measured benefit over this tree. It would
+not by itself eliminate subtree rescanning, negative-position replays or member-wise
+constructor evaluation. Those costs remain explicit; no cache or scanner index was added.
 
 ## Milestones
 
@@ -125,10 +144,13 @@ trusted skipping or specialization only for a measured benefit with a simple des
    borrowed leaves, retained sequence shape, composed navigation/filtering/aggregates,
    differential coverage and allocation benchmarks. Postfix grouping and `expr[]`
    remain deferred; see CONFORMANCE for reference implementation boundary policies.
-7. **Next: bindings and further functions.** Establish lexical variables and a small
+7. **Complete: architecture/performance consolidation.** Scalar paths consume known
+   selections directly; scoped traversal borrows instead of copying ownership through
+   each stage. No language or public API change. See PERFORMANCE for repeated results.
+8. **Next: bindings and further functions.** Establish lexical variables and a small
    coherent set of functions using the existing values/streams. Add closures only
    when their scope/retention semantics are specified; no general framework in advance.
-8. **Evidence-driven compilation.** Introduce normalization/IR only when it
+9. **Evidence-driven compilation.** Introduce normalization/IR only when it
    simplifies implemented semantics or measured execution. JIT remains undecided.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
