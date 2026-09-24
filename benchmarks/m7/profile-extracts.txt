@@ -1,0 +1,469 @@
+jx-m7-final-profile-aggregate-nested_filtered_sum.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54467) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54467]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x104074000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:01:52.946 +0530
+Launch Time:     2026-09-24 20:01:51.865 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         10.7M
+Physical footprint (peak):  10.7M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4155 Thread_722160   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        1506
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        766
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMNtBa_6filterNtBZ_6Filter4walk0E0Ba_  (in throughput-63eefe67c96df35b)        209
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        193
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-63eefe67c96df35b)        136
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json6string7matches  (in throughput-63eefe67c96df35b)        125
+        _RINvNtCs1r1PpTm5uSS_2jx4path6lookupNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        119
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        95
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        91
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx4pathNtNtB7_10expression4Path14select_context  (in throughput-63eefe67c96df35b)        75
+        _RNvNtCs1r1PpTm5uSS_2jx7compare5order  (in throughput-63eefe67c96df35b)        70
+        _platform_memcmp  (in libsystem_platform.dylib)        70
+        _RNvNtCs1r1PpTm5uSS_2jx6filter7numbers  (in throughput-63eefe67c96df35b)        60
+        _RNvNvNtCs1r1PpTm5uSS_2jx7compare5order10comparable  (in throughput-63eefe67c96df35b)        57
+        _RNvXs2_NtNtCs8Mbv00yxnRz_4core3num11float_parsedNtNtNtB9_3str6traits7FromStr8from_str  (in throughput-63eefe67c96df35b)        57
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value6atomic  (in throughput-63eefe67c96df35b)        52
+        _RNCINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB6_8sequence4HaltE0B6_  (in throughput-63eefe67c96df35b)        42
+        _RNvNtCs1r1PpTm5uSS_2jx6filter12with_filters  (in throughput-63eefe67c96df35b)        42
+        _RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs1r1PpTm5uSS_2jx8evaluate7OperandEBF_  (in throughput-63eefe67c96df35b)        29
+        _RNCNCNvMs1_NtCs1r1PpTm5uSS_2jx8sequenceNtB9_3Map4walk00Bb_  (in throughput-63eefe67c96df35b)        29
+        _RNvNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7dec2flt5parse12parse_number  (in throughput-63eefe67c96df35b)        29
+        _RINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        27
+        _RNCNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtBa_4View9transformNCNvMNtBc_6filterNtB11_6Filter4walk0E00Bc_  (in throughput-63eefe67c96df35b)        27
+        _RNCNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB6_6Stream7operand0B8_  (in throughput-63eefe67c96df35b)        26
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View10candidates  (in throughput-63eefe67c96df35b)        26
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View4walk  (in throughput-63eefe67c96df35b)        26
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMs1_B8_NtB8_3Map4walk0E0Ba_  (in throughput-63eefe67c96df35b)        25
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream4walk  (in throughput-63eefe67c96df35b)        23
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter7numbers0B5_  (in throughput-63eefe67c96df35b)        19
+        _RNvMs_NtCs1r1PpTm5uSS_2jx9aggregateNtB4_4Fold4push  (in throughput-63eefe67c96df35b)        15
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand4walk  (in throughput-63eefe67c96df35b)        14
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand5truth  (in throughput-63eefe67c96df35b)        14
+        _RNvXs1_NtNtNtCs8Mbv00yxnRz_4core3ops8function5implsQDINtB7_5FnMutTNtNtCs1r1PpTm5uSS_2jx5value5ValueEEp6OutputINtNtBb_6result6ResultuNtNtB16_8sequence4HaltEEL_IBQ_B11_E8call_mutB16_  (in throughput-63eefe67c96df35b)        14
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream7operand  (in throughput-63eefe67c96df35b)        11
+        DYLD-STUB$$memcmp  (in throughput-63eefe67c96df35b)        9
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value5truth  (in throughput-63eefe67c96df35b)        9
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter12with_filters0B5_  (in throughput-63eefe67c96df35b)        7
+
+
+jx-m7-final-profile-array-deep.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54469) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54469]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x104bec000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:02:00.083 +0530
+Launch Time:     2026-09-24 20:01:59.033 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         10.1M
+Physical footprint (peak):  10.1M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4128 Thread_722209   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        3846
+        _RINvNtCs1r1PpTm5uSS_2jx4path6lookupNtNtCs8Mbv00yxnRz_4core7convert10InfallibleECsbPolpB7wonU_10throughput  (in throughput-63eefe67c96df35b)        105
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        67
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        44
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        41
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json4scan6select  (in throughput-63eefe67c96df35b)        8
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        5
+
+
+jx-m7-final-profile-construct-nested_summary.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54471) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54471]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x102284000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:02:07.366 +0530
+Launch Time:     2026-09-24 20:02:06.200 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         19.3M
+Physical footprint (peak):  41.8M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4124 Thread_722245   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        1541
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        715
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMNtBa_6filterNtBZ_6Filter4walk0E0Ba_  (in throughput-63eefe67c96df35b)        215
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        159
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-63eefe67c96df35b)        149
+        _RINvNtCs1r1PpTm5uSS_2jx4path6lookupNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        146
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json6string7matches  (in throughput-63eefe67c96df35b)        107
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        95
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        90
+        _RNvNtCs1r1PpTm5uSS_2jx7compare5order  (in throughput-63eefe67c96df35b)        81
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx4pathNtNtB7_10expression4Path14select_context  (in throughput-63eefe67c96df35b)        71
+        _platform_memcmp  (in libsystem_platform.dylib)        64
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value6atomic  (in throughput-63eefe67c96df35b)        55
+        _RNvNtCs1r1PpTm5uSS_2jx6filter7numbers  (in throughput-63eefe67c96df35b)        54
+        _RNCINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB6_8sequence4HaltE0B6_  (in throughput-63eefe67c96df35b)        52
+        _RNvXs2_NtNtCs8Mbv00yxnRz_4core3num11float_parsedNtNtNtB9_3str6traits7FromStr8from_str  (in throughput-63eefe67c96df35b)        51
+        _RNvNvNtCs1r1PpTm5uSS_2jx7compare5order10comparable  (in throughput-63eefe67c96df35b)        41
+        _RNCNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB6_6Stream7operand0B8_  (in throughput-63eefe67c96df35b)        36
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream4walk  (in throughput-63eefe67c96df35b)        36
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value5truth  (in throughput-63eefe67c96df35b)        33
+        _RNvNtCs1r1PpTm5uSS_2jx6filter12with_filters  (in throughput-63eefe67c96df35b)        31
+        _RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs1r1PpTm5uSS_2jx8evaluate7OperandEBF_  (in throughput-63eefe67c96df35b)        30
+        _RINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        28
+        _RNCNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtBa_4View9transformNCNvMNtBc_6filterNtB11_6Filter4walk0E00Bc_  (in throughput-63eefe67c96df35b)        26
+        _RNCNCNvMs1_NtCs1r1PpTm5uSS_2jx8sequenceNtB9_3Map4walk00Bb_  (in throughput-63eefe67c96df35b)        26
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View4walk  (in throughput-63eefe67c96df35b)        22
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View10candidates  (in throughput-63eefe67c96df35b)        19
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter7numbers0B5_  (in throughput-63eefe67c96df35b)        18
+        _RNvNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7dec2flt5parse12parse_number  (in throughput-63eefe67c96df35b)        15
+        _RNvXs1_NtNtNtCs8Mbv00yxnRz_4core3ops8function5implsQDINtB7_5FnMutTNtNtCs1r1PpTm5uSS_2jx5value5ValueEEp6OutputINtNtBb_6result6ResultuNtNtB16_8sequence4HaltEEL_IBQ_B11_E8call_mutB16_  (in throughput-63eefe67c96df35b)        15
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMs1_B8_NtB8_3Map4walk0E0Ba_  (in throughput-63eefe67c96df35b)        12
+        _RNvMs_NtCs1r1PpTm5uSS_2jx9aggregateNtB4_4Fold4push  (in throughput-63eefe67c96df35b)        12
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream7operand  (in throughput-63eefe67c96df35b)        11
+        DYLD-STUB$$memcmp  (in throughput-63eefe67c96df35b)        10
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand4walk  (in throughput-63eefe67c96df35b)        10
+        _RNCNvMNtCs1r1PpTm5uSS_2jx9aggregateNtNtB6_10expression9Aggregate8evaluate0B6_  (in throughput-63eefe67c96df35b)        8
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter12with_filters0B5_  (in throughput-63eefe67c96df35b)        8
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand5truth  (in throughput-63eefe67c96df35b)        7
+        _RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-63eefe67c96df35b)        5
+
+
+jx-m7-final-profile-filter-predicate.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54463) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54463]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x10065c000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:01:45.768 +0530
+Launch Time:     2026-09-24 20:01:44.129 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         13.3M
+Physical footprint (peak):  13.3M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4160 Thread_722081   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        1138
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        996
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        385
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json6string7matches  (in throughput-63eefe67c96df35b)        172
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-63eefe67c96df35b)        163
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        132
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMNtBa_6filterNtBZ_6Filter4walk0E0Ba_  (in throughput-63eefe67c96df35b)        107
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx4pathNtNtB7_10expression4Path14select_context  (in throughput-63eefe67c96df35b)        106
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View4walk  (in throughput-63eefe67c96df35b)        99
+        _RNvNtCs1r1PpTm5uSS_2jx7compare5order  (in throughput-63eefe67c96df35b)        73
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value6atomic  (in throughput-63eefe67c96df35b)        69
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View10candidates  (in throughput-63eefe67c96df35b)        67
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMs1_B8_NtB8_3Map4walk0E0Ba_  (in throughput-63eefe67c96df35b)        58
+        _RNvNvNtCs1r1PpTm5uSS_2jx7compare5order10comparable  (in throughput-63eefe67c96df35b)        57
+        _RNvNtCs1r1PpTm5uSS_2jx6filter7numbers  (in throughput-63eefe67c96df35b)        54
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        54
+        _platform_memcmp  (in libsystem_platform.dylib)        46
+        _RNvNtCs1r1PpTm5uSS_2jx6filter12with_filters  (in throughput-63eefe67c96df35b)        40
+        _RNvNvNtCs1r1PpTm5uSS_2jx8sequence5route6stages  (in throughput-63eefe67c96df35b)        40
+        _RNvXs2_NtNtCs8Mbv00yxnRz_4core3num11float_parsedNtNtNtB9_3str6traits7FromStr8from_str  (in throughput-63eefe67c96df35b)        35
+        _RNCNCNvMs1_NtCs1r1PpTm5uSS_2jx8sequenceNtB9_3Map4walk00Bb_  (in throughput-63eefe67c96df35b)        32
+        _RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-63eefe67c96df35b)        31
+        _RNvNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7dec2flt5parse12parse_number  (in throughput-63eefe67c96df35b)        25
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter7numbers0B5_  (in throughput-63eefe67c96df35b)        24
+        _RNCNvCsbPolpB7wonU_10throughput14array_workloads_0B3_  (in throughput-63eefe67c96df35b)        23
+        _RNCNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtBa_4View9transformNCNvMNtBc_6filterNtB11_6Filter4walk0E00Bc_  (in throughput-63eefe67c96df35b)        20
+        _RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs1r1PpTm5uSS_2jx8evaluate7OperandEBF_  (in throughput-63eefe67c96df35b)        19
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand4walk  (in throughput-63eefe67c96df35b)        15
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value5truth  (in throughput-63eefe67c96df35b)        14
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter12with_filters0B5_  (in throughput-63eefe67c96df35b)        12
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand5truth  (in throughput-63eefe67c96df35b)        11
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream4walk  (in throughput-63eefe67c96df35b)        10
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json4scan6select  (in throughput-63eefe67c96df35b)        10
+        DYLD-STUB$$memcmp  (in throughput-63eefe67c96df35b)        8
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8evaluateNtB8_10Evaluation12try_for_eachNtNtCs8Mbv00yxnRz_4core7convert10InfallibleNCINvB4_8for_eachNCNCNvCsbPolpB7wonU_10throughput14array_workloads_00E0Es_0B29_  (in throughput-63eefe67c96df35b)        7
+
+
+jx-m7-m6-profile-aggregate-nested_filtered_sum.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54456) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54456]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x102a6c000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:01:23.688 +0530
+Launch Time:     2026-09-24 20:01:22.608 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         10.8M
+Physical footprint (peak):  10.8M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4148 Thread_721925   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        1448
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        731
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMNtBa_6filterNtBZ_6Filter4walk0E0Ba_  (in throughput-63eefe67c96df35b)        206
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        163
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream7operand  (in throughput-63eefe67c96df35b)        119
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json6string7matches  (in throughput-63eefe67c96df35b)        110
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-63eefe67c96df35b)        108
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream4walk  (in throughput-63eefe67c96df35b)        106
+        _RINvNtCs1r1PpTm5uSS_2jx4path6lookupNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        101
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        93
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        85
+        _RNvNtCs1r1PpTm5uSS_2jx7compare5order  (in throughput-63eefe67c96df35b)        83
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8sequenceNtNtB7_10expression4Node6stream  (in throughput-63eefe67c96df35b)        75
+        _platform_memcmp  (in libsystem_platform.dylib)        73
+        _RNCNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB6_6Stream7operand0B8_  (in throughput-63eefe67c96df35b)        68
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value6atomic  (in throughput-63eefe67c96df35b)        63
+        _RNvNvNtCs1r1PpTm5uSS_2jx7compare5order10comparable  (in throughput-63eefe67c96df35b)        49
+        _RNvXs2_NtNtCs8Mbv00yxnRz_4core3num11float_parsedNtNtNtB9_3str6traits7FromStr8from_str  (in throughput-63eefe67c96df35b)        48
+        _RNCINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB6_8sequence4HaltE0B6_  (in throughput-63eefe67c96df35b)        33
+        _RNvNtCs1r1PpTm5uSS_2jx6filter7numbers  (in throughput-63eefe67c96df35b)        32
+        _RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs1r1PpTm5uSS_2jx8sequence6StreamEBF_  (in throughput-63eefe67c96df35b)        29
+        _RNCNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtBa_4View9transformNCNvMNtBc_6filterNtB11_6Filter4walk0E00Bc_  (in throughput-63eefe67c96df35b)        28
+        _RNCNCNvMs1_NtCs1r1PpTm5uSS_2jx8sequenceNtB9_3Map4walk00Bb_  (in throughput-63eefe67c96df35b)        28
+        _RINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        27
+        _RNvNtCs1r1PpTm5uSS_2jx6filter12with_filters  (in throughput-63eefe67c96df35b)        27
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View10candidates  (in throughput-63eefe67c96df35b)        24
+        _RNvNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7dec2flt5parse12parse_number  (in throughput-63eefe67c96df35b)        24
+        DYLD-STUB$$memcmp  (in throughput-63eefe67c96df35b)        23
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View4walk  (in throughput-63eefe67c96df35b)        22
+        _RNvXs1_NtNtNtCs8Mbv00yxnRz_4core3ops8function5implsQDINtB7_5FnMutTNtNtCs1r1PpTm5uSS_2jx5value5ValueEEp6OutputINtNtBb_6result6ResultuNtNtB16_8sequence4HaltEEL_IBQ_B11_E8call_mutB16_  (in throughput-63eefe67c96df35b)        18
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter7numbers0B5_  (in throughput-63eefe67c96df35b)        15
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMs1_B8_NtB8_3Map4walk0E0Ba_  (in throughput-63eefe67c96df35b)        13
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand4walk  (in throughput-63eefe67c96df35b)        13
+        _RNvMs_NtCs1r1PpTm5uSS_2jx9aggregateNtB4_4Fold4push  (in throughput-63eefe67c96df35b)        13
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand5truth  (in throughput-63eefe67c96df35b)        11
+        _RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-63eefe67c96df35b)        11
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter12with_filters0B5_  (in throughput-63eefe67c96df35b)        10
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value5truth  (in throughput-63eefe67c96df35b)        9
+        _RNvMs_NtCs1r1PpTm5uSS_2jx4pathINtB4_8SequenceNtNtB6_8sequence4HaltE6finishB6_  (in throughput-63eefe67c96df35b)        6
+
+
+jx-m7-m6-profile-array-deep.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54458) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54458]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x104488000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:01:30.839 +0530
+Launch Time:     2026-09-24 20:01:29.781 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         10.1M
+Physical footprint (peak):  10.1M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4135 Thread_721976   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        3879
+        _RINvNtCs1r1PpTm5uSS_2jx4path6lookupNtNtCs8Mbv00yxnRz_4core7convert10InfallibleECsbPolpB7wonU_10throughput  (in throughput-63eefe67c96df35b)        82
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        70
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        46
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        34
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        5
+
+
+jx-m7-m6-profile-construct-nested_summary.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54460) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54460]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x10425c000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:01:38.133 +0530
+Launch Time:     2026-09-24 20:01:36.953 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         19.1M
+Physical footprint (peak):  41.6M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4119 Thread_722023   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        1493
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        706
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMNtBa_6filterNtBZ_6Filter4walk0E0Ba_  (in throughput-63eefe67c96df35b)        230
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        135
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream7operand  (in throughput-63eefe67c96df35b)        126
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-63eefe67c96df35b)        120
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        117
+        _RINvNtCs1r1PpTm5uSS_2jx4path6lookupNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        116
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream4walk  (in throughput-63eefe67c96df35b)        93
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        88
+        _RNvNtCs1r1PpTm5uSS_2jx7compare5order  (in throughput-63eefe67c96df35b)        87
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json6string7matches  (in throughput-63eefe67c96df35b)        79
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8sequenceNtNtB7_10expression4Node6stream  (in throughput-63eefe67c96df35b)        78
+        _RNCNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB6_6Stream7operand0B8_  (in throughput-63eefe67c96df35b)        58
+        _platform_memcmp  (in libsystem_platform.dylib)        58
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value6atomic  (in throughput-63eefe67c96df35b)        57
+        _RNvNtCs1r1PpTm5uSS_2jx6filter7numbers  (in throughput-63eefe67c96df35b)        44
+        _RNvNvNtCs1r1PpTm5uSS_2jx7compare5order10comparable  (in throughput-63eefe67c96df35b)        43
+        _RNCINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB6_8sequence4HaltE0B6_  (in throughput-63eefe67c96df35b)        30
+        _RNvXs2_NtNtCs8Mbv00yxnRz_4core3num11float_parsedNtNtNtB9_3str6traits7FromStr8from_str  (in throughput-63eefe67c96df35b)        30
+        _RNCNCNvMs1_NtCs1r1PpTm5uSS_2jx8sequenceNtB9_3Map4walk00Bb_  (in throughput-63eefe67c96df35b)        27
+        _RNvNtCs1r1PpTm5uSS_2jx6filter12with_filters  (in throughput-63eefe67c96df35b)        27
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View4walk  (in throughput-63eefe67c96df35b)        24
+        _RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs1r1PpTm5uSS_2jx8sequence6StreamEBF_  (in throughput-63eefe67c96df35b)        23
+        _RNCNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtBa_4View9transformNCNvMNtBc_6filterNtB11_6Filter4walk0E00Bc_  (in throughput-63eefe67c96df35b)        22
+        _RNvNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7dec2flt5parse12parse_number  (in throughput-63eefe67c96df35b)        21
+        _RNvXs1_NtNtNtCs8Mbv00yxnRz_4core3ops8function5implsQDINtB7_5FnMutTNtNtCs1r1PpTm5uSS_2jx5value5ValueEEp6OutputINtNtBb_6result6ResultuNtNtB16_8sequence4HaltEEL_IBQ_B11_E8call_mutB16_  (in throughput-63eefe67c96df35b)        21
+        _RINvNtCs1r1PpTm5uSS_2jx4path7contextNtNtB4_8sequence4HaltEB4_  (in throughput-63eefe67c96df35b)        18
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value5truth  (in throughput-63eefe67c96df35b)        18
+        _RNvMs_NtCs1r1PpTm5uSS_2jx9aggregateNtB4_4Fold4push  (in throughput-63eefe67c96df35b)        18
+        DYLD-STUB$$memcmp  (in throughput-63eefe67c96df35b)        16
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter7numbers0B5_  (in throughput-63eefe67c96df35b)        14
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View10candidates  (in throughput-63eefe67c96df35b)        13
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand4walk  (in throughput-63eefe67c96df35b)        10
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand5truth  (in throughput-63eefe67c96df35b)        10
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMs1_B8_NtB8_3Map4walk0E0Ba_  (in throughput-63eefe67c96df35b)        9
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter12with_filters0B5_  (in throughput-63eefe67c96df35b)        7
+        _RNCNvMNtCs1r1PpTm5uSS_2jx9aggregateNtNtB6_10expression9Aggregate8evaluate0B6_  (in throughput-63eefe67c96df35b)        5
+        _RNvMs_NtCs1r1PpTm5uSS_2jx4pathINtB4_8SequenceNtNtB6_8sequence4HaltE6finishB6_  (in throughput-63eefe67c96df35b)        5
+
+
+jx-m7-m6-profile-filter-predicate.txt
+Analysis of sampling throughput-63eefe67c96df35b (pid 54453) every 1 millisecond
+Process:         throughput-63eefe67c96df35b [54453]
+Path:            /private/tmp/*/throughput-63eefe67c96df35b
+Load Address:    0x104c58000
+Identifier:      throughput-63eefe67c96df35b
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [54452]
+Target Type:     live task
+
+Date/Time:       2026-09-24 20:01:16.513 +0530
+Launch Time:     2026-09-24 20:01:15.436 +0530
+OS Version:      macOS 26.5.1 (25F80)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         10.2M
+Physical footprint (peak):  10.2M
+Idle exit:                  untracked
+----
+
+Thread sample totals:
+    4189 Thread_721822   DispatchQueue_1: com.apple.main-thread  (serial)
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner5value  (in throughput-63eefe67c96df35b)        1106
+        _RNvMNtNtCs1r1PpTm5uSS_2jx4json4scanNtB2_7Scanner6string  (in throughput-63eefe67c96df35b)        900
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx9containerNtNtB7_5value5Value5field  (in throughput-63eefe67c96df35b)        314
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMNtBa_6filterNtBZ_6Filter4walk0E0Ba_  (in throughput-63eefe67c96df35b)        153
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-63eefe67c96df35b)        151
+        _RNvNtNtCs1r1PpTm5uSS_2jx4json6string7matches  (in throughput-63eefe67c96df35b)        151
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View4walk  (in throughput-63eefe67c96df35b)        117
+        _RNvMs_NtNtCs1r1PpTm5uSS_2jx4json4scanNtB4_7Scanner9raw_value  (in throughput-63eefe67c96df35b)        109
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream4walk  (in throughput-63eefe67c96df35b)        107
+        _RNvMs2_NtCs1r1PpTm5uSS_2jx8sequenceNtNtB7_10expression4Node6stream  (in throughput-63eefe67c96df35b)        96
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value6atomic  (in throughput-63eefe67c96df35b)        79
+        _RNvNvNtCs1r1PpTm5uSS_2jx7compare5order10comparable  (in throughput-63eefe67c96df35b)        79
+        _RNvNtCs1r1PpTm5uSS_2jx7compare5order  (in throughput-63eefe67c96df35b)        75
+        _RNvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB5_4View10candidates  (in throughput-63eefe67c96df35b)        74
+        _RNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB4_6Stream7operand  (in throughput-63eefe67c96df35b)        69
+        _RNvNvNtCs1r1PpTm5uSS_2jx8sequence5route6stages  (in throughput-63eefe67c96df35b)        60
+        _platform_memcmp  (in libsystem_platform.dylib)        44
+        _RNvNtCs1r1PpTm5uSS_2jx6filter12with_filters  (in throughput-63eefe67c96df35b)        43
+        _RNvNtCs1r1PpTm5uSS_2jx6filter7numbers  (in throughput-63eefe67c96df35b)        43
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtB8_4View9transformNCNvMs1_B8_NtB8_3Map4walk0E0Ba_  (in throughput-63eefe67c96df35b)        40
+        _RNvXs0_NtCs1r1PpTm5uSS_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-63eefe67c96df35b)        40
+        _RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-63eefe67c96df35b)        37
+        _RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs1r1PpTm5uSS_2jx8sequence6StreamEBF_  (in throughput-63eefe67c96df35b)        36
+        _RNCNvMs_NtCs1r1PpTm5uSS_2jx8sequenceNtB6_6Stream7operand0B8_  (in throughput-63eefe67c96df35b)        31
+        _RNvXs2_NtNtCs8Mbv00yxnRz_4core3num11float_parsedNtNtNtB9_3str6traits7FromStr8from_str  (in throughput-63eefe67c96df35b)        28
+        _RNCNCNvMs1_NtCs1r1PpTm5uSS_2jx8sequenceNtB9_3Map4walk00Bb_  (in throughput-63eefe67c96df35b)        26
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter7numbers0B5_  (in throughput-63eefe67c96df35b)        23
+        _RNvMs1_NtCs1r1PpTm5uSS_2jx8evaluateNtB5_7Operand4walk  (in throughput-63eefe67c96df35b)        23
+        _RNvNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7dec2flt5parse12parse_number  (in throughput-63eefe67c96df35b)        23
+        _RNCNCINvMs0_NtCs1r1PpTm5uSS_2jx8sequenceNtBa_4View9transformNCNvMNtBc_6filterNtB11_6Filter4walk0E00Bc_  (in throughput-63eefe67c96df35b)        22
+        _RNCNvCsbPolpB7wonU_10throughput14array_workloads_0B3_  (in throughput-63eefe67c96df35b)        20
+        _RNvMNtCs1r1PpTm5uSS_2jx5valueNtB2_5Value5truth  (in throughput-63eefe67c96df35b)        19
+        _RNCINvMs0_NtCs1r1PpTm5uSS_2jx8evaluateNtB8_10Evaluation12try_for_eachNtNtCs8Mbv00yxnRz_4core7convert10InfallibleNCINvB4_8for_eachNCNCNvCsbPolpB7wonU_10throughput14array_workloads_00E0Es_0B29_  (in throughput-63eefe67c96df35b)        15
+        _RNCNvNtCs1r1PpTm5uSS_2jx6filter12with_filters0B5_  (in throughput-63eefe67c96df35b)        11
+        DYLD-STUB$$memcmp  (in throughput-63eefe67c96df35b)        7
+        _RNvNtCs1r1PpTm5uSS_2jx8evaluate6scalar  (in throughput-63eefe67c96df35b)        7
+

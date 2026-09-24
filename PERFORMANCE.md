@@ -8,7 +8,13 @@ cost is separate. No speedup claim against another engine is established yet.
 ```sh
 just all
 just bench > /tmp/jx-bench.csv
+# Profile one existing workload with longer samples:
+JX_BENCH_FILTER=filter/predicate JX_BENCH_BYTES=100 JX_BENCH_SAMPLE_MS=1000 just bench
 ```
+
+The optional controls select a workload-name substring and exact input size, and
+set each sample's minimum duration. Defaults remain seven 50 ms samples. `--smoke`
+ignores selection controls so allocation checks cannot silently disappear.
 
 `crates/jx/benches/throughput.rs` is a standalone release harness using `Instant`
 and `black_box`. It emits CSV: records/s, input bytes/s, elapsed time, iteration
@@ -382,3 +388,72 @@ retain two M5 baselines, the owned-view prototype and two final runs. The accomp
 [prototype patch](benchmarks/m6/owned-views.patch) replays that benchmark in a separate
 copy; it predates the grouped-array focus fix and is not a replacement implementation.
 No cross-engine speedup, latency-distribution or retained-RSS claim follows.
+
+## Milestone 7 — architecture and performance consolidation
+
+Scalar evaluation now consumes known missing/single-value path selections directly.
+Only unresolved navigation and retained sequences need stream cardinality discovery.
+Routes, predicates and recursive lookup borrow live contexts; boolean filters move
+accepted candidates instead of cloning them. There is no new language feature, value
+hierarchy, scanner, cache, IR or JIT. All 21,640 differential comparisons still pass.
+
+The M6 regression is not explained by larger runtime unions or per-record heap
+allocation. On this compiler, M5 and M6 both have 24-byte `Value`, 48-byte
+`PathEvaluation`/`Stream`/`Operand`, 32-byte `Context`, and 48-byte `Node`.
+Constructors change the value-bearing types from `needs_drop=false` to `true` and
+add raw/constructed dispatch. Non-constructing filter/aggregate workloads still allocate zero; `needs_drop` describes
+type-level cleanup, not a heap allocation or reference-count update for every raw value.
+
+Five-second warmed `sample` profiles locate substantial scanning cost and additional
+stream/callback/drop work around scalar operands. Removing that round trip reduces
+this work without changing shape rules or traversal passes. An exploratory shortcut
+inside `Stream::operand` gave uneven results and did not improve nested filtering;
+returning selections at the scalar boundary avoids constructing the stream itself.
+Scoped borrowing alone gives little recovery on the principal regressions.
+
+Deep arrays remain dominated by scanner work (over 90% of leaf samples in
+`Scanner::value`); subtree rescanning is unchanged. Constructors still evaluate member
+demands separately. The remaining costs do not justify an IR: it would not eliminate
+these traversals or ownership checks by itself. Sampling does not apportion every
+remaining loss between tag checks, drops and compiler code layout.
+
+Two sequential baseline/final pairs use the same harness, machine, compiler and
+release profile as M6. **358 workloads**, **294 zero-allocation evaluations**;
+allocation counts and requested bytes are identical across all four runs, including
+constructors and equality. Selected medians over 14 samples, with paired changes
+relative to fresh M6 (`d6c4594`) runs:
+
+| Workload | Input bytes | M7 records/s | Pair 1 change | Pair 2 change |
+| --- | ---: | ---: | ---: | ---: |
+| ascii/nested | 100 | 10,045,212 | -1.21% | +1.02% |
+| ascii/nested | 500 | 3,160,786 | -3.16% | -0.19% |
+| array/shallow | 1,074 | 310,305 | -0.09% | +0.34% |
+| array/deep | 136 | 76,845 | +0.09% | +0.62% |
+| scalar/arithmetic | 100 | 3,183,503 | +4.32% | +3.98% |
+| filter/predicate | 100 | 2,209,792 | +7.83% | +8.52% |
+| filter/predicate | 500 | 1,150,544 | +4.17% | +4.59% |
+| filter/chained | 100 | 1,668,061 | +11.20% | +9.52% |
+| filter/nested | 892 | 76,490 | +3.76% | +3.55% |
+| aggregate/sum | 100 | 3,774,431 | -3.23% | -2.68% |
+| aggregate/filtered_sum | 500 | 1,222,353 | +3.56% | +4.02% |
+| aggregate/nested_filtered_sum | 1,036 | 75,308 | +8.82% | +8.12% |
+| aggregate/nested_filtered_sum | 1,048,588 | 75 | +7.91% | +8.31% |
+| construct/raw_member | 1,048,576 | 1,854 | -0.51% | -0.19% |
+| construct/filtered_summary | 500 | 596,999 | +3.60% | +4.07% |
+| construct/filtered_aggregate | 624,958 | 210 | +4.73% | +9.93% |
+| construct/nested_summary | 1,048,588 | 41 | +8.57% | +8.81% |
+
+This is partial recovery of the M6 regressions, not a return to M5 throughput in
+every case. Tiny projections and deep rescanning remain unchanged within these
+runs' variation. A few small workloads regress repeatedly: plain sum at 100 B by
+2.7–3.2%, raw-array sum at 23 B by 2.4–2.7%, and per-group positions by 2.2–2.8%.
+No claim attributes those residual changes to one instruction or allocation; no
+extra specialization was added for those marginal differences. The retained change
+simplifies scoped ownership and materially improves the targeted composed workloads.
+
+[All comparisons](benchmarks/m7/comparison.csv), [profile extracts](benchmarks/m7/profile-extracts.txt),
+[layouts](benchmarks/m7/layouts.txt), and [commands/source hashes/raw runs](benchmarks/m7/environment.json)
+include the negative results and exploratory variants. Rates are derived from
+records/elapsed time before taking medians, avoiding the display column's rounding
+on large inputs. Timings exclude profiler runs. Host activity was not controlled;
+no cross-engine, tail-latency or retained-memory claim is made.

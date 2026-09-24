@@ -1,0 +1,39 @@
+diff --git a/crates/jx/src/sequence.rs b/crates/jx/src/sequence.rs
+index d65d18f..8f1fe00 100644
+--- a/crates/jx/src/sequence.rs
++++ b/crates/jx/src/sequence.rs
+@@ -2,7 +2,7 @@ use crate::{
+     Error, Value,
+     evaluate::Operand,
+     expression::{Kind, Node, Step},
+-    path::PathEvaluation,
++    path::{PathEvaluation, Selection},
+ };
+ 
+ #[derive(Clone, Debug)]
+@@ -49,6 +49,25 @@ impl<'e, 'i> Stream<'e, 'i> {
+         }
+     }
+     pub fn operand(self) -> Result<Operand<'e, 'i>, Error> {
++        // Selection already knows cardinality until array navigation is needed.
++        match self {
++            Self::Path(PathEvaluation {
++                selection: Selection::Missing,
++                ..
++            }) => {
++                return Ok(Operand::Missing);
++            }
++            Self::Path(PathEvaluation {
++                selection: Selection::Value(value),
++                ..
++            }) if !value.is_sequence() => {
++                return Ok(match value {
++                    Value::Undefined => Operand::Missing,
++                    value => Operand::One(value),
++                });
++            }
++            _ => {}
++        }
+         let mut first = None;
+         let mut many = false;
+         let fast = matches!(self, Self::Path(_));

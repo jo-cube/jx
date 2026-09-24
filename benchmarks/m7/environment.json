@@ -1,0 +1,167 @@
+{
+  "recorded_at_utc": "2026-09-24T14:46:00.387002+00:00",
+  "baseline_commit": "d6c459474202635842d9c35e88f8b5ffbcfae977",
+  "machine": {
+    "cpu": "Apple M4",
+    "architecture": "arm64",
+    "memory_bytes": 25769803776,
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.1\nBuildVersion:\t\t25F80"
+  },
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_BUILD_TARGET": null,
+    "JX_BENCH_FILTER": null,
+    "JX_BENCH_BYTES": null,
+    "JX_BENCH_SAMPLE_MS": null
+  },
+  "profile": "Workspace release: thin LTO, codegen-units=1; no target-cpu override",
+  "commands": {
+    "baseline": "git worktree add --detach target/m6-reference d6c4594; git -C target/m6-reference apply ../../benchmarks/m7/harness.patch; run just bench in that checkout",
+    "final": "just all; just build; just bench",
+    "order": [
+      "m6-before.csv",
+      "m7-final.csv",
+      "m6-repeat.csv",
+      "m7-repeat.csv"
+    ],
+    "profiling_build": "CARGO_TARGET_DIR=/tmp/jx-m7-profile-VARIANT CARGO_PROFILE_RELEASE_DEBUG=1 cargo bench -p jx --bench throughput --no-run --locked",
+    "profiling_run": "JX_BENCH_FILTER=WORKLOAD JX_BENCH_BYTES=SIZE JX_BENCH_SAMPLE_MS=1000 /tmp/jx-m7-profile-VARIANT/release/deps/throughput-HASH > /tmp/profile.csv; after the first sample row appears, sample PID 5 1 -file /tmp/profile.txt",
+    "layout": "In a disposable source copy at ab912aa or d6c4594, concatenate crates/jx/src/lib.rs and benchmarks/m7/layout-probe.rs into crates/jx/src/probe.rs; rustc --edition=2024 -O crates/jx/src/probe.rs -o /tmp/layout; /tmp/layout",
+    "differential": "node scripts/check-SUITE.cjs /tmp/jx-jsonata-upstream target/release/jx for sequences, scalars, filters, aggregates, constructors"
+  },
+  "profiles": {
+    "workloads": [
+      [
+        "filter/predicate",
+        100
+      ],
+      [
+        "aggregate/nested_filtered_sum",
+        1036
+      ],
+      [
+        "array/deep",
+        136
+      ],
+      [
+        "construct/nested_summary",
+        1036
+      ]
+    ],
+    "method": "macOS sample; five seconds at 1 ms after the first 1 s benchmark sample. Separate debug-symbol builds, excluded from throughput comparisons. profile-extracts.txt retains report headers, thread totals, and collapsed top-of-stack tables (native tool omits symbols with fewer than five leaf samples). Full recursive call graphs are not stored.",
+    "original_reports_sha256": {
+      "jx-m7-final-profile-aggregate-nested_filtered_sum.txt": "a7bebe0aa70ac086aedb5899438a855e6e11d0d7827c0d34a52a3ab19187518f",
+      "jx-m7-final-profile-array-deep.txt": "b6867a9829db7c70f60e57a9616b82754d5217ac76ca40d089d3e84c567a5137",
+      "jx-m7-final-profile-construct-nested_summary.txt": "31922cc1a6d3c1ece2964dfdf7994e3e5288469bc5886a70452f96437eed7f06",
+      "jx-m7-final-profile-filter-predicate.txt": "2cc628b023db6b457ee3262b2bb294fd91b43004489147156b567df0222d137f",
+      "jx-m7-m6-profile-aggregate-nested_filtered_sum.txt": "7cf7a0a8a9d2f2e43493a29d191f3259f0689fc24444d49f35ed16ac1378505b",
+      "jx-m7-m6-profile-array-deep.txt": "c95c51179663a073f498bf19528e091bd1e355606233fc797448144fcadfc230",
+      "jx-m7-m6-profile-construct-nested_summary.txt": "86f27b6a3036692e62e62a863fb24f2d5a82f65168d7fb8e9cfe8faea4aba156",
+      "jx-m7-m6-profile-filter-predicate.txt": "47ed97e5299c6fad8bb7bae9d12b186c3ad7fc051bd7581b426c332ac2f0960d"
+    }
+  },
+  "experiments": {
+    "base": "d6c4594 plus harness.patch; commands use JX_BENCH_FILTER=filter/ just bench",
+    "m6-filters.csv": "Unchanged M6 engine",
+    "direct-filters.csv": "Apply direct-cardinality.patch to base; rejected shortcut inside Stream::operand",
+    "borrowed-filters.csv": "Apply borrowed.patch to base; scoped ownership simplification alone",
+    "selected-filters.csv": "Final implementation; known selections return directly to scalar evaluation",
+    "note": "Single exploratory runs guide scope, not headline claims. Full paired runs validate the final change."
+  },
+  "scope": [
+    "Benchmark and profiling processes ran sequentially, with no concurrent tests or compilation during timings; host activity was not controlled.",
+    "Same harness in baseline and final. Seven samples per workload; results include full validation and complete consumption. Compilation measured separately.",
+    "No semantic, public API, scanner, allocation-budget or dependency changes.",
+    "No cross-engine speedup, per-record tail-latency, or retained-RSS claim."
+  ],
+  "final_source_sha256": {
+    "crates/jx/Cargo.toml": "a926b953e0f399be30ffb6583cf93a2e9948f3a34910e4d54384455e78a530b9",
+    "crates/jx/benches/throughput.rs": "801aa5ab636cf25723b7cadbbed795ed8a0a59603179fcc0f2ad1cdf11211f58",
+    "crates/jx/benches/workloads/aggregates.rs": "00b6147314358d1048e9f643be106c6d88b4d6f3b7874cd12a776c77ebc3eae7",
+    "crates/jx/benches/workloads/constructors.rs": "7036b6121cd676ff2f7ffa7943d6e1fc8c8586999021621e7f0a942da5f1beb3",
+    "crates/jx/benches/workloads/filters.rs": "8db806117ccd9d0661e1e71fd074856655ae63fdcf231bc601eaaa27e97fca62",
+    "crates/jx/benches/workloads/scalars.rs": "2225047c004efdb0712c4719e3ccaf09fc03cd373e10f9725771a4faede0ce7e",
+    "crates/jx/src/aggregate.rs": "52cf6b270134b64174c6a5ea6a07e40ea61cd04f2eb10d6233dca36edf913464",
+    "crates/jx/src/compare.rs": "06d48ce3dc1abb5fb964f400ce13c6dbee547fb6bd696af176c8eba9e8e4a39d",
+    "crates/jx/src/construct.rs": "90058c784d5da96c61fa5a95ea842d74bb749f6ddc57bd8b974a843ed604613e",
+    "crates/jx/src/container.rs": "6addd48eeb24ed8fdf7ae6d5b91270b0ab618b243d44e546ff14160bbfd036b3",
+    "crates/jx/src/error.rs": "34f9c157e8e76377111fb16be4a825ea5763e4140ce0ce6f960535d747ccc1bc",
+    "crates/jx/src/evaluate.rs": "bd5d5cddb499e01218c20fb0e3282d128edfb68ab09e8e8377f7aceb9ba711e2",
+    "crates/jx/src/expression.rs": "8f9353a7ab3c30190417e4db698554ce87b4a05d9a9887c2bf56b337c3d6d2f4",
+    "crates/jx/src/filter.rs": "4c177d690c0d5c3e6aaceac86ba892f6639a016113bf07bb434fd0ffb5c945c2",
+    "crates/jx/src/json/mod.rs": "81845c6bd990e441b5e62097f93e59f1415082b6bff0513bc24a3eb42b61da15",
+    "crates/jx/src/json/scan.rs": "4e65e6a2ec4f485fd65af45a291657b47e1ea0539af69731bb0b542461125bc0",
+    "crates/jx/src/json/string.rs": "d9d66552dac96e4271e5fc2917f4af968a0e290680d9ccbaaa86056ee8530504",
+    "crates/jx/src/lib.rs": "86e1b5a0e8126702e945552150b990d388a396f888e9c5a7c79c1dd47d2fac0e",
+    "crates/jx/src/parse/lex.rs": "99e85e5bba0df645262e9db41e0a7c356973568307e2910d57168a869ec565e8",
+    "crates/jx/src/parse.rs": "574ade931e494dbc7a9126542c770b2f0ebbd6b57cc1fe660de38a679438472c",
+    "crates/jx/src/path.rs": "9d2720b0bab8510ef525f9ca797fabf72408cd4b6caf1a01f39ef69918b0adaa",
+    "crates/jx/src/sequence.rs": "58ba1b67d3e0d59e419b6cf318c222c12267d5d69d9508179454fa2802616c70",
+    "crates/jx/src/value.rs": "64071d069c059df72dcc818142d2e3a0012b89fa6e7fdf065cfc342a158bc619",
+    "crates/jx/tests/aggregates.rs": "fb02e16edcfdcf9996437d54932636b308aa62768e3e37205e906d377a4cd585",
+    "crates/jx/tests/conformance.rs": "42587ab85f6ba63e8b3d69da2ad6572e5ec29699ccae69f2b5dae4e4433158c9",
+    "crates/jx/tests/constructors.rs": "bdb9cd6d08ba484ad6f1331d0483d105184761efe812706d189e43265a666064",
+    "crates/jx/tests/filters.rs": "c7ed04d35c9669717f58691cfd022447d1ad9d3d310fb6bead941797b1112a08",
+    "crates/jx/tests/json_validation.rs": "2a626290abefbde8bd33ecc787869de69ed5c34a0f99e71e599649f21b4f57b8",
+    "crates/jx/tests/scalars.rs": "5be23c067fa847f12623187d3eeb1d53b8669f83f97b1ccb29a491e586142bc5",
+    "crates/jx/tests/semantics.rs": "589a073fc6539a680f224c842aeec1d3c42fcf0919b94c3ce3e8e0b23f47d216",
+    "crates/jx/tests/sequences.rs": "7a1818e3b13bc87352a8d99aca1e486863286ab040133201392eca3351a6d31e",
+    "crates/jx-cli/Cargo.toml": "46ae82fedef1841cdc06e6f91843d32fe9a746e0a3bec9aa7ab787ed5add476b",
+    "crates/jx-cli/src/args.rs": "a4274c3cde4a7fb0e16bce16995a7a8188b80229688a16a1fa3d88834d1370a2",
+    "crates/jx-cli/src/main.rs": "06794bb927e76d86b23be49c7b98cd88b45c59bcf3df79581d0c07f71109a6ca",
+    "crates/jx-cli/src/stream.rs": "f76e90e52da5635f43221d1686db93daa1ec2fd95d17c52ca4085d176e1739f7",
+    "crates/jx-cli/tests/cli.rs": "d57ab48645b3643cf565540c876250f371b601f2db5cbff4dce6100604404947",
+    "Cargo.toml": "d75df22c2e5743b279d273dc53f248f1bdaa5c4b53118a1d012ab903da3cff81",
+    "Cargo.lock": "ec6b3593774881204c517fb7129d9175a3b1dd2e4d46e2367b8ae5c2465d7d45",
+    "rust-toolchain.toml": "887f9be066a15585a2c583578e84b0fcb541126d81546276bad3d2ff00d61167"
+  },
+  "runs": {
+    "m6-before": {
+      "file": "m6-before.csv",
+      "workloads": 358,
+      "samples_per_workload": 7
+    },
+    "m7-final": {
+      "file": "m7-final.csv",
+      "workloads": 358,
+      "samples_per_workload": 7
+    },
+    "m6-repeat": {
+      "file": "m6-repeat.csv",
+      "workloads": 358,
+      "samples_per_workload": 7
+    },
+    "m7-repeat": {
+      "file": "m7-repeat.csv",
+      "workloads": 358,
+      "samples_per_workload": 7
+    }
+  },
+  "analysis": "comparison.csv uses medians of records/seconds (avoids rounding low records/s from the CSV display column); pair changes compare separate process medians. Allocation counts and requested bytes are identical in all four runs for every workload.",
+  "validation": {
+    "just all": "passed",
+    "just build": "passed",
+    "differential_comparisons": 21640,
+    "conformance_manifest_cases": 351,
+    "zero_allocation_evaluation_workloads": 294
+  },
+  "artifacts_sha256": {
+    "borrowed-filters.csv": "85be111a094fa3c7379cbb510c0e92f3d931575ca193de4e1244579c98175bed",
+    "borrowed.patch": "b4a1138a91e7b1a2e59e03899b3d2dd009f4ffd6a231085dd19f03762988a127",
+    "comparison.csv": "7f4c97be87582d30b752369445a209ccc295888cf4a93e7cd3bcfb88d11bace9",
+    "direct-cardinality.patch": "dbecb27c62948883529df61c825a30b182dc0edcfe72637567d8e3083ba4805f",
+    "direct-filters.csv": "52e11e236f4ba3559de26325c38ea41ec64847c2d1b857e78de3370635913137",
+    "harness.patch": "548e778e9579c08b897719d2554db89ff5ccc1cb414f86008366dc8c56c8810c",
+    "layout-probe.rs": "98fdfbdd52b58dd520bc7f9f86be6166e0602631853b3889540815cbf29909c2",
+    "layouts.txt": "f9b6c0570c4c91100522d605c9ad6edd2dd9070222f4cfb21ecdceb70f9f7d3c",
+    "m6-before.csv": "baaff2b56414d5120e2a80e45265e810e94c555f26342a18acbe855f3ea451ac",
+    "m6-filters.csv": "fe7641eccd873ca3b859ac3551459d9ca8ffeba38b11a03b268b9e2732c0331d",
+    "m6-repeat.csv": "8d3e35bafb1085e35ca05a79df6609a4f5c93b9705fa37501442f43a08d677d5",
+    "m7-final.csv": "815faa9bc270d5fc6be1d3f0dcbc5cfe60d11cfaa0f740d1427171ef31700ac6",
+    "m7-repeat.csv": "b9f8ad9dab53c71e6010655fb9ebe48f3c722aa2cd18534aef9803963e4a3e86",
+    "profile-extracts.txt": "726093bd97bddfdcad7fe4def8dee38c9f3b921ee73dc4b2e467be6c07531b5c",
+    "selected-filters.csv": "cfbaa51e4d4049664309fde119c7ae58c760b0086eefc828116184f3d34fc324"
+  }
+}

@@ -1,0 +1,15 @@
+m5
+Value: size=24, needs_drop=false
+PathEvaluation: size=48, needs_drop=false
+Stream: size=48, needs_drop=false
+Operand: size=48, needs_drop=false
+Context: size=32, needs_drop=false
+Node: size=48, needs_drop=true
+
+m6
+Value: size=24, needs_drop=true
+PathEvaluation: size=48, needs_drop=true
+Stream: size=48, needs_drop=true
+Operand: size=48, needs_drop=true
+Context: size=32, needs_drop=true
+Node: size=48, needs_drop=true
