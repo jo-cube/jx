@@ -17,13 +17,13 @@ FLATTENING_SUPPORTED = {"case001.json", "case002.json", "case016.json", "case024
                         *(f"case{i:03}.json" for i in range(3, 9)),
                         "case034.json", "case034a.json", "case035.json", "case036.json"}
 REASONS = {
-    "supported": "Implemented paths, sequences, filters or scalar semantics",
+    "supported": "Implemented paths, sequences, filters, scalar or aggregate semantics",
     "error": "Implemented compile/runtime error; local kind mapped from upstream code",
     "syntax": "Deferred expression syntax; see CONFORMANCE.md",
 }
 
-# Complete scalar groups, with reviewed unsupported cases kept explicit.
-SCALAR_GROUPS = {
+# Complete groups, with reviewed unsupported cases kept explicit.
+EXPRESSION_GROUPS = {
     "numeric-operators": (19, {18}),
     "comparison-operators": (29, {26, 27, 28}),
     "boolean-expresssions": (31, {10, 11, 16, 27, 28, 29, 30}),
@@ -33,8 +33,13 @@ SCALAR_GROUPS = {
     "predicates": (4, {3}),
     "simple-array-selectors": (23, {14}),
     "multiple-array-selectors": (3, {0, 1, 2}),
+    "function-count": (14, {2, 3, 4, 5, 6, 8, 9, 10, 11, 13}),
+    "function-sum": (7, {2}),
+    # Upstream keeps both min and max in this group.
+    "function-max": (27, {2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 16, 17, 18, 19, 20, 22, 23, 24, 25}),
 }
 ERROR_KINDS = {
+    "T0410": "TypeError", "T0412": "TypeError",
     "D1001": "NumericRange", "T2001": "TypeError", "T2002": "TypeError",
     "T2009": "TypeError", "T2010": "TypeError", "S0102": "NumericRange",
     "S0103": "UnsupportedExpression", "S0104": "UnsupportedExpression",
@@ -61,7 +66,7 @@ def inventory(suite):
                 statuses[i] = "supported"
         yield path, statuses
 
-    for group, (count, deferred) in SCALAR_GROUPS.items():
+    for group, (count, deferred) in EXPRESSION_GROUPS.items():
         names = sorted((suite / "groups" / group).glob("*.json"))
         extra = {"comparison-operators": ["deep-equals.json"], "literals": ["array-inputs.json"]}.get(group, [])
         expected = [f"case{i:03}.json" for i in range(count)] + extra

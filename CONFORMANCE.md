@@ -22,7 +22,8 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
 | Parentheses | Expression grouping and grouped path steps; `()` is missing; multi-expression blocks deferred |
 | Other operators | `in`, `&`, conditionals, ranges, coalescing/default and assignment deferred |
-| Constructors, variables, functions, closures, transforms, regex, standard library | Unsupported syntax; later milestones |
+| Aggregates | Direct `$count`, `$sum`, `$min`, `$max` calls; streamed arguments, scalar results |
+| Constructors, variables, general functions, closures, transforms, regex, other standard functions | Unsupported syntax; later milestones |
 | Comments, general unquoted Unicode names, single/double quoted selectors | Deferred syntax; compile error |
 | Keyword field names | `and`/`or` can be names in operand/field positions; `true`, `false`, `null`, `in`, `function` require backticks when used as fields |
 
@@ -94,6 +95,44 @@ consumption after earlier items were emitted; there is no per-record rollback.
 Earlier-stage evaluation errors take precedence over later-stage errors on complete
 consumption. Consumer cancellation deliberately stops further semantic evaluation.
 
+## Aggregates
+
+Direct `$count(expr)`, `$sum(expr)`, `$min(expr)` and `$max(expr)` calls compose with
+paths, filters, operators and other aggregate calls. `orders.$sum(price)` aggregates
+in each candidate context; `$sum(orders.price)` aggregates the combined result.
+These are fixed built-ins; function references, dynamic calls, partial application,
+chaining (`~>`) and other functions remain unsupported.
+
+| Normalized argument | `$count` | `$sum` | `$min` / `$max` |
+| --- | --- | --- | --- |
+| Missing (including no filter matches) | `0` | Missing | Missing |
+| Empty raw array | `0` | `0` | Missing |
+| Number | `1` | That number (added to zero) | That number |
+| Null, boolean, string, object | `1` | Type error | Type error |
+| Array / multi-item sequence | Number of members | Sum of numeric members | Numeric minimum / maximum |
+
+Numeric aggregates do not coerce strings, booleans or null and do not recursively
+flatten nested arrays. Argument normalization still matters: on `{"a":[[1,2]]}`,
+`$sum(a)` is a type error, while `$sum(a[true])` returns `3` because the singleton
+result normalizes to its raw array. Undefined retained in a multi-item sequence
+counts as a member and fails numeric aggregate type checks; singleton undefined
+normalizes to missing. Input order determines binary64 sum rounding.
+
+Numeric signature checks accept infinity and NaN, matching the pinned implementation;
+min/max propagate NaN and preserve the reference's signed-zero ordering. Existing
+non-finite serialization and scalar-operator rules still apply. Arguments finish
+before type/arity checks, so earlier-stage evaluation errors take precedence.
+A fold emits no partial value; cancellation can stop between mapped aggregate
+results, but cannot interrupt an aggregate whose result is not yet available.
+
+All four functions require exactly one argument; bad arity raises runtime `TypeError`.
+The [array-function docs](https://docs.jsonata.org/array-functions) describe a context
+fallback for `$count()`, but pinned JSONata 2.2.0 rejects it (`T0410`). We follow the
+pinned implementation and test this discrepancy. Use `$count($)` explicitly.
+[Numeric aggregate docs](https://docs.jsonata.org/aggregation-functions) and
+[92 readable cases](tests/semantics/aggregates.json) define the remaining behavior;
+Rust regressions cover error precedence, validation, cancellation and numeric bits.
+
 ## JSON boundary policies
 
 - Exactly one complete UTF-8 JSON value, with standard JSON whitespace. Validate
@@ -117,7 +156,7 @@ Precedence follows JSONata: paths/unary minus, multiplicative, additive, compari
 `and`, then `or`. Binary operators associate left. `and`/`or` short-circuit the RHS;
 truth conversion handles missing, null, primitives, nested arrays and objects.
 Arrays/sequences are true if any member is true; empty objects/arrays are false.
-Boolean NOT is a function (`$not`), deferred with function calls; there is no `!`
+Boolean NOT is a function (`$not`), still deferred; there is no `!`
 operator or unary `+`. String concatenation and implicit string-to-number coercion
 are not implemented.
 
@@ -153,18 +192,19 @@ Unicode, binary64 boundaries and CLI runtime errors.
 
 ## Executable coverage
 
-`just conformance` executes all **250** imported cases from complete `fields`,
+`just conformance` executes all **298** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
-`predicates`, `simple-array-selectors` and `multiple-array-selectors`
+`predicates`, `simple-array-selectors`, `multiple-array-selectors`,
+`function-count`, `function-sum` and `function-max` (also containing min cases)
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 159 | Semantic JSON result or missing matches upstream |
-| Supported errors | 11 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 80 | Exactly `UnsupportedExpression` |
+| Supported results | 175 | Semantic JSON result or missing matches upstream |
+| Supported errors | 13 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 110 | Exactly `UnsupportedExpression` |
 
 These are selected groups, not a percentage of the full suite. No imported case
 is skipped. `tests/conformance/manifest.json` lists every case and reason; the
@@ -198,10 +238,13 @@ just build
 node scripts/check-sequences.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-scalars.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-filters.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-aggregates.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
 evaluations against the reference stream. The scalar check adds 1,936 curated and
 seeded generated evaluations, including runtime error kinds and raw numeric/Unicode
 boundaries. The filter check adds 3,820 cases, including nested contexts, chained
-positions, numeric lists and stage error precedence. Normal `just all` needs neither Node nor the upstream checkout.
+positions, numeric lists and stage error precedence. The aggregate check adds 4,948
+evaluations across raw arrays, normalized sequences, filters, nested calls and
+numeric/error boundaries. Normal `just all` needs neither Node nor the upstream checkout.
