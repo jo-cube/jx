@@ -14,7 +14,7 @@ pub(crate) fn with_filters<'e, 'i>(
     output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
 ) -> Walk {
     let Some((predicate, previous)) = predicates.split_last() else {
-        return output(View::Operand(base.run(context)?));
+        return output(View::Operand(&base.run(&context)?));
     };
     with_filters(base, previous, context, &mut |input| {
         if let Kind::Number(index) = predicate.kind {
@@ -42,9 +42,7 @@ pub(crate) fn with_filters<'e, 'i>(
                 Ok(())
             })?;
             match selected {
-                Some(Value::Raw(raw)) if raw.is_array() => {
-                    output(View::Operand(Operand::One(Value::Raw(raw))))
-                }
+                Some(value) if value.is_array() => output(View::Operand(&Operand::One(value))),
                 None | Some(Value::Undefined) => output(View::Items(&[])),
                 Some(value) => output(View::Items(&[value])),
             }
@@ -67,13 +65,13 @@ impl<'e, 'i> Filter<'_, 'e, 'i> {
     pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         let mut index = 0;
         self.input.transform(true, output, |value, output| {
-            let predicate = self.predicate.run(Context {
-                value,
+            let predicate = self.predicate.run(&Context {
+                value: value.clone(),
                 wrapped: false,
             })?;
-            let numeric = numbers(predicate, self.predicate.offset, &mut |_| Ok(()))?;
+            let numeric = numbers(&predicate, self.predicate.offset, &mut |_| Ok(()))?;
             if numeric {
-                numbers(predicate, self.predicate.offset, &mut |number| {
+                numbers(&predicate, self.predicate.offset, &mut |number| {
                     let number = number.floor();
                     let target = if number < 0.0 {
                         self.length()? as f64 + number
@@ -81,12 +79,12 @@ impl<'e, 'i> Filter<'_, 'e, 'i> {
                         number
                     };
                     if target == index as f64 {
-                        output(value)?;
+                        output(value.clone())?;
                     }
                     Ok(())
                 })?;
             } else if predicate.truth(self.predicate.offset)? {
-                output(value)?;
+                output(value.clone())?;
             }
             index += 1;
             Ok(())
@@ -109,7 +107,7 @@ impl<'e, 'i> Filter<'_, 'e, 'i> {
 // Numeric lists preserve duplicate matching positions. Inspect the entire list
 // before choosing positional versus effective-boolean semantics (mixed lists).
 fn numbers(
-    operand: Operand<'_, '_>,
+    operand: &Operand<'_, '_>,
     offset: usize,
     output: &mut dyn FnMut(f64) -> Walk,
 ) -> Result<bool, Halt> {
@@ -124,12 +122,12 @@ fn numbers(
     };
     match operand {
         Operand::Missing => numeric = false,
-        Operand::One(Value::Raw(raw)) if raw.is_array() => {
-            for value in raw.elements() {
-                item(Value::Raw(value))?;
+        Operand::One(value) if value.is_array() => {
+            for value in value.elements() {
+                item(value)?;
             }
         }
-        Operand::One(value) => item(value)?,
+        Operand::One(value) => item(value.clone())?,
         Operand::Many(stream) => stream.walk(&mut item)?,
     }
     Ok(numeric)

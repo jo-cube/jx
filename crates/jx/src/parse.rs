@@ -76,6 +76,30 @@ impl<'a> Parser<'a> {
                     rooted: false,
                 })
             }
+            Token::FilterOpen => Kind::Array(self.list(nesting, true)?, false),
+            Token::ObjectOpen => {
+                let mut pairs = Vec::new();
+                if !matches!(self.token, Token::ObjectClose) {
+                    loop {
+                        let key = self.expression(0, nesting + 1)?;
+                        if !matches!(self.token, Token::Colon) {
+                            return Err(error(self.offset));
+                        }
+                        self.advance()?;
+                        let value = self.expression(0, nesting + 1)?;
+                        pairs.push((key, value));
+                        if !matches!(self.token, Token::Comma) {
+                            break;
+                        }
+                        self.advance()?;
+                    }
+                }
+                if !matches!(self.token, Token::ObjectClose) {
+                    return Err(error(self.offset));
+                }
+                self.advance()?;
+                Kind::Object(pairs.into_boxed_slice())
+            }
             Token::Aggregate(aggregate) => Kind::Aggregate(aggregate, self.arguments(nesting)?),
             Token::Root => Kind::Path(Path {
                 fields: Box::default(),
@@ -107,7 +131,16 @@ impl<'a> Parser<'a> {
         };
         let depth = match &kind {
             Kind::Group(n) | Kind::Negate(n) => 1 + n.depth,
-            Kind::Aggregate(_, args) => 1 + args.iter().map(|n| n.depth).max().unwrap_or(0),
+            Kind::Object(pairs) => {
+                1 + pairs
+                    .iter()
+                    .map(|(k, v)| k.depth.max(v.depth))
+                    .max()
+                    .unwrap_or(0)
+            }
+            Kind::Array(args, _) | Kind::Aggregate(_, args) => {
+                1 + args.iter().map(|n| n.depth).max().unwrap_or(0)
+            }
             _ => 1,
         };
         Ok((node(kind, offset, depth)?, lookup))
@@ -117,8 +150,17 @@ impl<'a> Parser<'a> {
             return Err(error(self.offset));
         }
         self.advance()?;
+        self.list(nesting, false)
+    }
+    fn list(&mut self, nesting: usize, array: bool) -> Result<Box<[Node]>, Error> {
+        let closed = |token: &Token| {
+            matches!(
+                (array, token),
+                (true, Token::FilterClose) | (false, Token::Close)
+            )
+        };
         let mut arguments = Vec::new();
-        if !matches!(self.token, Token::Close) {
+        if !closed(&self.token) {
             loop {
                 arguments.push(self.expression(0, nesting + 1)?);
                 if !matches!(self.token, Token::Comma) {
@@ -127,7 +169,7 @@ impl<'a> Parser<'a> {
                 self.advance()?;
             }
         }
-        if !matches!(self.token, Token::Close) {
+        if !closed(&self.token) {
             return Err(error(self.offset));
         }
         self.advance()?;
@@ -175,7 +217,13 @@ impl<'a> Parser<'a> {
             self.advance()?;
             if !matches!(
                 self.token,
-                Token::Name(_) | Token::Quoted(_) | Token::Root | Token::Open | Token::Aggregate(_)
+                Token::Name(_)
+                    | Token::Quoted(_)
+                    | Token::Root
+                    | Token::Open
+                    | Token::Aggregate(_)
+                    | Token::FilterOpen
+                    | Token::ObjectOpen
             ) {
                 return Err(error(self.offset));
             }
@@ -192,6 +240,9 @@ impl<'a> Parser<'a> {
         }
         if steps.len() == 1 && steps[0].predicates.is_empty() {
             return Ok(steps.pop().unwrap().node);
+        }
+        for step in &mut steps {
+            step.node.preserve_array();
         }
         // Keep static paths in their fused validating representation.
         if steps.iter().enumerate().all(|(index, step)| {
@@ -220,7 +271,12 @@ impl<'a> Parser<'a> {
                 })
                 .max()
                 .unwrap();
-        node(Kind::Route(steps.into_boxed_slice()), offset, depth)
+        let array_focus = steps[0].node.array_focus();
+        node(
+            Kind::Route(steps.into_boxed_slice(), array_focus),
+            offset,
+            depth,
+        )
     }
 }
 fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {

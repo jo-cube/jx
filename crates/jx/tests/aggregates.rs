@@ -139,7 +139,6 @@ fn aggregate_calls_keep_syntax_and_depth_limits_explicit() {
         "$sum(1",
         "$sum(a)()",
         "$sum(?)",
-        "$sum([1,2])",
         "$average(a)",
         "$foo(a)",
         "($sum)(a)",

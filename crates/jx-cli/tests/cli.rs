@@ -149,3 +149,33 @@ fn aggregates_distinguish_missing_empty_and_failed_records() {
     assert_eq!(output.status.code(), Some(1));
     assert!(output.stdout.is_empty());
 }
+
+#[test]
+fn constructors_frame_complete_outputs_and_mapped_failures() {
+    let output = run(
+        &[r#"{"sum":$sum(a[$>1]),"values":[a[$>1]],"missing":absent,"null":null}"#],
+        b"{\"a\":[1,2,3]}\n{}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"sum\":5,\"values\":[2,3],\"null\":null}\n{\"values\":[],\"null\":null}\n"
+    );
+    let output = run(&["a.[b,b+1]"], br#"{"a":[{"b":1},{"b":3}]}"#);
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"[1,2]\n[3,4]\n");
+    let output = run(&[r#"a.{"x":b+1}"#], br#"{"a":[{"b":1},{"b":null}]}"#);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"{\"x\":2}\n");
+    let output = run(&[r#"[a.{"x":b+1}]"#], br#"{"a":[{"b":1},{"b":null}]}"#);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    let output = run(&[r#"{"x":1,"\u0078":2}"#], b"{}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("DuplicateKey")
+    );
+}

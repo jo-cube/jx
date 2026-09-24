@@ -2,7 +2,7 @@ mod scan;
 pub(crate) mod string;
 
 pub use scan::MAX_DEPTH;
-pub(crate) use scan::{Selection, select};
+pub(crate) use scan::{Elements, Members, Selection, select};
 
 /// A validated JSON value borrowing its original UTF-8 encoding.
 /// Arrays here are JSON values, not JSONata result sequences.

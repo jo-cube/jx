@@ -54,9 +54,13 @@ impl<'e, 'i> Evaluation<'e, 'i> {
         mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
     ) -> Result<(), ConsumeError<E>> {
         match self.result {
-            Results::Path(path) => path
-                .try_for_each(|raw| output(Value::Raw(raw)))
-                .map_err(ConsumeError::Consumer),
+            Results::Path(path) => path.try_for_each(output).map_err(ConsumeError::Consumer),
+            Results::Scalar(Some(value)) if value.is_sequence() => {
+                for item in value.elements() {
+                    output(item).map_err(ConsumeError::Consumer)?;
+                }
+                Ok(())
+            }
             Results::Scalar(Some(value)) => output(value).map_err(ConsumeError::Consumer),
             Results::Scalar(None) => Ok(()),
             Results::Expression(node, context) => {
@@ -69,20 +73,30 @@ impl<'e, 'i> Evaluation<'e, 'i> {
                     })
                 };
                 let mut first = true;
-                let mut pending_undefined = false;
-                let result = stream.walk(&mut |value| {
-                    if first && matches!(value, Value::Undefined) {
+                let mut pending = None;
+                let result = stream
+                    .walk(&mut |value| {
+                        if first && (matches!(value, Value::Undefined) || value.is_sequence()) {
+                            first = false;
+                            pending = Some(value);
+                            return Ok(());
+                        }
                         first = false;
-                        pending_undefined = true;
-                        return Ok(());
-                    }
-                    first = false;
-                    if pending_undefined {
-                        pending_undefined = false;
-                        consumer(Value::Undefined)?;
-                    }
-                    consumer(value)
-                });
+                        if let Some(value) = pending.take() {
+                            consumer(value)?;
+                        }
+                        consumer(value)
+                    })
+                    .and_then(|()| {
+                        if let Some(value) = pending
+                            && value.is_sequence()
+                        {
+                            for item in value.elements() {
+                                consumer(item)?;
+                            }
+                        }
+                        Ok(())
+                    });
                 match result {
                     Ok(()) => Ok(()),
                     Err(Halt::Evaluation(e)) => Err(ConsumeError::Evaluation(e)),
@@ -98,10 +112,10 @@ pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluati
         value: Value::Raw(crate::validate(input)?),
         wrapped: true,
     };
-    let result = if matches!(node.kind, Kind::Route(_) | Kind::Filter(..)) {
+    let result = if matches!(node.kind, Kind::Route(..) | Kind::Filter(..)) {
         Results::Expression(node, context)
     } else {
-        match node.run(context)? {
+        match node.run(&context)? {
             Operand::Missing => Results::Scalar(None),
             Operand::One(value) => Results::Scalar(Some(value)),
             Operand::Many(Stream::Path(path)) => Results::Path(path),
@@ -111,7 +125,7 @@ pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluati
     Ok(Evaluation { result })
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(crate) enum Operand<'e, 'i> {
     Missing,
     One(Value<'e, 'i>),
@@ -119,15 +133,21 @@ pub(crate) enum Operand<'e, 'i> {
 }
 
 impl<'e, 'i> Operand<'e, 'i> {
-    pub(crate) fn walk(self, output: &mut Output<'_, 'e, 'i>) -> Walk {
+    pub(crate) fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
             Self::Missing => Ok(()),
-            Self::One(value) => output(value),
+            Self::One(value) if value.is_sequence() => {
+                for item in value.elements() {
+                    output(item)?;
+                }
+                Ok(())
+            }
+            Self::One(value) => output(value.clone()),
             Self::Many(stream) => stream.walk(output),
         }
     }
 
-    pub(crate) fn truth(self, offset: usize) -> Result<bool, Error> {
+    pub(crate) fn truth(&self, offset: usize) -> Result<bool, Error> {
         match self {
             Self::Missing => Ok(false),
             Self::One(value) => value.truth(offset),
@@ -142,7 +162,7 @@ impl<'e, 'i> Operand<'e, 'i> {
         }
     }
 
-    fn number(self, offset: usize) -> Result<Option<f64>, Error> {
+    fn number(&self, offset: usize) -> Result<Option<f64>, Error> {
         match self {
             Self::Missing => Ok(None),
             Self::One(value) => match value.atomic() {
@@ -157,26 +177,27 @@ impl<'e, 'i> Operand<'e, 'i> {
 }
 
 impl Node {
-    pub(crate) fn run<'e, 'i>(&'e self, input: Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
+    pub(crate) fn run<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
         let value = match &self.kind {
             Kind::Path(path) => {
                 if path.fields.is_empty() {
                     return Ok(if matches!(input.value, Value::Undefined) {
                         Operand::Missing
                     } else {
-                        Operand::One(input.value)
+                        Operand::One(input.value.clone())
                     });
                 }
-                let Value::Raw(_) = input.value else {
-                    return Ok(Operand::Missing);
-                };
                 return self.stream(input).unwrap().operand();
             }
-            Kind::Route(_) | Kind::Filter(..) => return Stream::Expression(self, input).operand(),
+            Kind::Route(..) | Kind::Filter(..) => {
+                return Stream::Expression(self, input.clone()).operand();
+            }
             Kind::Group(child) => return child.run(input),
             Kind::Aggregate(aggregate, args) => {
                 return aggregate.evaluate(args, input, self.offset);
             }
+            Kind::Array(items, preserve) => crate::construct::array(items, *preserve, input)?,
+            Kind::Object(pairs) => crate::construct::object(pairs, input, self.offset)?,
             Kind::Missing => return Ok(Operand::Missing),
             Kind::Number(value) => Value::Number(*value),
             Kind::Boolean(value) => Value::Boolean(*value),

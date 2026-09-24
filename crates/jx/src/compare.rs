@@ -21,10 +21,13 @@ pub(crate) fn equal(
         (Operand::Missing, _) | (_, Operand::Missing) => return Ok(false),
         (Operand::One(left), Operand::One(right)) => values(left, right),
         (Operand::Many(stream), Operand::One(value))
-        | (Operand::One(value), Operand::Many(stream)) => match value.json() {
-            Some(raw) if raw.is_array() => sequence(stream, raw.elements().map(Value::Raw))?,
-            _ => false,
-        },
+        | (Operand::One(value), Operand::Many(stream)) => {
+            if value.is_array() {
+                sequence(stream, value.elements())?
+            } else {
+                false
+            }
+        }
         (Operand::Many(left), Operand::Many(right)) => {
             // Equality retains one side so two push streams can be compared in order.
             let mut items = Vec::new();
@@ -62,20 +65,18 @@ fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
         (Value::Boolean(left), Value::Boolean(right)) => left == right,
         (Value::Number(left), Value::Number(right)) => left == right,
         (left, right) => {
-            let (Some(left), Some(right)) = (left.json(), right.json()) else {
-                return false;
-            };
-            match (left.as_bytes()[0], right.as_bytes()[0]) {
-                (b'"', b'"') => units(left).eq(units(right)),
-                (b'[', b'[') => {
-                    let mut right = right.elements();
-                    left.elements().all(|item| {
-                        right
-                            .next()
-                            .is_some_and(|next| values(Value::Raw(item), Value::Raw(next)))
-                    }) && right.next().is_none()
-                }
-                (b'{', b'{') => objects(left, right),
+            if left.is_array() && right.is_array() {
+                let mut right = right.elements();
+                return left
+                    .elements()
+                    .all(|item| right.next().is_some_and(|next| values(item, next)))
+                    && right.next().is_none();
+            }
+            if left.is_object() && right.is_object() {
+                return objects(&left, &right);
+            }
+            match (left.string_body(), right.string_body()) {
+                (Some(left), Some(right)) => string::units(left).eq(string::units(right)),
                 _ => false,
             }
         }
@@ -99,7 +100,7 @@ impl Hash for Key<'_> {
     }
 }
 
-fn objects(left: RawJson<'_>, right: RawJson<'_>) -> bool {
+fn objects(left: &Value<'_, '_>, right: &Value<'_, '_>) -> bool {
     // Retain only borrowed left members. Later duplicate keys overwrite earlier
     // values on both sides, without decoding strings or building a JSON tree.
     let mut members = HashMap::new();
@@ -110,7 +111,7 @@ fn objects(left: RawJson<'_>, right: RawJson<'_>) -> bool {
         let Some((expected, equal)) = members.get_mut(&Key(key)) else {
             return false;
         };
-        *equal = Some(values(Value::Raw(*expected), Value::Raw(value)));
+        *equal = Some(values(expected.clone(), value));
     }
     members.values().all(|(_, equal)| *equal == Some(true))
 }

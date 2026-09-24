@@ -14,10 +14,12 @@ pub(crate) struct Node {
 #[derive(Clone, Debug)]
 pub(crate) enum Kind {
     Path(Path),
-    Route(Box<[Step]>),
+    Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
     Aggregate(Aggregate, Box<[Node]>),
+    Array(Box<[Node]>, bool),
+    Object(Box<[(Node, Node)]>),
     Number(f64),
     Boolean(bool),
     Null,
@@ -74,4 +76,28 @@ pub(crate) enum Aggregate {
     Sum,
     Min,
     Max,
+}
+
+impl Node {
+    pub(crate) fn array_focus(&self) -> bool {
+        match &self.kind {
+            Kind::Array(_, preserve) | Kind::Route(_, preserve) => *preserve,
+            Kind::Filter(base, _) | Kind::Group(base) => base.array_focus(),
+            _ => false,
+        }
+    }
+    pub(crate) fn is_array_constructor(&self) -> bool {
+        match &self.kind {
+            Kind::Array(..) => true,
+            Kind::Filter(base, _) => base.is_array_constructor(),
+            _ => false,
+        }
+    }
+    pub(crate) fn preserve_array(&mut self) {
+        match &mut self.kind {
+            Kind::Array(_, preserve) => *preserve = true,
+            Kind::Filter(base, _) => base.preserve_array(),
+            _ => {}
+        }
+    }
 }

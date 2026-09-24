@@ -7,6 +7,7 @@ pub enum ErrorKind {
     InvalidJson,
     DepthLimit,
     TypeError,
+    DuplicateKey,
     NumericRange,
 }
 

@@ -1,22 +1,35 @@
 use crate::expression::Path;
-use crate::{RawJson, json::Selection};
+use crate::{Value, json};
+
+#[derive(Clone, Debug)]
+pub(crate) enum Selection<'e, 'i> {
+    Missing,
+    Value(Value<'e, 'i>),
+    Array(Value<'e, 'i>, &'e [Box<str>]),
+}
 
 /// A borrowed, consumable result stream. Missing emits nothing; null and each
 /// array value emit once. A sequence emits its items in order, without collecting.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct PathEvaluation<'expression, 'input> {
-    pub(crate) selection: Selection<'input, 'expression>,
+    pub(crate) selection: Selection<'expression, 'input>,
     pub(crate) root_lookup: bool,
 }
 
-impl<'i> PathEvaluation<'_, 'i> {
+impl<'e, 'i> PathEvaluation<'e, 'i> {
     /// A consumer error stops traversal immediately and is returned unchanged.
     pub fn try_for_each<E>(
-        self,
-        mut output: impl FnMut(RawJson<'i>) -> Result<(), E>,
+        &self,
+        mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
     ) -> Result<(), E> {
-        match self.selection {
+        match self.selection.clone() {
             Selection::Missing => Ok(()),
+            Selection::Value(value) if value.is_sequence() => {
+                for item in value.elements() {
+                    output(item)?;
+                }
+                Ok(())
+            }
             Selection::Value(value) => output(value),
             Selection::Array(value, fields) => {
                 let mut result = Sequence {
@@ -40,14 +53,14 @@ impl<'i> PathEvaluation<'_, 'i> {
 // The last path stage preserves a sole raw array. A second defined result makes
 // both contribute their immediate contents instead. Keep only the first value
 // until that distinction is known, including an empty array as a defined result.
-struct Sequence<'i, 'o, E> {
-    first: Option<RawJson<'i>>,
+struct Sequence<'e, 'i, 'o, E> {
+    first: Option<Value<'e, 'i>>,
     multiple: bool,
-    output: &'o mut dyn FnMut(RawJson<'i>) -> Result<(), E>,
+    output: &'o mut dyn FnMut(Value<'e, 'i>) -> Result<(), E>,
 }
 
-impl<'i, E> Sequence<'i, '_, E> {
-    fn value(&mut self, value: RawJson<'i>) -> Result<(), E> {
+impl<'e, 'i, E> Sequence<'e, 'i, '_, E> {
+    fn value(&mut self, value: Value<'e, 'i>) -> Result<(), E> {
         if self.multiple {
             return self.flatten(value);
         }
@@ -68,8 +81,8 @@ impl<'i, E> Sequence<'i, '_, E> {
         Ok(())
     }
 
-    fn flatten(&mut self, value: RawJson<'i>) -> Result<(), E> {
-        if value.is_array() {
+    fn flatten(&mut self, value: Value<'e, 'i>) -> Result<(), E> {
+        if value.is_array() && !value.preserves_array() {
             for item in value.elements() {
                 (self.output)(item)?;
             }
@@ -81,16 +94,22 @@ impl<'i, E> Sequence<'i, '_, E> {
 
     fn finish(self) -> Result<(), E> {
         if let Some(first) = self.first {
-            (self.output)(first)?;
+            if first.is_sequence() {
+                for item in first.elements() {
+                    (self.output)(item)?;
+                }
+            } else {
+                (self.output)(first)?;
+            }
         }
         Ok(())
     }
 }
 
-fn context<'i, E>(
-    input: RawJson<'i>,
+fn context<'e, 'i, E>(
+    input: Value<'e, 'i>,
     fields: &[Box<str>],
-    result: &mut Sequence<'i, '_, E>,
+    result: &mut Sequence<'e, 'i, '_, E>,
 ) -> Result<(), E> {
     let (field, rest) = fields.split_first().expect("remaining path step");
     if !input.is_array() {
@@ -126,10 +145,10 @@ fn context<'i, E>(
     Ok(())
 }
 
-fn single<'i, E>(
-    value: RawJson<'i>,
+fn single<'e, 'i, E>(
+    value: Value<'e, 'i>,
     rest: &[Box<str>],
-    result: &mut Sequence<'i, '_, E>,
+    result: &mut Sequence<'e, 'i, '_, E>,
 ) -> Result<(), E> {
     if rest.is_empty() {
         return result.value(value);
@@ -144,10 +163,10 @@ fn single<'i, E>(
     }
 }
 
-fn sequence_item<'i, E>(
-    value: RawJson<'i>,
+fn sequence_item<'e, 'i, E>(
+    value: Value<'e, 'i>,
     rest: &[Box<str>],
-    result: &mut Sequence<'i, '_, E>,
+    result: &mut Sequence<'e, 'i, '_, E>,
 ) -> Result<(), E> {
     if rest.is_empty() {
         (result.output)(value)
@@ -158,10 +177,10 @@ fn sequence_item<'i, E>(
 
 // Recursive array lookup flattens returned arrays once at the object boundary;
 // concatenating the recursive sequences must not flatten their array items again.
-fn lookup<'i, E>(
-    input: RawJson<'i>,
+fn lookup<'e, 'i, E>(
+    input: Value<'e, 'i>,
     field: &str,
-    output: &mut dyn FnMut(RawJson<'i>) -> Result<(), E>,
+    output: &mut dyn FnMut(Value<'e, 'i>) -> Result<(), E>,
 ) -> Result<(), E> {
     if input.is_array() {
         for item in input.elements() {
@@ -184,11 +203,18 @@ impl Path {
         &'e self,
         input: &'i [u8],
     ) -> Result<PathEvaluation<'e, 'i>, crate::Error> {
-        let selection = crate::json::select(input, &self.fields)?;
+        let selection = match crate::json::select(input, &self.fields)? {
+            json::Selection::Missing => Selection::Missing,
+            json::Selection::Value(value) => Selection::Value(Value::Raw(value)),
+            json::Selection::Array(value, fields) => Selection::Array(Value::Raw(value), fields),
+        };
         Ok(self.selection(selection))
     }
 
-    pub(crate) fn select_raw<'e, 'i>(&'e self, mut input: RawJson<'i>) -> PathEvaluation<'e, 'i> {
+    pub(crate) fn select_value<'e, 'i>(
+        &'e self,
+        mut input: Value<'e, 'i>,
+    ) -> PathEvaluation<'e, 'i> {
         let mut fields = self.fields.as_ref();
         let selection = loop {
             if fields.is_empty() {
@@ -206,7 +232,7 @@ impl Path {
         self.selection(selection)
     }
 
-    fn selection<'e, 'i>(&'e self, selection: Selection<'i, 'e>) -> PathEvaluation<'e, 'i> {
+    fn selection<'e, 'i>(&'e self, selection: Selection<'e, 'i>) -> PathEvaluation<'e, 'i> {
         let root_lookup = !self.rooted
             && matches!(&selection,
             Selection::Array(_, fields) if fields.len() == self.fields.len());

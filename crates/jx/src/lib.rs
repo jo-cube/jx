@@ -11,6 +11,8 @@
 
 mod aggregate;
 mod compare;
+mod construct;
+mod container;
 mod error;
 mod evaluate;
 mod expression;
@@ -21,6 +23,7 @@ mod path;
 mod sequence;
 mod value;
 
+pub use container::{Array, Object};
 pub use error::{Error, ErrorKind};
 pub use evaluate::{ConsumeError, Evaluation};
 pub use json::{MAX_DEPTH, RawJson, validate};

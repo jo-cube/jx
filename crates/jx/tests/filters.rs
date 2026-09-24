@@ -98,7 +98,6 @@ fn filters_have_bounded_depth_and_keep_deferred_syntax_explicit() {
         "a[]",
         "a[true",
         "a[0,1]",
-        "a[[0,1]]",
         "a[$$]",
         "a[$not(false)]",
         "a[0..2]",

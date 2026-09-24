@@ -10,7 +10,7 @@ impl Aggregate {
     pub(crate) fn evaluate<'e, 'i>(
         self,
         args: &'e [Node],
-        input: Context<'e, 'i>,
+        input: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
         let [argument] = args else {
@@ -55,9 +55,9 @@ impl Aggregate {
         if let Some(value) = first {
             match value {
                 Value::Undefined => {}
-                Value::Raw(raw) if raw.is_array() => {
-                    for item in raw.elements() {
-                        fold.push(Value::Raw(item));
+                value if value.is_array() => {
+                    for item in value.elements() {
+                        fold.push(item);
                     }
                 }
                 value => fold.push(value),

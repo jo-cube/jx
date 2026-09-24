@@ -5,7 +5,7 @@ use crate::{
     path::PathEvaluation,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Context<'e, 'i> {
     pub value: Value<'e, 'i>,
     // The top-level JSON record is one context, even when it is an array.
@@ -24,19 +24,23 @@ impl From<Error> for Halt {
 pub(crate) type Walk = Result<(), Halt>;
 pub(crate) type Output<'a, 'e, 'i> = dyn FnMut(Value<'e, 'i>) -> Walk + 'a;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Stream<'e, 'i> {
     Path(PathEvaluation<'e, 'i>),
     Expression(&'e Node, Context<'e, 'i>),
 }
 impl<'e, 'i> Stream<'e, 'i> {
-    pub fn walk(self, output: &mut Output<'_, 'e, 'i>) -> Walk {
+    pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
-            Self::Path(path) => path.try_for_each(|raw| output(Value::Raw(raw))),
+            Self::Path(path) => path.try_for_each(output),
             Self::Expression(node, context) => match &node.kind {
-                Kind::Route(steps) => route(steps, context, &mut |view| view.walk(output)),
+                Kind::Route(steps, array_focus) => {
+                    route(steps, *array_focus, context.clone(), &mut |view| {
+                        view.walk(output)
+                    })
+                }
                 Kind::Filter(base, predicates) => {
-                    crate::filter::with_filters(base, predicates, context, &mut |view| {
+                    crate::filter::with_filters(base, predicates, context.clone(), &mut |view| {
                         view.walk(output)
                     })
                 }
@@ -72,7 +76,7 @@ impl<'e, 'i> Stream<'e, 'i> {
         })
     }
     pub fn visit(
-        self,
+        &self,
         mut output: impl FnMut(Value<'e, 'i>) -> Result<(), Error>,
     ) -> Result<(), Error> {
         match self.walk(&mut |value| output(value).map_err(Halt::Evaluation)) {
@@ -88,18 +92,18 @@ impl<'e, 'i> Stream<'e, 'i> {
 // recounting without retaining all candidates.
 #[derive(Clone, Copy)]
 pub(crate) enum View<'s, 'e, 'i> {
-    Operand(Operand<'e, 'i>),
+    Operand(&'s Operand<'e, 'i>),
     Items(&'s [Value<'e, 'i>]),
     Map(&'s Map<'s, 'e, 'i>),
     Filter(&'s crate::filter::Filter<'s, 'e, 'i>),
 }
 impl<'e, 'i> View<'_, 'e, 'i> {
-    pub fn walk(self, output: &mut Output<'_, 'e, 'i>) -> Walk {
+    pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
             Self::Operand(value) => value.walk(output),
             Self::Items(items) => {
-                for &value in items {
-                    output(value)?;
+                for value in *items {
+                    output(value.clone())?;
                 }
                 Ok(())
             }
@@ -111,7 +115,7 @@ impl<'e, 'i> View<'_, 'e, 'i> {
     // replay its input for earlier errors. This preserves eager JSONata error
     // precedence without an eager validation pass on successful streamed results.
     pub fn transform(
-        self,
+        &self,
         missing: bool,
         output: &mut Output<'_, 'e, 'i>,
         mut transform: impl FnMut(Value<'e, 'i>, &mut Output<'_, 'e, 'i>) -> Walk,
@@ -137,12 +141,12 @@ impl<'e, 'i> View<'_, 'e, 'i> {
         result?;
         downstream.map_or(Ok(()), |error| Err(Halt::Evaluation(error)))
     }
-    pub fn candidates(self, missing: bool, output: &mut Output<'_, 'e, 'i>) -> Walk {
+    pub fn candidates(&self, missing: bool, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
             Self::Operand(Operand::Missing) if missing => output(Value::Undefined),
-            Self::Operand(Operand::One(Value::Raw(raw))) if raw.is_array() => {
-                for item in raw.elements() {
-                    output(Value::Raw(item))?;
+            Self::Operand(Operand::One(value)) if value.is_array() => {
+                for item in value.elements() {
+                    output(item)?;
                 }
                 Ok(())
             }
@@ -173,31 +177,45 @@ impl<'e, 'i> Map<'_, 'e, 'i> {
                     if matches!(view, View::Operand(Operand::Missing)) {
                         return Ok(());
                     }
-                    if let Some(raw) = pending.take() {
-                        View::Operand(Operand::One(Value::Raw(raw))).candidates(false, output)?;
+                    if let Some(value) = pending.take() {
+                        emit_mapped(value, output)?;
                     }
                     if self.last && !defined {
                         defined = true;
-                        if let View::Operand(Operand::One(Value::Raw(raw))) = view
-                            && raw.is_array()
+                        if let View::Operand(Operand::One(value)) = view
+                            && value.is_array()
+                            && !value.is_sequence()
                         {
-                            pending = Some(raw);
+                            pending = Some(value.clone());
                             return Ok(());
                         }
                     }
                     defined = true;
-                    view.candidates(false, output)
+                    match &view {
+                        View::Operand(Operand::One(value)) if value.preserves_array() => {
+                            output(value.clone())
+                        }
+                        _ => view.candidates(false, output),
+                    }
                 },
             )
         })?;
-        if let Some(raw) = pending {
-            output(Value::Raw(raw))?;
+        if let Some(value) = pending {
+            output(value)?;
         }
         Ok(())
     }
 }
+fn emit_mapped<'e, 'i>(value: Value<'e, 'i>, output: &mut Output<'_, 'e, 'i>) -> Walk {
+    if value.preserves_array() {
+        output(value)
+    } else {
+        View::Operand(&Operand::One(value)).candidates(false, output)
+    }
+}
 fn route<'e, 'i>(
     steps: &'e [Step],
+    array_focus: bool,
     context: Context<'e, 'i>,
     output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
 ) -> Walk {
@@ -216,13 +234,45 @@ fn route<'e, 'i>(
         };
         stages(View::Map(&map), rest, output)
     }
-    let single = [context.value];
+    if array_focus {
+        return crate::filter::with_filters(
+            &steps[0].node,
+            &steps[0].predicates,
+            context,
+            &mut |view| {
+                if let View::Operand(Operand::One(value)) = &view
+                    && !value.is_array()
+                {
+                    if matches!(value.atomic(), Value::Null) {
+                        return Err(crate::value::type_error(steps[0].node.offset).into());
+                    }
+                    if value.string_body().is_some() {
+                        return Err(crate::Error::new(
+                            crate::ErrorKind::UnsupportedExpression,
+                            steps[0].node.offset,
+                            "string iteration after a filtered array constructor is deferred",
+                        )
+                        .into());
+                    }
+                    return output(View::Items(&[]));
+                }
+                if matches!(&view, View::Operand(Operand::One(value)) if value.is_array() && value.elements().next().is_none())
+                {
+                    output(view)
+                } else {
+                    stages(view, &steps[1..], output)
+                }
+            },
+        );
+    }
+    let single = [context.value.clone()];
     let variable =
         matches!(&steps[0].node.kind, Kind::Path(path) if path.rooted && path.fields.is_empty());
+    let operand = Operand::One(context.value);
     let input = if context.wrapped || variable {
         View::Items(&single)
     } else {
-        View::Operand(Operand::One(context.value))
+        View::Operand(&operand)
     };
     stages(input, steps, output)
 }
@@ -231,19 +281,16 @@ impl Node {
     // Expose deferred results without a cardinality preflight. Consumers that
     // require a scalar still normalize through Stream::operand.
     #[inline]
-    pub(crate) fn stream<'e, 'i>(&'e self, input: Context<'e, 'i>) -> Option<Stream<'e, 'i>> {
+    pub(crate) fn stream<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Option<Stream<'e, 'i>> {
         match &self.kind {
             Kind::Path(path) if !path.fields.is_empty() => {
-                let Value::Raw(raw) = input.value else {
-                    return None;
-                };
-                let mut selected = path.select_raw(raw);
+                let mut selected = path.select_value(input.value.clone());
                 if !input.wrapped {
                     selected.root_lookup = false;
                 }
                 Some(Stream::Path(selected))
             }
-            Kind::Route(_) | Kind::Filter(..) => Some(Stream::Expression(self, input)),
+            Kind::Route(..) | Kind::Filter(..) => Some(Stream::Expression(self, input.clone())),
             Kind::Group(child) => child.stream(input),
             _ => None,
         }

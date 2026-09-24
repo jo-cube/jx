@@ -2,7 +2,7 @@
 
 A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
-result sequences, scalar operators, filters, and streaming aggregates**. Full JSONata is the semantic target; see
+result sequences, scalar operators, filters, streaming aggregates, and constructors**. Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
 Requires Rust **1.98.1** and [just](https://just.systems). The workspace contains
@@ -15,6 +15,7 @@ printf '%s\n' '{"customer":{"id":42}}' | target/release/jx 'customer.id'
 target/release/jx 'price * quantity' records.ndjson
 target/release/jx 'orders[price > 10].id' records.ndjson
 target/release/jx '$sum(orders[price > 10].price)' records.ndjson
+target/release/jx '{"total":$sum(orders[price > 10].price),"ids":[orders.id]}' records.ndjson
 target/release/jx --max-record-bytes 1048576 '$' records.ndjson
 ```
 
@@ -27,26 +28,30 @@ expression.evaluate(br#"{"price":2.5,"quantity":3}"#)?.for_each(|value| {
 
 Evaluation validates the entire UTF-8 record before returning results. Paths keep
 borrowed raw JSON; computed numbers and booleans use primitives. `write_compact`
-serializes either. Input slices extracted with `as_raw()` can outlive the expression;
+serializes both, plus constructed objects and arrays. Containers own their member
+lists and retain borrowed leaves; cloning a constructed value shares its storage. Input slices extracted with `as_raw()` can outlive the expression;
 string literals borrow compiled storage. `try_for_each` propagates consumer errors
 immediately, distinguishing `ConsumeError::Consumer` from `ConsumeError::Evaluation`.
 Both callback APIs return evaluation failures; neither collects results.
 
-Ordinary paths, filters, scalar operators and `$count`/`$sum`/`$min`/`$max` allocate
-no per-record heap storage. Structural
-equality may retain borrowed members or one sequence. There is no general JSON tree
-or engine runtime dependency; `serde_json` is a test-only oracle and fixture reader.
+Without construction, ordinary paths, filters, scalar operators and `$count`/`$sum`/`$min`/`$max` allocate
+no per-record heap storage. Constructors allocate their structure and retained
+member sequences; mapped constructors can emit one container at a time. Structural
+equality may retain borrowed members or one sequence. Input is never converted to a JSON tree
+and there is no engine runtime dependency; `serde_json` is a test-only oracle and fixture reader.
 
 The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact
 NDJSON synchronously. Missing produces no line; null produces `null`; sequences
-emit one line per item. A raw array value stays on one line. JSONata mapping and singleton rules
+emit one line per item. An array value stays on one line. JSONata mapping and singleton rules
 determine which is returned; see the examples in [coverage](CONFORMANCE.md).
 Blank lines are ignored; the last line may omit LF. The default 1 MiB record limit excludes LF but includes
 CR and whitespace. Memory is bounded by the largest accepted record plus I/O
-buffers and temporary equality storage where needed. Invalid records or runtime
+buffers, constructed output retained for that record, and temporary equality/grouping
+storage where needed. Invalid records or runtime
 errors stop processing. JSON validation precedes all output; a later mapped expression error
 can leave earlier items from that record written. Each aggregate consumes its whole
-argument before emitting its scalar result.
+argument before emitting its scalar result. A constructor finishes its members before
+emitting its container; mapped constructors can emit earlier complete containers.
 Usage/compilation errors exit 2; record/I/O errors exit 1; broken pipes exit 0.
 
 `just` lists commands. [Architecture and milestones](ARCHITECTURE.md),

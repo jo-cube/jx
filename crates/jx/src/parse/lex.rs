@@ -14,6 +14,9 @@ pub(super) enum Token<'a> {
     Root,
     Aggregate(Aggregate),
     Comma,
+    ObjectOpen,
+    ObjectClose,
+    Colon,
     Dot,
     Open,
     FilterOpen,
@@ -59,6 +62,9 @@ impl<'a> Lexer<'a> {
                 }
             }
             b',' => Token::Comma,
+            b'{' => Token::ObjectOpen,
+            b'}' => Token::ObjectClose,
+            b':' => Token::Colon,
             b'.' => Token::Dot,
             b'(' => Token::Open,
             b'[' => Token::FilterOpen,

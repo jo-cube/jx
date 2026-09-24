@@ -8,7 +8,9 @@
   names and encoded string literals are owned once; operators retain source offsets.
   Parser nesting and tree depth are capped at 128, including flat operator chains.
   `expression.rs` holds static paths, mapped steps with predicates, groups, scalar
-  operations and four named aggregates. Plain paths retain their specialized representation.
+  operations, four named aggregates and array/object constructors. Plain paths retain
+  their specialized representation. Array-led path focus propagates through groups
+  once during parsing, so execution need not rediscover it for each candidate.
 - A top-level path still uses `json/scan.rs` to capture object paths during full
   validation. The first array needing navigation retains its raw range and remaining
   fields. Last decoded duplicate keys win before traversal.
@@ -34,6 +36,20 @@
   source-stage normalization and negative positions can still replay.
   Numeric type errors are retained until argument evaluation succeeds, preserving
   upstream error precedence. Counts and numeric accumulators are primitives.
+- `construct.rs` is the retention boundary. It consumes member streams directly;
+  only sequences stored in a container are collected. Arrays distinguish ordinary
+  arrays, path-preserved arrays and retained sequences. Direct nested array syntax
+  retains its result; other array members append the normalized result one level.
+  Objects finish evaluating keys before values, compare decoded UTF-16 keys, omit
+  missing members and reject duplicate keys from different member expressions.
+  Local array contexts group matching keys before evaluating each group's value.
+  Key groups use a linear search, suitable for small constructors; wide dynamic
+  grouping has quadratic key-comparison cost and is not yet specialized.
+- `container.rs` owns immutable array/object member lists behind `Rc`. Leaves are
+  existing `Value` items: raw input, compiled strings, primitives or nested containers.
+  Cloning containers shares structure rather than copying leaves or serializing them.
+  The same path, filter, comparison and aggregate code accepts raw and constructed
+  values; no second evaluator or serialization/reparse boundary exists.
 - Numbers use binary64, booleans/null are primitives, and strings retain validated
   JSON encodings. Escapes and ordering compare as UTF-16 units without allocating
   decoded strings. Raw paths preserve all original number/string tokens.
@@ -42,8 +58,12 @@
   values. Object equality uses a temporary map of borrowed left members and applies
   last-key-wins on both sides. These allocations are confined to equality.
 - `Value` is the small public output union: raw input, primitive scalars or a
-  compiled string literal, plus undefined retained inside multi-item sequences. Its
-  two lifetimes distinguish input from expression storage. `as_raw()` extracts input slices that can outlive the expression.
+  compiled string literal, constructed container, or undefined retained inside
+  multi-item sequences. Containers retain their internal sequence/array shape. Its
+  two lifetimes distinguish input from expression storage. `as_raw()` extracts input
+  slices that can outlive the expression. Values are `Clone`, no longer `Copy`;
+  constructed results use single-threaded shared ownership. Compiled expressions
+  remain shareable between independent evaluator threads.
 - `Expression` is immutable/shareable. `evaluate(&[u8])` validates JSON before returning.
   `for_each`/`try_for_each` return errors encountered during streamed evaluation;
   `ConsumeError` separates evaluation from consumer failure. Consumer errors stop
@@ -54,7 +74,8 @@
 ## Decisions and measured limits
 
 The tree exists because precedence, short-circuiting and typed operators now need
-structure. There is no execution IR, JIT, generic function/value framework or DOM.
+structure. Constructors add owned containers only when they are requested. There is
+no execution IR, JIT, general function runtime or input DOM.
 Only unary minus on numeric literals is folded: JSONata treats literal and computed
 positions differently. Groups must survive parsing for the same reason. No other
 constant folding or field-demand fusion yet: neither is needed for correctness,
@@ -69,7 +90,10 @@ Callbacks keep traversal state on the bounded native stack. Suspending two callb
 for ordered equality would require iterator machinery; retaining one side only in
 that operation is simpler. Object equality initially rescanned objects per key;
 measuring 128-field objects justified a borrowed-member map confined to that case.
-Neither choice imposes allocation on ordinary paths, filters, aggregates or scalar operators.
+Neither choice imposes allocation on ordinary paths, filters, aggregates or scalar
+operators without construction. Evaluation borrows contexts and scoped stage views
+borrow operands. Values clone where a candidate, deferred stream or retained member
+needs ownership.
 
 Filters fuse with navigation and later filters. If a downstream stage fails, earlier
 stages finish checking for errors; an error can replay its input to preserve upstream
@@ -97,10 +121,14 @@ trusted skipping or specialization only for a measured benefit with a simple des
 5. **Complete:** direct `$count`/`$sum`/`$min`/`$max` calls, streaming folds,
    cardinality/type/error rules, upstream cases and allocation/traversal benchmarks.
    Function values, bindings and dynamic calls remain deferred.
-6. **Next: construction and functions.** Add owned output, constructors, bindings,
-   closures and standard functions incrementally; a general fallback may serve
-   dynamic semantics without burdening common cases.
-7. **Evidence-driven compilation.** Introduce normalization/IR only when it
+6. **Complete:** array/object constructors, computed keys and values, nested output,
+   borrowed leaves, retained sequence shape, composed navigation/filtering/aggregates,
+   differential coverage and allocation benchmarks. Postfix grouping and `expr[]`
+   remain deferred; see CONFORMANCE for reference implementation boundary policies.
+7. **Next: bindings and further functions.** Establish lexical variables and a small
+   coherent set of functions using the existing values/streams. Add closures only
+   when their scope/retention semantics are specified; no general framework in advance.
+8. **Evidence-driven compilation.** Introduce normalization/IR only when it
    simplifies implemented semantics or measured execution. JIT remains undecided.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
