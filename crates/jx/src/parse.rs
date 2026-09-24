@@ -76,6 +76,7 @@ impl<'a> Parser<'a> {
                     rooted: false,
                 })
             }
+            Token::Aggregate(aggregate) => Kind::Aggregate(aggregate, self.arguments(nesting)?),
             Token::Root => Kind::Path(Path {
                 fields: Box::default(),
                 rooted: true,
@@ -106,9 +107,31 @@ impl<'a> Parser<'a> {
         };
         let depth = match &kind {
             Kind::Group(n) | Kind::Negate(n) => 1 + n.depth,
+            Kind::Aggregate(_, args) => 1 + args.iter().map(|n| n.depth).max().unwrap_or(0),
             _ => 1,
         };
         Ok((node(kind, offset, depth)?, lookup))
+    }
+    fn arguments(&mut self, nesting: usize) -> Result<Box<[Node]>, Error> {
+        if !matches!(self.token, Token::Open) {
+            return Err(error(self.offset));
+        }
+        self.advance()?;
+        let mut arguments = Vec::new();
+        if !matches!(self.token, Token::Close) {
+            loop {
+                arguments.push(self.expression(0, nesting + 1)?);
+                if !matches!(self.token, Token::Comma) {
+                    break;
+                }
+                self.advance()?;
+            }
+        }
+        if !matches!(self.token, Token::Close) {
+            return Err(error(self.offset));
+        }
+        self.advance()?;
+        Ok(arguments.into_boxed_slice())
     }
     fn predicates(&mut self, nesting: usize) -> Result<Box<[Node]>, Error> {
         let mut predicates = Vec::new();
@@ -152,7 +175,7 @@ impl<'a> Parser<'a> {
             self.advance()?;
             if !matches!(
                 self.token,
-                Token::Name(_) | Token::Quoted(_) | Token::Root | Token::Open
+                Token::Name(_) | Token::Quoted(_) | Token::Root | Token::Open | Token::Aggregate(_)
             ) {
                 return Err(error(self.offset));
             }

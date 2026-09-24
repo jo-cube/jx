@@ -9,6 +9,7 @@
 //! # Ok::<(), jx::Error>(())
 //! ```
 
+mod aggregate;
 mod compare;
 mod error;
 mod evaluate;

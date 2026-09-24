@@ -7,8 +7,8 @@
 - `parse/lex.rs` and `parse.rs` own tokenization, precedence and grouping. Field
   names and encoded string literals are owned once; operators retain source offsets.
   Parser nesting and tree depth are capped at 128, including flat operator chains.
-  `expression.rs` holds static paths, mapped steps with predicates, groups and scalar
-  operations. Plain paths retain their specialized representation.
+  `expression.rs` holds static paths, mapped steps with predicates, groups, scalar
+  operations and four named aggregates. Plain paths retain their specialized representation.
 - A top-level path still uses `json/scan.rs` to capture object paths during full
   validation. The first array needing navigation retains its raw range and remaining
   fields. Last decoded duplicate keys win before traversal.
@@ -26,6 +26,14 @@
   Candidate context explicitly distinguishes top-level array wrapping from local
   mapping. Numeric filters count only when a negative index needs the length.
   Each live stage retains that length across replays, avoiding recursive recounts.
+- `aggregate.rs` folds `$count`, `$sum`, `$min` and `$max` over the same deferred
+  path/filter streams. `Node::stream` exposes them without scalar cardinality
+  preflight; other argument expressions use `Node::run`. One pending value resolves
+  missing/singleton/multiple shape before interpreting a sole raw array as the
+  argument array. The fold walks its argument stream once without collecting it;
+  source-stage normalization and negative positions can still replay.
+  Numeric type errors are retained until argument evaluation succeeds, preserving
+  upstream error precedence. Counts and numeric accumulators are primitives.
 - Numbers use binary64, booleans/null are primitives, and strings retain validated
   JSON encodings. Escapes and ordering compare as UTF-16 units without allocating
   decoded strings. Raw paths preserve all original number/string tokens.
@@ -39,7 +47,7 @@
 - `Expression` is immutable/shareable. `evaluate(&[u8])` validates JSON before returning.
   `for_each`/`try_for_each` return errors encountered during streamed evaluation;
   `ConsumeError` separates evaluation from consumer failure. Consumer errors stop
-  immediately. Earlier items may be delivered before a predicate fails. Missing emits
+  immediately. Earlier items may be delivered before a mapped expression fails. Missing emits
   nothing, null emits once, and arrays remain values.
   The CLI owns NDJSON, limits, reused buffers and synchronous I/O, one line per item.
 
@@ -61,7 +69,7 @@ Callbacks keep traversal state on the bounded native stack. Suspending two callb
 for ordered equality would require iterator machinery; retaining one side only in
 that operation is simpler. Object equality initially rescanned objects per key;
 measuring 128-field objects justified a borrowed-member map confined to that case.
-Neither choice imposes allocation on ordinary paths, filters or scalar operators.
+Neither choice imposes allocation on ordinary paths, filters, aggregates or scalar operators.
 
 Filters fuse with navigation and later filters. If a downstream stage fails, earlier
 stages finish checking for errors; an error can replay its input to preserve upstream
@@ -86,10 +94,10 @@ trusted skipping or specialization only for a measured benefit with a simple des
    differential/conformance tests and performance evidence.
 4. **Complete:** predicate and positional filters, candidate context, grouped
    paths, stage-preserving sequences, fallible streams and filter benchmarks.
-5. **Next: selected aggregates.** Add a small function-call surface and aggregates
-   consuming existing sequences. Specify missing, null, numeric errors and empty
-   inputs before expanding the function set. Avoid collecting where iteration suffices.
-6. **Construction and functions.** Add owned output, constructors, bindings,
+5. **Complete:** direct `$count`/`$sum`/`$min`/`$max` calls, streaming folds,
+   cardinality/type/error rules, upstream cases and allocation/traversal benchmarks.
+   Function values, bindings and dynamic calls remain deferred.
+6. **Next: construction and functions.** Add owned output, constructors, bindings,
    closures and standard functions incrementally; a general fallback may serve
    dynamic semantics without burdening common cases.
 7. **Evidence-driven compilation.** Introduce normalization/IR only when it

@@ -1,4 +1,7 @@
-use crate::{Error, ErrorKind, expression::Op};
+use crate::{
+    Error, ErrorKind,
+    expression::{Aggregate, Op},
+};
 use std::fmt::Write;
 
 #[derive(Debug)]
@@ -9,6 +12,8 @@ pub(super) enum Token<'a> {
     Number(f64),
     Operator(Op),
     Root,
+    Aggregate(Aggregate),
+    Comma,
     Dot,
     Open,
     FilterOpen,
@@ -36,7 +41,24 @@ impl<'a> Lexer<'a> {
         };
         self.at += 1;
         let token = match byte {
-            b'$' => Token::Root,
+            b'$' => {
+                let name = self.at;
+                while self
+                    .byte()
+                    .is_some_and(|b| b.is_ascii_alphanumeric() || b == b'_')
+                {
+                    self.at += 1;
+                }
+                match &self.source[name..self.at] {
+                    "" => Token::Root,
+                    "count" => Token::Aggregate(Aggregate::Count),
+                    "sum" => Token::Aggregate(Aggregate::Sum),
+                    "min" => Token::Aggregate(Aggregate::Min),
+                    "max" => Token::Aggregate(Aggregate::Max),
+                    _ => return Err(error(start)),
+                }
+            }
+            b',' => Token::Comma,
             b'.' => Token::Dot,
             b'(' => Token::Open,
             b'[' => Token::FilterOpen,

@@ -131,3 +131,21 @@ fn filters_frame_values_and_report_streamed_errors() {
     assert_eq!(output.status.code(), Some(1));
     assert!(output.stdout.is_empty());
 }
+
+#[test]
+fn aggregates_distinguish_missing_empty_and_failed_records() {
+    let output = run(
+        &["$sum(a)"],
+        b"{}\n{\"a\":[]}\n{\"a\":[1,2]}\n{\"a\":null}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"0\n3\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 4:") && error.contains("TypeError"));
+    let output = run(&["$count(a[$ > 1])"], b"{\"a\":[0,2,3]}\n{}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"2\n0\n");
+    let output = run(&["$sum(a[$ + 1 > 0])"], b"{\"a\":[1,null]}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+}

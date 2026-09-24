@@ -1,5 +1,7 @@
 // The benchmark's counting allocator is the only unsafe code in this workspace.
 #![allow(unsafe_code)]
+#[path = "workloads/aggregates.rs"]
+mod aggregates;
 #[path = "workloads/filters.rs"]
 mod filters;
 #[path = "workloads/scalars.rs"]
@@ -251,4 +253,5 @@ fn main() {
     arrays(smoke);
     scalars::run(smoke);
     filters::run(smoke);
+    aggregates::run(smoke);
 }

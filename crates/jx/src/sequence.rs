@@ -226,3 +226,26 @@ fn route<'e, 'i>(
     };
     stages(input, steps, output)
 }
+
+impl Node {
+    // Expose deferred results without a cardinality preflight. Consumers that
+    // require a scalar still normalize through Stream::operand.
+    #[inline]
+    pub(crate) fn stream<'e, 'i>(&'e self, input: Context<'e, 'i>) -> Option<Stream<'e, 'i>> {
+        match &self.kind {
+            Kind::Path(path) if !path.fields.is_empty() => {
+                let Value::Raw(raw) = input.value else {
+                    return None;
+                };
+                let mut selected = path.select_raw(raw);
+                if !input.wrapped {
+                    selected.root_lookup = false;
+                }
+                Some(Stream::Path(selected))
+            }
+            Kind::Route(_) | Kind::Filter(..) => Some(Stream::Expression(self, input)),
+            Kind::Group(child) => child.stream(input),
+            _ => None,
+        }
+    }
+}

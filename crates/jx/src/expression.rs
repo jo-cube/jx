@@ -17,6 +17,7 @@ pub(crate) enum Kind {
     Route(Box<[Step]>),
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
+    Aggregate(Aggregate, Box<[Node]>),
     Number(f64),
     Boolean(bool),
     Null,
@@ -65,4 +66,12 @@ pub(crate) struct Step {
     pub node: Node,
     pub predicates: Box<[Node]>,
     pub lookup: bool,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum Aggregate {
+    Count,
+    Sum,
+    Min,
+    Max,
 }

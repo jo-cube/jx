@@ -167,17 +167,16 @@ impl Node {
                         Operand::One(input.value)
                     });
                 }
-                let Value::Raw(raw) = input.value else {
+                let Value::Raw(_) = input.value else {
                     return Ok(Operand::Missing);
                 };
-                let mut selected = path.select_raw(raw);
-                if !input.wrapped {
-                    selected.root_lookup = false;
-                }
-                return Stream::Path(selected).operand();
+                return self.stream(input).unwrap().operand();
             }
             Kind::Route(_) | Kind::Filter(..) => return Stream::Expression(self, input).operand(),
             Kind::Group(child) => return child.run(input),
+            Kind::Aggregate(aggregate, args) => {
+                return aggregate.evaluate(args, input, self.offset);
+            }
             Kind::Missing => return Ok(Operand::Missing),
             Kind::Number(value) => Value::Number(*value),
             Kind::Boolean(value) => Value::Boolean(*value),

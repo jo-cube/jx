@@ -86,7 +86,7 @@ fn unsupported_semantics_fail_explicitly() {
         "*",
         "a.*",
         "{\"x\":a}",
-        "$sum(a)",
+        "$average(a)",
         "a.\"b\"",
         "a /* comment */",
         "a b",
