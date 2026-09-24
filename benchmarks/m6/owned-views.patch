@@ -1,0 +1,162 @@
+--- a/crates/jx/src/sequence.rs
++++ b/crates/jx/src/sequence.rs
+@@ -34,11 +34,7 @@
+         match self {
+             Self::Path(path) => path.try_for_each(output),
+             Self::Expression(node, context) => match &node.kind {
+-                Kind::Route(steps, array_focus) => {
+-                    route(steps, *array_focus, context.clone(), &mut |view| {
+-                        view.walk(output)
+-                    })
+-                }
++                Kind::Route(steps) => route(steps, context.clone(), &mut |view| view.walk(output)),
+                 Kind::Filter(base, predicates) => {
+                     crate::filter::with_filters(base, predicates, context.clone(), &mut |view| {
+                         view.walk(output)
+@@ -90,9 +86,9 @@
+ // Scoped views borrow preceding stages on the stack. In particular, a filter's
+ // computed length survives replays by later positional filters, avoiding recursive
+ // recounting without retaining all candidates.
+-#[derive(Clone, Copy)]
++#[derive(Clone)]
+ pub(crate) enum View<'s, 'e, 'i> {
+-    Operand(&'s Operand<'e, 'i>),
++    Operand(Operand<'e, 'i>),
+     Items(&'s [Value<'e, 'i>]),
+     Map(&'s Map<'s, 'e, 'i>),
+     Filter(&'s crate::filter::Filter<'s, 'e, 'i>),
+@@ -182,7 +178,7 @@
+                     }
+                     if self.last && !defined {
+                         defined = true;
+-                        if let View::Operand(Operand::One(value)) = view
++                        if let View::Operand(Operand::One(ref value)) = view
+                             && value.is_array()
+                             && !value.is_sequence()
+                         {
+@@ -210,12 +206,11 @@
+     if value.preserves_array() {
+         output(value)
+     } else {
+-        View::Operand(&Operand::One(value)).candidates(false, output)
++        View::Operand(Operand::One(value)).candidates(false, output)
+     }
+ }
+ fn route<'e, 'i>(
+     steps: &'e [Step],
+-    array_focus: bool,
+     context: Context<'e, 'i>,
+     output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
+ ) -> Walk {
+@@ -234,7 +229,7 @@
+         };
+         stages(View::Map(&map), rest, output)
+     }
+-    if array_focus {
++    if steps[0].node.is_array_constructor() {
+         return crate::filter::with_filters(
+             &steps[0].node,
+             &steps[0].predicates,
+@@ -268,11 +263,10 @@
+     let single = [context.value.clone()];
+     let variable =
+         matches!(&steps[0].node.kind, Kind::Path(path) if path.rooted && path.fields.is_empty());
+-    let operand = Operand::One(context.value);
+     let input = if context.wrapped || variable {
+         View::Items(&single)
+     } else {
+-        View::Operand(&operand)
++        View::Operand(Operand::One(context.value))
+     };
+     stages(input, steps, output)
+ }
+@@ -290,7 +284,7 @@
+                 }
+                 Some(Stream::Path(selected))
+             }
+-            Kind::Route(..) | Kind::Filter(..) => Some(Stream::Expression(self, input.clone())),
++            Kind::Route(_) | Kind::Filter(..) => Some(Stream::Expression(self, input.clone())),
+             Kind::Group(child) => child.stream(input),
+             _ => None,
+         }
+--- a/crates/jx/src/filter.rs
++++ b/crates/jx/src/filter.rs
+@@ -14,7 +14,7 @@
+     output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
+ ) -> Walk {
+     let Some((predicate, previous)) = predicates.split_last() else {
+-        return output(View::Operand(&base.run(&context)?));
++        return output(View::Operand(base.run(&context)?));
+     };
+     with_filters(base, previous, context, &mut |input| {
+         if let Kind::Number(index) = predicate.kind {
+@@ -42,7 +42,7 @@
+                 Ok(())
+             })?;
+             match selected {
+-                Some(value) if value.is_array() => output(View::Operand(&Operand::One(value))),
++                Some(value) if value.is_array() => output(View::Operand(Operand::One(value))),
+                 None | Some(Value::Undefined) => output(View::Items(&[])),
+                 Some(value) => output(View::Items(&[value])),
+             }
+--- a/crates/jx/src/expression.rs
++++ b/crates/jx/src/expression.rs
+@@ -14,7 +14,7 @@
+ #[derive(Clone, Debug)]
+ pub(crate) enum Kind {
+     Path(Path),
+-    Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
++    Route(Box<[Step]>),
+     Filter(Box<Node>, Box<[Node]>),
+     Group(Box<Node>),
+     Aggregate(Aggregate, Box<[Node]>),
+@@ -79,13 +79,6 @@
+ }
+ 
+ impl Node {
+-    pub(crate) fn array_focus(&self) -> bool {
+-        match &self.kind {
+-            Kind::Array(_, preserve) | Kind::Route(_, preserve) => *preserve,
+-            Kind::Filter(base, _) | Kind::Group(base) => base.array_focus(),
+-            _ => false,
+-        }
+-    }
+     pub(crate) fn is_array_constructor(&self) -> bool {
+         match &self.kind {
+             Kind::Array(..) => true,
+--- a/crates/jx/src/parse.rs
++++ b/crates/jx/src/parse.rs
+@@ -271,12 +271,7 @@
+                 })
+                 .max()
+                 .unwrap();
+-        let array_focus = steps[0].node.array_focus();
+-        node(
+-            Kind::Route(steps.into_boxed_slice(), array_focus),
+-            offset,
+-            depth,
+-        )
++        node(Kind::Route(steps.into_boxed_slice()), offset, depth)
+     }
+ }
+ fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {
+--- a/crates/jx/src/evaluate.rs
++++ b/crates/jx/src/evaluate.rs
+@@ -112,7 +112,7 @@
+         value: Value::Raw(crate::validate(input)?),
+         wrapped: true,
+     };
+-    let result = if matches!(node.kind, Kind::Route(..) | Kind::Filter(..)) {
++    let result = if matches!(node.kind, Kind::Route(_) | Kind::Filter(..)) {
+         Results::Expression(node, context)
+     } else {
+         match node.run(&context)? {
+@@ -189,7 +189,7 @@
+                 }
+                 return self.stream(input).unwrap().operand();
+             }
+-            Kind::Route(..) | Kind::Filter(..) => {
++            Kind::Route(_) | Kind::Filter(..) => {
+                 return Stream::Expression(self, input.clone()).operand();
+             }
+             Kind::Group(child) => return child.run(input),

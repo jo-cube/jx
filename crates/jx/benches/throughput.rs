@@ -2,6 +2,8 @@
 #![allow(unsafe_code)]
 #[path = "workloads/aggregates.rs"]
 mod aggregates;
+#[path = "workloads/constructors.rs"]
+mod constructors;
 #[path = "workloads/filters.rs"]
 mod filters;
 #[path = "workloads/scalars.rs"]
@@ -254,4 +256,5 @@ fn main() {
     scalars::run(smoke);
     filters::run(smoke);
     aggregates::run(smoke);
+    constructors::run(smoke);
 }

@@ -38,7 +38,7 @@ operands, comparisons, strings, boolean logic, missing, short-circuiting, mixed
 expressions and reused output serialization. Additional workloads exercise singleton
 and multi-item sequence operands, type errors, escaped strings, stream-to-array and
 stream-to-stream equality, and objects with 8/128 fields. Expected results are checked
-before timing. Path, scalar, filter and aggregate compilation have separate rows.
+before timing. Path, scalar, filter, aggregate and constructor compilation have separate rows.
 
 Filter fixtures add exact 100 B–1 MiB records for predicates, no matches, literal
 first/last positions, computed negative positions and chained predicates. Wide arrays
@@ -52,17 +52,24 @@ array folds from filtered sequences and computed mapped values. Nested inputs wi
 64-deep arrays retain the scanner rescanning cost. Expected scalar results and
 missing output are asserted before timing.
 
+Constructor fixtures add computed objects, borrowed whole-record members, nested
+containers, navigation back through constructed output and filtered summaries at
+100 B–1 MiB. Wide inputs (8/128/1,024/16,384 rows) compare streamed mapped objects,
+collection into an array, reused serialization and aggregate-only summaries. Nested
+inputs reach 1,048,588 bytes. Expected semantic JSON output is checked before timing.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
-ordinary paths, filters, aggregates, scalar operators and preallocated output must report zero. Structural
-object/sequence equality has explicit per-workload allocation budgets. All assertions
+ordinary paths, filters, aggregates and scalar operators without construction must
+report zero, including preallocated output. Structural
+object/sequence equality and constructors have explicit per-workload allocation budgets. All assertions
 also run in `just all` via `--smoke`. The wrapper delegates to `System`;
 it is the only unsafe code, isolated to the benchmark. Engine and CLI forbid unsafe.
-Counter overhead affects allocating compilation; counts are not retained RSS.
+Counter overhead affects allocating compilation, construction and equality; counts are not retained RSS.
 
 ## Extending evidence
 
-Add constructors and further functions with their semantics. Use selected purpose-written
+Extend workloads alongside further functions and grouping semantics. Use selected purpose-written
 Rust controls when they clarify overhead. Add realistic whole-CLI pipelines and
 latency distributions separately; sample duration is not per-record tail latency.
 Fair cross-engine comparisons must use identical input, expression semantics,
@@ -307,3 +314,71 @@ retain two M4 baselines, two outlined-helper runs and two final runs. The
 [outlined-helper patch](benchmarks/m5/outlined-path.patch) reproduces the narrow
 comparison in a separate copy. No cross-engine speedup, tail latency or RSS claim
 is made.
+
+## Milestone 6 — constructors
+
+Same machine/compiler/profile. **358 workloads** include five compilation cases
+and 353 repeated evaluations. Both final runs retain **294 zero-allocation evaluation
+workloads**. All **55 constructor workloads** allocate their requested structure;
+ordinary paths, filters and aggregate folds still allocate zero. The four existing
+structural-equality allocation counts are unchanged (their retained-value byte
+footprint can differ).
+
+Selected medians over 14 samples, including validation and complete consumption:
+
+| Workload | Input bytes | Records/s | Input MB/s | Allocations/record | Requested bytes/record |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| construct/raw_member | 500 | 2,642,583 | 1,321.3 | 3 | 168 |
+| construct/raw_member | 1,048,576 | 1,854 | 1,944.1 | 3 | 168 |
+| construct/filtered_summary | 500 | 562,452 | 281.2 | 5 | 368 |
+| construct/nested | 500 | 443,525 | 221.8 | 15 | 1,352 |
+| construct/mapped_objects | 4,334 | 28,336 | 122.8 | 192 | 18,944 |
+| construct/collected_objects | 4,334 | 28,237 | 122.4 | 199 | 21,992 |
+| construct/filtered_aggregate | 624,958 | 180 | 112.2 | 3 | 296 |
+| construct/nested_summary | 1,048,588 | 38 | 39.8 | 3 | 296 |
+
+`{"record":$}` requests 168 bytes in three allocations at every measured size,
+including 1 MiB: the input remains borrowed. The 128-row mapped-object fixture
+constructs 64 results with three allocations each; collecting them into an array
+adds storage for retained values. Streamed callbacks can release each object before
+the next one. Allocation totals include growth and temporary grouping storage;
+they are not peak live memory. Counter overhead is included in allocating timings.
+
+Final M6 versus two clean M5 (`ab912aa`) runs:
+
+| Existing workload | Bytes | Run 1 change | Run 2 change |
+| --- | ---: | ---: | ---: |
+| ascii/nested | 100 | -2.77% | +3.32% |
+| ascii/nested | 500 | -4.26% | -0.76% |
+| ascii/nested | 1,024 | -3.30% | -0.04% |
+| array/shallow | 1,074 | -4.53% | -4.80% |
+| array/deep | 136 | -4.52% | -4.52% |
+| scalar/arithmetic | 100 | -3.85% | -5.65% |
+| filter/predicate | 100 | -12.91% | -12.52% |
+| filter/predicate | 500 | -6.68% | -6.77% |
+| filter/chained | 100 | -15.81% | -17.18% |
+| filter/nested | 892 | -18.44% | -16.79% |
+| aggregate/sum | 500 | -3.21% | -2.44% |
+| aggregate/nested_filtered_sum | 1,036 | -19.14% | -18.98% |
+
+The common filter and nested-aggregate regressions are material and remain open.
+Containers made values retainable and introduced ownership/shape handling into the
+shared evaluator. Inspection found extra owned context/stage state; evaluation now
+borrows contexts and scoped views borrow operands. The retained owned-view comparison
+shows no meaningful filter throughput recovery from the latter simplification, so
+it is retained for clear ownership rather than claimed as a speed optimization.
+These measurements do not isolate how much cost comes from tags, drops, code layout
+or scanning; no additional specialization, cache, scanner index or IR was added.
+
+Tiny projection variation remains visible, including the older M1→M2 regression.
+Deep-array traversal still revisits nested bytes, now around 76k records/s on its
+136-byte fixture. Large nested filtered summaries expose repeated traversal of the
+same demand for each member. Dynamic object-key grouping uses a linear search;
+wide grouping can require quadratic key comparisons and is not covered by a speed
+claim. These are explicit targets for later profiling, not resolved costs.
+
+[Raw runs, commands, environment and source hashes](benchmarks/m6/environment.json)
+retain two M5 baselines, the owned-view prototype and two final runs. The accompanying
+[prototype patch](benchmarks/m6/owned-views.patch) replays that benchmark in a separate
+copy; it predates the grouped-array focus fix and is not a replacement implementation.
+No cross-engine speedup, latency-distribution or retained-RSS claim follows.
