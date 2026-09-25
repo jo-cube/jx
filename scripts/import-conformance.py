@@ -9,7 +9,7 @@ import sys
 REVISION = "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03"  # JSONata v2.2.0
 GROUPS = {
     "fields": ["supported"] * 8,
-    "missing-paths": ["supported"] * 5 + ["syntax"],
+    "missing-paths": ["supported"] * 6,
     "quoted-selectors": ["syntax", "syntax", "syntax", "syntax", "supported", "syntax", "supported", "supported"],
 }
 FLATTENING_SUPPORTED = {*(f"case{i:03}.json" for i in range(37)), "case034a.json"}
@@ -18,27 +18,38 @@ REASONS = {
     "supported": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics",
     "error": "Implemented compile/runtime error; local kind mapped from upstream code",
     "syntax": "Deferred expression syntax; see CONFORMANCE.md",
+    "deferred": "Deferred builtin; asserts runtime UnsupportedExpression",
+    "limit": "Exceeds the documented 64-call recursion guard; tail-call elimination deferred",
 }
 
 # Complete groups, with reviewed unsupported cases kept explicit.
 EXPRESSION_GROUPS = {
-    "numeric-operators": (19, {18}),
-    "comparison-operators": (29, {26, 27, 28}),
-    "boolean-expresssions": (31, {10, 11, 16, 27, 28, 29, 30}),
+    "variables": (13, set()),
+    "blocks": (7, set()),
+    "conditionals": (9, set()),
+    "closures": (2, {0, 1}),
+    "lambdas": (14, set()),
+    "higher-order-functions": (3, set()),
+    "function-boolean": (24, set()),
+    "function-exists": (25, set()),
+    "numeric-operators": (19, set()),
+    "comparison-operators": (29, set()),
+    "boolean-expresssions": (31, {16}),
     "literals": (20, set()),
-    "null": (7, {3}),
+    "null": (7, set()),
     "parentheses": (8, set()),
-    "predicates": (4, {3}),
-    "simple-array-selectors": (23, {14}),
+    "predicates": (4, set()),
+    "simple-array-selectors": (23, set()),
     "multiple-array-selectors": (3, {0, 1, 2}),
     "function-count": (14, {2}),
     "function-sum": (7, {2}),
     # Upstream keeps both min and max in this group.
     "function-max": (27, {2, 16}),
-    "array-constructor": (21, {6, 15}),
-    "object-constructor": (27, {8, 9, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}),
+    "array-constructor": (21, {15}),
+    "object-constructor": (27, {8, 9, 10, 11, 13, 15, 17, 18, 19, 20, 21, 22, 25, 26}),
 }
 ERROR_KINDS = {
+    "S0212": "UnsupportedExpression",
     "T1003": "TypeError", "D1009": "DuplicateKey",
     "T0410": "TypeError", "T0412": "TypeError",
     "D1001": "NumericRange", "T2001": "TypeError", "T2002": "TypeError",
@@ -46,6 +57,12 @@ ERROR_KINDS = {
     "S0103": "UnsupportedExpression", "S0104": "UnsupportedExpression",
 }
 
+
+DEFERRED_CALLS = {
+    "boolean-expresssions": {29, 30}, "predicates": {3},
+    "object-constructor": {12}, "conditionals": {3, 4, 5},
+    "lambdas": {10, 11, 12},
+}
 
 def inventory(suite):
     for group, statuses in GROUPS.items():
@@ -87,7 +104,10 @@ def inventory(suite):
                 statuses = ["syntax", "syntax", "supported", "supported", "syntax"]
             else:
                 index = int(path.stem[4:])
-                statuses = ["syntax" if index in deferred else "error" if "code" in spec else "supported"]
+                status = "syntax" if index in deferred else "error" if "code" in spec else "supported"
+                if index in DEFERRED_CALLS.get(group, set()): status = "deferred"
+                if group == "lambdas" and index in {6, 7, 8}: status = "limit"
+                statuses = [status]
             yield path, statuses
 
 
@@ -114,6 +134,10 @@ def main():
             if case.get("dataset") is not None:
                 datasets.add(case["dataset"])
             row = {"file": str(relative), "index": index, "status": status, "reason": REASONS[status]}
+            if status == "supported" and path.parent.name in {"variables", "blocks", "conditionals", "lambdas", "higher-order-functions", "function-boolean", "function-exists"}:
+                row["reason"] = "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+            if status in {"deferred", "limit"}:
+                row.update(phase="evaluate", kind="DepthLimit" if status == "limit" else "UnsupportedExpression")
             if status == "error":
                 row.update(phase="compile" if case["code"].startswith("S") else "evaluate", kind=ERROR_KINDS[case["code"]])
             rows.append(row)

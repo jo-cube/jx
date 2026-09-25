@@ -10,7 +10,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance");
     let manifest = read(&root.join("manifest.json"));
     let mut seen = BTreeSet::new();
-    let mut counts = [0; 3];
+    let mut counts = [0; 5];
     for row in manifest["cases"].as_array().unwrap() {
         let file = row["file"].as_str().unwrap();
         let index = row["index"].as_u64().unwrap() as usize;
@@ -35,29 +35,40 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
             .unwrap();
             &expression_file
         };
+        // Upstream host-provided JSON bindings become lexical declarations. This
+        // exercises the same values without introducing an embedding API.
+        let adapted;
+        let source = if let Some(bindings) = case["bindings"].as_object().filter(|b| !b.is_empty())
+        {
+            adapted = format!(
+                "({}{} )",
+                bindings
+                    .iter()
+                    .map(|(name, value)| format!("${name}:={value};"))
+                    .collect::<String>(),
+                source
+            );
+            &adapted
+        } else {
+            source
+        };
         let compiled = jx::compile(source);
         match row["status"].as_str().unwrap() {
             "supported" => {
                 counts[0] += 1;
-                if let Some(bindings) = case.get("bindings") {
-                    assert!(
-                        bindings.as_object().unwrap().is_empty(),
-                        "unhandled bindings: {id}"
-                    );
-                }
                 let data = input_data(&root, case);
                 let input = serde_json::to_vec(&data).unwrap();
                 let mut values: Vec<Value> = Vec::new();
                 compiled
                     .unwrap_or_else(|error| panic!("{id}: {source}: {error}"))
                     .evaluate(&input)
-                    .unwrap()
+                    .unwrap_or_else(|error| panic!("{id}: {source}: {error}"))
                     .for_each(|value| {
                         let mut bytes = Vec::new();
                         value.write_compact(&mut bytes).unwrap();
                         values.push(serde_json::from_slice(&bytes).unwrap());
                     })
-                    .unwrap();
+                    .unwrap_or_else(|error| panic!("{id}: {source}: {error}"));
                 if case.get("undefinedResult").is_some() {
                     assert!(values.is_empty(), "{id}");
                 } else {
@@ -73,15 +84,20 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                     assert_eq!(actual, case["result"], "{id}: {source}");
                 }
             }
-            "error" => {
-                counts[2] += 1;
+            status @ ("error" | "deferred" | "limit") => {
+                counts[match status {
+                    "error" => 2,
+                    "deferred" => 3,
+                    _ => 4,
+                }] += 1;
                 let error = match row["phase"].as_str().unwrap() {
                     "compile" => compiled.unwrap_err(),
                     "evaluate" => compiled
                         .unwrap()
                         .evaluate(&serde_json::to_vec(&input_data(&root, case)).unwrap())
                         .and_then(|result| result.for_each(|_| {}))
-                        .unwrap_err(),
+                        .err()
+                        .unwrap_or_else(|| panic!("expected error: {id}: {source}")),
                     phase => panic!("unknown error phase: {phase}"),
                 };
                 assert_eq!(
@@ -126,11 +142,13 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         "every imported case must be classified and executed"
     );
     println!(
-        "JSONata {}: {} supported results, {} deferred syntax, {} supported errors; no skipped cases",
+        "JSONata {}: {} supported results, {} deferred syntax, {} supported errors, {} deferred builtin calls, {} recursion limits; no skipped cases",
         manifest["revision"].as_str().unwrap(),
         counts[0],
         counts[1],
-        counts[2]
+        counts[2],
+        counts[3],
+        counts[4]
     );
 }
 

@@ -82,8 +82,8 @@
     {
       "file": "groups/missing-paths/case005.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/quoted-selectors/case000.json",
@@ -500,6 +500,614 @@
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
     },
     {
+      "file": "groups/variables/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/variables/case012.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/blocks/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/blocks/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/blocks/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/blocks/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/blocks/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/blocks/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/blocks/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/conditionals/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/conditionals/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/conditionals/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/conditionals/case003.json",
+      "index": 0,
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/conditionals/case004.json",
+      "index": 0,
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/conditionals/case005.json",
+      "index": 0,
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/conditionals/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/conditionals/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/conditionals/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/closures/case000.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/closures/case001.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/lambdas/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/lambdas/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/lambdas/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/lambdas/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/lambdas/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/lambdas/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/lambdas/case006.json",
+      "index": 0,
+      "status": "limit",
+      "reason": "Exceeds the documented 64-call recursion guard; tail-call elimination deferred",
+      "phase": "evaluate",
+      "kind": "DepthLimit"
+    },
+    {
+      "file": "groups/lambdas/case007.json",
+      "index": 0,
+      "status": "limit",
+      "reason": "Exceeds the documented 64-call recursion guard; tail-call elimination deferred",
+      "phase": "evaluate",
+      "kind": "DepthLimit"
+    },
+    {
+      "file": "groups/lambdas/case008.json",
+      "index": 0,
+      "status": "limit",
+      "reason": "Exceeds the documented 64-call recursion guard; tail-call elimination deferred",
+      "phase": "evaluate",
+      "kind": "DepthLimit"
+    },
+    {
+      "file": "groups/lambdas/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/lambdas/case010.json",
+      "index": 0,
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/lambdas/case011.json",
+      "index": 0,
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/lambdas/case012.json",
+      "index": 0,
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/lambdas/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/higher-order-functions/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/higher-order-functions/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/higher-order-functions/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case012.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case014.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case015.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case016.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case017.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case018.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case019.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case020.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case021.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case022.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-boolean/case023.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-exists/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case012.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case014.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case015.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case016.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case017.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case018.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case019.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case020.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case021.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case022.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+    },
+    {
+      "file": "groups/function-exists/case023.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-exists/case024.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
       "file": "groups/numeric-operators/case000.json",
       "index": 0,
       "status": "supported",
@@ -616,8 +1224,10 @@
     {
       "file": "groups/numeric-operators/case018.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
     },
     {
       "file": "groups/comparison-operators/case000.json",
@@ -786,20 +1396,22 @@
     {
       "file": "groups/comparison-operators/case026.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
     },
     {
       "file": "groups/comparison-operators/case027.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/comparison-operators/case028.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/comparison-operators/deep-equals.json",
@@ -978,14 +1590,14 @@
     {
       "file": "groups/boolean-expresssions/case010.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/boolean-expresssions/case011.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/boolean-expresssions/case012.json",
@@ -1080,26 +1692,30 @@
     {
       "file": "groups/boolean-expresssions/case027.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/boolean-expresssions/case028.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/boolean-expresssions/case029.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/boolean-expresssions/case030.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/literals/array-inputs.json",
@@ -1274,8 +1890,8 @@
     {
       "file": "groups/null/case003.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/null/case004.json",
@@ -1364,8 +1980,10 @@
     {
       "file": "groups/predicates/case003.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/simple-array-selectors/case000.json",
@@ -1454,8 +2072,8 @@
     {
       "file": "groups/simple-array-selectors/case014.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/simple-array-selectors/case015.json",
@@ -1916,8 +2534,8 @@
     {
       "file": "groups/array-constructor/case006.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/array-constructor/case007.json",
@@ -2078,8 +2696,10 @@
     {
       "file": "groups/object-constructor/case012.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/object-constructor/case013.json",
@@ -2146,14 +2766,18 @@
     {
       "file": "groups/object-constructor/case023.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "DuplicateKey"
     },
     {
       "file": "groups/object-constructor/case024.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
     },
     {
       "file": "groups/object-constructor/case025.json",

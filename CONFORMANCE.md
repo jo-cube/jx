@@ -7,7 +7,7 @@ This is an early subset, not a full JSONata implementation. Errors use local
 
 | Area | Current behavior / status |
 | --- | --- |
-| Identity | `$` returns the complete input value |
+| Context | `$` is current context; `$$` initially references the root record |
 | Field paths | `a`, `a.b`, `$.a.b`; ASCII names `[A-Za-z_][A-Za-z0-9_]*` |
 | Quoted fields | Backtick-delimited UTF-8 names, including empty names; no escape interpretation in the expression |
 | Missing | Zero results; different from JSON null |
@@ -20,12 +20,14 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Wildcards, parent/descendant, order/group/join | Unsupported syntax; incremental follow-up |
 | Literals | Binary64 numbers, booleans, null, single/double quoted strings |
 | Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
-| Parentheses | Expression grouping and grouped path steps; `()` is missing; multi-expression blocks deferred |
-| Other operators | `in`, `&`, conditionals, ranges, coalescing/default and assignment deferred |
-| Aggregates | Direct `$count`, `$sum`, `$min`, `$max` calls; streamed arguments, scalar results |
+| Parentheses | Expression grouping, lexical blocks and grouped path steps; `()` is missing |
+| Other operators | `in`, `&`, ranges and coalescing/default deferred; `:=` and `? :` supported |
+| Aggregates | `$count`, `$sum`, `$min`, `$max`; direct streaming folds and first-class calls |
 | Constructors | Arrays, objects, computed keys/values, nested and mapped construction; see below |
 | Postfix grouping, singleton retention | `items{key:value}` and `expr[]` deferred syntax |
-| Variables, general functions, closures, transforms, regex, other standard functions | Unsupported syntax; later milestones |
+| Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures and higher-order values |
+| Builtins | Aggregates, `$boolean`, `$not`, `$exists`; others fail explicitly when called |
+| Deferred runtime/language | Signatures, tail-call elimination, partial application, chaining, transforms and regex |
 | Comments, general unquoted Unicode names, single/double quoted selectors | Deferred syntax; compile error |
 | Keyword field names | `and`/`or` can be names in operand/field positions; `true`, `false`, `null`, `in`, `function` require backticks when used as fields |
 
@@ -103,8 +105,8 @@ consumption. Consumer cancellation deliberately stops further semantic evaluatio
 Direct `$count(expr)`, `$sum(expr)`, `$min(expr)` and `$max(expr)` calls compose with
 paths, filters, operators and other aggregate calls. `orders.$sum(price)` aggregates
 in each candidate context; `$sum(orders.price)` aggregates the combined result.
-These are fixed built-ins; function references, dynamic calls, partial application,
-chaining (`~>`) and other functions remain unsupported.
+These builtins also support references and dynamic calls. Partial application and
+chaining (`~>`) remain deferred. Statically unshadowed direct calls stream their arguments.
 
 | Normalized argument | `$count` | `$sum` | `$min` / `$max` |
 | --- | --- | --- | --- |
@@ -177,8 +179,8 @@ a leading filtered constructor that collapses to a number, boolean or object.
 Null collapse maps the reference's native exception to `TypeError`. Implicit
 string iteration after that collapse (`["ab"][0].$`) is explicitly deferred with
 runtime `UnsupportedExpression`; parenthesized normal navigation remains available.
-Postfix grouping (`a{k:v}`), singleton retention (`a[]`), ranges and functions beyond
-the four aggregates remain unsupported syntax.
+Postfix grouping (`a{k:v}`), singleton retention (`a[]`) and ranges remain
+unsupported syntax. Function support and deferred calls are described below.
 
 Each constructor completes before emitting a container. Mapped constructors can
 emit earlier complete containers before a later failure, and consumer cancellation
@@ -218,7 +220,7 @@ Precedence follows JSONata: paths/unary minus, multiplicative, additive, compari
 `and`, then `or`. Binary operators associate left. `and`/`or` short-circuit the RHS;
 truth conversion handles missing, null, primitives, nested arrays and objects.
 Arrays/sequences are true if any member is true; empty objects/arrays are false.
-Boolean NOT is a function (`$not`), still deferred; there is no `!`
+Boolean NOT is the supported function `$not`; there is no `!`
 operator or unary `+`. String concatenation and implicit string-to-number coercion
 are not implemented.
 
@@ -252,22 +254,61 @@ codes/text are not a stable API. [100 readable scalar cases](tests/semantics/sca
 and separate regression tests freeze these rules, validation order, depth limits,
 Unicode, binary64 boundaries and CLI runtime errors.
 
+## Lexical runtime
+
+Bindings (`$x := expr`) evaluate once and return the stored value. Blocks evaluate in
+order, return the final expression and introduce scope, including single-expression
+parentheses. Inner assignments shadow; they do not update a parent binding. Missing
+shadows an outer value just as null does. Unbound user variables are missing.
+
+Lambdas capture current `$` and their lexical frame. Later assignments in that frame
+are visible, including forward references and recursive calls. Calls retain argument
+values before invocation, bind missing parameters as undefined, and evaluate/ignore
+extra arguments for lambdas without signatures. Arguments use the caller's context; the body uses
+the captured context. Functions can be passed, returned, stored in containers and called
+through computed expressions. The root binding `$$` is available across navigation.
+Conditionals use effective boolean value, evaluate only the selected branch, and return
+missing without an else branch when false. Function values are false in boolean context;
+equality compares function identity. `$boolean()` / `$not()` default to current context;
+`$exists` requires one argument. Explicit missing propagates through boolean/not.
+
+Bindings retain normalized sequences with borrowed leaves. They never retain computation
+recipes. Stateful mapping/filter stages finish once before later stages can replay them;
+negative indexes and repeated variable use cannot repeat assignments. Pure expressions
+keep streaming. See [readable cases](tests/semantics/lexical.json) and Rust ownership,
+record isolation, cancellation and recursion regressions.
+
+Limits and explicit policies:
+
+- Calls stop with `DepthLimit` after 64 active calls or 512 accumulated body-tree levels.
+  This includes tail recursion; tail-call elimination and optional signatures are deferred.
+- Known unimplemented builtins are function values; calling them raises runtime
+  `UnsupportedExpression`, including dynamic calls. Unknown user-function calls are `TypeError`.
+- JSONata-js runs constructor members concurrently. Unscoped assignments shared across
+  array members, or in object members, are rejected at compile time. Use member-local
+  parenthesized blocks; race-dependent shared assignment is deferred.
+- `Value::Function` is opaque. `write_compact` and the CLI reject function output because
+  it has no JSON encoding. Host function registration/invocation remains deferred.
+
 ## Executable coverage
 
-`just conformance` executes all **351** imported cases from complete `fields`,
+`just conformance` executes all **448** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
 `function-count`, `function-sum`, `function-max` (also containing min cases),
-`array-constructor` and `object-constructor`
+`array-constructor`, `object-constructor`, `variables`, `blocks`, `conditionals`,
+`closures`, `lambdas`, `higher-order-functions`, `function-boolean` and `function-exists`
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 258 | Semantic JSON result or missing matches upstream |
-| Supported errors | 30 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 63 | Exactly `UnsupportedExpression` |
+| Supported results | 350 | Semantic JSON result or missing matches upstream |
+| Supported errors | 38 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 47 | Compile-time `UnsupportedExpression` |
+| Deferred builtin calls | 10 | Runtime `UnsupportedExpression` |
+| Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
 
 These are selected groups, not a percentage of the full suite. No imported case
 is skipped. `tests/conformance/manifest.json` lists every case and reason; the
@@ -277,8 +318,8 @@ implementation. Unimported language families remain deferred as listed above.
 Upstream separates reusable `datasets/` from `groups/<topic>/caseNNN.json`, with
 `expr`, `data`/`dataset`, bindings, and expected result/undefined/error fields.
 The general suite also has expression files and multi-case files; the current
-adapter handles inline/named data, multi-case files and expression files. Host
-functions and nonempty bindings remain deferred.
+adapter handles inline/named data, multi-case files and expression files. JSON host
+bindings are explicitly adapted to lexical declarations; host functions remain deferred.
 Original files and MIT notice are preserved under `tests/conformance/`.
 
 Reimport from a checkout at the pinned revision:
@@ -303,6 +344,7 @@ node scripts/check-scalars.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-filters.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-aggregates.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-constructors.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-lexical.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -312,4 +354,7 @@ boundaries. The filter check adds 3,820 cases, including nested contexts, chaine
 positions, numeric lists and stage error precedence. The aggregate check adds 4,948
 evaluations across raw arrays, normalized sequences, filters, nested calls and
 numeric/error boundaries. The constructor check adds 5,000 evaluations including
-102 readable cases, shape matrices and 2,000 seeded expressions. Normal `just all` needs neither Node nor the upstream checkout.
+102 readable cases, shape matrices and 2,000 seeded expressions. The lexical check adds 2,796 evaluations across bindings, captured contexts,
+escaping functions, argument retention and stateful predicates. The known upstream
+empty-root-array mutation during object construction is excluded from generated
+constructor/lexical comparisons. Normal `just all` needs neither Node nor the upstream checkout.
