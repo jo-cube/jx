@@ -12,9 +12,9 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-pub(crate) fn equal(
-    left: Operand<'_, '_>,
-    right: Operand<'_, '_>,
+pub(crate) fn equal<'e, 'i>(
+    left: Operand<'e, 'i>,
+    right: Operand<'e, 'i>,
     negate: bool,
 ) -> Result<bool, Error> {
     let equal = match (left, right) {
@@ -61,6 +61,10 @@ fn sequence<'e, 'i>(
 
 fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
     match (left.atomic(), right.atomic()) {
+        (Value::Function(left), Value::Function(right)) => {
+            std::rc::Rc::ptr_eq(&left, &right)
+                || matches!((&left.kind, &right.kind), (crate::function::FunctionKind::Builtin(a), crate::function::FunctionKind::Builtin(b)) if a == b)
+        }
         (Value::Null, Value::Null) | (Value::Undefined, Value::Undefined) => true,
         (Value::Boolean(left), Value::Boolean(right)) => left == right,
         (Value::Number(left), Value::Number(right)) => left == right,

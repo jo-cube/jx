@@ -61,8 +61,6 @@ fn compile_errors_and_expression_depth_are_bounded() {
         "a & b",
         "'\\y'",
         "\"\\u123\"",
-        "true ? 1 : 2",
-        "(1;2)",
     ] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,

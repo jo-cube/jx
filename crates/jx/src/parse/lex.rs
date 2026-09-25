@@ -1,7 +1,4 @@
-use crate::{
-    Error, ErrorKind,
-    expression::{Aggregate, Op},
-};
+use crate::{Error, ErrorKind, expression::Op};
 use std::fmt::Write;
 
 #[derive(Debug)]
@@ -12,7 +9,10 @@ pub(super) enum Token<'a> {
     Number(f64),
     Operator(Op),
     Root,
-    Aggregate(Aggregate),
+    Variable(&'a str),
+    Bind,
+    Semi,
+    Question,
     Comma,
     ObjectOpen,
     ObjectClose,
@@ -42,6 +42,10 @@ impl<'a> Lexer<'a> {
         let Some(byte) = self.byte() else {
             return Ok((Token::End, start));
         };
+        if self.source[start..].starts_with('λ') {
+            self.at += 'λ'.len_utf8();
+            return Ok((Token::Name("function"), start));
+        }
         self.at += 1;
         let token = match byte {
             b'$' => {
@@ -52,19 +56,21 @@ impl<'a> Lexer<'a> {
                 {
                     self.at += 1;
                 }
-                match &self.source[name..self.at] {
-                    "" => Token::Root,
-                    "count" => Token::Aggregate(Aggregate::Count),
-                    "sum" => Token::Aggregate(Aggregate::Sum),
-                    "min" => Token::Aggregate(Aggregate::Min),
-                    "max" => Token::Aggregate(Aggregate::Max),
-                    _ => return Err(error(start)),
+                if name == self.at && self.take(b'$') {
+                    Token::Variable("$")
+                } else if name == self.at {
+                    Token::Root
+                } else {
+                    Token::Variable(&self.source[name..self.at])
                 }
             }
             b',' => Token::Comma,
             b'{' => Token::ObjectOpen,
             b'}' => Token::ObjectClose,
+            b':' if self.take(b'=') => Token::Bind,
             b':' => Token::Colon,
+            b';' => Token::Semi,
+            b'?' => Token::Question,
             b'.' => Token::Dot,
             b'(' => Token::Open,
             b'[' => Token::FilterOpen,

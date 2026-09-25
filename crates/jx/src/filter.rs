@@ -51,8 +51,18 @@ pub(crate) fn with_filters<'e, 'i>(
                 input,
                 predicate,
                 length: Cell::new(None),
+                context,
             };
-            output(View::Filter(&filter))
+            if predicate.effects {
+                let mut items = Vec::new();
+                filter.walk(&mut |value| {
+                    items.push(value);
+                    Ok(())
+                })?;
+                output(View::Items(&items))
+            } else {
+                output(View::Filter(&filter))
+            }
         }
     })
 }
@@ -60,6 +70,7 @@ pub(crate) struct Filter<'s, 'e, 'i> {
     input: View<'s, 'e, 'i>,
     predicate: &'e Node,
     length: Cell<Option<usize>>,
+    context: &'s Context<'e, 'i>,
 }
 impl<'e, 'i> Filter<'_, 'e, 'i> {
     pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
@@ -68,6 +79,7 @@ impl<'e, 'i> Filter<'_, 'e, 'i> {
             let context = Context {
                 value,
                 wrapped: false,
+                scope: self.context.scope.clone(),
             };
             let predicate = self.predicate.run(&context)?;
             let numeric = numbers(&predicate, self.predicate.offset, &mut |_| Ok(()))?;

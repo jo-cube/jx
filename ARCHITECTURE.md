@@ -8,7 +8,7 @@
   names and encoded string literals are owned once; operators retain source offsets.
   Parser nesting and tree depth are capped at 128, including flat operator chains.
   `expression.rs` holds static paths, mapped steps with predicates, groups, scalar
-  operations, four named aggregates and array/object constructors. Plain paths retain
+  operations, builtin calls, array/object constructors, bindings, blocks, conditionals and lambdas. Plain paths retain
   their specialized representation. Array-led path focus propagates through groups
   once during parsing, so execution need not rediscover it for each candidate.
 - A top-level path still uses `json/scan.rs` to capture object paths during full
@@ -38,8 +38,9 @@
   source-stage normalization and negative positions can still replay.
   Numeric type errors are retained until argument evaluation succeeds, preserving
   upstream error precedence. Counts and numeric accumulators are primitives.
-- `construct.rs` is the retention boundary. It consumes member streams directly;
-  only sequences stored in a container are collected. Arrays distinguish ordinary
+- `retain.rs` is the shared retention boundary for constructors and lexical values.
+  Already retained values pass through without copying. `construct.rs` consumes
+  member streams directly, collecting sequences only when stored in a container. Arrays distinguish ordinary
   arrays, path-preserved arrays and retained sequences. Direct nested array syntax
   retains its result; other array members append the normalized result one level.
   Objects finish evaluating keys before values, compare decoded UTF-16 keys, omit
@@ -60,7 +61,7 @@
   values. Object equality uses a temporary map of borrowed left members and applies
   last-key-wins on both sides. These allocations are confined to equality.
 - `Value` is the small public output union: raw input, primitive scalars or a
-  compiled string literal, constructed container, or undefined retained inside
+  compiled string literal, constructed container, opaque function, or undefined inside
   multi-item sequences. Containers retain their internal sequence/array shape. Its
   two lifetimes distinguish input from expression storage. `as_raw()` extracts input
   slices that can outlive the expression. Values are `Clone`, no longer `Copy`;
@@ -73,11 +74,52 @@
   nothing, null emits once, and arrays remain values.
   The CLI owns NDJSON, limits, reused buffers and synchronous I/O, one line per item.
 
+## Lexical evaluation
+
+`analysis.rs` marks expressions and path stages that read/change lexical state or
+create/call closures. It lowers direct builtin calls only when no binding or parameter
+in the expression can shadow their name. Pure expressions allocate no scope arena;
+static aggregates retain their streaming folds. There is no per-record name analysis.
+
+`runtime.rs` owns an evaluation-local arena of parent-linked frames with small linear
+binding lists. Bindings store missing/values/retained sequences, never replayable streams.
+Blocks and calls create frames; assignment replaces a binding in the current frame.
+Closures hold their body, captured current value/wrapping, and frame index. Captures
+observe subsequent rebinding in that frame, supporting forward and recursive references.
+Frames own values, but closures do not own the arena: recursion creates no `Rc` cycle.
+Uncaptured terminal frames are popped; captured frames and their ancestors live until
+that record's evaluation ends. Creating many closures can retain many frames per record.
+
+`Context` carries an optional scope alongside current value and wrapping. `$$` is
+initialized in the root frame; mapped items change `$` while preserving that scope.
+Calls evaluate the callee and arguments in caller order, retain arguments once, bind
+parameters in a child of the captured frame, and run with the captured current value.
+Results are retained before leaving a call/block. Missing parameters are undefined;
+extra arguments are evaluated then ignored by lambdas without signatures. Native calls check arity.
+
+Stateful stages are retained before downstream traversal can replay them for cardinality,
+negative indexes or error precedence. Pure stages still use existing stack-borrowed views.
+This conservative boundary favors correctness over streaming lexical pipelines. It does
+not turn ordinary paths or filters into collections. Retained output can still be cancelled,
+but lexical evaluation may finish before the first callback. Input validation remains first.
+
+`builtin.rs` registers four aggregates plus `$boolean`, `$not`, and `$exists`. Builtins are
+first-class, shadowable values; unimplemented standard names are recognizable functions
+whose calls fail explicitly. `function.rs` handles closures and dynamic calls. Functions
+have identity equality, false effective-boolean value, and no host JSON serialization or
+public host invocation API. Escaped JSON results retain their ordinary borrowing lifetimes;
+opaque function results cannot be invoked after their evaluation's arena is gone.
+
+Calls are bounded by 64 active invocations and 512 accumulated body-tree levels, in
+addition to the parser's 128-level limit. Tail-call elimination and function signatures
+remain deferred. Direct evaluation still expresses scope/control flow cleanly; an IR
+would not remove frame retention or traversal costs and is not justified by this milestone.
+
 ## Decisions and measured limits
 
 The tree exists because precedence, short-circuiting and typed operators now need
 structure. Constructors add owned containers only when they are requested. There is
-no execution IR, JIT, general function runtime or input DOM.
+no execution IR, JIT or input DOM. Function execution uses the same tree and values.
 Only unary minus on numeric literals is folded: JSONata treats literal and computed
 positions differently. Groups must survive parsing for the same reason. No other
 constant folding or field-demand fusion yet: neither is needed for correctness,
@@ -93,7 +135,7 @@ for ordered equality would require iterator machinery; retaining one side only i
 that operation is simpler. Object equality initially rescanned objects per key;
 measuring 128-field objects justified a borrowed-member map confined to that case.
 Neither choice imposes allocation on ordinary paths, filters, aggregates or scalar
-operators without construction. Routes, predicates and recursive lookups borrow
+operators without lexical features or construction. Routes, predicates and recursive lookups borrow
 scoped contexts and values; stage views borrow operands. A predicate owns its candidate
 once and moves it to output on a boolean match. Values clone where a deferred stream,
 retained member or repeated positional match actually needs ownership.
@@ -139,7 +181,7 @@ constructor evaluation. Those costs remain explicit; no cache or scanner index w
    paths, stage-preserving sequences, fallible streams and filter benchmarks.
 5. **Complete:** direct `$count`/`$sum`/`$min`/`$max` calls, streaming folds,
    cardinality/type/error rules, upstream cases and allocation/traversal benchmarks.
-   Function values, bindings and dynamic calls remain deferred.
+   Later extended to first-class function references and dynamic calls in milestone 8.
 6. **Complete:** array/object constructors, computed keys and values, nested output,
    borrowed leaves, retained sequence shape, composed navigation/filtering/aggregates,
    differential coverage and allocation benchmarks. Postfix grouping and `expr[]`
@@ -147,11 +189,13 @@ constructor evaluation. Those costs remain explicit; no cache or scanner index w
 7. **Complete: architecture/performance consolidation.** Scalar paths consume known
    selections directly; scoped traversal borrows instead of copying ownership through
    each stage. No language or public API change. See PERFORMANCE for repeated results.
-8. **Next: bindings and further functions.** Establish lexical variables and a small
-   coherent set of functions using the existing values/streams. Add closures only
-   when their scope/retention semantics are specified; no general framework in advance.
-9. **Evidence-driven compilation.** Introduce normalization/IR only when it
-   simplifies implemented semantics or measured execution. JIT remains undecided.
+8. **Complete: lexical/function runtime.** Bindings, blocks, root context, conditionals,
+   lambdas, captured environments, dynamic/higher-order calls and minimal builtins.
+   Evaluated retention and effect-aware stages preserve single execution.
+9. **Next: sequence/path completion and function library.** Singleton retention,
+   ranges and common higher-order builtins can build on this runtime. Tail calls and
+   host invocation need explicit lifetime/resource contracts before broader embedding.
+   Introduce IR only for a demonstrated semantic or measured execution benefit.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
 language support does not require every expression to use the same execution path.

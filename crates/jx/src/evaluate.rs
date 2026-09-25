@@ -108,11 +108,16 @@ impl<'e, 'i> Evaluation<'e, 'i> {
 }
 
 pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
+    let value = Value::Raw(crate::validate(input)?);
+    let scope = node
+        .effects
+        .then(|| crate::runtime::Scope::new(value.clone()));
     let context = Context {
-        value: Value::Raw(crate::validate(input)?),
+        scope,
+        value,
         wrapped: true,
     };
-    let result = if matches!(node.kind, Kind::Route(..) | Kind::Filter(..)) {
+    let result = if !node.effects && matches!(node.kind, Kind::Route(..) | Kind::Filter(..)) {
         Results::Expression(node, context)
     } else {
         match node.run(&context)? {
@@ -190,11 +195,60 @@ impl Node {
                 return path.select_context(input).operand();
             }
             Kind::Route(..) | Kind::Filter(..) => {
-                return Stream::Expression(self, input.clone()).operand();
+                let stream = Stream::Expression(self, input.clone());
+                if self.effects {
+                    return crate::retain::collect(|emit| {
+                        stream.visit(|v| {
+                            emit(v);
+                            Ok(())
+                        })
+                    })
+                    .map(|v| v.map_or(Operand::Missing, Operand::One));
+                }
+                return stream.operand();
             }
-            Kind::Group(child) => return child.run(input),
-            Kind::Aggregate(aggregate, args) => {
-                return aggregate.evaluate(args, input, self.offset);
+            Kind::Group(child) if !self.effects => return child.run(input),
+            Kind::Group(child) => {
+                return crate::runtime::block(std::slice::from_ref(child), input)
+                    .map(|v| v.map_or(Operand::Missing, Operand::One));
+            }
+            Kind::Block(items) => {
+                return crate::runtime::block(items, input)
+                    .map(|v| v.map_or(Operand::Missing, Operand::One));
+            }
+            Kind::Builtin(builtin, args) => return builtin.evaluate(args, input, self.offset),
+            Kind::Variable(name) => {
+                let value = input
+                    .scope
+                    .as_ref()
+                    .and_then(|s| s.lookup(name))
+                    .or_else(|| crate::builtin::Builtin::named(name).map(crate::Function::builtin));
+                return Ok(match value {
+                    None | Some(Value::Undefined) => Operand::Missing,
+                    Some(value) => Operand::One(value),
+                });
+            }
+            Kind::Bind(name, child) => {
+                let value = crate::retain::materialize(child, input)?;
+                input
+                    .scope
+                    .as_ref()
+                    .expect("lexical runtime")
+                    .bind(name, value.clone().unwrap_or(Value::Undefined));
+                return Ok(value.map_or(Operand::Missing, Operand::One));
+            }
+            Kind::Conditional(test, yes, no) => {
+                return if test.run(input)?.truth(self.offset)? {
+                    yes.run(input)
+                } else if let Some(no) = no {
+                    no.run(input)
+                } else {
+                    Ok(Operand::Missing)
+                };
+            }
+            Kind::Lambda(params, body) => crate::Function::lambda(params, body, input),
+            Kind::Call(target, args) => {
+                return crate::function::call(target, args, input, self.offset);
             }
             Kind::Array(items, preserve) => crate::construct::array(items, *preserve, input)?,
             Kind::Object(pairs) => crate::construct::object(pairs, input, self.offset)?,

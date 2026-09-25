@@ -10,6 +10,8 @@
 //! ```
 
 mod aggregate;
+mod analysis;
+mod builtin;
 mod compare;
 mod construct;
 mod container;
@@ -17,15 +19,19 @@ mod error;
 mod evaluate;
 mod expression;
 mod filter;
+mod function;
 mod json;
 mod parse;
 mod path;
+mod retain;
+mod runtime;
 mod sequence;
 mod value;
 
 pub use container::{Array, Object};
 pub use error::{Error, ErrorKind};
 pub use evaluate::{ConsumeError, Evaluation};
+pub use function::Function;
 pub use json::{MAX_DEPTH, RawJson, validate};
 pub use value::Value;
 
@@ -40,8 +46,8 @@ pub fn compile(source: &str) -> Result<Expression, Error> {
 }
 
 impl Expression {
-    /// Validate the entire record before exposing results. Traversal is deferred
-    /// until consumption; scalar operations finish before returning results.
+    /// Validate the entire record before exposing results. Pure routes defer
+    /// traversal; scalar operations and lexical retention finish before returning.
     #[inline]
     pub fn evaluate<'e, 'i>(&'e self, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
         match &self.root.kind {

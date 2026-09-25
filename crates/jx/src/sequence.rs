@@ -10,6 +10,7 @@ pub(crate) struct Context<'e, 'i> {
     pub value: Value<'e, 'i>,
     // The top-level JSON record is one context, even when it is an array.
     pub wrapped: bool,
+    pub scope: Option<crate::runtime::Scope<'e, 'i>>,
 }
 
 pub(crate) enum Halt {
@@ -157,6 +158,7 @@ pub(crate) struct Map<'s, 'e, 'i> {
     input: View<'s, 'e, 'i>,
     step: &'e Step,
     last: bool,
+    context: &'s Context<'e, 'i>,
 }
 impl<'e, 'i> Map<'_, 'e, 'i> {
     fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
@@ -166,6 +168,7 @@ impl<'e, 'i> Map<'_, 'e, 'i> {
             let context = Context {
                 value,
                 wrapped: self.step.lookup,
+                scope: self.context.scope.clone(),
             };
             crate::filter::with_filters(
                 &self.step.node,
@@ -220,6 +223,7 @@ fn route<'e, 'i>(
     fn stages<'e, 'i>(
         input: View<'_, 'e, 'i>,
         steps: &'e [Step],
+        context: &Context<'e, 'i>,
         output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
     ) -> Walk {
         let Some((step, rest)) = steps.split_first() else {
@@ -229,8 +233,20 @@ fn route<'e, 'i>(
             input,
             step,
             last: rest.is_empty(),
+            context,
         };
-        stages(View::Map(&map), rest, output)
+        // Stream::walk consumes the final view once. Only an intermediate
+        // stateful stage needs storage to protect it from downstream replays.
+        if step.effects && !rest.is_empty() {
+            let mut items = Vec::new();
+            map.walk(&mut |value| {
+                items.push(value);
+                Ok(())
+            })?;
+            stages(View::Items(&items), rest, context, output)
+        } else {
+            stages(View::Map(&map), rest, context, output)
+        }
     }
     if array_focus {
         return crate::filter::with_filters(
@@ -258,23 +274,25 @@ fn route<'e, 'i>(
                 {
                     output(view)
                 } else {
-                    stages(view, &steps[1..], output)
+                    stages(view, &steps[1..], context, output)
                 }
             },
         );
     }
-    let variable =
-        matches!(&steps[0].node.kind, Kind::Path(path) if path.rooted && path.fields.is_empty());
+    let variable = matches!(&steps[0].node.kind, Kind::Variable(_))
+        || matches!(&steps[0].node.kind, Kind::Path(path) if path.rooted && path.fields.is_empty());
     if context.wrapped || variable {
         stages(
             View::Items(std::slice::from_ref(&context.value)),
             steps,
+            context,
             output,
         )
     } else {
         stages(
             View::Operand(&Operand::One(context.value.clone())),
             steps,
+            context,
             output,
         )
     }
@@ -285,6 +303,9 @@ impl Node {
     // require a scalar still normalize through Stream::operand.
     #[inline]
     pub(crate) fn stream<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Option<Stream<'e, 'i>> {
+        if self.effects {
+            return None;
+        }
         match &self.kind {
             Kind::Path(path) if !path.fields.is_empty() => {
                 Some(Stream::Path(path.select_context(input)))

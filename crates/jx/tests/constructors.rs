@@ -166,7 +166,6 @@ fn constructor_syntax_and_depth_are_bounded() {
         "a{\"x\":b}",
         "a[]",
         "[1..3]",
-        "$map(a,function($x){$x})",
     ] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,

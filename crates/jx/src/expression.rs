@@ -9,6 +9,8 @@ pub(crate) struct Node {
     pub kind: Kind,
     pub offset: usize,
     pub depth: usize,
+    // Reads/writes lexical state or creates/calls functions; unsafe to replay.
+    pub effects: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -17,7 +19,13 @@ pub(crate) enum Kind {
     Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
-    Aggregate(Aggregate, Box<[Node]>),
+    Builtin(crate::builtin::Builtin, Box<[Node]>),
+    Variable(Box<str>),
+    Bind(Box<str>, Box<Node>),
+    Block(Box<[Node]>),
+    Conditional(Box<Node>, Box<Node>, Option<Box<Node>>),
+    Lambda(Box<[Box<str>]>, Box<Node>),
+    Call(Box<Node>, Box<[Node]>),
     Array(Box<[Node]>, bool),
     Object(Box<[(Node, Node)]>),
     Number(f64),
@@ -68,9 +76,10 @@ pub(crate) struct Step {
     pub node: Node,
     pub predicates: Box<[Node]>,
     pub lookup: bool,
+    pub effects: bool,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Aggregate {
     Count,
     Sum,

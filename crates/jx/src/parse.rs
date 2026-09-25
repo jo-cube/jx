@@ -1,4 +1,6 @@
 mod lex;
+mod lexical;
+mod navigation;
 use crate::{
     Error, ErrorKind, Expression,
     expression::{Kind, Node, Op, Path, Step},
@@ -14,10 +16,11 @@ pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
         token,
         offset,
     };
-    let root = parser.expression(0, 0)?;
+    let mut root = parser.expression(0, 0)?;
     if !matches!(parser.token, Token::End) {
         return Err(error(parser.offset));
     }
+    crate::analysis::prepare(&mut root)?;
     Ok(Expression { root })
 }
 struct Parser<'a> {
@@ -35,6 +38,40 @@ impl<'a> Parser<'a> {
         let (first, lookup) = self.primary(nesting)?;
         let mut lhs = self.navigation(first, lookup, nesting)?;
         loop {
+            if matches!(self.token, Token::Bind) && minimum < 10 {
+                let name = match lhs.kind {
+                    Kind::Variable(name) => name,
+                    Kind::Path(path) if path.rooted && path.fields.is_empty() => "".into(),
+                    _ => return Err(error(lhs.offset)),
+                };
+                let offset = self.offset;
+                self.advance()?;
+                let rhs = self.expression(9, nesting + 1)?;
+                let depth = rhs.depth + 1;
+                lhs = node(Kind::Bind(name, Box::new(rhs)), offset, depth)?;
+                continue;
+            }
+            if matches!(self.token, Token::Question) && minimum < 20 {
+                let offset = self.offset;
+                self.advance()?;
+                let yes = self.expression(0, nesting + 1)?;
+                let no = if matches!(self.token, Token::Colon) {
+                    self.advance()?;
+                    Some(Box::new(self.expression(0, nesting + 1)?))
+                } else {
+                    None
+                };
+                let depth = 1 + lhs
+                    .depth
+                    .max(yes.depth)
+                    .max(no.as_ref().map_or(0, |n| n.depth));
+                lhs = node(
+                    Kind::Conditional(Box::new(lhs), Box::new(yes), no),
+                    offset,
+                    depth,
+                )?;
+                continue;
+            }
             let op = match self.token {
                 Token::Operator(op) => op,
                 Token::Name("and") => Op::And,
@@ -68,7 +105,8 @@ impl<'a> Parser<'a> {
             Token::Name("true") => Kind::Boolean(true),
             Token::Name("false") => Kind::Boolean(false),
             Token::Name("null") => Kind::Null,
-            Token::Name("in" | "function") => return Err(error(offset)),
+            Token::Name("in") => return Err(error(offset)),
+            Token::Name("function") => self.lambda(nesting)?,
             Token::Name(name) | Token::Quoted(name) => {
                 lookup = true;
                 Kind::Path(Path {
@@ -100,7 +138,7 @@ impl<'a> Parser<'a> {
                 self.advance()?;
                 Kind::Object(pairs.into_boxed_slice())
             }
-            Token::Aggregate(aggregate) => Kind::Aggregate(aggregate, self.arguments(nesting)?),
+            Token::Variable(name) => Kind::Variable(name.into()),
             Token::Root => Kind::Path(Path {
                 fields: Box::default(),
                 rooted: true,
@@ -115,22 +153,11 @@ impl<'a> Parser<'a> {
                     Kind::Negate(Box::new(child))
                 }
             }
-            Token::Open => {
-                let child = if matches!(self.token, Token::Close) {
-                    node(Kind::Missing, offset, 1)?
-                } else {
-                    self.expression(0, nesting + 1)?
-                };
-                if !matches!(self.token, Token::Close) {
-                    return Err(error(self.offset));
-                }
-                self.advance()?;
-                Kind::Group(Box::new(child))
-            }
+            Token::Open => self.block(nesting, offset)?,
             _ => return Err(error(offset)),
         };
         let depth = match &kind {
-            Kind::Group(n) | Kind::Negate(n) => 1 + n.depth,
+            Kind::Group(n) | Kind::Negate(n) | Kind::Lambda(_, n) => 1 + n.depth,
             Kind::Object(pairs) => {
                 1 + pairs
                     .iter()
@@ -138,7 +165,7 @@ impl<'a> Parser<'a> {
                     .max()
                     .unwrap_or(0)
             }
-            Kind::Array(args, _) | Kind::Aggregate(_, args) => {
+            Kind::Array(args, _) | Kind::Block(args) => {
                 1 + args.iter().map(|n| n.depth).max().unwrap_or(0)
             }
             _ => 1,
@@ -190,94 +217,6 @@ impl<'a> Parser<'a> {
         }
         Ok(predicates.into_boxed_slice())
     }
-    fn navigation(&mut self, first: Node, lookup: bool, nesting: usize) -> Result<Node, Error> {
-        let offset = first.offset;
-        let predicates = self.predicates(nesting)?;
-        let path_start = lookup || matches!(first.kind, Kind::Path(_));
-        let first = if !path_start && !predicates.is_empty() {
-            let depth =
-                first.depth + predicates.iter().map(|p| p.depth).max().unwrap() + predicates.len();
-            Step {
-                node: node(Kind::Filter(Box::new(first), predicates), offset, depth)?,
-                predicates: Box::default(),
-                lookup: false,
-            }
-        } else {
-            Step {
-                node: first,
-                predicates,
-                lookup,
-            }
-        };
-        let mut steps = vec![first];
-        while matches!(self.token, Token::Dot) {
-            if steps.len() >= MAX_DEPTH {
-                return Err(depth_error(self.offset));
-            }
-            self.advance()?;
-            if !matches!(
-                self.token,
-                Token::Name(_)
-                    | Token::Quoted(_)
-                    | Token::Root
-                    | Token::Open
-                    | Token::Aggregate(_)
-                    | Token::FilterOpen
-                    | Token::ObjectOpen
-            ) {
-                return Err(error(self.offset));
-            }
-            let (node, lookup) = self.primary(nesting + 1)?;
-            if matches!(node.kind, Kind::Boolean(_) | Kind::Null) {
-                return Err(error(node.offset));
-            }
-            let predicates = self.predicates(nesting)?;
-            steps.push(Step {
-                node,
-                predicates,
-                lookup,
-            });
-        }
-        if steps.len() == 1 && steps[0].predicates.is_empty() {
-            return Ok(steps.pop().unwrap().node);
-        }
-        for step in &mut steps {
-            step.node.preserve_array();
-        }
-        // Keep static paths in their fused validating representation.
-        if steps.iter().enumerate().all(|(index, step)| {
-            step.predicates.is_empty()
-                && matches!(&step.node.kind, Kind::Path(path)
-                    if step.lookup || (index == 0 && path.fields.is_empty()))
-        }) {
-            let rooted = !steps[0].lookup;
-            let fields = steps
-                .into_iter()
-                .flat_map(|step| match step.node.kind {
-                    Kind::Path(path) => path.fields.into_vec(),
-                    _ => unreachable!(),
-                })
-                .collect::<Vec<_>>()
-                .into_boxed_slice();
-            return node(Kind::Path(Path { fields, rooted }), offset, 1);
-        }
-        let depth = steps.len()
-            + steps
-                .iter()
-                .map(|s| {
-                    s.node.depth
-                        + s.predicates.len()
-                        + s.predicates.iter().map(|p| p.depth).max().unwrap_or(0)
-                })
-                .max()
-                .unwrap();
-        let array_focus = steps[0].node.array_focus();
-        node(
-            Kind::Route(steps.into_boxed_slice(), array_focus),
-            offset,
-            depth,
-        )
-    }
 }
 fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {
     if depth > MAX_DEPTH {
@@ -287,6 +226,7 @@ fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {
         kind,
         offset,
         depth,
+        effects: false,
     })
 }
 fn depth_error(offset: usize) -> Error {

@@ -179,3 +179,20 @@ fn constructors_frame_complete_outputs_and_mapped_failures() {
             .contains("DuplicateKey")
     );
 }
+
+#[test]
+fn lexical_runtime_is_fresh_for_each_record() {
+    let output = run(
+        &["($x:=a;$f:=function(){$x? $x+1 : $$.fallback};$f())"],
+        b"{\"a\":2}\n{\"fallback\":9}\n{\"a\":4}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"3\n9\n5\n");
+    let output = run(&["function(){1}"], b"null\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("functions have no JSON encoding")
+    );
+}

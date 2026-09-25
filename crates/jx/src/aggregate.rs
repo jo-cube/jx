@@ -63,15 +63,30 @@ impl Aggregate {
                 value => fold.push(value),
             }
         }
-        if fold.invalid {
-            return Err(type_error(offset));
-        }
-        let number = match self {
-            Self::Count => Some(fold.count as f64),
-            Self::Sum if defined => Some(fold.number.unwrap_or(0.0)),
-            _ => fold.number,
+        fold.finish(defined, offset)
+    }
+    pub(crate) fn retained<'e, 'i>(
+        self,
+        value: Option<Value<'e, 'i>>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
+        let defined = value.is_some();
+        let mut fold = Fold {
+            aggregate: self,
+            count: 0,
+            number: None,
+            invalid: false,
         };
-        Ok(number.map_or(Operand::Missing, |n| Operand::One(Value::Number(n))))
+        if let Some(value) = value {
+            if value.is_array() {
+                for item in value.elements() {
+                    fold.push(item);
+                }
+            } else {
+                fold.push(value);
+            }
+        }
+        fold.finish(defined, offset)
     }
 }
 
@@ -82,6 +97,17 @@ struct Fold {
     invalid: bool,
 }
 impl Fold {
+    fn finish<'e, 'i>(self, defined: bool, offset: usize) -> Result<Operand<'e, 'i>, Error> {
+        if self.invalid {
+            return Err(type_error(offset));
+        }
+        let number = match self.aggregate {
+            Aggregate::Count => Some(self.count as f64),
+            Aggregate::Sum if defined => Some(self.number.unwrap_or(0.0)),
+            _ => self.number,
+        };
+        Ok(number.map_or(Operand::Missing, |n| Operand::One(Value::Number(n))))
+    }
     fn push(&mut self, value: Value<'_, '_>) {
         self.count += 1;
         if matches!(self.aggregate, Aggregate::Count) {

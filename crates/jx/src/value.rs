@@ -7,6 +7,7 @@ use std::io::{self, Write};
 #[derive(Clone, Debug)]
 pub enum Value<'expression, 'input> {
     Raw(RawJson<'input>),
+    Function(std::rc::Rc<crate::Function<'expression, 'input>>),
     Number(f64),
     Boolean(bool),
     Null,
@@ -30,6 +31,10 @@ impl<'i> Value<'_, 'i> {
     /// Like JSONata's JSON serialization, non-finite results serialize as null.
     pub fn write_compact(&self, mut output: impl Write) -> io::Result<()> {
         match self {
+            Self::Function(_) => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "functions have no JSON encoding",
+            )),
             Self::Array(array) => array.write_compact(&mut output),
             Self::Object(object) => object.write_compact(&mut output),
             Self::Raw(value) => value.write_compact(output),
@@ -66,6 +71,7 @@ impl<'i> Value<'_, 'i> {
 
     pub(crate) fn truth(&self, offset: usize) -> Result<bool, Error> {
         match self.atomic() {
+            Self::Function(_) => Ok(false),
             Self::Boolean(value) => Ok(value),
             Self::Null | Self::Undefined => Ok(false),
             Self::Number(value) => {

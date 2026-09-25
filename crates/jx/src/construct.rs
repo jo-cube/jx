@@ -1,3 +1,4 @@
+use crate::retain::{materialize, visit};
 use crate::{
     Error, ErrorKind, Value, evaluate::Operand, expression::Node, json::string, sequence::Context,
     value::type_error,
@@ -47,6 +48,7 @@ pub(crate) fn object<'e, 'i>(
             let key = match key.run(&Context {
                 value: value.clone(),
                 wrapped: false,
+                scope: context.scope.clone(),
             })? {
                 Operand::Missing => continue,
                 Operand::One(key) if key.string_body().is_some() => key,
@@ -108,6 +110,7 @@ pub(crate) fn object<'e, 'i>(
             &Context {
                 value,
                 wrapped: false,
+                scope: context.scope.clone(),
             },
         )?
         else {
@@ -116,47 +119,4 @@ pub(crate) fn object<'e, 'i>(
         members.push((group.key, value));
     }
     Ok(Value::object(members))
-}
-
-// Construction is the retention boundary: stream directly into its storage.
-fn visit<'e, 'i>(
-    node: &'e Node,
-    context: &Context<'e, 'i>,
-    output: &mut dyn FnMut(Value<'e, 'i>),
-) -> Result<(), Error> {
-    let mut emit = |value| {
-        output(value);
-        Ok(())
-    };
-    let result = match node.stream(context) {
-        Some(stream) => stream.walk(&mut emit),
-        None => node.run(context)?.walk(&mut emit),
-    };
-    match result {
-        Ok(()) => Ok(()),
-        Err(crate::sequence::Halt::Evaluation(error)) => Err(error),
-        Err(crate::sequence::Halt::Stop) => unreachable!("construction consumes its members"),
-    }
-}
-fn materialize<'e, 'i>(
-    node: &'e Node,
-    context: &Context<'e, 'i>,
-) -> Result<Option<Value<'e, 'i>>, Error> {
-    let mut first = None;
-    let mut values = Vec::new();
-    visit(node, context, &mut |value| {
-        if !values.is_empty() {
-            values.push(value);
-        } else if let Some(first) = first.take() {
-            values.push(first);
-            values.push(value);
-        } else {
-            first = Some(value);
-        }
-    })?;
-    Ok(if !values.is_empty() {
-        Some(Value::sequence(values))
-    } else {
-        first.filter(|value| !matches!(value, Value::Undefined))
-    })
 }
