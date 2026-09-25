@@ -1,0 +1,1378 @@
+[
+  {
+    "workload": "filter/chained",
+    "bytes": 100,
+    "repeat": 0,
+    "variant": "before",
+    "median_records_s": 1598664.0467583635,
+    "samples": [
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "0",
+        "records": "159936",
+        "seconds": "0.100009583",
+        "records_per_second": "1599207",
+        "input_bytes_per_second": "159920675",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "1",
+        "records": "162560",
+        "seconds": "0.100001041",
+        "records_per_second": "1625583",
+        "input_bytes_per_second": "162558308",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "2",
+        "records": "161664",
+        "seconds": "0.100001042",
+        "records_per_second": "1616623",
+        "input_bytes_per_second": "161662315",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "3",
+        "records": "158240",
+        "seconds": "0.100005292",
+        "records_per_second": "1582316",
+        "input_bytes_per_second": "158231626",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "4",
+        "records": "158848",
+        "seconds": "0.100005125",
+        "records_per_second": "1588399",
+        "input_bytes_per_second": "158839859",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "5",
+        "records": "159872",
+        "seconds": "0.100003500",
+        "records_per_second": "1598664",
+        "input_bytes_per_second": "159866405",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "6",
+        "records": "159584",
+        "seconds": "0.100008917",
+        "records_per_second": "1595698",
+        "input_bytes_per_second": "159569771",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "filter/chained",
+    "bytes": 100,
+    "repeat": 0,
+    "variant": "split",
+    "median_records_s": 1621206.2706919545,
+    "samples": [
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "0",
+        "records": "158912",
+        "seconds": "0.100015209",
+        "records_per_second": "1588878",
+        "input_bytes_per_second": "158887835",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "1",
+        "records": "163328",
+        "seconds": "0.100015458",
+        "records_per_second": "1633028",
+        "input_bytes_per_second": "163302757",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "2",
+        "records": "162080",
+        "seconds": "0.100002500",
+        "records_per_second": "1620759",
+        "input_bytes_per_second": "162075948",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "3",
+        "records": "162144",
+        "seconds": "0.100014417",
+        "records_per_second": "1621206",
+        "input_bytes_per_second": "162120627",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "4",
+        "records": "161824",
+        "seconds": "0.100003167",
+        "records_per_second": "1618189",
+        "input_bytes_per_second": "161818875",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "5",
+        "records": "162560",
+        "seconds": "0.100013209",
+        "records_per_second": "1625385",
+        "input_bytes_per_second": "162538530",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "6",
+        "records": "163104",
+        "seconds": "0.100008875",
+        "records_per_second": "1630895",
+        "input_bytes_per_second": "163089526",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "filter/chained",
+    "bytes": 100,
+    "repeat": 1,
+    "variant": "before",
+    "median_records_s": 1593598.6773130978,
+    "samples": [
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "0",
+        "records": "157440",
+        "seconds": "0.100012625",
+        "records_per_second": "1574201",
+        "input_bytes_per_second": "157420126",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "1",
+        "records": "157504",
+        "seconds": "0.100006125",
+        "records_per_second": "1574944",
+        "input_bytes_per_second": "157494353",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "2",
+        "records": "159840",
+        "seconds": "0.100004833",
+        "records_per_second": "1598323",
+        "input_bytes_per_second": "159832275",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "3",
+        "records": "157408",
+        "seconds": "0.100000167",
+        "records_per_second": "1574077",
+        "input_bytes_per_second": "157407737",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "4",
+        "records": "159488",
+        "seconds": "0.100008416",
+        "records_per_second": "1594746",
+        "input_bytes_per_second": "159474579",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "5",
+        "records": "159360",
+        "seconds": "0.100000083",
+        "records_per_second": "1593599",
+        "input_bytes_per_second": "159359868",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "6",
+        "records": "160192",
+        "seconds": "0.100017666",
+        "records_per_second": "1601637",
+        "input_bytes_per_second": "160163705",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "filter/chained",
+    "bytes": 100,
+    "repeat": 1,
+    "variant": "split",
+    "median_records_s": 1590169.425433312,
+    "samples": [
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "0",
+        "records": "158496",
+        "seconds": "0.100004958",
+        "records_per_second": "1584881",
+        "input_bytes_per_second": "158488142",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "1",
+        "records": "159744",
+        "seconds": "0.100011708",
+        "records_per_second": "1597253",
+        "input_bytes_per_second": "159725299",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "2",
+        "records": "161152",
+        "seconds": "0.100006250",
+        "records_per_second": "1611419",
+        "input_bytes_per_second": "161141929",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "3",
+        "records": "158176",
+        "seconds": "0.100008667",
+        "records_per_second": "1581623",
+        "input_bytes_per_second": "158162292",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "4",
+        "records": "157920",
+        "seconds": "0.100001583",
+        "records_per_second": "1579175",
+        "input_bytes_per_second": "157917500",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "5",
+        "records": "159552",
+        "seconds": "0.100020250",
+        "records_per_second": "1595197",
+        "input_bytes_per_second": "159519697",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "filter/chained",
+        "input_bytes": "100",
+        "sample": "6",
+        "records": "159040",
+        "seconds": "0.100014500",
+        "records_per_second": "1590169",
+        "input_bytes_per_second": "159016943",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "aggregate/computed_sum",
+    "bytes": 23,
+    "repeat": 0,
+    "variant": "before",
+    "median_records_s": 1930026.0952078681,
+    "samples": [
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "0",
+        "records": "191904",
+        "seconds": "0.100006000",
+        "records_per_second": "1918925",
+        "input_bytes_per_second": "44135272",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "1",
+        "records": "192448",
+        "seconds": "0.100002250",
+        "records_per_second": "1924437",
+        "input_bytes_per_second": "44262044",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "2",
+        "records": "192864",
+        "seconds": "0.100010792",
+        "records_per_second": "1928432",
+        "input_bytes_per_second": "44353933",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "3",
+        "records": "193216",
+        "seconds": "0.100009417",
+        "records_per_second": "1931978",
+        "input_bytes_per_second": "44435496",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "4",
+        "records": "193376",
+        "seconds": "0.100013042",
+        "records_per_second": "1933508",
+        "input_bytes_per_second": "44470680",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "5",
+        "records": "194080",
+        "seconds": "0.100005417",
+        "records_per_second": "1940695",
+        "input_bytes_per_second": "44635982",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "6",
+        "records": "193024",
+        "seconds": "0.100011083",
+        "records_per_second": "1930026",
+        "input_bytes_per_second": "44390600",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "aggregate/computed_sum",
+    "bytes": 23,
+    "repeat": 0,
+    "variant": "split",
+    "median_records_s": 1998386.6907446396,
+    "samples": [
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "0",
+        "records": "199296",
+        "seconds": "0.100014583",
+        "records_per_second": "1992669",
+        "input_bytes_per_second": "45831396",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "1",
+        "records": "199840",
+        "seconds": "0.100000666",
+        "records_per_second": "1998387",
+        "input_bytes_per_second": "45962894",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "2",
+        "records": "200064",
+        "seconds": "0.100010291",
+        "records_per_second": "2000434",
+        "input_bytes_per_second": "46009985",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "3",
+        "records": "199584",
+        "seconds": "0.100001000",
+        "records_per_second": "1995820",
+        "input_bytes_per_second": "45903861",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "4",
+        "records": "199648",
+        "seconds": "0.100016666",
+        "records_per_second": "1996147",
+        "input_bytes_per_second": "45911388",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "5",
+        "records": "201056",
+        "seconds": "0.100015667",
+        "records_per_second": "2010245",
+        "input_bytes_per_second": "46235636",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "6",
+        "records": "200192",
+        "seconds": "0.100004209",
+        "records_per_second": "2001836",
+        "input_bytes_per_second": "46042222",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "aggregate/computed_sum",
+    "bytes": 23,
+    "repeat": 1,
+    "variant": "before",
+    "median_records_s": 1914241.7573078475,
+    "samples": [
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "0",
+        "records": "191616",
+        "seconds": "0.100016500",
+        "records_per_second": "1915844",
+        "input_bytes_per_second": "44064409",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "1",
+        "records": "193504",
+        "seconds": "0.100003667",
+        "records_per_second": "1934969",
+        "input_bytes_per_second": "44504288",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "2",
+        "records": "191456",
+        "seconds": "0.100016625",
+        "records_per_second": "1914242",
+        "input_bytes_per_second": "44027560",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "3",
+        "records": "191392",
+        "seconds": "0.100001875",
+        "records_per_second": "1913884",
+        "input_bytes_per_second": "44019335",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "4",
+        "records": "190912",
+        "seconds": "0.100009500",
+        "records_per_second": "1908939",
+        "input_bytes_per_second": "43905589",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "5",
+        "records": "191104",
+        "seconds": "0.100006417",
+        "records_per_second": "1910917",
+        "input_bytes_per_second": "43951100",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "6",
+        "records": "194272",
+        "seconds": "0.100011500",
+        "records_per_second": "1942497",
+        "input_bytes_per_second": "44677422",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "aggregate/computed_sum",
+    "bytes": 23,
+    "repeat": 1,
+    "variant": "split",
+    "median_records_s": 1999584.199920982,
+    "samples": [
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "0",
+        "records": "199936",
+        "seconds": "0.100010750",
+        "records_per_second": "1999145",
+        "input_bytes_per_second": "45980337",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "1",
+        "records": "199968",
+        "seconds": "0.100004791",
+        "records_per_second": "1999584",
+        "input_bytes_per_second": "45990437",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "2",
+        "records": "198944",
+        "seconds": "0.100000750",
+        "records_per_second": "1989425",
+        "input_bytes_per_second": "45756777",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "3",
+        "records": "200576",
+        "seconds": "0.100011292",
+        "records_per_second": "2005534",
+        "input_bytes_per_second": "46127271",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "4",
+        "records": "200096",
+        "seconds": "0.100009875",
+        "records_per_second": "2000762",
+        "input_bytes_per_second": "46017536",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "5",
+        "records": "199744",
+        "seconds": "0.100015042",
+        "records_per_second": "1997140",
+        "input_bytes_per_second": "45934211",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      },
+      {
+        "workload": "aggregate/computed_sum",
+        "input_bytes": "23",
+        "sample": "6",
+        "records": "200000",
+        "seconds": "0.100004750",
+        "records_per_second": "1999905",
+        "input_bytes_per_second": "45997815",
+        "allocations_per_record": "0.000000",
+        "allocated_bytes_per_record": "0.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/closure_call",
+    "bytes": 500,
+    "repeat": 0,
+    "variant": "before",
+    "median_records_s": 796335.3377225493,
+    "samples": [
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "79008",
+        "seconds": "0.100030375",
+        "records_per_second": "789840",
+        "input_bytes_per_second": "394920043",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "79584",
+        "seconds": "0.100018708",
+        "records_per_second": "795691",
+        "input_bytes_per_second": "397845571",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "79648",
+        "seconds": "0.100018166",
+        "records_per_second": "796335",
+        "input_bytes_per_second": "398167669",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "80544",
+        "seconds": "0.100006250",
+        "records_per_second": "805390",
+        "input_bytes_per_second": "402694832",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "80352",
+        "seconds": "0.100005500",
+        "records_per_second": "803476",
+        "input_bytes_per_second": "401737904",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "80512",
+        "seconds": "0.100008417",
+        "records_per_second": "805052",
+        "input_bytes_per_second": "402526119",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "79648",
+        "seconds": "0.100027417",
+        "records_per_second": "796262",
+        "input_bytes_per_second": "398130844",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/closure_call",
+    "bytes": 500,
+    "repeat": 0,
+    "variant": "split",
+    "median_records_s": 802118.3507309281,
+    "samples": [
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "80224",
+        "seconds": "0.100015166",
+        "records_per_second": "802118",
+        "input_bytes_per_second": "401059175",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "80544",
+        "seconds": "0.100000500",
+        "records_per_second": "805436",
+        "input_bytes_per_second": "402717986",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "80800",
+        "seconds": "0.100017042",
+        "records_per_second": "807862",
+        "input_bytes_per_second": "403931162",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "80640",
+        "seconds": "0.100000541",
+        "records_per_second": "806396",
+        "input_bytes_per_second": "403197819",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "79872",
+        "seconds": "0.100025792",
+        "records_per_second": "798514",
+        "input_bytes_per_second": "399257024",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "79712",
+        "seconds": "0.100024791",
+        "records_per_second": "796922",
+        "input_bytes_per_second": "398461217",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "79520",
+        "seconds": "0.100011750",
+        "records_per_second": "795107",
+        "input_bytes_per_second": "397553287",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/closure_call",
+    "bytes": 500,
+    "repeat": 1,
+    "variant": "before",
+    "median_records_s": 791174.7306133322,
+    "samples": [
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "77920",
+        "seconds": "0.100013333",
+        "records_per_second": "779096",
+        "input_bytes_per_second": "389548062",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "79040",
+        "seconds": "0.100011125",
+        "records_per_second": "790312",
+        "input_bytes_per_second": "395156039",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "79968",
+        "seconds": "0.100016667",
+        "records_per_second": "799547",
+        "input_bytes_per_second": "399773370",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "79584",
+        "seconds": "0.100025667",
+        "records_per_second": "795636",
+        "input_bytes_per_second": "397817892",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "79840",
+        "seconds": "0.100016167",
+        "records_per_second": "798271",
+        "input_bytes_per_second": "399135472",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "79136",
+        "seconds": "0.100023417",
+        "records_per_second": "791175",
+        "input_bytes_per_second": "395587365",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "78304",
+        "seconds": "0.100042833",
+        "records_per_second": "782705",
+        "input_bytes_per_second": "391352372",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/closure_call",
+    "bytes": 500,
+    "repeat": 1,
+    "variant": "split",
+    "median_records_s": 812229.5652581439,
+    "samples": [
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "79552",
+        "seconds": "0.100014375",
+        "records_per_second": "795406",
+        "input_bytes_per_second": "397702830",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "80320",
+        "seconds": "0.100000167",
+        "records_per_second": "803199",
+        "input_bytes_per_second": "401599329",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "80416",
+        "seconds": "0.100005417",
+        "records_per_second": "804116",
+        "input_bytes_per_second": "402058221",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "81888",
+        "seconds": "0.100005416",
+        "records_per_second": "818836",
+        "input_bytes_per_second": "409417826",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "81856",
+        "seconds": "0.100014417",
+        "records_per_second": "818442",
+        "input_bytes_per_second": "409221003",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "81280",
+        "seconds": "0.100026833",
+        "records_per_second": "812582",
+        "input_bytes_per_second": "406290980",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      },
+      {
+        "workload": "lexical/closure_call",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "81248",
+        "seconds": "0.100030833",
+        "records_per_second": "812230",
+        "input_bytes_per_second": "406114783",
+        "allocations_per_record": "8.000000",
+        "allocated_bytes_per_record": "768.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/mixed",
+    "bytes": 500,
+    "repeat": 0,
+    "variant": "before",
+    "median_records_s": 531074.9743295434,
+    "samples": [
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "53120",
+        "seconds": "0.100037625",
+        "records_per_second": "531000",
+        "input_bytes_per_second": "265500106",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "53056",
+        "seconds": "0.100022958",
+        "records_per_second": "530438",
+        "input_bytes_per_second": "265219111",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "53056",
+        "seconds": "0.100014750",
+        "records_per_second": "530482",
+        "input_bytes_per_second": "265240877",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "53120",
+        "seconds": "0.100023542",
+        "records_per_second": "531075",
+        "input_bytes_per_second": "265537487",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "53600",
+        "seconds": "0.100039209",
+        "records_per_second": "535790",
+        "input_bytes_per_second": "267894961",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "53376",
+        "seconds": "0.100026166",
+        "records_per_second": "533620",
+        "input_bytes_per_second": "266810186",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "53408",
+        "seconds": "0.100031833",
+        "records_per_second": "533910",
+        "input_bytes_per_second": "266955020",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/mixed",
+    "bytes": 500,
+    "repeat": 0,
+    "variant": "split",
+    "median_records_s": 530324.8857651448,
+    "samples": [
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "52192",
+        "seconds": "0.100034000",
+        "records_per_second": "521743",
+        "input_bytes_per_second": "260871304",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "52736",
+        "seconds": "0.100013458",
+        "records_per_second": "527289",
+        "input_bytes_per_second": "263644519",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "53056",
+        "seconds": "0.100044334",
+        "records_per_second": "530325",
+        "input_bytes_per_second": "265162443",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "53632",
+        "seconds": "0.100006125",
+        "records_per_second": "536287",
+        "input_bytes_per_second": "268143576",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "53536",
+        "seconds": "0.100057000",
+        "records_per_second": "535055",
+        "input_bytes_per_second": "267527509",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "53216",
+        "seconds": "0.100016166",
+        "records_per_second": "532074",
+        "input_bytes_per_second": "266036992",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "53024",
+        "seconds": "0.100025583",
+        "records_per_second": "530104",
+        "input_bytes_per_second": "265052192",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/mixed",
+    "bytes": 500,
+    "repeat": 1,
+    "variant": "before",
+    "median_records_s": 533619.7007082897,
+    "samples": [
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "52352",
+        "seconds": "0.100029125",
+        "records_per_second": "523368",
+        "input_bytes_per_second": "261683785",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "53376",
+        "seconds": "0.100012792",
+        "records_per_second": "533692",
+        "input_bytes_per_second": "266845865",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "53376",
+        "seconds": "0.100026292",
+        "records_per_second": "533620",
+        "input_bytes_per_second": "266809850",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "53472",
+        "seconds": "0.100058458",
+        "records_per_second": "534408",
+        "input_bytes_per_second": "267203798",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "53408",
+        "seconds": "0.100000417",
+        "records_per_second": "534078",
+        "input_bytes_per_second": "267038886",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "53024",
+        "seconds": "0.100050375",
+        "records_per_second": "529973",
+        "input_bytes_per_second": "264986513",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "52896",
+        "seconds": "0.100013500",
+        "records_per_second": "528889",
+        "input_bytes_per_second": "264444300",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      }
+    ]
+  },
+  {
+    "workload": "lexical/mixed",
+    "bytes": 500,
+    "repeat": 1,
+    "variant": "split",
+    "median_records_s": 537936.0661226406,
+    "samples": [
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "0",
+        "records": "53088",
+        "seconds": "0.100017250",
+        "records_per_second": "530788",
+        "input_bytes_per_second": "265394219",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "1",
+        "records": "53600",
+        "seconds": "0.100021916",
+        "records_per_second": "535883",
+        "input_bytes_per_second": "267941278",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "2",
+        "records": "53824",
+        "seconds": "0.100056500",
+        "records_per_second": "537936",
+        "input_bytes_per_second": "268968033",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "3",
+        "records": "53824",
+        "seconds": "0.100055417",
+        "records_per_second": "537942",
+        "input_bytes_per_second": "268970944",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "4",
+        "records": "53824",
+        "seconds": "0.100022542",
+        "records_per_second": "538119",
+        "input_bytes_per_second": "269059349",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "5",
+        "records": "53824",
+        "seconds": "0.100015083",
+        "records_per_second": "538159",
+        "input_bytes_per_second": "269079415",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      },
+      {
+        "workload": "lexical/mixed",
+        "input_bytes": "500",
+        "sample": "6",
+        "records": "53568",
+        "seconds": "0.100045708",
+        "records_per_second": "535435",
+        "input_bytes_per_second": "267717632",
+        "allocations_per_record": "14.000000",
+        "allocated_bytes_per_record": "1480.000000"
+      }
+    ]
+  }
+]

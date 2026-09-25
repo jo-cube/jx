@@ -44,7 +44,7 @@ operands, comparisons, strings, boolean logic, missing, short-circuiting, mixed
 expressions and reused output serialization. Additional workloads exercise singleton
 and multi-item sequence operands, type errors, escaped strings, stream-to-array and
 stream-to-stream equality, and objects with 8/128 fields. Expected results are checked
-before timing. Path, scalar, filter, aggregate and constructor compilation have separate rows.
+before timing. Path, scalar, filter, aggregate, constructor and lexical compilation have separate rows.
 
 Filter fixtures add exact 100 B–1 MiB records for predicates, no matches, literal
 first/last positions, computed negative positions and chained predicates. Wide arrays
@@ -64,14 +64,20 @@ containers, navigation back through constructed output and filtered summaries at
 collection into an array, reused serialization and aggregate-only summaries. Nested
 inputs reach 1,048,588 bytes. Expected semantic JSON output is checked before timing.
 
+Lexical fixtures cover lookup, repeated bindings, retained sequences, ordinary and
+escaping closure calls, and filter/aggregate/constructor pipelines at 100 B–1 MiB.
+Wide fixtures compare mapped calls with repeated use of one retained projection;
+nested retention reaches 1,048,588 bytes. Allocation budgets are asserted separately
+from existing zero-allocation paths, scalars, filters and direct aggregates.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
-ordinary paths, filters, aggregates and scalar operators without construction must
-report zero, including preallocated output. Structural
+ordinary paths, filters, aggregates and scalar operators without lexical features
+or construction must report zero, including preallocated output. Structural
 object/sequence equality and constructors have explicit per-workload allocation budgets. All assertions
 also run in `just all` via `--smoke`. The wrapper delegates to `System`;
 it is the only unsafe code, isolated to the benchmark. Engine and CLI forbid unsafe.
-Counter overhead affects allocating compilation, construction and equality; counts are not retained RSS.
+Counter overhead affects allocating workloads; counts are not retained RSS.
 
 ## Extending evidence
 
@@ -457,3 +463,80 @@ include the negative results and exploratory variants. Rates are derived from
 records/elapsed time before taking medians, avoiding the display column's rounding
 on large inputs. Timings exclude profiler runs. Host activity was not controlled;
 no cross-engine, tail-latency or retained-memory claim is made.
+
+
+## Milestone 8 — lexical/function runtime
+
+Bindings, blocks, closures and dynamic calls share the existing values and evaluator.
+The compiler resolves unshadowed builtins and marks stages that cannot safely replay.
+Ordinary expressions create no lexical arena; direct aggregates retain their streaming
+folds. All **294 existing zero-allocation evaluations** remain zero-allocation. Allocation
+counts and requested bytes for all earlier evaluation workloads are unchanged across
+the retained baseline/final runs. The suite now has **406 workloads**, including six
+compilation workloads and 47 lexical evaluations.
+
+Bindings and call arguments store evaluated values, never replay recipes. Retained
+sequences share their member storage on reuse. Investigation of the new wide workloads
+removed repeated retention of already retained values and a redundant final-stage
+buffer; intermediate stateful stages still need retention to prevent replay. Mapped
+calls allocate argument/parameter storage per invocation. Captured frames remain live
+until that record's evaluation ends; uncaptured terminal frames are reclaimed on return.
+Lookup is linear through small frame binding lists. These are measured baseline costs,
+not a slot compiler, frame cache or garbage collector hidden in the runtime.
+
+On the pinned compiler, `Value` stays 24 bytes and `PathEvaluation` stays 48 bytes.
+`Context` grows from 32 to 48 bytes; `Stream`/`Operand` from 48 to 56 bytes; `Node` from
+48 to 64 bytes. Optional scope propagation and state checks add real execution work,
+even where no arena is created. Direct tree evaluation remains appropriate; introducing
+an IR would not itself remove binding retention or the existing repeated JSON scanning.
+
+Two fresh M7 baselines (`5c97ba5`) and two final M8 runs use the same machine,
+compiler, harness and release settings. Selected medians over 14 final samples:
+
+| Workload | Input bytes | M8 records/s | Pair 1 change | Pair 2 change |
+| --- | ---: | ---: | ---: | ---: |
+| ascii/nested | 100 | 10,093,946 | -0.62% | +0.54% |
+| ascii/nested | 500 | 3,194,592 | -2.13% | -1.85% |
+| array/deep | 136 | 76,383 | -1.21% | -0.61% |
+| scalar/arithmetic | 100 | 3,118,384 | -2.62% | -3.14% |
+| filter/predicate | 100 | 2,029,347 | -6.39% | -8.81% |
+| filter/chained | 100 | 1,598,954 | -0.45% | -4.03% |
+| filter/nested | 892 | 76,988 | -1.65% | -3.07% |
+| aggregate/computed_sum | 23 | 1,803,427 | -14.37% | -15.11% |
+| aggregate/filtered_sum | 500 | 1,158,527 | -6.11% | -6.50% |
+| aggregate/nested_filtered_sum | 1,036 | 70,619 | -6.04% | -5.48% |
+| construct/filtered_summary | 500 | 586,918 | -2.69% | -1.81% |
+
+There are real residual regressions: roughly 6–9% for selected filters/folds and
+14–15% for the tiny computed sum. No additional allocation explains them. Larger
+context/operand layouts and scope checks are relevant structural costs; these runs
+do not isolate their share from dispatch, compiler code layout or host variation.
+An experiment extracting lexical arms from scalar dispatch improved the tiny sum
+by only 3.5–4.5%, with inconsistent chained-filter results. The extra dispatch was
+not retained. Tiny-workload timings varied across builds and sampling setups;
+there is no claim that this experiment explains or fixes the regression.
+
+New lexical costs include retained values and per-call frames/arguments. Requested
+bytes below are cumulative allocations, not peak live memory:
+
+| Workload | Input bytes | Records/s | Allocations/record | Requested bytes/record |
+| --- | ---: | ---: | ---: | ---: |
+| lexical/lookup | 500 | 1,338,506 | 5 | 504 |
+| lexical/repeated_binding | 500 | 1,209,696 | 5 | 504 |
+| lexical/retained_sequence | 500 | 1,056,727 | 7 | 648 |
+| lexical/closure_call | 500 | 802,739 | 8 | 768 |
+| lexical/escaped_closure | 500 | 756,975 | 11 | 1,032 |
+| lexical/mixed | 500 | 523,915 | 14 | 1,480 |
+| lexical/mapped_calls | 251,044 | 344 | 32,788 | 3,801,624 |
+| lexical/repeated_projection | 251,044 | 763 | 19 | 786,888 |
+| lexical/nested_retention | 1,048,588 | 70 | 20 | 1,573,320 |
+
+Compilation includes scope/effect analysis and is measured separately. Existing
+subtree rescanning and member-wise constructor demands remain unchanged. No IR,
+frame cache, slot compiler or scanner specialization was introduced.
+
+[Comparisons](benchmarks/m8/comparison.csv), [layouts](benchmarks/m8/layouts.txt),
+[discarded dispatch experiment](benchmarks/m8/dispatch-split.json) and
+[raw runs, commands and source hashes](benchmarks/m8/environment.json) retain the
+evidence. Benchmark processes ran sequentially; host activity was not controlled.
+No cross-engine, tail-latency or retained-RSS claim follows.
