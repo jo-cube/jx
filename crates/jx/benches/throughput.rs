@@ -2,6 +2,8 @@
 #![allow(unsafe_code)]
 #[path = "workloads/aggregates.rs"]
 mod aggregates;
+#[path = "workloads/compiler.rs"]
+mod compiler;
 #[path = "workloads/constructors.rs"]
 mod constructors;
 #[path = "workloads/filters.rs"]
@@ -281,4 +283,5 @@ fn main() {
     constructors::run(smoke);
     lexical::run(smoke);
     navigation::run(smoke);
+    compiler::run(smoke);
 }

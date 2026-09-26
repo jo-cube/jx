@@ -1,0 +1,104 @@
+--- a/crates/jx/src/json/scan.rs
++++ b/crates/jx/src/json/scan.rs
+@@ -262,20 +262,25 @@
+ }
+ 
+ pub(crate) struct Elements<'a> {
+-    scanner: Scanner<'a>,
++    remaining: &'a str,
+ }
+ 
+ impl<'a> Iterator for Elements<'a> {
+     type Item = RawJson<'a>;
+ 
+     fn next(&mut self) -> Option<Self::Item> {
+-        self.scanner.space();
+-        if self.scanner.byte() == Some(b']') {
++        let mut scanner = Scanner {
++            text: self.remaining,
++            at: 0,
++        };
++        scanner.space();
++        if scanner.byte() == Some(b']') {
+             return None;
+         }
+-        let value = self.scanner.raw_value();
+-        self.scanner.space();
+-        self.scanner.take(b',');
++        let value = scanner.raw_value();
++        scanner.space();
++        scanner.take(b',');
++        self.remaining = &self.remaining[scanner.at..];
+         Some(value)
+     }
+ }
+@@ -288,10 +293,7 @@
+     pub(crate) fn elements(self) -> Elements<'a> {
+         debug_assert!(self.is_array());
+         Elements {
+-            scanner: Scanner {
+-                text: self.0,
+-                at: 1,
+-            },
++            remaining: &self.0[1..],
+         }
+     }
+ 
+@@ -326,25 +328,30 @@
+ 
+ /// Object members retain encoded keys so comparisons need no decoded allocation.
+ pub(crate) struct Members<'a> {
+-    scanner: Scanner<'a>,
++    remaining: &'a str,
+ }
+ 
+ impl<'a> Iterator for Members<'a> {
+     type Item = (&'a str, RawJson<'a>);
+     fn next(&mut self) -> Option<Self::Item> {
+-        self.scanner.space();
+-        if self.scanner.byte() == Some(b'}') {
++        let mut scanner = Scanner {
++            text: self.remaining,
++            at: 0,
++        };
++        scanner.space();
++        if scanner.byte() == Some(b'}') {
+             return None;
+         }
+-        let start = self.scanner.at + 1;
+-        self.scanner.string().expect("validated key");
+-        let key = &self.scanner.text[start..self.scanner.at - 1];
+-        self.scanner.space();
+-        self.scanner.at += 1;
+-        self.scanner.space();
+-        let value = self.scanner.raw_value();
+-        self.scanner.space();
+-        self.scanner.take(b',');
++        let start = scanner.at + 1;
++        scanner.string().expect("validated key");
++        let key = &scanner.text[start..scanner.at - 1];
++        scanner.space();
++        scanner.at += 1;
++        scanner.space();
++        let value = scanner.raw_value();
++        scanner.space();
++        scanner.take(b',');
++        self.remaining = &self.remaining[scanner.at..];
+         Some((key, value))
+     }
+ }
+@@ -353,10 +360,7 @@
+     pub(crate) fn members(self) -> Members<'a> {
+         debug_assert_eq!(self.as_bytes()[0], b'{');
+         Members {
+-            scanner: Scanner {
+-                text: self.0,
+-                at: 1,
+-            },
+-        }
+-    }
+-}
++            remaining: &self.0[1..],
++        }
++    }
++}

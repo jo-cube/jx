@@ -77,6 +77,16 @@ key-search and subtree-scanning costs. Range output is constructed and consumed.
 Compilation separately measures navigation and nested fallbacks; the latter has an
 allocation budget to prevent exponential tree expansion.
 
+Compiler fixtures add static tables with 8/128/1,024/4,096 keys: last-key hits,
+misses, a rotating pool of 256 keys, and retained lexical tables. Record-size cases
+span 100 B–1 MiB. Constant-heavy scalars, repeated field demands, static constructors
+with dynamic leaves, invariant aggregates, builtin references and filtered sums
+separate folding gains from unchanged traversal costs. Compilation is measured
+separately for each table size. Rust controls combine the same validating key selector
+with `HashMap`; repeated-field controls validate the whole record and parse two numeric
+fields once using the fixture's fixed ASCII layout. They are architectural controls,
+not general JSONata implementations. Evaluation timing excludes serialization.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
 ordinary paths, filters, aggregates and scalar operators without lexical features
@@ -637,3 +647,94 @@ preserve the evidence. Focused traversal comparisons use seven 100 ms samples pe
 workload per run. Profiler runs are excluded from timing comparisons. Processes ran
 sequentially; host activity was not controlled. No cross-engine, tail-latency or
 retained-RSS claim follows.
+
+
+## Milestone 10 — compiler specialization
+
+Same machine/compiler/release settings. **560 workloads** include 12 compilation
+cases and 548 evaluations; **359 evaluations allocate zero** in both final runs.
+Existing allocation counts are unchanged except six membership fixtures, which fall
+from four to two calls. Constant containers allocate one 16-byte identity token;
+primitive static lookups allocate nothing. Counts are cumulative requests, not RSS.
+
+Two full M9 (`4edc571`) runs bracket development of the specialization layer. Two
+final runs and isolated incremental comparisons retain seven samples per workload.
+The lookup baseline is M9 plus the generic `$lookup` builtin, with specialization
+disabled; it is not a claim about a previously supported M9 function. Table entries
+are final 14-sample medians, versus seven samples of the expanded direct baseline.
+Validation and full result consumption are included, serialization is excluded.
+
+Static-object lookup, last-key hits on 501-byte records (records/s):
+
+| Object keys | Unspecialized | Compiled lookup | Rust HashMap control |
+| ---: | ---: | ---: | ---: |
+| 8 | 605,098 | 2,581,181 | 3,335,310 |
+| 128 | 7,064 | 2,216,392 | 3,336,420 |
+| 1,024 | 133 | 2,044,176 | 3,335,691 |
+| 4,096 | 10 | 2,004,931 | 3,336,989 |
+
+The direct evaluator repeatedly groups literal object keys, with quadratic comparisons.
+Compilation pays this cost once and builds a sorted UTF-16 key index. A rotating pool
+of 256 keys in the 4,096-entry table reaches **1,700,926 records/s**, versus
+3,271,241 for the ASCII HashMap control. The index still decodes key units during
+binary search; the control uses byte hashing and omits general JSONata key semantics.
+Both validate every record. Bound tables also reuse compiled data, while retaining
+six lexical/identity allocations per record, independent of table width.
+
+Folding alone removes reconstruction but retains ordinary argument evaluation.
+At 1 MiB, folding-only lookup measures **943 records/s**;
+reusing validating path capture raises this to **1,854**, removing a second scan
+and the temporary object identity. Compilation of the 4,096-key fixture takes about
+91 ms and requests 3.22 MB across 20,520 allocations. This is deliberate compile-once
+work; constructor grouping still makes large-table compilation quadratic.
+
+Other 500-byte workloads (records/s; allocations before → after):
+
+| Workload | Unspecialized | Compiled | Allocations |
+| --- | ---: | ---: | ---: |
+| constant_scalar | 2,581,713 | 3,265,283 | 0 → 0 |
+| dynamic_leaves | 982,535 | 1,334,453 | 11 → 4 |
+| invariant_aggregate | 1,237,008 | 1,570,332 | 2 → 0 |
+| builtin_reference | 2,566,895 | 3,268,194 | 5 → 0 |
+| static_array | 1,992,757 | 3,167,526 | 7 → 1 |
+| repeated_fields | 239,003 | 238,643 | 0 → 0 |
+| filtered_sum | 1,141,558 | 1,150,141 | 0 → 0 |
+
+The new compiled-container variant leaves `Value` (24 B), `Context` (48 B),
+`Stream`/`Operand` (56 B) and `Node` (64 B) unchanged, but grows container iterators
+from 24 to 32 B. Initial full runs exposed raw-array aggregate losses. Hoisting
+storage dispatch out of exhaustive iterator loops improves all 16 focused aggregate
+fixtures by 2–11% across two pairs. A smaller remaining-slice cursor was slower and
+was discarded. The retained change uses `Iterator::for_each`, not a separate fold engine.
+
+Selected existing workloads versus M9 (paired median changes):
+
+| Workload | Bytes | Pair 1 | Pair 2 |
+| --- | ---: | ---: | ---: |
+| ascii/nested | 100 | -1.07% | -0.14% |
+| ascii/nested | 500 | -3.90% | +1.23% |
+| array/deep | 136 | -1.02% | +0.16% |
+| filter/predicate | 100 | +3.15% | -2.34% |
+| aggregate/nested_filtered_sum | 1,048,588 | +1.55% | +1.35% |
+| aggregate/array_sum | 87,201 | -2.98% | -5.62% |
+| construct/filtered_summary | 500 | +1.35% | +1.94% |
+| scalar/escaped_strings | 26 | -5.69% | -6.06% |
+| navigation/wide_group | 600,386 | -5.44% | -5.43% |
+
+The tiny escaped-string and wide-grouping losses repeat; they are not claimed as
+resolved. Neither adds allocations or lexical frames. Additional representation
+cases and iterator dispatch remain costs; the measurements do not isolate every
+code-generation effect. Existing tiny-record and nested-subtree rescanning limits remain.
+
+Repeated fields are deliberately unchanged: at 1 MiB, the expression reaches
+147 records/s versus 1,854 for the purpose-written control that validates once
+and reads each field once. Multi-field capture, context-safe propagation across lexical
+bindings, and broader demand fusion are stronger next opportunities than native code
+generation. The current tree plus small specializations remains sufficient; no IR/JIT,
+per-record cache or input DOM was introduced.
+
+[Raw runs, commands, variants and hashes](benchmarks/m10/environment.json),
+[all M9 comparisons](benchmarks/m10/comparison.csv) and
+[specialization comparisons](benchmarks/m10/specialization.csv) retain the evidence.
+Processes ran sequentially; brief source/artifact work overlapped timing and host
+activity was not controlled. No cross-engine, tail-latency or retained-RSS claim follows.

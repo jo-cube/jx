@@ -1,0 +1,19 @@
+M9
+Value: size=24, needs_drop=true
+PathEvaluation: size=48, needs_drop=true
+Stream: size=56, needs_drop=true
+Operand: size=56, needs_drop=true
+Context: size=48, needs_drop=true
+Node: size=64, needs_drop=true
+Elements: size=24
+Members: size=24
+
+M10
+Value: size=24, needs_drop=true
+PathEvaluation: size=48, needs_drop=true
+Stream: size=56, needs_drop=true
+Operand: size=56, needs_drop=true
+Context: size=48, needs_drop=true
+Node: size=64, needs_drop=true
+Elements: size=32
+Members: size=32

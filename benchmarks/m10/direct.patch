@@ -1,0 +1,728 @@
+--- a/crates/jx/benches/workloads/compiler.rs
++++ b/crates/jx/benches/workloads/compiler.rs
+@@ -50,7 +50,7 @@
+                 &source,
+                 input.as_bytes(),
+                 expected,
+-                0,
++                128,
+                 smoke,
+             );
+             // Same validated ASCII-key fixture; field extraction uses the engine's
+@@ -102,7 +102,7 @@
+             &format!("compiler/varying_lookup_{width}"),
+             records[0].len(),
+             smoke,
+-            Some(0),
++            Some(128),
+             || {
+                 expression
+                     .evaluate(black_box(&records[at]))
+@@ -138,7 +138,7 @@
+             &format!("($table:={literal};$lookup($table,key))"),
+             br#"{"key":"k00000"}"#,
+             json!([0]),
+-            6,
++            128,
+             smoke,
+         );
+         measure_allocations(&format!("compile/lookup_{width}"), 0, smoke, None, || {
+@@ -158,27 +158,27 @@
+                 "dynamic_leaves",
+                 r#"{"schema":{"a":[1,2,3],"b":{"c":4}},"value":x+2*3}"#,
+                 json!([{"schema":{"a":[1,2,3],"b":{"c":4}},"value":13}]),
+-                4,
++                32,
+             ),
+             ("filtered_sum", "$sum(rows[v>2].v)", json!([5]), 0),
+             (
+                 "invariant_aggregate",
+                 "x+$sum([1,2,3,4,5,6,7,8])",
+                 json!([43]),
+-                0,
+-            ),
+-            ("builtin_reference", "$sum=$sum", json!([true]), 0),
++                4,
++            ),
++            ("builtin_reference", "$sum=$sum", json!([true]), 16),
+             (
+                 "static_array",
+                 r#"[1,2,3,[4,5],{"n":6}]"#,
+                 json!([[1,2,3,[4,5],{"n":6}]]),
+-                1,
++                16,
+             ),
+             (
+                 "constant_membership",
+                 "x in [1,2,3,4,5,6,7,8]",
+                 json!([true]),
+-                1,
++                4,
+             ),
+         ] {
+             workload(
+@@ -203,7 +203,7 @@
+             &format!("$lookup({},key)", serde_json::to_string(&table).unwrap()),
+             record.as_bytes(),
+             json!([127]),
+-            0,
++            16,
+             smoke,
+         );
+         // Purpose-written control for this fixed ASCII object layout. It still
+--- a/crates/jx/src/aggregate.rs
++++ b/crates/jx/src/aggregate.rs
+@@ -56,7 +56,9 @@
+             match value {
+                 Value::Undefined => {}
+                 value if value.is_array() => {
+-                    value.elements().for_each(|item| fold.push(item));
++                    for item in value.elements() {
++                        fold.push(item);
++                    }
+                 }
+                 value => fold.push(value),
+             }
+@@ -77,7 +79,9 @@
+         };
+         if let Some(value) = value {
+             if value.is_array() {
+-                value.elements().for_each(|item| fold.push(item));
++                for item in value.elements() {
++                    fold.push(item);
++                }
+             } else {
+                 fold.push(value);
+             }
+--- a/crates/jx/src/analysis.rs
++++ b/crates/jx/src/analysis.rs
+@@ -39,21 +39,12 @@
+         _ => {}
+     });
+     visit(root, &mut |node| {
+-        if let Kind::Call(target, args) = &mut node.kind {
+-            let builtin = match &target.kind {
+-                Kind::BuiltinReference(builtin) => Some(*builtin),
+-                Kind::Variable(name) if !bound.contains(name.as_ref()) => Builtin::named(name),
+-                _ => None,
+-            };
+-            if let Some(builtin) = builtin {
+-                node.kind = Kind::Builtin(builtin, std::mem::take(args));
+-            }
+-        }
+-        if let Kind::Variable(name) = &node.kind
++        if let Kind::Call(target, args) = &mut node.kind
++            && let Kind::Variable(name) = &target.kind
+             && !bound.contains(name.as_ref())
+             && let Some(builtin) = Builtin::named(name)
+         {
+-            node.kind = Kind::BuiltinReference(builtin);
++            node.kind = Kind::Builtin(builtin, std::mem::take(args));
+         }
+         node.effects = matches!(
+             node.kind,
+@@ -74,7 +65,7 @@
+     children(node, &mut |child| visit(child, f));
+     f(node);
+ }
+-pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
++fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
+     match &mut node.kind {
+         Kind::Route(steps, _) => {
+             for step in steps {
+@@ -90,8 +81,7 @@
+                 f(n);
+             }
+         }
+-        Kind::StaticLookup(_, n)
+-        | Kind::Keep(n, _)
++        Kind::Keep(n, _)
+         | Kind::Group(n)
+         | Kind::Negate(n)
+         | Kind::Bind(_, n)
+--- a/crates/jx/src/compare.rs
++++ b/crates/jx/src/compare.rs
+@@ -181,7 +181,6 @@
+     let mut found = false;
+     let mut compare = |right: Value<'_, '_>| {
+         found |= match (&left, &right) {
+-            (Value::Constant(a), Value::Constant(b)) => a.same(b),
+             (Value::Array(a), Value::Array(b)) => std::rc::Rc::ptr_eq(a, b),
+             (Value::Object(a), Value::Object(b)) => std::rc::Rc::ptr_eq(a, b),
+             (Value::Raw(a), Value::Raw(b)) if left.is_array() || left.is_object() => {
+--- a/crates/jx/src/compile.rs
++++ /dev/null
+@@ -1,94 +0,0 @@
+-use crate::{
+-    Value,
+-    builtin::Builtin,
+-    constant::{Data, Prepared},
+-    expression::{Kind, Node, Op},
+-    sequence::Context,
+-};
+-
+-// Only context-independent, effect-free expressions are candidates. Evaluate
+-// with the existing semantics; failures stay in the tree as runtime failures.
+-pub(crate) fn prepare(node: &mut Node) -> bool {
+-    let mut constant = true;
+-    if let Kind::Binary(Op::Coalesce, test, no) = &mut node.kind {
+-        // Its call argument is also the selected branch; keep that call boundary.
+-        crate::analysis::children(test, &mut |child| {
+-            constant &= prepare(child);
+-        });
+-        constant &= eligible(test);
+-        constant &= prepare(no);
+-    } else {
+-        crate::analysis::children(node, &mut |child| {
+-            constant &= prepare(child);
+-        });
+-    }
+-    constant &= eligible(node);
+-    if constant
+-        && !matches!(
+-            node.kind,
+-            Kind::Number(_)
+-                | Kind::String(_)
+-                | Kind::Boolean(_)
+-                | Kind::Null
+-                | Kind::Missing
+-                | Kind::Prepared(_)
+-                | Kind::BuiltinReference(_)
+-        )
+-    {
+-        let context = Context {
+-            value: Value::Undefined,
+-            wrapped: true,
+-            scope: None,
+-        };
+-        if let Ok(value) = crate::retain::materialize(node, &context)
+-            && let Some(data) = Data::capture(&value.unwrap_or(Value::Undefined))
+-        {
+-            let prepared = Prepared {
+-                data,
+-                array_syntax: node.is_array_constructor(),
+-            };
+-            node.kind = Kind::Prepared(Box::new(prepared));
+-            node.effects = false;
+-        } else {
+-            constant = false;
+-        }
+-    }
+-    if let Kind::Builtin(Builtin::Lookup, args) = &mut node.kind
+-        && args.len() == 2
+-        && matches!(&args[0].kind,Kind::Prepared(p) if matches!(p.data,Data::Object {..}))
+-    {
+-        let mut args = std::mem::take(args).into_vec();
+-        let key = args.pop().unwrap();
+-        let Kind::Prepared(prepared) = args.pop().unwrap().kind else {
+-            unreachable!()
+-        };
+-        node.kind = Kind::StaticLookup(Box::new(prepared.data), Box::new(key));
+-    }
+-    constant
+-}
+-fn eligible(node: &Node) -> bool {
+-    if node.effects {
+-        return false;
+-    }
+-    match &node.kind {
+-        Kind::Number(_)
+-        | Kind::String(_)
+-        | Kind::Boolean(_)
+-        | Kind::Null
+-        | Kind::Missing
+-        | Kind::Prepared(_)
+-        | Kind::BuiltinReference(_)
+-        | Kind::Array(..)
+-        | Kind::Object(_)
+-        | Kind::Group(_)
+-        | Kind::Negate(_)
+-        | Kind::Binary(..)
+-        | Kind::Conditional(..) => true,
+-        Kind::Builtin(builtin, args) => match builtin {
+-            Builtin::Deferred(_) => false,
+-            Builtin::Lookup => args.len() == 2,
+-            _ => !args.is_empty(),
+-        },
+-        _ => false,
+-    }
+-}
+--- a/crates/jx/src/constant.rs
++++ /dev/null
+@@ -1,162 +0,0 @@
+-use crate::{
+-    Value,
+-    container::Shape,
+-    json::{RawJson, string},
+-};
+-use std::{
+-    cmp::Ordering,
+-    io::{self, Write},
+-    rc::Rc,
+-};
+-
+-#[derive(Clone, Debug)]
+-pub(crate) enum Data {
+-    Missing,
+-    Null,
+-    Boolean(bool),
+-    Number(f64),
+-    String(Box<str>),
+-    Array(Box<[Data]>, Shape),
+-    Object {
+-        members: Box<[(Box<str>, Data)]>,
+-        index: Box<[usize]>,
+-    },
+-}
+-
+-/// A constructed value backed by immutable expression data. Each construction
+-/// has fresh identity; descendants share its token but have distinct data addresses.
+-#[derive(Clone, Debug)]
+-pub struct ConstantValue<'e> {
+-    pub(crate) data: &'e Data,
+-    identity: Rc<()>,
+-}
+-
+-#[derive(Clone, Debug)]
+-pub(crate) struct Prepared {
+-    pub data: Data,
+-    pub array_syntax: bool,
+-}
+-
+-impl Data {
+-    pub(crate) fn capture(value: &Value<'_, '_>) -> Option<Self> {
+-        Some(match value {
+-            Value::Undefined => Self::Missing,
+-            Value::Null => Self::Null,
+-            Value::Number(n) => Self::Number(*n),
+-            Value::Boolean(b) => Self::Boolean(*b),
+-            Value::StringLiteral(s) => Self::String(s.as_str().into()),
+-            Value::Constant(c) => c.data.clone(),
+-            Value::Array(a) => Self::Array(
+-                a.items
+-                    .iter()
+-                    .map(Self::capture)
+-                    .collect::<Option<Box<[_]>>>()?,
+-                a.shape,
+-            ),
+-            Value::Object(o) => {
+-                let members = o
+-                    .members
+-                    .iter()
+-                    .map(|(k, v)| Some((k.json()?.as_str().into(), Self::capture(v)?)))
+-                    .collect::<Option<Box<[(Box<str>, Self)]>>>()?;
+-                let mut index = (0..members.len()).collect::<Vec<_>>();
+-                index.sort_by(|&a, &b| {
+-                    string::units(body(&members[a].0)).cmp(string::units(body(&members[b].0)))
+-                });
+-                Self::Object {
+-                    members,
+-                    index: index.into_boxed_slice(),
+-                }
+-            }
+-            _ => return None,
+-        })
+-    }
+-    pub(crate) fn value<'e, 'i>(&'e self) -> Value<'e, 'i> {
+-        self.with_identity(None)
+-    }
+-    fn with_identity<'e, 'i>(&'e self, identity: Option<&Rc<()>>) -> Value<'e, 'i> {
+-        match self {
+-            Self::Missing => Value::Undefined,
+-            Self::Null => Value::Null,
+-            Self::Boolean(b) => Value::Boolean(*b),
+-            Self::Number(n) => Value::Number(*n),
+-            Self::String(s) => Value::StringLiteral(RawJson(s)),
+-            Self::Array(..) | Self::Object { .. } => Value::Constant(ConstantValue {
+-                data: self,
+-                identity: identity.cloned().unwrap_or_else(|| Rc::new(())),
+-            }),
+-        }
+-    }
+-    pub(crate) fn find(&self, mut compare: impl FnMut(&str) -> Ordering) -> Option<&Data> {
+-        let Self::Object { members, index } = self else {
+-            return None;
+-        };
+-        let found = index
+-            .binary_search_by(|&i| compare(body(&members[i].0)))
+-            .ok()?;
+-        Some(&members[index[found]].1)
+-    }
+-    pub(crate) fn write(&self, output: &mut dyn Write) -> io::Result<()> {
+-        match self {
+-            Self::Array(items, _) => {
+-                output.write_all(b"[")?;
+-                for (i, v) in items.iter().enumerate() {
+-                    if i != 0 {
+-                        output.write_all(b",")?;
+-                    }
+-                    v.write(output)?;
+-                }
+-                output.write_all(b"]")
+-            }
+-            Self::Object { members, .. } => {
+-                output.write_all(b"{")?;
+-                for (i, (key, v)) in members.iter().enumerate() {
+-                    if i != 0 {
+-                        output.write_all(b",")?;
+-                    }
+-                    output.write_all(key.as_bytes())?;
+-                    output.write_all(b":")?;
+-                    v.write(output)?;
+-                }
+-                output.write_all(b"}")
+-            }
+-            _ => self.value().write_compact(output),
+-        }
+-    }
+-}
+-impl<'e> ConstantValue<'e> {
+-    pub(crate) fn same(&self, other: &Self) -> bool {
+-        std::ptr::eq(self.data, other.data) && Rc::ptr_eq(&self.identity, &other.identity)
+-    }
+-    pub(crate) fn shape(&self) -> Option<Shape> {
+-        if let Data::Array(_, shape) = self.data {
+-            Some(*shape)
+-        } else {
+-            None
+-        }
+-    }
+-    pub(crate) fn element<'i>(&self, index: usize) -> Option<Value<'e, 'i>> {
+-        let Data::Array(items, _) = self.data else {
+-            return None;
+-        };
+-        items
+-            .get(index)
+-            .map(|v| v.with_identity(Some(&self.identity)))
+-    }
+-    pub(crate) fn member<'i>(&self, index: usize) -> Option<(&'e str, Value<'e, 'i>)> {
+-        let Data::Object { members, .. } = self.data else {
+-            return None;
+-        };
+-        members
+-            .get(index)
+-            .map(|(k, v)| (body(k), v.with_identity(Some(&self.identity))))
+-    }
+-    pub(crate) fn field<'i>(&self, compare: impl FnMut(&str) -> Ordering) -> Option<Value<'e, 'i>> {
+-        self.data
+-            .find(compare)
+-            .map(|v| v.with_identity(Some(&self.identity)))
+-    }
+-}
+-fn body(s: &str) -> &str {
+-    &s[1..s.len() - 1]
+-}
+--- a/crates/jx/src/container.rs
++++ b/crates/jx/src/container.rs
+@@ -8,10 +8,10 @@
+ #[derive(Debug)]
+ pub struct Array<'e, 'i> {
+     pub(crate) items: Vec<Value<'e, 'i>>,
+-    pub(crate) shape: Shape,
++    shape: Shape,
+ }
+-#[derive(Clone, Copy, Debug)]
+-pub(crate) enum Shape {
++#[derive(Debug)]
++enum Shape {
+     Array,
+     Preserved,
+     Sequence,
+@@ -59,7 +59,6 @@
+ 
+ pub(crate) enum Elements<'a, 'e, 'i> {
+     Raw(json::Elements<'i>),
+-    Constant(&'a crate::ConstantValue<'e>, usize),
+     Constructed(std::slice::Iter<'a, Value<'e, 'i>>),
+ }
+ impl<'e, 'i> Iterator for Elements<'_, 'e, 'i> {
+@@ -67,28 +66,7 @@
+     fn next(&mut self) -> Option<Self::Item> {
+         match self {
+             Self::Raw(items) => items.next().map(Value::Raw),
+-            Self::Constant(value, index) => {
+-                let item = value.element(*index);
+-                *index += 1;
+-                item
+-            }
+             Self::Constructed(items) => items.next().cloned(),
+-        }
+-    }
+-    // Exhaustive consumers dispatch on storage once, outside the item loop.
+-    fn for_each<F>(self, mut f: F)
+-    where
+-        F: FnMut(Self::Item),
+-    {
+-        match self {
+-            Self::Raw(items) => items.for_each(|v| f(Value::Raw(v))),
+-            Self::Constructed(items) => items.cloned().for_each(f),
+-            Self::Constant(value, mut index) => {
+-                while let Some(item) = value.element(index) {
+-                    f(item);
+-                    index += 1;
+-                }
+-            }
+         }
+     }
+ }
+@@ -117,28 +95,22 @@
+     }
+     pub(crate) fn unpacks_sequence(&self) -> bool {
+         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence))
+-            || matches!(self, Self::Constant(c) if matches!(c.shape(),Some(Shape::Sequence)))
+     }
+     pub(crate) fn is_sequence(&self) -> bool {
+         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence | Shape::Kept))
+-            || matches!(self, Self::Constant(c) if matches!(c.shape(),Some(Shape::Sequence | Shape::Kept)))
+     }
+     pub(crate) fn object(members: Vec<(Self, Self)>) -> Self {
+         Self::Object(Rc::new(Object { members }))
+     }
+     pub(crate) fn is_array(&self) -> bool {
+-        matches!(self, Self::Constant(c) if c.shape().is_some())
+-            || matches!(self, Self::Array(_))
+-            || matches!(self, Self::Raw(raw) if raw.is_array())
++        matches!(self, Self::Array(_)) || matches!(self, Self::Raw(raw) if raw.is_array())
+     }
+     pub(crate) fn preserves_array(&self) -> bool {
+         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Preserved))
+-            || matches!(self, Self::Constant(c) if matches!(c.shape(),Some(Shape::Preserved)))
+     }
+     pub(crate) fn elements(&self) -> Elements<'_, 'e, 'i> {
+         match self {
+             Self::Raw(raw) => Elements::Raw(raw.elements()),
+-            Self::Constant(c) => Elements::Constant(c, 0),
+             Self::Array(array) => Elements::Constructed(array.items.iter()),
+             _ => unreachable!("array value"),
+         }
+@@ -146,7 +118,6 @@
+     pub(crate) fn field(&self, field: &str) -> Option<Self> {
+         match self {
+             Self::Raw(raw) => raw.field(field).map(Self::Raw),
+-            Self::Constant(c) => c.field(|k| json::string::units(k).cmp(field.encode_utf16())),
+             Self::Object(object) => object
+                 .members
+                 .iter()
+@@ -163,21 +134,18 @@
+     pub(crate) fn members(&self) -> Members<'_, 'e, 'i> {
+         match self {
+             Self::Raw(raw) => Members::Raw(raw.members()),
+-            Self::Constant(c) => Members::Constant(c, 0),
+             Self::Object(object) => Members::Constructed(object.members.iter()),
+             _ => unreachable!("object value"),
+         }
+     }
+     pub(crate) fn is_object(&self) -> bool {
+-        matches!(self, Self::Constant(c) if c.shape().is_none())
+-            || matches!(self, Self::Object(_))
++        matches!(self, Self::Object(_))
+             || matches!(self, Self::Raw(raw) if raw.as_bytes()[0] == b'{')
+     }
+ }
+ 
+ pub(crate) enum Members<'a, 'e, 'i> {
+     Raw(json::Members<'i>),
+-    Constant(&'a crate::ConstantValue<'e>, usize),
+     Constructed(std::slice::Iter<'a, (Value<'e, 'i>, Value<'e, 'i>)>),
+ }
+ impl<'a, 'e: 'a, 'i: 'a> Iterator for Members<'a, 'e, 'i> {
+@@ -185,11 +153,6 @@
+     fn next(&mut self) -> Option<Self::Item> {
+         match self {
+             Self::Raw(items) => items.next().map(|(key, value)| (key, Value::Raw(value))),
+-            Self::Constant(value, index) => {
+-                let item = value.member(*index);
+-                *index += 1;
+-                item
+-            }
+             Self::Constructed(items) => items
+                 .next()
+                 .map(|(key, value)| (key.string_body().unwrap(), value.clone())),
+--- a/crates/jx/src/evaluate.rs
++++ b/crates/jx/src/evaluate.rs
+@@ -193,20 +193,6 @@
+ impl Node {
+     pub(crate) fn run<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
+         let value = match &self.kind {
+-            Kind::StaticLookup(data, key) => {
+-                let key = crate::retain::materialize(key, input)?;
+-                return crate::lookup::constant(data, key, self.offset)
+-                    .map(|v| v.map_or(Operand::Missing, Operand::One));
+-            }
+-            Kind::Prepared(prepared) => {
+-                let value = prepared.data.value();
+-                return Ok(if matches!(value, Value::Undefined) {
+-                    Operand::Missing
+-                } else {
+-                    Operand::One(value)
+-                });
+-            }
+-            Kind::BuiltinReference(builtin) => crate::Function::builtin(*builtin),
+             Kind::Path(path) => {
+                 if path.fields.is_empty() {
+                     return Ok(if matches!(input.value, Value::Undefined) {
+--- a/crates/jx/src/expression.rs
++++ b/crates/jx/src/expression.rs
+@@ -16,9 +16,6 @@
+ #[derive(Clone, Debug)]
+ pub(crate) enum Kind {
+     Path(Path),
+-    Prepared(Box<crate::constant::Prepared>),
+-    StaticLookup(Box<crate::constant::Data>, Box<Node>),
+-    BuiltinReference(crate::builtin::Builtin),
+     Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
+     Filter(Box<Node>, Box<[Node]>),
+     Group(Box<Node>),
+@@ -112,7 +109,6 @@
+     }
+     pub(crate) fn is_array_constructor(&self) -> bool {
+         match &self.kind {
+-            Kind::Prepared(p) => p.array_syntax,
+             Kind::Array(..) => true,
+             Kind::Filter(base, _) | Kind::Keep(base, _) => base.is_array_constructor(),
+             _ => false,
+--- a/crates/jx/src/lib.rs
++++ b/crates/jx/src/lib.rs
+@@ -13,8 +13,6 @@
+ mod analysis;
+ mod builtin;
+ mod compare;
+-mod compile;
+-mod constant;
+ mod construct;
+ mod container;
+ mod error;
+@@ -35,7 +33,6 @@
+ mod sequence;
+ mod value;
+ 
+-pub use constant::ConstantValue;
+ pub use container::{Array, Object};
+ pub use error::{Error, ErrorKind};
+ pub use evaluate::{ConsumeError, Evaluation};
+@@ -62,14 +59,6 @@
+             expression::Kind::Path(path) => Ok(Evaluation {
+                 result: evaluate::Results::Path(path.select(input)?),
+             }),
+-            expression::Kind::StaticLookup(data, key)
+-                if matches!(key.kind, expression::Kind::Path(_)) =>
+-            {
+-                let expression::Kind::Path(path) = &key.kind else {
+-                    unreachable!()
+-                };
+-                lookup::select(data, path, input, self.root.offset)
+-            }
+             _ => evaluate::scalar(&self.root, input),
+         }
+     }
+--- a/crates/jx/src/lookup.rs
++++ b/crates/jx/src/lookup.rs
+@@ -33,7 +33,10 @@
+     key: Option<Value<'e, 'i>>,
+     offset: usize,
+ ) -> Result<Operand<'e, 'i>, Error> {
+-    let key = key_body(&key, offset)?;
++    let key = match &key {
++        None | Some(Value::Undefined) => "undefined",
++        Some(value) => value.string_body().ok_or_else(|| type_error(offset))?,
++    };
+     let Some(object) = object else {
+         return Ok(Operand::Missing);
+     };
+@@ -63,9 +66,6 @@
+ }
+ 
+ pub(crate) fn field<'e, 'i>(object: &Value<'e, 'i>, key: &str) -> Option<Value<'e, 'i>> {
+-    if let Value::Constant(value) = object {
+-        return value.field(|name| string::units(name).cmp(string::units(key)));
+-    }
+     if !object.is_object() {
+         return None;
+     }
+@@ -77,38 +77,3 @@
+     }
+     found
+ }
+-
+-fn key_body<'a>(key: &'a Option<Value<'_, '_>>, offset: usize) -> Result<&'a str, Error> {
+-    match key {
+-        None | Some(Value::Undefined) => Ok("undefined"),
+-        Some(value) => value.string_body().ok_or_else(|| type_error(offset)),
+-    }
+-}
+-
+-pub(crate) fn constant<'e, 'i>(
+-    data: &'e crate::constant::Data,
+-    key: Option<Value<'e, 'i>>,
+-    offset: usize,
+-) -> Result<Option<Value<'e, 'i>>, Error> {
+-    let key = key_body(&key, offset)?;
+-    Ok(data
+-        .find(|name| string::units(name).cmp(string::units(key)))
+-        .map(crate::constant::Data::value))
+-}
+-
+-pub(crate) fn select<'e, 'i>(
+-    data: &'e crate::constant::Data,
+-    path: &'e crate::expression::Path,
+-    input: &'i [u8],
+-    offset: usize,
+-) -> Result<crate::Evaluation<'e, 'i>, Error> {
+-    // Reuse validating path capture: no second record scan or lexical context.
+-    let key = match path.select(input)?.operand()? {
+-        Operand::Missing => None,
+-        Operand::One(value) => Some(value),
+-        Operand::Many(_) => return Err(type_error(offset)),
+-    };
+-    Ok(crate::Evaluation {
+-        result: crate::evaluate::Results::Scalar(constant(data, key, offset)?),
+-    })
+-}
+--- a/crates/jx/src/parse.rs
++++ b/crates/jx/src/parse.rs
+@@ -22,7 +22,6 @@
+         return Err(error(parser.offset));
+     }
+     crate::analysis::prepare(&mut root)?;
+-    crate::compile::prepare(&mut root);
+     Ok(Expression { root })
+ }
+ struct Parser<'a> {
+--- a/crates/jx/src/value.rs
++++ b/crates/jx/src/value.rs
+@@ -7,7 +7,6 @@
+ #[derive(Clone, Debug)]
+ pub enum Value<'expression, 'input> {
+     Raw(RawJson<'input>),
+-    Constant(crate::ConstantValue<'expression>),
+     Function(std::rc::Rc<crate::Function<'expression, 'input>>),
+     Number(f64),
+     Boolean(bool),
+@@ -36,7 +35,6 @@
+                 io::ErrorKind::InvalidInput,
+                 "functions have no JSON encoding",
+             )),
+-            Self::Constant(value) => value.data.write(&mut output),
+             Self::Array(array) => array.write_compact(&mut output),
+             Self::Object(object) => object.write_compact(&mut output),
+             Self::Raw(value) => value.write_compact(output),
+@@ -90,19 +88,6 @@
+                 Ok(truth)
+             }
+             Self::Object(object) => Ok(!object.members.is_empty()),
+-            Self::Constant(value) => {
+-                if value.shape().is_some() {
+-                    let mut truth = false;
+-                    let mut index = 0;
+-                    while let Some(item) = value.element(index) {
+-                        truth |= item.truth(offset)?;
+-                        index += 1;
+-                    }
+-                    Ok(truth)
+-                } else {
+-                    Ok(value.member(0).is_some())
+-                }
+-            }
+             value => {
+                 let raw = value.json().unwrap();
+                 match raw.as_bytes()[0] {
