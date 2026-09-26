@@ -44,7 +44,7 @@ operands, comparisons, strings, boolean logic, missing, short-circuiting, mixed
 expressions and reused output serialization. Additional workloads exercise singleton
 and multi-item sequence operands, type errors, escaped strings, stream-to-array and
 stream-to-stream equality, and objects with 8/128 fields. Expected results are checked
-before timing. Path, scalar, filter, aggregate, constructor and lexical compilation have separate rows.
+before timing. Path, scalar, filter, aggregate, constructor, lexical and navigation compilation have separate rows.
 
 Filter fixtures add exact 100 B–1 MiB records for predicates, no matches, literal
 first/last positions, computed negative positions and chained predicates. Wide arrays
@@ -70,6 +70,13 @@ Wide fixtures compare mapped calls with repeated use of one retained projection;
 nested retention reaches 1,048,588 bytes. Allocation budgets are asserted separately
 from existing zero-allocation paths, scalars, filters and direct aggregates.
 
+Navigation fixtures cover singleton retention, wildcards/descendants, ordering,
+grouping, membership, fallbacks and mixed lexical pipelines at 100 B–1 MiB. Wide
+inputs reach 16,384 rows; distinct-key grouping and 8/32/64-deep descendants expose
+key-search and subtree-scanning costs. Range output is constructed and consumed.
+Compilation separately measures navigation and nested fallbacks; the latter has an
+allocation budget to prevent exponential tree expansion.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
 ordinary paths, filters, aggregates and scalar operators without lexical features
@@ -81,7 +88,7 @@ Counter overhead affects allocating workloads; counts are not retained RSS.
 
 ## Extending evidence
 
-Extend workloads alongside further functions and grouping semantics. Use selected purpose-written
+Extend workloads alongside further functions and tuple navigation. Use selected purpose-written
 Rust controls when they clarify overhead. Add realistic whole-CLI pipelines and
 latency distributions separately; sample duration is not per-record tail latency.
 Fair cross-engine comparisons must use identical input, expression semantics,
@@ -540,3 +547,93 @@ frame cache, slot compiler or scanner specialization was introduced.
 [raw runs, commands and source hashes](benchmarks/m8/environment.json) retain the
 evidence. Benchmark processes ran sequentially; host activity was not controlled.
 No cross-engine, tail-latency or retained-RSS claim follows.
+
+
+## Milestone 9 — path and sequence expansion
+
+The suite now has **478 workloads**: eight compilation cases and 470 evaluations.
+Both final runs report **300 zero-allocation evaluations**; allocation counts and
+requested bytes for every earlier evaluation workload are unchanged. `Value`,
+`Context`, `Stream`/`Operand` and `Node` retain their M8 layouts. Four explicit array
+shapes replace independent flags, and mapped traversal now lives in `route.rs`.
+No lexical arena is introduced for ordinary expressions.
+
+Five-second warmed M8 profiles of a 100 B predicate, 23 B computed sum and 1,036 B
+nested filtered sum show substantial scanner work, plus scalar dispatch, callbacks
+and drops. They reveal no variable lookup or frame creation on these paths. The
+larger contexts/operands introduced in M8 remain shared costs; the profiles do not
+isolate their contribution from code layout and dispatch. No clean frame-removal
+change was identified, and splitting the evaluator would duplicate semantics.
+Direct tree evaluation remains appropriate; no IR, cache or scanner index was added.
+
+Two baseline/final pairs use M8 `7126491` and the same machine/compiler/release
+settings as above. Medians below combine 14 final samples; paired changes compare
+the corresponding seven-sample medians, derived from records/elapsed time.
+
+| Existing workload | Input bytes | M9 records/s | Pair 1 change | Pair 2 change |
+| --- | ---: | ---: | ---: | ---: |
+| ascii/nested | 100 | 9,818,811 | -1.63% | -1.41% |
+| ascii/nested | 500 | 3,160,373 | -2.45% | +0.21% |
+| array/shallow | 1,074 | 310,852 | +0.70% | +0.61% |
+| array/deep | 136 | 76,433 | +0.66% | +0.29% |
+| scalar/arithmetic | 100 | 3,119,386 | +0.14% | -1.88% |
+| filter/predicate | 100 | 2,101,816 | +4.80% | -1.23% |
+| filter/chained | 100 | 1,593,370 | +2.55% | +0.72% |
+| filter/nested | 892 | 76,762 | -1.05% | +8.61% |
+| aggregate/computed_sum | 23 | 1,908,943 | +6.99% | -0.98% |
+| aggregate/filtered_sum | 500 | 1,181,098 | +2.76% | -1.34% |
+| aggregate/nested_filtered_sum | 1,036 | 72,146 | +2.55% | -0.27% |
+| aggregate/nested_filtered_sum | 1,048,588 | 72 | +2.64% | -0.29% |
+| construct/filtered_summary | 500 | 578,300 | -0.75% | -0.36% |
+| lexical/mixed | 500 | 521,819 | -2.03% | -2.19% |
+
+Baseline variation exceeds final-run variation on several targeted workloads;
+first-pair gains do not establish a recovery of the M8 regressions. No earlier
+workload loses more than 5% in both pairs. The small repeated projection and lexical
+losses remain recorded, as do the older tiny-record and nested-rescanning costs.
+
+One traversal change has a clear isolated benefit. Infallible wildcard/descendant
+cardinality lookahead stops at two items instead of enumerating the whole result
+before replay. Two focused pairs on the final source improve wide descendant sums
+by **44–47%** across 8–16,384 rows. At 600,386 bytes, the two pairs move about 98 to
+144 records/s; allocations fall from 65,540 to 32,772, requested bytes from
+8,782,360 to 4,391,448. This removes a redundant traversal, not the member table
+needed for decoded duplicate keys and reference key ordering.
+
+Selected new workloads, including validation and complete consumption:
+
+| Workload | Input bytes | Records/s | Input MB/s | Allocations/record | Requested bytes/record |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| navigation/keep | 500 | 1,039,155 | 519.6 | 2 | 144 |
+| navigation/descendants | 500 | 476,104 | 238.1 | 8 | 1,072 |
+| navigation/ordering | 500 | 964,518 | 482.3 | 6 | 320 |
+| navigation/grouping | 500 | 849,489 | 424.7 | 11 | 824 |
+| navigation/mixed | 500 | 755,101 | 377.6 | 11 | 968 |
+| navigation/wide_sort | 600,386 | 64 | 38.4 | 18 | 1,441,840 |
+| navigation/wide_group | 600,386 | 288 | 172.8 | 32 | 1,180,088 |
+| navigation/distinct_groups | 27,486 | 242 | 6.7 | 13 | 294,712 |
+| navigation/range | 600,386 | 575 | 345.3 | 15 | 786,408 |
+| navigation/deep_descendants | 136 | 38,590 | 5.2 | 4 | 536 |
+
+Sorting retains candidates and stable merge indices; it evaluates keys on each
+comparison to preserve lexical effects and error order. Grouping retains grouped
+contexts and still searches keys linearly: the 1,024-distinct-key fixture exposes
+quadratic comparisons. Wildcards with array-valued members and explicit `[]` retain
+the required result shape. Range constructors materialize their explicit array,
+even when immediately aggregated. Leaves remain borrowed. Deep descendant paths
+still normalize/replay and rescan nested bytes; the 64-deep fixture makes this cost
+visible. Allocation bytes are cumulative requests, not peak live memory.
+
+A compiler regression test also caught exponential subtree duplication from lowering
+fallbacks to copied conditionals. Keeping the left expression once and evaluating it
+again when selected reduces ten nested coalescing expressions from **11,286 to 113
+allocations** per compile (450,459 to 7,921 requested bytes). The benchmark enforces a
+bounded allocation budget; runtime rebinding and repeated-evaluation semantics remain
+covered by differential tests.
+
+[All comparisons](benchmarks/m9/comparison.csv), [profile extracts](benchmarks/m9/profile-extracts.txt),
+[layouts](benchmarks/m9/layouts.txt), and [raw runs, commands, patches and hashes](benchmarks/m9/environment.json)
+preserve the evidence. Focused traversal comparisons use seven 100 ms samples per
+workload per run. Profiler runs are excluded from timing comparisons. Processes ran
+sequentially; host activity was not controlled. No cross-engine, tail-latency or
+retained-RSS claim follows.

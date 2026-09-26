@@ -1,0 +1,14 @@
+--- a/crates/jx/src/sequence.rs
++++ b/crates/jx/src/sequence.rs
+@@ -57,10 +57,7 @@
+     pub fn operand(self) -> Result<Operand<'e, 'i>, Error> {
+         let mut first = None;
+         let mut many = false;
+-        // These traversals cannot fail after validated input. Two items settle
+-        // cardinality; do not enumerate the entire subtree before replaying it.
+-        let fast = matches!(self, Self::Path(_))
+-            || matches!(&self, Self::Expression(node, _) if matches!(node.kind, Kind::Wildcard | Kind::Descendants));
++        let fast = matches!(self, Self::Path(_));
+         let result = self.walk(&mut |value| {
+             if first.is_some() {
+                 many = true;

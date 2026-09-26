@@ -8,6 +8,8 @@ mod constructors;
 mod filters;
 #[path = "workloads/lexical.rs"]
 mod lexical;
+#[path = "workloads/navigation.rs"]
+mod navigation;
 #[path = "workloads/scalars.rs"]
 mod scalars;
 use std::{
@@ -278,4 +280,5 @@ fn main() {
     aggregates::run(smoke);
     constructors::run(smoke);
     lexical::run(smoke);
+    navigation::run(smoke);
 }
