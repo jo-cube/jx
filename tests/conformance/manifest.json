@@ -1376,26 +1376,20 @@
     {
       "file": "groups/conditionals/case003.json",
       "index": 0,
-      "status": "deferred",
-      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
-      "phase": "evaluate",
-      "kind": "UnsupportedExpression"
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
     },
     {
       "file": "groups/conditionals/case004.json",
       "index": 0,
-      "status": "deferred",
-      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
-      "phase": "evaluate",
-      "kind": "UnsupportedExpression"
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
     },
     {
       "file": "groups/conditionals/case005.json",
       "index": 0,
-      "status": "deferred",
-      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
-      "phase": "evaluate",
-      "kind": "UnsupportedExpression"
+      "status": "supported",
+      "reason": "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
     },
     {
       "file": "groups/conditionals/case006.json",
@@ -1840,6 +1834,30 @@
       "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
       "phase": "evaluate",
       "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-lookup/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/function-lookup/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/function-lookup/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/function-lookup/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/numeric-operators/case000.json",

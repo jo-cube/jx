@@ -7,6 +7,7 @@ use std::io::{self, Write};
 #[derive(Clone, Debug)]
 pub enum Value<'expression, 'input> {
     Raw(RawJson<'input>),
+    Constant(crate::ConstantValue<'expression>),
     Function(std::rc::Rc<crate::Function<'expression, 'input>>),
     Number(f64),
     Boolean(bool),
@@ -35,6 +36,7 @@ impl<'i> Value<'_, 'i> {
                 io::ErrorKind::InvalidInput,
                 "functions have no JSON encoding",
             )),
+            Self::Constant(value) => value.data.write(&mut output),
             Self::Array(array) => array.write_compact(&mut output),
             Self::Object(object) => object.write_compact(&mut output),
             Self::Raw(value) => value.write_compact(output),
@@ -88,6 +90,19 @@ impl<'i> Value<'_, 'i> {
                 Ok(truth)
             }
             Self::Object(object) => Ok(!object.members.is_empty()),
+            Self::Constant(value) => {
+                if value.shape().is_some() {
+                    let mut truth = false;
+                    let mut index = 0;
+                    while let Some(item) = value.element(index) {
+                        truth |= item.truth(offset)?;
+                        index += 1;
+                    }
+                    Ok(truth)
+                } else {
+                    Ok(value.member(0).is_some())
+                }
+            }
             value => {
                 let raw = value.json().unwrap();
                 match raw.as_bytes()[0] {

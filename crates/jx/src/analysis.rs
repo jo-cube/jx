@@ -39,12 +39,21 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         _ => {}
     });
     visit(root, &mut |node| {
-        if let Kind::Call(target, args) = &mut node.kind
-            && let Kind::Variable(name) = &target.kind
+        if let Kind::Call(target, args) = &mut node.kind {
+            let builtin = match &target.kind {
+                Kind::BuiltinReference(builtin) => Some(*builtin),
+                Kind::Variable(name) if !bound.contains(name.as_ref()) => Builtin::named(name),
+                _ => None,
+            };
+            if let Some(builtin) = builtin {
+                node.kind = Kind::Builtin(builtin, std::mem::take(args));
+            }
+        }
+        if let Kind::Variable(name) = &node.kind
             && !bound.contains(name.as_ref())
             && let Some(builtin) = Builtin::named(name)
         {
-            node.kind = Kind::Builtin(builtin, std::mem::take(args));
+            node.kind = Kind::BuiltinReference(builtin);
         }
         node.effects = matches!(
             node.kind,
@@ -65,7 +74,7 @@ fn visit(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
     children(node, &mut |child| visit(child, f));
     f(node);
 }
-fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
+pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
     match &mut node.kind {
         Kind::Route(steps, _) => {
             for step in steps {
@@ -81,7 +90,8 @@ fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
                 f(n);
             }
         }
-        Kind::Keep(n, _)
+        Kind::StaticLookup(_, n)
+        | Kind::Keep(n, _)
         | Kind::Group(n)
         | Kind::Negate(n)
         | Kind::Bind(_, n)

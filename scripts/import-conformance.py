@@ -39,6 +39,7 @@ EXPRESSION_GROUPS = {
     "higher-order-functions": (3, set()),
     "function-boolean": (24, set()),
     "function-exists": (25, set()),
+    "function-lookup": (4, set()),
     "numeric-operators": (19, set()),
     "comparison-operators": (29, set()),
     "boolean-expresssions": (31, set()),
@@ -68,7 +69,7 @@ ERROR_KINDS = {
 
 DEFERRED_CALLS = {
     "boolean-expresssions": {16, 29, 30}, "inclusion-operator": {8}, "predicates": {3},
-    "object-constructor": {10, 11, 12, 22, 25}, "conditionals": {3, 4, 5},
+    "object-constructor": {10, 11, 12, 22, 25},
     "lambdas": {10, 11, 12},
 }
 

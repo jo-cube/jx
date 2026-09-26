@@ -12,6 +12,7 @@ pub(crate) enum Builtin {
     Boolean,
     Not,
     Exists,
+    Lookup,
     Deferred(&'static str),
 }
 impl Builtin {
@@ -24,6 +25,7 @@ impl Builtin {
             "boolean" => Self::Boolean,
             "not" => Self::Not,
             "exists" => Self::Exists,
+            "lookup" => Self::Lookup,
             _ => Self::Deferred(DEFERRED.iter().find(|&&candidate| candidate == name)?),
         })
     }
@@ -33,6 +35,9 @@ impl Builtin {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if matches!(self, Self::Lookup) {
+            return crate::lookup::evaluate(args, context, offset);
+        }
         if let Self::Deferred(name) = self {
             return Err(crate::Error::new(
                 crate::ErrorKind::UnsupportedExpression,
@@ -105,7 +110,7 @@ impl Builtin {
                 };
                 value.truth(offset)? != matches!(self, Self::Not)
             }
-            Self::Aggregate(_) | Self::Deferred(_) => unreachable!(),
+            Self::Aggregate(_) | Self::Deferred(_) | Self::Lookup => unreachable!(),
         };
         Ok(Operand::One(Value::Boolean(result)))
     }
@@ -147,7 +152,6 @@ const DEFERRED: &[&str] = &[
     "reduce",
     "sift",
     "keys",
-    "lookup",
     "append",
     "spread",
     "merge",

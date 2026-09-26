@@ -56,9 +56,7 @@ impl Aggregate {
             match value {
                 Value::Undefined => {}
                 value if value.is_array() => {
-                    for item in value.elements() {
-                        fold.push(item);
-                    }
+                    value.elements().for_each(|item| fold.push(item));
                 }
                 value => fold.push(value),
             }
@@ -79,9 +77,7 @@ impl Aggregate {
         };
         if let Some(value) = value {
             if value.is_array() {
-                for item in value.elements() {
-                    fold.push(item);
-                }
+                value.elements().for_each(|item| fold.push(item));
             } else {
                 fold.push(value);
             }

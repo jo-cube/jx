@@ -28,7 +28,7 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Constructors | Arrays, objects, computed keys/values, nested and mapped construction; see below |
 | Singleton retention | `expr[]` preserves sequence shape; missing stays missing |
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures and higher-order values |
-| Builtins | Aggregates, `$boolean`, `$not`, `$exists`; others fail explicitly when called |
+| Builtins | Aggregates, `$boolean`, `$not`, `$exists`, `$lookup`; others fail explicitly when called |
 | Deferred runtime/language | Signatures, tail-call elimination, partial application, chaining, transforms and regex |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments, general unquoted Unicode names | Deferred syntax; compile error |
@@ -332,9 +332,23 @@ Limits and explicit policies:
 - `Value::Function` is opaque. `write_compact` and the CLI reject function output because
   it has no JSON encoding. Host function registration/invocation remains deferred.
 
+## Lookup and specialization
+
+[`$lookup`](https://docs.jsonata.org/object-functions) accepts an object and string key;
+its one-argument form uses current context as the object. Missing/scalar/null objects
+produce missing. Arrays recursively search their objects and flatten returned array
+members one level. Explicit missing key looks up `"undefined"`, matching the reference;
+other non-string keys are type errors. Last decoded duplicate input keys win.
+
+Compilation changes execution cost, not result shape, identity or error timing.
+Constant containers remain fresh constructions; retained bindings share identity.
+Computed indexes stay distinct from literal indexes after folding. Invalid constant
+expressions still fail at evaluation, after record validation, and unselected branches
+remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze these rules.
+
 ## Executable coverage
 
-`just conformance` executes all **564** imported cases from complete `fields`,
+`just conformance` executes all **568** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
@@ -342,16 +356,16 @@ Limits and explicit policies:
 `array-constructor`, `object-constructor`, `variables`, `blocks`, `conditionals`,
 `closures`, `lambdas`, `higher-order-functions`, `function-boolean`, `function-exists`,
 `wildcards`, `descendent-operator`, `range-operator`, `sorting`, `inclusion-operator`,
-`coalescing-operator` and `default-operator`
+`coalescing-operator`, `default-operator` and `function-lookup`
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 474 | Semantic JSON result or missing matches upstream |
+| Supported results | 481 | Semantic JSON result or missing matches upstream |
 | Supported errors | 55 | Asserted compile/evaluate phase and mapped local error kind |
 | Deferred syntax | 13 | Compile-time `UnsupportedExpression` |
-| Deferred builtin calls | 19 | Runtime `UnsupportedExpression` |
+| Deferred builtin calls | 16 | Runtime `UnsupportedExpression` |
 | Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
 
 These are selected groups, not a percentage of the full suite. No imported case
@@ -392,6 +406,7 @@ node scripts/check-aggregates.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-constructors.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-lexical.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-navigation.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-compiler.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -405,6 +420,7 @@ numeric/error boundaries. The constructor check adds 5,000 evaluations including
 escaping functions, argument retention and stateful predicates. The navigation check
 adds 1,374 comparisons, including 129 readable cases, shape matrices, grouping/sorting
 composition, duplicate-key enumeration, ranges, kept sequences and fallback/membership
-behavior. The known upstream
+behavior. The compiler check adds 947 comparisons covering constant folding, constructor
+identity/shape, indexed lookup, dynamic keys and builtin shadowing. The known upstream
 empty-root-array mutation during object construction is excluded from generated
 constructor/lexical comparisons. Normal `just all` needs neither Node nor the upstream checkout.

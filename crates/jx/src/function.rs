@@ -60,6 +60,17 @@ pub(crate) fn call<'e, 'i>(
     };
     match &function.kind {
         FunctionKind::Builtin(builtin @ Builtin::Deferred(_)) => builtin.value(None, offset),
+        FunctionKind::Builtin(Builtin::Lookup) => {
+            let (object, key) = match arguments.len() {
+                1 => (Some(context.value.clone()), arguments.pop().unwrap()),
+                2 => {
+                    let key = arguments.pop().unwrap();
+                    (arguments.pop().unwrap(), key)
+                }
+                _ => return Err(type_error(offset)),
+            };
+            crate::lookup::values(object, key, offset)
+        }
         FunctionKind::Builtin(builtin) => {
             if arguments.is_empty() && matches!(builtin, Builtin::Boolean | Builtin::Not) {
                 return builtin.value(Some(context.value.clone()), offset);

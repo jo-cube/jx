@@ -13,6 +13,8 @@ mod aggregate;
 mod analysis;
 mod builtin;
 mod compare;
+mod compile;
+mod constant;
 mod construct;
 mod container;
 mod error;
@@ -21,6 +23,7 @@ mod expression;
 mod filter;
 mod function;
 mod json;
+mod lookup;
 mod members;
 mod navigate;
 mod ordering;
@@ -32,6 +35,7 @@ mod runtime;
 mod sequence;
 mod value;
 
+pub use constant::ConstantValue;
 pub use container::{Array, Object};
 pub use error::{Error, ErrorKind};
 pub use evaluate::{ConsumeError, Evaluation};
@@ -58,6 +62,14 @@ impl Expression {
             expression::Kind::Path(path) => Ok(Evaluation {
                 result: evaluate::Results::Path(path.select(input)?),
             }),
+            expression::Kind::StaticLookup(data, key)
+                if matches!(key.kind, expression::Kind::Path(_)) =>
+            {
+                let expression::Kind::Path(path) = &key.kind else {
+                    unreachable!()
+                };
+                lookup::select(data, path, input, self.root.offset)
+            }
             _ => evaluate::scalar(&self.root, input),
         }
     }

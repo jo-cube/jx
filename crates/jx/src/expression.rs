@@ -16,6 +16,9 @@ pub(crate) struct Node {
 #[derive(Clone, Debug)]
 pub(crate) enum Kind {
     Path(Path),
+    Prepared(Box<crate::constant::Prepared>),
+    StaticLookup(Box<crate::constant::Data>, Box<Node>),
+    BuiltinReference(crate::builtin::Builtin),
     Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
@@ -109,6 +112,7 @@ impl Node {
     }
     pub(crate) fn is_array_constructor(&self) -> bool {
         match &self.kind {
+            Kind::Prepared(p) => p.array_syntax,
             Kind::Array(..) => true,
             Kind::Filter(base, _) | Kind::Keep(base, _) => base.is_array_constructor(),
             _ => false,

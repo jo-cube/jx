@@ -193,6 +193,20 @@ impl<'e, 'i> Operand<'e, 'i> {
 impl Node {
     pub(crate) fn run<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
         let value = match &self.kind {
+            Kind::StaticLookup(data, key) => {
+                let key = crate::retain::materialize(key, input)?;
+                return crate::lookup::constant(data, key, self.offset)
+                    .map(|v| v.map_or(Operand::Missing, Operand::One));
+            }
+            Kind::Prepared(prepared) => {
+                let value = prepared.data.value();
+                return Ok(if matches!(value, Value::Undefined) {
+                    Operand::Missing
+                } else {
+                    Operand::One(value)
+                });
+            }
+            Kind::BuiltinReference(builtin) => crate::Function::builtin(*builtin),
             Kind::Path(path) => {
                 if path.fields.is_empty() {
                     return Ok(if matches!(input.value, Value::Undefined) {

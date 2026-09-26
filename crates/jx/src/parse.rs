@@ -22,6 +22,7 @@ pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
         return Err(error(parser.offset));
     }
     crate::analysis::prepare(&mut root)?;
+    crate::compile::prepare(&mut root);
     Ok(Expression { root })
 }
 struct Parser<'a> {

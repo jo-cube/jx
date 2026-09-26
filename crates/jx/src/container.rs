@@ -8,10 +8,10 @@ use std::{
 #[derive(Debug)]
 pub struct Array<'e, 'i> {
     pub(crate) items: Vec<Value<'e, 'i>>,
-    shape: Shape,
+    pub(crate) shape: Shape,
 }
-#[derive(Debug)]
-enum Shape {
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum Shape {
     Array,
     Preserved,
     Sequence,
@@ -59,6 +59,7 @@ impl<'e, 'i> Object<'e, 'i> {
 
 pub(crate) enum Elements<'a, 'e, 'i> {
     Raw(json::Elements<'i>),
+    Constant(&'a crate::ConstantValue<'e>, usize),
     Constructed(std::slice::Iter<'a, Value<'e, 'i>>),
 }
 impl<'e, 'i> Iterator for Elements<'_, 'e, 'i> {
@@ -66,7 +67,28 @@ impl<'e, 'i> Iterator for Elements<'_, 'e, 'i> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Raw(items) => items.next().map(Value::Raw),
+            Self::Constant(value, index) => {
+                let item = value.element(*index);
+                *index += 1;
+                item
+            }
             Self::Constructed(items) => items.next().cloned(),
+        }
+    }
+    // Exhaustive consumers dispatch on storage once, outside the item loop.
+    fn for_each<F>(self, mut f: F)
+    where
+        F: FnMut(Self::Item),
+    {
+        match self {
+            Self::Raw(items) => items.for_each(|v| f(Value::Raw(v))),
+            Self::Constructed(items) => items.cloned().for_each(f),
+            Self::Constant(value, mut index) => {
+                while let Some(item) = value.element(index) {
+                    f(item);
+                    index += 1;
+                }
+            }
         }
     }
 }
@@ -95,22 +117,28 @@ impl<'e, 'i> Value<'e, 'i> {
     }
     pub(crate) fn unpacks_sequence(&self) -> bool {
         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence))
+            || matches!(self, Self::Constant(c) if matches!(c.shape(),Some(Shape::Sequence)))
     }
     pub(crate) fn is_sequence(&self) -> bool {
         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence | Shape::Kept))
+            || matches!(self, Self::Constant(c) if matches!(c.shape(),Some(Shape::Sequence | Shape::Kept)))
     }
     pub(crate) fn object(members: Vec<(Self, Self)>) -> Self {
         Self::Object(Rc::new(Object { members }))
     }
     pub(crate) fn is_array(&self) -> bool {
-        matches!(self, Self::Array(_)) || matches!(self, Self::Raw(raw) if raw.is_array())
+        matches!(self, Self::Constant(c) if c.shape().is_some())
+            || matches!(self, Self::Array(_))
+            || matches!(self, Self::Raw(raw) if raw.is_array())
     }
     pub(crate) fn preserves_array(&self) -> bool {
         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Preserved))
+            || matches!(self, Self::Constant(c) if matches!(c.shape(),Some(Shape::Preserved)))
     }
     pub(crate) fn elements(&self) -> Elements<'_, 'e, 'i> {
         match self {
             Self::Raw(raw) => Elements::Raw(raw.elements()),
+            Self::Constant(c) => Elements::Constant(c, 0),
             Self::Array(array) => Elements::Constructed(array.items.iter()),
             _ => unreachable!("array value"),
         }
@@ -118,6 +146,7 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn field(&self, field: &str) -> Option<Self> {
         match self {
             Self::Raw(raw) => raw.field(field).map(Self::Raw),
+            Self::Constant(c) => c.field(|k| json::string::units(k).cmp(field.encode_utf16())),
             Self::Object(object) => object
                 .members
                 .iter()
@@ -134,18 +163,21 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn members(&self) -> Members<'_, 'e, 'i> {
         match self {
             Self::Raw(raw) => Members::Raw(raw.members()),
+            Self::Constant(c) => Members::Constant(c, 0),
             Self::Object(object) => Members::Constructed(object.members.iter()),
             _ => unreachable!("object value"),
         }
     }
     pub(crate) fn is_object(&self) -> bool {
-        matches!(self, Self::Object(_))
+        matches!(self, Self::Constant(c) if c.shape().is_none())
+            || matches!(self, Self::Object(_))
             || matches!(self, Self::Raw(raw) if raw.as_bytes()[0] == b'{')
     }
 }
 
 pub(crate) enum Members<'a, 'e, 'i> {
     Raw(json::Members<'i>),
+    Constant(&'a crate::ConstantValue<'e>, usize),
     Constructed(std::slice::Iter<'a, (Value<'e, 'i>, Value<'e, 'i>)>),
 }
 impl<'a, 'e: 'a, 'i: 'a> Iterator for Members<'a, 'e, 'i> {
@@ -153,6 +185,11 @@ impl<'a, 'e: 'a, 'i: 'a> Iterator for Members<'a, 'e, 'i> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Raw(items) => items.next().map(|(key, value)| (key, Value::Raw(value))),
+            Self::Constant(value, index) => {
+                let item = value.member(*index);
+                *index += 1;
+                item
+            }
             Self::Constructed(items) => items
                 .next()
                 .map(|(key, value)| (key.string_body().unwrap(), value.clone())),
