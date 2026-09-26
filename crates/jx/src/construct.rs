@@ -36,6 +36,77 @@ pub(crate) fn object<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Value<'e, 'i>, Error> {
+    grouped(pairs, context, offset, |add| {
+        if !context.wrapped && context.value.is_array() {
+            let mut empty = true;
+            for item in context.value.elements() {
+                empty = false;
+                add(item)?;
+            }
+            if empty {
+                add(Value::Undefined)?;
+            }
+        } else {
+            add(context.value.clone())?;
+        }
+        Ok(())
+    })
+}
+
+pub(crate) fn reduce<'e, 'i>(
+    base: &'e Node,
+    pairs: &'e [(Node, Node)],
+    context: &Context<'e, 'i>,
+    offset: usize,
+) -> Result<Value<'e, 'i>, Error> {
+    grouped(pairs, context, offset, |add| {
+        let mut pending = None;
+        let mut multiple = false;
+        let mut error = None;
+        visit(base, context, &mut |value| {
+            if error.is_some() {
+                return;
+            }
+            if let Some(first) = pending.take() {
+                multiple = true;
+                error = add(first).err();
+            }
+            if multiple {
+                if error.is_none() {
+                    error = add(value).err();
+                }
+            } else {
+                pending = Some(value);
+            }
+        })?;
+        if let Some(error) = error {
+            return Err(error);
+        }
+        if !multiple {
+            match pending {
+                Some(value) if value.is_array() => {
+                    let mut empty = true;
+                    for item in value.elements() {
+                        empty = false;
+                        add(item)?;
+                    }
+                    if empty {
+                        add(Value::Undefined)?;
+                    }
+                }
+                value => add(value.unwrap_or(Value::Undefined))?,
+            }
+        }
+        Ok(())
+    })
+}
+
+fn grouped<'e, 'i>(
+    pairs: &'e [(Node, Node)],
+    context: &Context<'e, 'i>,
+    offset: usize,
+    input: impl FnOnce(&mut dyn FnMut(Value<'e, 'i>) -> Result<(), Error>) -> Result<(), Error>,
+) -> Result<Value<'e, 'i>, Error> {
     struct Group<'e, 'i> {
         key: Value<'e, 'i>,
         pair: usize,
@@ -65,7 +136,11 @@ pub(crate) fn object<'e, 'i>(
                         "duplicate object key from different members",
                     ));
                 }
-                group.rest.push(value.clone());
+                if matches!(group.first, Value::Undefined) {
+                    group.first = value.clone();
+                } else if !matches!(value, Value::Undefined) {
+                    group.rest.push(value.clone());
+                }
             } else {
                 groups.push(Group {
                     key,
@@ -77,18 +152,10 @@ pub(crate) fn object<'e, 'i>(
         }
         Ok(())
     };
-    if !context.wrapped && context.value.is_array() {
-        let mut empty = true;
-        for item in context.value.elements() {
-            empty = false;
-            add(item)?;
-        }
-        if empty {
-            add(Value::Undefined)?;
-        }
-    } else {
-        add(context.value.clone())?;
-    }
+    input(&mut add)?;
+    groups.sort_by_key(|group| {
+        crate::members::index(group.key.string_body().unwrap()).unwrap_or(u32::MAX)
+    });
     let mut members = Vec::with_capacity(groups.len());
     for group in groups {
         let value = if group.rest.is_empty() {

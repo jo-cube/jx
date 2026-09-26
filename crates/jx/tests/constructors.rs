@@ -156,17 +156,7 @@ fn serialization_keeps_unicode_units_and_arbitrary_json_keys() {
 
 #[test]
 fn constructor_syntax_and_depth_are_bounded() {
-    for source in [
-        "[1,]",
-        "[,1]",
-        "[1",
-        "{1}",
-        "{\"a\":}",
-        "{\"a\":1,}",
-        "a{\"x\":b}",
-        "a[]",
-        "[1..3]",
-    ] {
+    for source in ["[1,]", "[,1]", "[1", "{1}", "{\"a\":}", "{\"a\":1,}"] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression,

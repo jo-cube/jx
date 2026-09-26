@@ -19,6 +19,12 @@ pub(crate) enum Kind {
     Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
+    Keep(Box<Node>, bool), // Whole path versus a stage/expression boundary.
+    Wildcard,
+    Descendants,
+    Range(Box<Node>, Box<Node>),
+    Reduce(Box<Node>, Box<[(Node, Node)]>),
+    Sort(Box<Node>, Box<[(Node, bool)]>),
     Builtin(crate::builtin::Builtin, Box<[Node]>),
     Variable(Box<str>),
     Bind(Box<str>, Box<Node>),
@@ -52,6 +58,9 @@ pub(crate) enum Op {
     GreaterEqual,
     And,
     Or,
+    In,
+    Default,
+    Coalesce,
 }
 
 impl Op {
@@ -59,7 +68,10 @@ impl Op {
         match self {
             Self::Or => 25,
             Self::And => 30,
-            Self::Equal
+            Self::In
+            | Self::Default
+            | Self::Coalesce
+            | Self::Equal
             | Self::NotEqual
             | Self::Less
             | Self::LessEqual
@@ -91,21 +103,21 @@ impl Node {
     pub(crate) fn array_focus(&self) -> bool {
         match &self.kind {
             Kind::Array(_, preserve) | Kind::Route(_, preserve) => *preserve,
-            Kind::Filter(base, _) | Kind::Group(base) => base.array_focus(),
+            Kind::Filter(base, _) | Kind::Group(base) | Kind::Keep(base, _) => base.array_focus(),
             _ => false,
         }
     }
     pub(crate) fn is_array_constructor(&self) -> bool {
         match &self.kind {
             Kind::Array(..) => true,
-            Kind::Filter(base, _) => base.is_array_constructor(),
+            Kind::Filter(base, _) | Kind::Keep(base, _) => base.is_array_constructor(),
             _ => false,
         }
     }
     pub(crate) fn preserve_array(&mut self) {
         match &mut self.kind {
             Kind::Array(_, preserve) => *preserve = true,
-            Kind::Filter(base, _) => base.preserve_array(),
+            Kind::Filter(base, _) | Kind::Keep(base, _) => base.preserve_array(),
             _ => {}
         }
     }

@@ -25,7 +25,7 @@ impl<'e, 'i> PathEvaluation<'e, 'i> {
     pub(crate) fn operand(self) -> Result<Operand<'e, 'i>, Error> {
         match self.selection {
             Selection::Missing => Ok(Operand::Missing),
-            Selection::Value(value) if !value.is_sequence() => Ok(match value {
+            Selection::Value(value) if !value.unpacks_sequence() => Ok(match value {
                 Value::Undefined => Operand::Missing,
                 value => Operand::One(value),
             }),
@@ -40,7 +40,7 @@ impl<'e, 'i> PathEvaluation<'e, 'i> {
     ) -> Result<(), E> {
         match &self.selection {
             Selection::Missing => Ok(()),
-            Selection::Value(value) if value.is_sequence() => {
+            Selection::Value(value) if value.unpacks_sequence() => {
                 for item in value.elements() {
                     output(item)?;
                 }
@@ -193,7 +193,7 @@ fn sequence_item<'e, 'i, E>(
 
 // Recursive array lookup flattens returned arrays once at the object boundary;
 // concatenating the recursive sequences must not flatten their array items again.
-fn lookup<'e, 'i, E>(
+pub(crate) fn lookup<'e, 'i, E>(
     input: &Value<'e, 'i>,
     field: &str,
     output: &mut dyn FnMut(Value<'e, 'i>) -> Result<(), E>,

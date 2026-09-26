@@ -1,7 +1,7 @@
 use crate::{
     Error, Value,
     evaluate::Operand,
-    expression::{Kind, Node, Step},
+    expression::{Kind, Node},
     path::PathEvaluation,
 };
 
@@ -35,8 +35,15 @@ impl<'e, 'i> Stream<'e, 'i> {
         match self {
             Self::Path(path) => path.try_for_each(output),
             Self::Expression(node, context) => match &node.kind {
+                Kind::Wildcard => crate::navigate::wildcard(&context.value, output),
+                Kind::Descendants => crate::navigate::descendants(context.value.clone(), output),
+                Kind::Range(left, right) => {
+                    crate::navigate::range(left, right, context, node.offset, output)
+                }
                 Kind::Route(steps, array_focus) => {
-                    route(steps, *array_focus, context, &mut |view| view.walk(output))
+                    crate::route::walk(steps, *array_focus, false, context, &mut |view| {
+                        view.walk(output)
+                    })
                 }
                 Kind::Filter(base, predicates) => {
                     crate::filter::with_filters(base, predicates, context, &mut |view| {
@@ -50,7 +57,10 @@ impl<'e, 'i> Stream<'e, 'i> {
     pub fn operand(self) -> Result<Operand<'e, 'i>, Error> {
         let mut first = None;
         let mut many = false;
-        let fast = matches!(self, Self::Path(_));
+        // These traversals cannot fail after validated input. Two items settle
+        // cardinality; do not enumerate the entire subtree before replaying it.
+        let fast = matches!(self, Self::Path(_))
+            || matches!(&self, Self::Expression(node, _) if matches!(node.kind, Kind::Wildcard | Kind::Descendants));
         let result = self.walk(&mut |value| {
             if first.is_some() {
                 many = true;
@@ -93,7 +103,7 @@ impl<'e, 'i> Stream<'e, 'i> {
 pub(crate) enum View<'s, 'e, 'i> {
     Operand(&'s Operand<'e, 'i>),
     Items(&'s [Value<'e, 'i>]),
-    Map(&'s Map<'s, 'e, 'i>),
+    Map(&'s crate::route::Map<'s, 'e, 'i>),
     Filter(&'s crate::filter::Filter<'s, 'e, 'i>),
 }
 impl<'e, 'i> View<'_, 'e, 'i> {
@@ -154,150 +164,6 @@ impl<'e, 'i> View<'_, 'e, 'i> {
     }
 }
 
-pub(crate) struct Map<'s, 'e, 'i> {
-    input: View<'s, 'e, 'i>,
-    step: &'e Step,
-    last: bool,
-    context: &'s Context<'e, 'i>,
-}
-impl<'e, 'i> Map<'_, 'e, 'i> {
-    fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
-        let mut defined = false;
-        let mut pending = None;
-        self.input.transform(false, output, |value, output| {
-            let context = Context {
-                value,
-                wrapped: self.step.lookup,
-                scope: self.context.scope.clone(),
-            };
-            crate::filter::with_filters(
-                &self.step.node,
-                &self.step.predicates,
-                &context,
-                &mut |view| {
-                    if matches!(view, View::Operand(Operand::Missing)) {
-                        return Ok(());
-                    }
-                    if let Some(value) = pending.take() {
-                        emit_mapped(value, output)?;
-                    }
-                    if self.last && !defined {
-                        defined = true;
-                        if let View::Operand(Operand::One(value)) = view
-                            && value.is_array()
-                            && !value.is_sequence()
-                        {
-                            pending = Some(value.clone());
-                            return Ok(());
-                        }
-                    }
-                    defined = true;
-                    match &view {
-                        View::Operand(Operand::One(value)) if value.preserves_array() => {
-                            output(value.clone())
-                        }
-                        _ => view.candidates(false, output),
-                    }
-                },
-            )
-        })?;
-        if let Some(value) = pending {
-            output(value)?;
-        }
-        Ok(())
-    }
-}
-fn emit_mapped<'e, 'i>(value: Value<'e, 'i>, output: &mut Output<'_, 'e, 'i>) -> Walk {
-    if value.preserves_array() {
-        output(value)
-    } else {
-        View::Operand(&Operand::One(value)).candidates(false, output)
-    }
-}
-fn route<'e, 'i>(
-    steps: &'e [Step],
-    array_focus: bool,
-    context: &Context<'e, 'i>,
-    output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
-) -> Walk {
-    fn stages<'e, 'i>(
-        input: View<'_, 'e, 'i>,
-        steps: &'e [Step],
-        context: &Context<'e, 'i>,
-        output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
-    ) -> Walk {
-        let Some((step, rest)) = steps.split_first() else {
-            return output(input);
-        };
-        let map = Map {
-            input,
-            step,
-            last: rest.is_empty(),
-            context,
-        };
-        // Stream::walk consumes the final view once. Only an intermediate
-        // stateful stage needs storage to protect it from downstream replays.
-        if step.effects && !rest.is_empty() {
-            let mut items = Vec::new();
-            map.walk(&mut |value| {
-                items.push(value);
-                Ok(())
-            })?;
-            stages(View::Items(&items), rest, context, output)
-        } else {
-            stages(View::Map(&map), rest, context, output)
-        }
-    }
-    if array_focus {
-        return crate::filter::with_filters(
-            &steps[0].node,
-            &steps[0].predicates,
-            context,
-            &mut |view| {
-                if let View::Operand(Operand::One(value)) = &view
-                    && !value.is_array()
-                {
-                    if matches!(value.atomic(), Value::Null) {
-                        return Err(crate::value::type_error(steps[0].node.offset).into());
-                    }
-                    if value.string_body().is_some() {
-                        return Err(crate::Error::new(
-                            crate::ErrorKind::UnsupportedExpression,
-                            steps[0].node.offset,
-                            "string iteration after a filtered array constructor is deferred",
-                        )
-                        .into());
-                    }
-                    return output(View::Items(&[]));
-                }
-                if matches!(&view, View::Operand(Operand::One(value)) if value.is_array() && value.elements().next().is_none())
-                {
-                    output(view)
-                } else {
-                    stages(view, &steps[1..], context, output)
-                }
-            },
-        );
-    }
-    let variable = matches!(&steps[0].node.kind, Kind::Variable(_))
-        || matches!(&steps[0].node.kind, Kind::Path(path) if path.rooted && path.fields.is_empty());
-    if context.wrapped || variable {
-        stages(
-            View::Items(std::slice::from_ref(&context.value)),
-            steps,
-            context,
-            output,
-        )
-    } else {
-        stages(
-            View::Operand(&Operand::One(context.value.clone())),
-            steps,
-            context,
-            output,
-        )
-    }
-}
-
 impl Node {
     // Expose deferred results without a cardinality preflight. Consumers that
     // require a scalar still normalize through Stream::operand.
@@ -310,7 +176,11 @@ impl Node {
             Kind::Path(path) if !path.fields.is_empty() => {
                 Some(Stream::Path(path.select_context(input)))
             }
-            Kind::Route(..) | Kind::Filter(..) => Some(Stream::Expression(self, input.clone())),
+            Kind::Route(..)
+            | Kind::Filter(..)
+            | Kind::Wildcard
+            | Kind::Descendants
+            | Kind::Range(..) => Some(Stream::Expression(self, input.clone())),
             Kind::Group(child) => child.stream(input),
             _ => None,
         }

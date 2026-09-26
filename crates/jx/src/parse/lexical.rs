@@ -57,25 +57,7 @@ impl Parser<'_> {
         Ok(Kind::Lambda(params.into_boxed_slice(), Box::new(body)))
     }
 
-    pub(super) fn suffix(
-        &mut self,
-        mut target: Node,
-        nesting: usize,
-    ) -> Result<(Node, Box<[Node]>), Error> {
-        loop {
-            target = self.calls(target, nesting)?;
-            let predicates = self.predicates(nesting)?;
-            if !matches!(self.token, Token::Open) {
-                return Ok((target, predicates));
-            }
-            let offset = target.offset;
-            let depth = target.depth
-                + predicates.len()
-                + predicates.iter().map(|p| p.depth).max().unwrap_or(0);
-            target = node(Kind::Filter(Box::new(target), predicates), offset, depth)?;
-        }
-    }
-    fn calls(&mut self, mut target: Node, nesting: usize) -> Result<Node, Error> {
+    pub(super) fn calls(&mut self, mut target: Node, nesting: usize) -> Result<Node, Error> {
         while matches!(self.token, Token::Open) {
             let offset = target.offset;
             let args = self.arguments(nesting)?;

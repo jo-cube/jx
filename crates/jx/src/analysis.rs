@@ -15,7 +15,7 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         {
             invalid = Some(node.offset);
         }
-        if let Kind::Object(pairs) = &node.kind
+        if let Kind::Object(pairs) | Kind::Reduce(_, pairs) = &node.kind
             && pairs
                 .iter()
                 .any(|(key, value)| mutates_scope(key) || mutates_scope(value))
@@ -81,8 +81,12 @@ fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
                 f(n);
             }
         }
-        Kind::Group(n) | Kind::Negate(n) | Kind::Bind(_, n) | Kind::Lambda(_, n) => f(n),
-        Kind::Binary(_, l, r) => {
+        Kind::Keep(n, _)
+        | Kind::Group(n)
+        | Kind::Negate(n)
+        | Kind::Bind(_, n)
+        | Kind::Lambda(_, n) => f(n),
+        Kind::Binary(_, l, r) | Kind::Range(l, r) => {
             f(l);
             f(r);
         }
@@ -96,6 +100,19 @@ fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
         Kind::Array(args, _) | Kind::Builtin(_, args) | Kind::Block(args) => {
             for n in args {
                 f(n);
+            }
+        }
+        Kind::Reduce(base, pairs) => {
+            f(base);
+            for (key, value) in pairs {
+                f(key);
+                f(value);
+            }
+        }
+        Kind::Sort(base, terms) => {
+            f(base);
+            for (term, _) in terms {
+                f(term);
             }
         }
         Kind::Object(pairs) => {
@@ -112,7 +129,9 @@ fn mutates_scope(node: &Node) -> bool {
     match &node.kind {
         Kind::Bind(..) => true,
         Kind::Group(_) | Kind::Block(_) | Kind::Lambda(..) => false,
-        Kind::Binary(_, left, right) => mutates_scope(left) || mutates_scope(right),
+        Kind::Binary(_, left, right) | Kind::Range(left, right) => {
+            mutates_scope(left) || mutates_scope(right)
+        }
         Kind::Conditional(test, yes, no) => {
             mutates_scope(test) || mutates_scope(yes) || no.as_deref().is_some_and(mutates_scope)
         }
@@ -126,7 +145,16 @@ fn mutates_scope(node: &Node) -> bool {
         Kind::Object(pairs) => pairs
             .iter()
             .any(|(k, v)| mutates_scope(k) || mutates_scope(v)),
-        Kind::Negate(n) => mutates_scope(n),
+        Kind::Negate(n) | Kind::Keep(n, _) => mutates_scope(n),
+        Kind::Reduce(base, pairs) => {
+            mutates_scope(base)
+                || pairs
+                    .iter()
+                    .any(|(k, v)| mutates_scope(k) || mutates_scope(v))
+        }
+        Kind::Sort(base, terms) => {
+            mutates_scope(base) || terms.iter().any(|(n, _)| mutates_scope(n))
+        }
         _ => false,
     }
 }

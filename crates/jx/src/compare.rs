@@ -88,7 +88,7 @@ fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
 }
 
 // Encoded keys compare and hash their UTF-16 units, including lone surrogates.
-struct Key<'a>(&'a str);
+pub(crate) struct Key<'a>(pub(crate) &'a str);
 impl PartialEq for Key<'_> {
     fn eq(&self, other: &Self) -> bool {
         string::units(self.0).eq(string::units(other.0))
@@ -171,4 +171,37 @@ pub(crate) fn order<'e, 'i>(
 
 fn units(raw: RawJson<'_>) -> string::Units<'_> {
     string::units(&raw.as_str()[1..raw.as_str().len() - 1])
+}
+
+// `in` uses reference identity for containers, unlike structural `=`.
+pub(crate) fn includes(left: Operand<'_, '_>, right: Operand<'_, '_>) -> Result<bool, Error> {
+    let Operand::One(left) = left else {
+        return Ok(false);
+    };
+    let mut found = false;
+    let mut compare = |right: Value<'_, '_>| {
+        found |= match (&left, &right) {
+            (Value::Array(a), Value::Array(b)) => std::rc::Rc::ptr_eq(a, b),
+            (Value::Object(a), Value::Object(b)) => std::rc::Rc::ptr_eq(a, b),
+            (Value::Raw(a), Value::Raw(b)) if left.is_array() || left.is_object() => {
+                a.as_bytes().as_ptr() == b.as_bytes().as_ptr()
+            }
+            _ if left.is_array() || left.is_object() || right.is_array() || right.is_object() => {
+                false
+            }
+            _ => values(left.clone(), right),
+        };
+        Ok(())
+    };
+    match right {
+        Operand::Missing => {}
+        Operand::One(value) if value.is_array() => {
+            for item in value.elements() {
+                compare(item)?;
+            }
+        }
+        Operand::One(value) => compare(value)?,
+        Operand::Many(stream) => stream.visit(compare)?,
+    }
+    Ok(found)
 }

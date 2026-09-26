@@ -55,7 +55,7 @@ impl<'e, 'i> Evaluation<'e, 'i> {
     ) -> Result<(), ConsumeError<E>> {
         match self.result {
             Results::Path(path) => path.try_for_each(output).map_err(ConsumeError::Consumer),
-            Results::Scalar(Some(value)) if value.is_sequence() => {
+            Results::Scalar(Some(value)) if value.unpacks_sequence() => {
                 for item in value.elements() {
                     output(item).map_err(ConsumeError::Consumer)?;
                 }
@@ -76,7 +76,8 @@ impl<'e, 'i> Evaluation<'e, 'i> {
                 let mut pending = None;
                 let result = stream
                     .walk(&mut |value| {
-                        if first && (matches!(value, Value::Undefined) || value.is_sequence()) {
+                        if first && (matches!(value, Value::Undefined) || value.unpacks_sequence())
+                        {
                             first = false;
                             pending = Some(value);
                             return Ok(());
@@ -89,7 +90,7 @@ impl<'e, 'i> Evaluation<'e, 'i> {
                     })
                     .and_then(|()| {
                         if let Some(value) = pending
-                            && value.is_sequence()
+                            && value.unpacks_sequence()
                         {
                             for item in value.elements() {
                                 consumer(item)?;
@@ -117,7 +118,15 @@ pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluati
         value,
         wrapped: true,
     };
-    let result = if !node.effects && matches!(node.kind, Kind::Route(..) | Kind::Filter(..)) {
+    let result = if !node.effects
+        && matches!(
+            node.kind,
+            Kind::Route(..)
+                | Kind::Filter(..)
+                | Kind::Wildcard
+                | Kind::Descendants
+                | Kind::Range(..)
+        ) {
         Results::Expression(node, context)
     } else {
         match node.run(&context)? {
@@ -141,7 +150,7 @@ impl<'e, 'i> Operand<'e, 'i> {
     pub(crate) fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
             Self::Missing => Ok(()),
-            Self::One(value) if value.is_sequence() => {
+            Self::One(value) if value.unpacks_sequence() => {
                 for item in value.elements() {
                     output(item)?;
                 }
@@ -194,7 +203,11 @@ impl Node {
                 }
                 return path.select_context(input).operand();
             }
-            Kind::Route(..) | Kind::Filter(..) => {
+            Kind::Route(..)
+            | Kind::Filter(..)
+            | Kind::Wildcard
+            | Kind::Descendants
+            | Kind::Range(..) => {
                 let stream = Stream::Expression(self, input.clone());
                 if self.effects {
                     return crate::retain::collect(|emit| {
@@ -206,6 +219,11 @@ impl Node {
                     .map(|v| v.map_or(Operand::Missing, Operand::One));
                 }
                 return stream.operand();
+            }
+            Kind::Keep(child, path) => return crate::navigate::keep(child, *path, input),
+            Kind::Reduce(base, pairs) => crate::construct::reduce(base, pairs, input, self.offset)?,
+            Kind::Sort(base, terms) => {
+                return crate::ordering::evaluate(base, terms, input, self.offset);
             }
             Kind::Group(child) if !self.effects => return child.run(input),
             Kind::Group(child) => {
@@ -265,6 +283,24 @@ impl Node {
                         Operand::One(Value::Number(-value))
                     }));
             }
+            Kind::Binary(op @ (Op::Default | Op::Coalesce), test, no) => {
+                return if test.run(input)?.truth(self.offset)? {
+                    // Coalescing stores its left expression once, as the argument
+                    // of the shadowable $exists call. Both fallbacks re-evaluate
+                    // the selected branch without duplicating the compiled tree.
+                    let yes = if matches!(op, Op::Coalesce) {
+                        match &test.kind {
+                            Kind::Call(_, args) | Kind::Builtin(_, args) => &args[0],
+                            _ => unreachable!("coalescing test is an exists call"),
+                        }
+                    } else {
+                        test
+                    };
+                    yes.run(input)
+                } else {
+                    no.run(input)
+                };
+            }
             Kind::Binary(op, lhs, rhs) => {
                 let left = lhs.run(input)?;
                 if matches!(op, Op::And | Op::Or) {
@@ -278,6 +314,7 @@ impl Node {
                 }
                 let right = rhs.run(input)?;
                 match op {
+                    Op::In => Value::Boolean(crate::compare::includes(left, right)?),
                     Op::Equal | Op::NotEqual => Value::Boolean(crate::compare::equal(
                         left,
                         right,

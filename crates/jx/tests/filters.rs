@@ -93,7 +93,7 @@ fn undefined_sequence_items_remain_distinct_from_null() {
 
 #[test]
 fn filters_have_bounded_depth_and_keep_deferred_syntax_explicit() {
-    for source in ["a[", "a[]", "a[true", "a[0,1]", "a[0..2]"] {
+    for source in ["a[", "a[true", "a[0,1]", "a[0..2]"] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression,

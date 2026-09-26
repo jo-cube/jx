@@ -1,6 +1,7 @@
 mod lex;
 mod lexical;
 mod navigation;
+mod reduce;
 use crate::{
     Error, ErrorKind, Expression,
     expression::{Kind, Node, Op, Path, Step},
@@ -38,6 +39,14 @@ impl<'a> Parser<'a> {
         let (first, lookup) = self.primary(nesting)?;
         let mut lhs = self.navigation(first, lookup, nesting)?;
         loop {
+            if matches!(self.token, Token::ObjectOpen) && minimum < 70 {
+                lhs = self.reduction(lhs, nesting)?;
+                continue;
+            }
+            if matches!(self.token, Token::Sort) && minimum < 40 {
+                lhs = self.ordering(lhs, nesting)?;
+                continue;
+            }
             if matches!(self.token, Token::Bind) && minimum < 10 {
                 let name = match lhs.kind {
                     Kind::Variable(name) => name,
@@ -76,6 +85,7 @@ impl<'a> Parser<'a> {
                 Token::Operator(op) => op,
                 Token::Name("and") => Op::And,
                 Token::Name("or") => Op::Or,
+                Token::Name("in") => Op::In,
                 _ => break,
             };
             if op.precedence() <= minimum {
@@ -83,13 +93,15 @@ impl<'a> Parser<'a> {
             }
             let offset = self.offset;
             self.advance()?;
-            let rhs = self.expression(op.precedence(), nesting + 1)?;
-            let depth = 1 + lhs.depth.max(rhs.depth);
-            lhs = node(
-                Kind::Binary(op, Box::new(lhs), Box::new(rhs)),
-                offset,
-                depth,
+            let rhs = self.expression(
+                if matches!(op, Op::Default | Op::Coalesce) {
+                    0
+                } else {
+                    op.precedence()
+                },
+                nesting + 1,
             )?;
+            lhs = binary(op, lhs, rhs, offset)?;
         }
         Ok(lhs)
     }
@@ -105,7 +117,8 @@ impl<'a> Parser<'a> {
             Token::Name("true") => Kind::Boolean(true),
             Token::Name("false") => Kind::Boolean(false),
             Token::Name("null") => Kind::Null,
-            Token::Name("in") => return Err(error(offset)),
+            Token::Operator(Op::Multiply) => Kind::Wildcard,
+            Token::Descendants => Kind::Descendants,
             Token::Name("function") => self.lambda(nesting)?,
             Token::Name(name) | Token::Quoted(name) => {
                 lookup = true;
@@ -115,29 +128,7 @@ impl<'a> Parser<'a> {
                 })
             }
             Token::FilterOpen => Kind::Array(self.list(nesting, true)?, false),
-            Token::ObjectOpen => {
-                let mut pairs = Vec::new();
-                if !matches!(self.token, Token::ObjectClose) {
-                    loop {
-                        let key = self.expression(0, nesting + 1)?;
-                        if !matches!(self.token, Token::Colon) {
-                            return Err(error(self.offset));
-                        }
-                        self.advance()?;
-                        let value = self.expression(0, nesting + 1)?;
-                        pairs.push((key, value));
-                        if !matches!(self.token, Token::Comma) {
-                            break;
-                        }
-                        self.advance()?;
-                    }
-                }
-                if !matches!(self.token, Token::ObjectClose) {
-                    return Err(error(self.offset));
-                }
-                self.advance()?;
-                Kind::Object(pairs.into_boxed_slice())
-            }
+            Token::ObjectOpen => Kind::Object(self.object(nesting)?),
             Token::Variable(name) => Kind::Variable(name.into()),
             Token::Root => Kind::Path(Path {
                 fields: Box::default(),
@@ -189,7 +180,15 @@ impl<'a> Parser<'a> {
         let mut arguments = Vec::new();
         if !closed(&self.token) {
             loop {
-                arguments.push(self.expression(0, nesting + 1)?);
+                let mut item = self.expression(0, nesting + 1)?;
+                if array && matches!(self.token, Token::Range) {
+                    let offset = self.offset;
+                    self.advance()?;
+                    let end = self.expression(0, nesting + 1)?;
+                    let depth = 1 + item.depth.max(end.depth);
+                    item = node(Kind::Range(Box::new(item), Box::new(end)), offset, depth)?;
+                }
+                arguments.push(item);
                 if !matches!(self.token, Token::Comma) {
                     break;
                 }
@@ -201,21 +200,6 @@ impl<'a> Parser<'a> {
         }
         self.advance()?;
         Ok(arguments.into_boxed_slice())
-    }
-    fn predicates(&mut self, nesting: usize) -> Result<Box<[Node]>, Error> {
-        let mut predicates = Vec::new();
-        while matches!(self.token, Token::FilterOpen) {
-            if predicates.len() >= MAX_DEPTH {
-                return Err(depth_error(self.offset));
-            }
-            self.advance()?;
-            predicates.push(self.expression(0, nesting + 1)?);
-            if !matches!(self.token, Token::FilterClose) {
-                return Err(error(self.offset));
-            }
-            self.advance()?;
-        }
-        Ok(predicates.into_boxed_slice())
     }
 }
 fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {
@@ -234,5 +218,25 @@ fn depth_error(offset: usize) -> Error {
         ErrorKind::DepthLimit,
         offset,
         "expression depth exceeds 128",
+    )
+}
+
+fn binary(op: Op, mut left: Node, right: Node, offset: usize) -> Result<Node, Error> {
+    if matches!(op, Op::Coalesce) {
+        let depth = left.depth + 1;
+        left = node(
+            Kind::Call(
+                Box::new(node(Kind::Variable("exists".into()), offset, 1)?),
+                vec![left].into_boxed_slice(),
+            ),
+            offset,
+            depth,
+        )?;
+    }
+    let depth = 1 + left.depth.max(right.depth);
+    node(
+        Kind::Binary(op, Box::new(left), Box::new(right)),
+        offset,
+        depth,
     )
 }

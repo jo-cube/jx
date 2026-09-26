@@ -25,7 +25,7 @@ fn ndjson_missing_null_arrays_and_final_unterminated_record() {
 
 #[test]
 fn errors_have_distinct_exit_codes_and_record_context() {
-    let output = run(&["a[]"], b"");
+    let output = run(&["a["], b"");
     assert_eq!(output.status.code(), Some(2));
     let output = run(&["$"], b"1\n[0,]\n2\n");
     assert_eq!(output.status.code(), Some(1));
@@ -195,4 +195,17 @@ fn lexical_runtime_is_fresh_for_each_record() {
             .unwrap()
             .contains("functions have no JSON encoding")
     );
+}
+
+#[test]
+fn kept_sequences_and_reductions_preserve_record_framing() {
+    let output = run(&["a[]"], b"{}\n{\"a\":null}\n{\"a\":1}\n{\"a\":[1,2]}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"[null]\n[1]\n[1,2]\n");
+    let output = run(
+        &["a^(>v){k:v[]}"],
+        br#"{"a":[{"k":"x","v":1},{"k":"x","v":2}]}"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"{\"x\":[2,1]}\n");
 }

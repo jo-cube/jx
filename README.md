@@ -3,7 +3,7 @@
 A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
 result sequences, scalar operators, filters, aggregates, constructors, lexical
-variables, conditionals, and closures**. Full JSONata is the semantic target; see
+variables, conditionals, closures, wildcard navigation, grouping, and ordering**. Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
 Requires Rust **1.98.1** and [just](https://just.systems). The workspace contains
@@ -18,6 +18,7 @@ target/release/jx 'orders[price > 10].id' records.ndjson
 target/release/jx '$sum(orders[price > 10].price)' records.ndjson
 target/release/jx '{"total":$sum(orders[price > 10].price),"ids":[orders.id]}' records.ndjson
 target/release/jx '($prices:=orders.price; {"total":$sum($prices),"count":$count($prices)})' records.ndjson
+target/release/jx 'orders[price > 10]^(>price){kind:{"ids":id[],"total":$sum(price)}}' records.ndjson
 target/release/jx --max-record-bytes 1048576 '$' records.ndjson
 ```
 
@@ -38,15 +39,17 @@ Both callback APIs return evaluation failures. Lexical bindings and function arg
 retain evaluated sequences once; repeated variable use does not re-run expressions.
 Function values are opaque and `write_compact` rejects them as non-JSON.
 
-Without lexical evaluation or construction, ordinary paths, filters, scalar operators and `$count`/`$sum`/`$min`/`$max` allocate
+Without lexical evaluation or construction, static-field paths, filters, scalar operators and `$count`/`$sum`/`$min`/`$max` allocate
 no per-record heap storage. Constructors allocate their structure and retained
 member sequences; mapped constructors can emit one container at a time. Structural
-equality may retain borrowed members or one sequence. Input is never converted to a JSON tree
+equality may retain borrowed members or one sequence. Sorting, grouping and `[]`
+retention store their output; wildcard/descendant object enumeration retains one
+object’s members to resolve duplicate keys and ordering. Input is never converted to a JSON tree
 and there is no engine runtime dependency; `serde_json` is a test-only oracle and fixture reader.
 
 The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact
 NDJSON synchronously. Missing produces no line; null produces `null`; sequences
-emit one line per item. An array value stays on one line. JSONata mapping and singleton rules
+emit one line per item. An array value or explicitly kept sequence (`expr[]`) stays on one line. JSONata mapping and singleton rules
 determine which is returned; see the examples in [coverage](CONFORMANCE.md).
 Blank lines are ignored; the last line may omit LF. The default 1 MiB record limit excludes LF but includes
 CR and whitespace. Memory is bounded by the largest accepted record plus I/O

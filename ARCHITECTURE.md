@@ -24,7 +24,7 @@
   item to distinguish missing, singleton and multiple;
   multiple items remain a replayable stream, not an eagerly collected vector.
   Filtered operands are inspected completely before scalar use to preserve errors.
-- `sequence.rs` composes mapped steps and `filter.rs` applies predicates using the
+- `route.rs` composes mapped steps over `sequence.rs` scoped views and `filter.rs` applies predicates using the
   same `Node::run` and scalar operands. Stack-borrowed stage views retain array versus
   sequence shape across chained predicates; groups normalize at expression boundaries.
   Candidate context explicitly distinguishes top-level array wrapping from local
@@ -40,14 +40,28 @@
   upstream error precedence. Counts and numeric accumulators are primitives.
 - `retain.rs` is the shared retention boundary for constructors and lexical values.
   Already retained values pass through without copying. `construct.rs` consumes
-  member streams directly, collecting sequences only when stored in a container. Arrays distinguish ordinary
-  arrays, path-preserved arrays and retained sequences. Direct nested array syntax
+  member streams directly, collecting sequences only when stored in a container. Arrays have four explicit shapes: ordinary
+  arrays, path-preserved arrays, normalized sequences and kept sequences (`[]`). Direct nested array syntax
   retains its result; other array members append the normalized result one level.
   Objects finish evaluating keys before values, compare decoded UTF-16 keys, omit
   missing members and reject duplicate keys from different member expressions.
   Local array contexts group matching keys before evaluating each group's value.
   Key groups use a linear search, suitable for small constructors; wide dynamic
   grouping has quadratic key-comparison cost and is not yet specialized.
+- `navigate.rs` adds wildcard/descendant traversal, range emission and singleton
+  retention. Kept sequences are recognized before scalar normalization; they emit
+  as one array but flatten as sequences during mapping. Parser annotations preserve
+  both the marked stage and the complete path boundary. Pure wildcard/descendant
+  streams stop cardinality lookahead after two items, as static paths already do.
+- `members.rs` enumerates one object's borrowed members with last-key-wins and
+  reference integer-key ordering. Descendants stream depth-first; an array-valued
+  wildcard member requires an array result and therefore retention. Neither builds
+  a whole input tree. Ranges emit primitive numbers into the array constructor;
+  the explicit output array still materializes, including when passed to an aggregate.
+- Postfix grouping feeds the existing constructor groups directly, without a second
+  candidate collection. `ordering.rs` retains candidates and stable merge-sort indices;
+  comparator expressions use the normal context/evaluator and may fail or have lexical
+  effects. Comparison order matches the reference; keys are not speculatively cached.
 - `container.rs` owns immutable array/object member lists behind `Rc`. Leaves are
   existing `Value` items: raw input, compiled strings, primitives or nested containers.
   Cloning containers shares structure rather than copying leaves or serializing them.
@@ -120,6 +134,10 @@ would not remove frame retention or traversal costs and is not justified by this
 The tree exists because precedence, short-circuiting and typed operators now need
 structure. Constructors add owned containers only when they are requested. There is
 no execution IR, JIT or input DOM. Function execution uses the same tree and values.
+Fallback operators reuse scalar evaluation and calls. Coalescing stores its left
+expression once as the argument of a shadowable `$exists` call, then re-evaluates
+that argument when selected. This follows reference execution without exponentially
+duplicating nested fallback trees at compile time.
 Only unary minus on numeric literals is folded: JSONata treats literal and computed
 positions differently. Groups must survive parsing for the same reason. No other
 constant folding or field-demand fusion yet: neither is needed for correctness,
@@ -168,6 +186,12 @@ function/control-flow requirements, with a measured benefit over this tree. It w
 not by itself eliminate subtree rescanning, negative-position replays or member-wise
 constructor evaluation. Those costs remain explicit; no cache or scanner index was added.
 
+Milestone 9 profiles and repeated runs find no lexical frame creation or variable
+lookup on ordinary filters/folds. M8's larger context/operand layouts remain; the
+new navigation features do not enlarge them. Stopping infallible traversal lookahead
+after two items removes a measured redundant pass. Sorting/grouping retain only
+where their semantics require it. See PERFORMANCE for residual costs and variation.
+
 ## Milestones
 
 1. **Complete:** identity/object paths, UTF-8 JSON validation, borrowed evaluation,
@@ -184,18 +208,22 @@ constructor evaluation. Those costs remain explicit; no cache or scanner index w
    Later extended to first-class function references and dynamic calls in milestone 8.
 6. **Complete:** array/object constructors, computed keys and values, nested output,
    borrowed leaves, retained sequence shape, composed navigation/filtering/aggregates,
-   differential coverage and allocation benchmarks. Postfix grouping and `expr[]`
-   remain deferred; see CONFORMANCE for reference implementation boundary policies.
+   differential coverage and allocation benchmarks. See CONFORMANCE for reference implementation boundary policies.
 7. **Complete: architecture/performance consolidation.** Scalar paths consume known
    selections directly; scoped traversal borrows instead of copying ownership through
    each stage. No language or public API change. See PERFORMANCE for repeated results.
 8. **Complete: lexical/function runtime.** Bindings, blocks, root context, conditionals,
    lambdas, captured environments, dynamic/higher-order calls and minimal builtins.
    Evaluated retention and effect-aware stages preserve single execution.
-9. **Next: sequence/path completion and function library.** Singleton retention,
-   ranges and common higher-order builtins can build on this runtime. Tail calls and
-   host invocation need explicit lifetime/resource contracts before broader embedding.
-   Introduce IR only for a demonstrated semantic or measured execution benefit.
+9. **Complete: path/sequence expansion.** Singleton retention, array ranges, wildcards,
+   descendants, quoted path steps, grouping, stable ordering, membership and fallbacks.
+   Direct evaluation remains the foundation; these features need shape and retention
+   boundaries, not instruction decoding. Ordinary expressions still create no scope arena.
+10. **Next:** parent/context/index tuple navigation and the function library. Parent
+    navigation must carry ancestry across filtering, sorting and grouping; it cannot be
+    inferred from the final value or a syntactic parent shortcut. Keep that state confined
+    to expressions requiring it. String conversion/concatenation, chaining and broader
+    builtins remain explicit gaps. Host invocation still needs a lifetime/resource contract.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
 language support does not require every expression to use the same execution path.

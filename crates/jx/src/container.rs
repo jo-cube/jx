@@ -8,9 +8,16 @@ use std::{
 #[derive(Debug)]
 pub struct Array<'e, 'i> {
     pub(crate) items: Vec<Value<'e, 'i>>,
-    pub(crate) preserve: bool,
-    pub(crate) sequence: bool,
+    shape: Shape,
 }
+#[derive(Debug)]
+enum Shape {
+    Array,
+    Preserved,
+    Sequence,
+    Kept,
+}
+
 impl<'e, 'i> Array<'e, 'i> {
     pub fn as_slice(&self) -> &[Value<'e, 'i>] {
         &self.items
@@ -67,19 +74,30 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn array(items: Vec<Self>, preserve: bool) -> Self {
         Self::Array(Rc::new(Array {
             items,
-            preserve,
-            sequence: false,
+            shape: if preserve {
+                Shape::Preserved
+            } else {
+                Shape::Array
+            },
         }))
     }
     pub(crate) fn sequence(items: Vec<Self>) -> Self {
         Self::Array(Rc::new(Array {
             items,
-            preserve: false,
-            sequence: true,
+            shape: Shape::Sequence,
         }))
     }
+    pub(crate) fn kept(items: Vec<Self>) -> Self {
+        Self::Array(Rc::new(Array {
+            items,
+            shape: Shape::Kept,
+        }))
+    }
+    pub(crate) fn unpacks_sequence(&self) -> bool {
+        matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence))
+    }
     pub(crate) fn is_sequence(&self) -> bool {
-        matches!(self, Self::Array(array) if array.sequence)
+        matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence | Shape::Kept))
     }
     pub(crate) fn object(members: Vec<(Self, Self)>) -> Self {
         Self::Object(Rc::new(Object { members }))
@@ -88,7 +106,7 @@ impl<'e, 'i> Value<'e, 'i> {
         matches!(self, Self::Array(_)) || matches!(self, Self::Raw(raw) if raw.is_array())
     }
     pub(crate) fn preserves_array(&self) -> bool {
-        matches!(self, Self::Array(array) if array.preserve)
+        matches!(self, Self::Array(array) if matches!(array.shape, Shape::Preserved))
     }
     pub(crate) fn elements(&self) -> Elements<'_, 'e, 'i> {
         match self {
