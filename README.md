@@ -33,15 +33,16 @@ Evaluation validates the entire UTF-8 record before returning results. Paths kee
 borrowed raw JSON; computed numbers and booleans use primitives. `write_compact`
 serializes both, plus constructed objects and arrays. Containers own their member
 lists and retain borrowed leaves; cloning a constructed value shares its storage. Input slices extracted with `as_raw()` can outlive the expression;
-string literals borrow compiled storage. `try_for_each` propagates consumer errors
+string literals borrow compiled storage. Constant constructors also borrow immutable
+compiled data, and static object lookups use a prebuilt key index. `try_for_each` propagates consumer errors
 immediately, distinguishing `ConsumeError::Consumer` from `ConsumeError::Evaluation`.
 Both callback APIs return evaluation failures. Lexical bindings and function arguments
 retain evaluated sequences once; repeated variable use does not re-run expressions.
 Function values are opaque and `write_compact` rejects them as non-JSON.
 
-Without lexical evaluation or construction, static-field paths, filters, scalar operators and `$count`/`$sum`/`$min`/`$max` allocate
-no per-record heap storage. Constructors allocate their structure and retained
-member sequences; mapped constructors can emit one container at a time. Structural
+Ordinary field paths and scalar/filter/aggregate workloads on borrowed or primitive
+values allocate no per-record heap storage. Dynamic constructors allocate their structure and retained
+member sequences; constant containers allocate only a fresh identity token; mapped constructors can emit one container at a time. Structural
 equality may retain borrowed members or one sequence. Sorting, grouping and `[]`
 retention store their output; wildcard/descendant object enumeration retains one
 object’s members to resolve duplicate keys and ordering. Input is never converted to a JSON tree

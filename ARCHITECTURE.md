@@ -2,7 +2,7 @@
 
 ## Current execution
 
-`source → small expression tree → validating selection or expression execution → result stream`
+`source → expression tree → effect analysis and specialization → validating selection or tree execution → result stream`
 
 - `parse/lex.rs` and `parse.rs` own tokenization, precedence and grouping. Field
   names and encoded string literals are owned once; operators retain source offsets.
@@ -37,7 +37,9 @@
   argument array. The fold walks its argument stream once without collecting it;
   source-stage normalization and negative positions can still replay.
   Numeric type errors are retained until argument evaluation succeeds, preserving
-  upstream error precedence. Counts and numeric accumulators are primitives.
+  upstream error precedence. Counts and numeric accumulators are primitives. Exhaustive
+  array folds dispatch on raw/dynamic/compiled storage once through the iterator’s
+  `for_each`, avoiding a representation branch for each item.
 - `retain.rs` is the shared retention boundary for constructors and lexical values.
   Already retained values pass through without copying. `construct.rs` consumes
   member streams directly, collecting sequences only when stored in a container. Arrays have four explicit shapes: ordinary
@@ -75,7 +77,7 @@
   values. Object equality uses a temporary map of borrowed left members and applies
   last-key-wins on both sides. These allocations are confined to equality.
 - `Value` is the small public output union: raw input, primitive scalars or a
-  compiled string literal, constructed container, opaque function, or undefined inside
+  compiled string literal, dynamic or compiled container, opaque function, or undefined inside
   multi-item sequences. Containers retain their internal sequence/array shape. Its
   two lifetimes distinguish input from expression storage. `as_raw()` extracts input
   slices that can outlive the expression. Values are `Clone`, no longer `Copy`;
@@ -117,7 +119,7 @@ This conservative boundary favors correctness over streaming lexical pipelines. 
 not turn ordinary paths or filters into collections. Retained output can still be cancelled,
 but lexical evaluation may finish before the first callback. Input validation remains first.
 
-`builtin.rs` registers four aggregates plus `$boolean`, `$not`, and `$exists`. Builtins are
+`builtin.rs` registers four aggregates plus `$boolean`, `$not`, `$exists` and `$lookup`. Builtins are
 first-class, shadowable values; unimplemented standard names are recognizable functions
 whose calls fail explicitly. `function.rs` handles closures and dynamic calls. Functions
 have identity equality, false effective-boolean value, and no host JSON serialization or
@@ -129,6 +131,42 @@ addition to the parser's 128-level limit. Tail-call elimination and function sig
 remain deferred. Direct evaluation still expresses scope/control flow cleanly; an IR
 would not remove frame retention or traversal costs and is not justified by this milestone.
 
+## Compile-time specialization
+
+`compile.rs` runs bottom-up after scope/effect analysis. A conservative whitelist
+identifies context-independent, effect-free scalar expressions, constructors and
+implemented builtin calls with explicit arguments. The existing evaluator computes
+successful constants; errors stay in the tree and retain runtime phase, source offsets,
+short-circuiting and input-validation precedence. Paths, ranges, bindings, lambdas,
+dynamic calls and effectful subtrees remain direct evaluation. This avoids both a
+second semantic implementation and speculative evaluation of large implicit ranges.
+
+`constant.rs` separates immutable compiled `Data` from per-record `Value`. Strings
+and container contents borrow expression storage; scalars remain unboxed. Containers
+keep their array/sequence shape and receive a fresh shared identity token per
+construction. Descendants share the token but have distinct data addresses. This
+preserves observable identity under `in`, repeated calls and retained bindings without
+rebuilding members. Dynamic constructors use the same container access operations and
+can contain compiled subtrees. Compiled expressions remain `Send + Sync`.
+
+Static objects preserve member order and add a sorted index over encoded keys. Lookup
+binary-searches decoded UTF-16 units without allocating decoded keys. `$lookup` uses
+this index for compiled objects and the ordinary member traversal for dynamic/raw
+objects. A direct call with a static object lowers to a small `StaticLookup` tree node:
+primitive results need no temporary object identity. At the expression root, a plain
+path key reuses validating path capture, avoiding a second scan of the record. Other
+keys and enclosing expressions use the existing evaluator. Generic array lookup
+retains its normalized result; it is not a second navigation engine.
+
+Builtin references resolve once when no declaration anywhere in the expression can
+shadow them. Ordinary references then need neither name lookup nor a lexical arena.
+The conservative whole-expression shadowing rule is unchanged. Lexical constant
+propagation is deferred: captured frames observe later rebinding. General repeated
+field-demand fusion is also deferred; the benchmark control exposes its opportunity.
+Static constructor grouping still has quadratic compile cost for distinct keys, paid
+once rather than per record. No general IR, JIT, scanner cache or input DOM is needed
+for these specializations.
+
 ## Decisions and measured limits
 
 The tree exists because precedence, short-circuiting and typed operators now need
@@ -138,10 +176,8 @@ Fallback operators reuse scalar evaluation and calls. Coalescing stores its left
 expression once as the argument of a shadowable `$exists` call, then re-evaluates
 that argument when selected. This follows reference execution without exponentially
 duplicating nested fallback trees at compile time.
-Only unary minus on numeric literals is folded: JSONata treats literal and computed
-positions differently. Groups must survive parsing for the same reason. No other
-constant folding or field-demand fusion yet: neither is needed for correctness,
-and the benchmark suite now exposes their potential value.
+Compilation preserves JSONata’s literal-versus-computed position rules and direct
+nested-array syntax, even when their values are constant. See specialization below.
 
 The custom safe scanner combines validation and selective capture for standalone
 paths. Element/member cursors reuse its grammar instead of adding a trusted second
@@ -176,7 +212,8 @@ Keep direct tree evaluation. Parsing already resolves precedence, static paths a
 array focus; execution separates scalar operands, replayable streams and retained
 containers. Those distinctions encode observable shape and error behavior. Flattening
 them into one owned result or one generic iterator would reintroduce collection or
-move complexity elsewhere. Modules remain small and cohesive; no new layer is needed.
+move complexity elsewhere. Modules remain small and cohesive; specialization annotates this tree rather than
+introducing a second general execution representation.
 
 Profiles locate the current costs in scanning and the scalar/stream ownership boundary,
 not instruction decoding. Returning known selections directly removes a redundant
@@ -219,11 +256,13 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
    descendants, quoted path steps, grouping, stable ordering, membership and fallbacks.
    Direct evaluation remains the foundation; these features need shape and retention
    boundaries, not instruction decoding. Ordinary expressions still create no scope arena.
-10. **Next:** parent/context/index tuple navigation and the function library. Parent
-    navigation must carry ancestry across filtering, sorting and grouping; it cannot be
-    inferred from the final value or a syntactic parent shortcut. Keep that state confined
-    to expressions requiring it. String conversion/concatenation, chaining and broader
-    builtins remain explicit gaps. Host invocation still needs a lifetime/resource contract.
+10. **Complete: compiler specialization.** Fold context-independent expressions, retain
+    immutable static constructors, resolve builtin references and index static object
+    lookups. Reuse validating path capture for a direct lookup's record-derived key.
+11. **Next semantic work:** parent/context/index tuples and the function library.
+    Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
+    a final value. String conversion/concatenation and chaining remain useful gaps.
+    Host invocation still needs a lifetime/resource contract.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
 language support does not require every expression to use the same execution path.
