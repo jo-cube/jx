@@ -17,19 +17,22 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Root/intermediate/nested array mapping | Supported, input order; missing/scalar contexts drop out |
 | Result sequences / flattening | Supported for paths and filters; streamed without collecting |
 | Indexes / predicates | Literal/computed indexes, numeric lists from input, effective-boolean predicates, chained filters |
-| Wildcards, parent/descendant, order/group/join | Unsupported syntax; incremental follow-up |
+| Wildcards / descendants | `*` and `**`, including composed paths, predicates and aggregates |
+| Ordering / grouping | Stable `^(<key, >key)` and postfix `{key:value}` |
+| Parent/context/index tuples | `%`, `@` and `#` navigation remain deferred together |
 | Literals | Binary64 numbers, booleans, null, single/double quoted strings |
 | Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
 | Parentheses | Expression grouping, lexical blocks and grouped path steps; `()` is missing |
-| Other operators | `in`, `&`, ranges and coalescing/default deferred; `:=` and `? :` supported |
+| Other operators | `in`, array ranges, `??`, `?:`, `:=`, `? :`; concatenation `&` deferred |
 | Aggregates | `$count`, `$sum`, `$min`, `$max`; direct streaming folds and first-class calls |
 | Constructors | Arrays, objects, computed keys/values, nested and mapped construction; see below |
-| Postfix grouping, singleton retention | `items{key:value}` and `expr[]` deferred syntax |
+| Singleton retention | `expr[]` preserves sequence shape; missing stays missing |
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures and higher-order values |
 | Builtins | Aggregates, `$boolean`, `$not`, `$exists`; others fail explicitly when called |
 | Deferred runtime/language | Signatures, tail-call elimination, partial application, chaining, transforms and regex |
-| Comments, general unquoted Unicode names, single/double quoted selectors | Deferred syntax; compile error |
-| Keyword field names | `and`/`or` can be names in operand/field positions; `true`, `false`, `null`, `in`, `function` require backticks when used as fields |
+| Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
+| Comments, general unquoted Unicode names | Deferred syntax; compile error |
+| Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null`, `function` require backticks when used as fields |
 
 ## Array and sequence boundaries
 
@@ -59,6 +62,45 @@ Leading `$` introduces a map stage, so `a` and `$.a` differ on root arrays.
 including nested lookup, singleton and empty boundaries. Borrowing, duplicate
 keys, cancellation, depth limits and CLI line framing have separate Rust tests.
 
+## Navigation, retention and reduction
+
+`[]` marks a sequence boundary rather than constructing an array around every value.
+`a.b[]` keeps a singleton as an array; `(a.b)[]` cannot restore a singleton already
+normalized by parentheses. Missing still emits nothing. Filters can retain an undefined
+singleton (`missing[true][]` emits `[null]`). Kept sequences flatten during navigation,
+but emit as one array at the API/CLI boundary. Explicit arrays retain their own shape.
+
+Wildcards enumerate immediate members and recursively flatten array-valued members.
+The pinned implementation returns an array value if any such member is an array,
+even an empty one; otherwise it returns a sequence. Descendants include the starting
+non-array value and visit descendants depth-first; array containers themselves are
+not emitted. Raw duplicate keys use their last value in first-key order; integer
+keys precede other keys as in the reference. Leaves still borrow input bytes.
+
+Ranges occur inside array constructors (`[start..end]`), with inclusive integer endpoints.
+Missing endpoints or descending bounds contribute no items; types are checked before
+missing propagates. Width is limited to 10 million, matching upstream. Endpoints beyond
+±(2^53−1) raise `NumericRange`, avoiding non-progressing binary64 increments.
+
+Postfix grouping groups the whole unparenthesized path, including later steps/filters;
+use `(items{key:value}).field` to navigate the constructed object. Equal keys from one
+member group contexts; different members still raise `DuplicateKey`. Integer group
+keys also precede other keys when evaluating values and choosing error precedence. Undefined group
+contexts are ignored by append, without turning an all-undefined group into an empty array.
+Ordering is stable, supports ascending/descending terms, and places missing keys last
+in either direction. Keys must be numbers or strings of matching types when compared.
+Singletons require no comparisons, so their key expression is not evaluated.
+
+`in` uses strict scalar equality and container identity, unlike structural `=`.
+`??` checks existence, while `?:` checks effective boolean value. Both follow upstream's
+conditional expansion and re-evaluate a selected left expression; `??` calls the
+ordinary shadowable `$exists`. RHS evaluation is conditional.
+
+[Readable navigation cases](tests/semantics/navigation.json) and Rust/CLI tests freeze
+these rules, validation, borrowed output, cancellation and resource limits. `%` parent
+navigation and `@`/`#` tuple bindings remain unsupported; ancestry needs to survive
+reduction stages. String concatenation/conversion, chaining and general builtins remain deferred.
+
 ## Filters
 
 Filters bind to the preceding step: `a.b[0]` selects the first `b` in each `a`
@@ -71,8 +113,8 @@ from the end. A numeric array/sequence selects matching positions (including dup
 matches); mixed arrays use effective boolean value. Empty candidates yield missing.
 Non-numeric predicates use effective boolean value; a numeric `0` selects position
 zero rather than rejecting the candidate. Numeric lists can come from input/paths and
-can also be constructed inline (`a[[0,2]]`). Ranges and `[]`
-singleton-array retention remain deferred syntax.
+can also be constructed inline (`a[[0,2]]`, `a[[1..3]]`). Bare `a[1..3]` is invalid;
+the range belongs inside an array constructor.
 
 Chained filters retain stage shape until the enclosing expression normalizes it.
 The upstream literal-index rule preserves a selected raw array; a computed index
@@ -179,8 +221,8 @@ a leading filtered constructor that collapses to a number, boolean or object.
 Null collapse maps the reference's native exception to `TypeError`. Implicit
 string iteration after that collapse (`["ab"][0].$`) is explicitly deferred with
 runtime `UnsupportedExpression`; parenthesized normal navigation remains available.
-Postfix grouping (`a{k:v}`), singleton retention (`a[]`) and ranges remain
-unsupported syntax. Function support and deferred calls are described below.
+Postfix grouping, singleton retention and ranges follow the navigation rules above.
+Function support and deferred calls are described below.
 
 Each constructor completes before emitting a container. Mapped constructors can
 emit earlier complete containers before a later failure, and consumer cancellation
@@ -192,7 +234,7 @@ regressions and CLI tests freeze these rules.
 Two explicit host-boundary differences from jsonata-js: prototype-related names
 such as `__proto__` are ordinary JSON keys, and object construction never mutates
 an empty input array. The reference's inherited-property behavior and empty-array
-mutation side effects are not emulated. Member values evaluate in group insertion
+mutation side effects are not emulated. Member values evaluate in integer-key order followed by group insertion
 order; asynchronous races between several failing reference members are not emulated. Dedicated Rust tests freeze these policies;
 the seeded differential generator excludes mutation-dependent empty-root cases,
 while isolated empty-array semantics remain covered by the readable corpus.
@@ -292,22 +334,24 @@ Limits and explicit policies:
 
 ## Executable coverage
 
-`just conformance` executes all **448** imported cases from complete `fields`,
+`just conformance` executes all **564** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
 `function-count`, `function-sum`, `function-max` (also containing min cases),
 `array-constructor`, `object-constructor`, `variables`, `blocks`, `conditionals`,
-`closures`, `lambdas`, `higher-order-functions`, `function-boolean` and `function-exists`
+`closures`, `lambdas`, `higher-order-functions`, `function-boolean`, `function-exists`,
+`wildcards`, `descendent-operator`, `range-operator`, `sorting`, `inclusion-operator`,
+`coalescing-operator` and `default-operator`
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 350 | Semantic JSON result or missing matches upstream |
-| Supported errors | 38 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 47 | Compile-time `UnsupportedExpression` |
-| Deferred builtin calls | 10 | Runtime `UnsupportedExpression` |
+| Supported results | 474 | Semantic JSON result or missing matches upstream |
+| Supported errors | 55 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 13 | Compile-time `UnsupportedExpression` |
+| Deferred builtin calls | 19 | Runtime `UnsupportedExpression` |
 | Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
 
 These are selected groups, not a percentage of the full suite. No imported case
@@ -319,7 +363,9 @@ Upstream separates reusable `datasets/` from `groups/<topic>/caseNNN.json`, with
 `expr`, `data`/`dataset`, bindings, and expected result/undefined/error fields.
 The general suite also has expression files and multi-case files; the current
 adapter handles inline/named data, multi-case files and expression files. JSON host
-bindings are explicitly adapted to lexical declarations; host functions remain deferred.
+bindings are explicitly adapted to lexical declarations. Absent host input uses an
+undefined predicate context, distinct from explicit JSON null; `unordered` assertions
+compare multisets. Host functions remain deferred.
 Original files and MIT notice are preserved under `tests/conformance/`.
 
 Reimport from a checkout at the pinned revision:
@@ -345,6 +391,7 @@ node scripts/check-filters.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-aggregates.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-constructors.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-lexical.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-navigation.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -355,6 +402,9 @@ positions, numeric lists and stage error precedence. The aggregate check adds 4,
 evaluations across raw arrays, normalized sequences, filters, nested calls and
 numeric/error boundaries. The constructor check adds 5,000 evaluations including
 102 readable cases, shape matrices and 2,000 seeded expressions. The lexical check adds 2,796 evaluations across bindings, captured contexts,
-escaping functions, argument retention and stateful predicates. The known upstream
+escaping functions, argument retention and stateful predicates. The navigation check
+adds 1,374 comparisons, including 129 readable cases, shape matrices, grouping/sorting
+composition, duplicate-key enumeration, ranges, kept sequences and fallback/membership
+behavior. The known upstream
 empty-root-array mutation during object construction is excluded from generated
 constructor/lexical comparisons. Normal `just all` needs neither Node nor the upstream checkout.

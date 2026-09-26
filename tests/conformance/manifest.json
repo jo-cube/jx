@@ -88,26 +88,26 @@
     {
       "file": "groups/quoted-selectors/case000.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/quoted-selectors/case001.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/quoted-selectors/case002.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/quoted-selectors/case003.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/quoted-selectors/case004.json",
@@ -118,8 +118,8 @@
     {
       "file": "groups/quoted-selectors/case005.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/quoted-selectors/case006.json",
@@ -148,8 +148,8 @@
     {
       "file": "groups/flattening/array-inputs.json",
       "index": 2,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/array-inputs.json",
@@ -412,68 +412,74 @@
     {
       "file": "groups/flattening/case037.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/case038.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/case039.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/case040.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/case041.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/case042.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/case043.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/case044.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/flattening/case045.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/large.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/flattening/large.json",
       "index": 1,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/flattening/sequence-of-arrays.json",
@@ -490,14 +496,742 @@
     {
       "file": "groups/flattening/sequence-of-arrays.json",
       "index": 2,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/flattening/sequence-of-arrays.json",
       "index": 3,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/wildcards/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case012.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case014.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case015.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/descendent-operator/case016.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/range-operator/case009.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case010.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case011.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case012.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case013.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case014.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case015.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case016.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case017.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case018.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case019.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case020.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/range-operator/case021.json",
+      "index": 0,
       "status": "syntax",
       "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/range-operator/case022.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/range-operator/case023.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/range-operator/case024.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/sorting/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case011.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/sorting/case012.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/sorting/case013.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/sorting/case014.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case015.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case016.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case017.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case018.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case019.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/sorting/case020.json",
+      "index": 0,
+      "status": "syntax",
+      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+    },
+    {
+      "file": "groups/inclusion-operator/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/inclusion-operator/case008.json",
+      "index": 0,
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/coalescing-operator/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case012.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/coalescing-operator/case014.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case012.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case014.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case015.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case016.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case017.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/default-operator/case018.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/variables/case000.json",
@@ -1626,8 +2360,10 @@
     {
       "file": "groups/boolean-expresssions/case016.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/boolean-expresssions/case017.json",
@@ -2126,20 +2862,20 @@
     {
       "file": "groups/multiple-array-selectors/case000.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/multiple-array-selectors/case001.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/multiple-array-selectors/case002.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/function-count/case000.json",
@@ -2468,14 +3204,14 @@
     {
       "file": "groups/array-constructor/array-sequences.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/array-constructor/array-sequences.json",
       "index": 1,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/array-constructor/array-sequences.json",
@@ -2492,8 +3228,8 @@
     {
       "file": "groups/array-constructor/array-sequences.json",
       "index": 4,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/array-constructor/case000.json",
@@ -2588,8 +3324,8 @@
     {
       "file": "groups/array-constructor/case015.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/array-constructor/case016.json",
@@ -2672,26 +3408,30 @@
     {
       "file": "groups/object-constructor/case008.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/object-constructor/case009.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/object-constructor/case010.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/object-constructor/case011.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/object-constructor/case012.json",
@@ -2704,8 +3444,10 @@
     {
       "file": "groups/object-constructor/case013.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
     },
     {
       "file": "groups/object-constructor/case014.json",
@@ -2718,8 +3460,8 @@
     {
       "file": "groups/object-constructor/case015.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/object-constructor/case016.json",
@@ -2730,20 +3472,22 @@
     {
       "file": "groups/object-constructor/case017.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "DuplicateKey"
     },
     {
       "file": "groups/object-constructor/case018.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/object-constructor/case019.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/object-constructor/case020.json",
@@ -2760,8 +3504,10 @@
     {
       "file": "groups/object-constructor/case022.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/object-constructor/case023.json",
@@ -2782,14 +3528,16 @@
     {
       "file": "groups/object-constructor/case025.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "deferred",
+      "reason": "Deferred builtin; asserts runtime UnsupportedExpression",
+      "phase": "evaluate",
+      "kind": "UnsupportedExpression"
     },
     {
       "file": "groups/object-constructor/case026.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     }
   ]
 }

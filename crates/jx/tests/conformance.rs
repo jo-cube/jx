@@ -52,6 +52,18 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         } else {
             source
         };
+        // The byte-input API always has a JSON root. Upstream's absent host
+        // input is represented by an undefined predicate candidate instead.
+        let absent_input;
+        let source = if case.get("data").is_none() && case["dataset"].is_null() {
+            assert!(!source.contains("__jx_conformance"));
+            absent_input = format!(
+                "($$:=();$__jx_conformance_result:=();$__jx_conformance_missing[$__jx_conformance_result:=({source})];$__jx_conformance_result)"
+            );
+            &absent_input
+        } else {
+            source
+        };
         let compiled = jx::compile(source);
         match row["status"].as_str().unwrap() {
             "supported" => {
@@ -81,7 +93,19 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                     } else {
                         Value::Array(values)
                     };
-                    assert_eq!(actual, case["result"], "{id}: {source}");
+                    let mut expected = case["result"].clone();
+                    let mut actual = actual;
+                    if case["unordered"] == true {
+                        actual
+                            .as_array_mut()
+                            .expect("unordered array")
+                            .sort_by_cached_key(Value::to_string);
+                        expected
+                            .as_array_mut()
+                            .expect("unordered array")
+                            .sort_by_cached_key(Value::to_string);
+                    }
+                    assert_eq!(actual, expected, "{id}: {source}");
                 }
             }
             status @ ("error" | "deferred" | "limit") => {

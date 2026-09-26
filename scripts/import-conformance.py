@@ -10,9 +10,9 @@ REVISION = "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03"  # JSONata v2.2.0
 GROUPS = {
     "fields": ["supported"] * 8,
     "missing-paths": ["supported"] * 6,
-    "quoted-selectors": ["syntax", "syntax", "syntax", "syntax", "supported", "syntax", "supported", "supported"],
+    "quoted-selectors": ["supported"] * 8,
 }
-FLATTENING_SUPPORTED = {*(f"case{i:03}.json" for i in range(37)), "case034a.json"}
+FLATTENING_SUPPORTED = {*(f"case{i:03}.json" for i in range(46)), "case034a.json"} - {"case044.json"}
 
 REASONS = {
     "supported": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics",
@@ -24,6 +24,13 @@ REASONS = {
 
 # Complete groups, with reviewed unsupported cases kept explicit.
 EXPRESSION_GROUPS = {
+    "wildcards": (10, set()),
+    "descendent-operator": (17, set()),
+    "range-operator": (25, {21, 22, 23, 24}),
+    "sorting": (21, {20}),
+    "inclusion-operator": (9, set()),
+    "coalescing-operator": (15, set()),
+    "default-operator": (19, set()),
     "variables": (13, set()),
     "blocks": (7, set()),
     "conditionals": (9, set()),
@@ -34,21 +41,22 @@ EXPRESSION_GROUPS = {
     "function-exists": (25, set()),
     "numeric-operators": (19, set()),
     "comparison-operators": (29, set()),
-    "boolean-expresssions": (31, {16}),
+    "boolean-expresssions": (31, set()),
     "literals": (20, set()),
     "null": (7, set()),
     "parentheses": (8, set()),
     "predicates": (4, set()),
     "simple-array-selectors": (23, set()),
-    "multiple-array-selectors": (3, {0, 1, 2}),
+    "multiple-array-selectors": (3, set()),
     "function-count": (14, {2}),
     "function-sum": (7, {2}),
     # Upstream keeps both min and max in this group.
     "function-max": (27, {2, 16}),
-    "array-constructor": (21, {15}),
-    "object-constructor": (27, {8, 9, 10, 11, 13, 15, 17, 18, 19, 20, 21, 22, 25, 26}),
+    "array-constructor": (21, set()),
+    "object-constructor": (27, {20, 21}),
 }
 ERROR_KINDS = {
+    "T2003": "TypeError", "T2004": "TypeError", "T2007": "TypeError", "T2008": "TypeError",
     "S0212": "UnsupportedExpression",
     "T1003": "TypeError", "D1009": "DuplicateKey",
     "T0410": "TypeError", "T0412": "TypeError",
@@ -59,8 +67,8 @@ ERROR_KINDS = {
 
 
 DEFERRED_CALLS = {
-    "boolean-expresssions": {29, 30}, "predicates": {3},
-    "object-constructor": {12}, "conditionals": {3, 4, 5},
+    "boolean-expresssions": {16, 29, 30}, "inclusion-operator": {8}, "predicates": {3},
+    "object-constructor": {10, 11, 12, 22, 25}, "conditionals": {3, 4, 5},
     "lambdas": {10, 11, 12},
 }
 
@@ -80,10 +88,12 @@ def inventory(suite):
         if path.name in FLATTENING_SUPPORTED:
             statuses = ["supported"]
         if path.name == "array-inputs.json":
-            for i in (0, 1, 3, 4, 5, 6, 7):
+            for i in range(8):
                 statuses[i] = "supported"
         if path.name == "sequence-of-arrays.json":
-            statuses = ["supported", "supported", "syntax", "syntax"]
+            statuses = ["supported"] * 4
+        if path.name in {"case044.json", "large.json"}:
+            statuses = ["deferred"] * len(cases)
         yield path, statuses
 
     for group, (count, deferred) in EXPRESSION_GROUPS.items():
@@ -101,7 +111,7 @@ def inventory(suite):
                 assert len(cases) == 4
                 statuses = ["supported"] * 4
             elif path.name == "array-sequences.json":
-                statuses = ["syntax", "syntax", "supported", "supported", "syntax"]
+                statuses = ["supported"] * 5
             else:
                 index = int(path.stem[4:])
                 status = "syntax" if index in deferred else "error" if "code" in spec else "supported"
