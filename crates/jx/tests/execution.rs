@@ -140,3 +140,71 @@ fn numeric_regions_preserve_ordering_and_stream_cancellation() {
     let long = std::iter::repeat_n("x", 60).collect::<Vec<_>>().join("+");
     assert_eq!(evaluate(&long, br#"{"x":2}"#).unwrap(), vec![json!(120)]);
 }
+
+#[test]
+fn planned_regions_do_not_round_borrowed_output() {
+    let input = br#"{"x":9007199254740993,"y":1}"#;
+    for source in ["x>y and y>0 ? x : y", "{\"raw\":x,\"computed\":x+y}"] {
+        let expression = jx::compile(source).unwrap();
+        expression
+            .evaluate(input)
+            .unwrap()
+            .for_each(|value| {
+                let raw = match &value {
+                    jx::Value::Object(object) => object.as_slice()[0].1.as_raw().unwrap(),
+                    value => value.as_raw().unwrap(),
+                };
+                assert_eq!(raw.as_str(), "9007199254740993");
+                assert_eq!(raw.as_bytes().as_ptr(), input[5..].as_ptr());
+            })
+            .unwrap();
+    }
+}
+
+#[test]
+fn branches_fixed_objects_and_streamed_folds_compose() {
+    let input=br#"{"x":7,"y":3,"active":true,"payload":{"orders":[{"price":2,"qty":3},{"price":5,"qty":2}]}}"#;
+    for (source, expected) in [
+        ("x>y ? x*x+y*y : x-y", vec![json!(58)]),
+        ("active and x>y and (x+y<20 or y=0)", vec![json!(true)]),
+        (
+            r#"{"sum":x+y,"product":x*y,"schema":{"v":1}}"#,
+            vec![json!({"sum":10,"product":21,"schema":{"v":1}})],
+        ),
+        (
+            "$sum(payload.orders[price>3].(price*qty+1))",
+            vec![json!(11)],
+        ),
+        ("$min(payload.orders.(price*qty+1))", vec![json!(7)]),
+        ("$max(payload.orders.(price*qty+1))", vec![json!(11)]),
+        (
+            "$count(payload.orders[price>3].(price*qty+1))",
+            vec![json!(1)],
+        ),
+        (
+            r#"payload.orders.{"gross":price*qty,"large":price>3}"#,
+            vec![
+                json!({"gross":6,"large":false}),
+                json!({"gross":10,"large":true}),
+            ],
+        ),
+    ] {
+        assert_eq!(evaluate(source, input).unwrap(), expected, "{source}");
+    }
+    for (source, expected) in [
+        ("$sum(payload.orders[price>3].(price*qty+1))", vec![]),
+        (
+            "$count(payload.orders[price>3].(price*qty+1))",
+            vec![json!(0)],
+        ),
+    ] {
+        assert_eq!(
+            evaluate(source, br#"{"payload":{"orders":[]}}"#).unwrap(),
+            expected
+        );
+    }
+    assert_eq!(
+        evaluate("x>0 or (y*y+y>0)", br#"{"x":2,"y":null}"#).unwrap(),
+        vec![json!(true)]
+    );
+}

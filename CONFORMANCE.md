@@ -408,6 +408,7 @@ node scripts/check-lexical.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-navigation.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-compiler.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-execution.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-plans.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -425,7 +426,10 @@ behavior. The compiler check adds 947 comparisons covering constant folding, con
 identity/shape, indexed lookup, dynamic keys and builtin shadowing. Numeric-plan checks
 add 4,443 comparisons across input shapes, IEEE boundaries, repeated loads and streamed
 contexts. Offline plan/tree tests also compare exact error offsets and floating-point
-bits. Milestone 11 changes execution only; the upstream classifications are unchanged.
+bits. Expanded-plan checks add 4,561 branch, aggregate, constructor and lookup
+comparisons, with offline coverage for skipped demands, duplicate keys, exact errors
+and borrowed numeric tokens. Milestones 11–12 change execution only; upstream
+classifications are unchanged.
 The known upstream
 empty-root-array mutation during object construction is excluded from generated
 constructor/lexical comparisons. Normal `just all` needs neither Node nor the upstream checkout.
