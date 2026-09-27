@@ -2,7 +2,7 @@
 
 ## Current execution
 
-`source → expression tree → effect analysis and specialization → validating selection or tree execution → result stream`
+`source → expression tree → effect analysis and specialization → bounded numeric lowering → validating selection or execution → result stream`
 
 - `parse/lex.rs` and `parse.rs` own tokenization, precedence and grouping. Field
   names and encoded string literals are owned once; operators retain source offsets.
@@ -128,8 +128,8 @@ opaque function results cannot be invoked after their evaluation's arena is gone
 
 Calls are bounded by 64 active invocations and 512 accumulated body-tree levels, in
 addition to the parser's 128-level limit. Tail-call elimination and function signatures
-remain deferred. Direct evaluation still expresses scope/control flow cleanly; an IR
-would not remove frame retention or traversal costs and is not justified by this milestone.
+remain deferred. Scope and function control flow remain direct evaluation; numeric lowering does not
+change frame retention or lexical lifetimes.
 
 ## Compile-time specialization
 
@@ -161,23 +161,53 @@ retains its normalized result; it is not a second navigation engine.
 Builtin references resolve once when no declaration anywhere in the expression can
 shadow them. Ordinary references then need neither name lookup nor a lexical arena.
 The conservative whole-expression shadowing rule is unchanged. Lexical constant
-propagation is deferred: captured frames observe later rebinding. General repeated
-field-demand fusion is also deferred; the benchmark control exposes its opportunity.
+propagation is deferred: captured frames observe later rebinding. Repeated numeric
+paths share loads within a lowered region (below); capture across different fields
+or regions remains deferred.
 Static constructor grouping still has quadratic compile cost for distinct keys, paid
 once rather than per record. No general IR, JIT, scanner cache or input DOM is needed
 for these specializations.
+
+## Numeric execution plans
+
+`plan.rs` lowers pure arithmetic and numeric ordering regions after constant folding.
+The bounded register plan contains static path loads, constants, unary negation and
+binary operations. Identical paths (including their leading `$` distinction) share a
+load within one invocation. Regions need at least three operations and fit within
+32 instructions; larger or unsupported trees can contain smaller lowered children.
+The limit bounds stack storage, not expression support. Branches, function calls,
+constructors and stream iteration continue to use the existing tree and may invoke
+numeric regions in their operands, members or predicates.
+
+Registers hold primitive numbers, booleans or missing on the stack. No record cache,
+heap allocation, retained sequence or general value hierarchy is added. Loads use the
+same borrowed path selection and normalization as the tree. Each invocation starts
+fresh, so mapped candidates and independent records cannot share values accidentally.
+The original pure subtree remains the fallback for type/shape mismatches and nonfinite
+operands. Replaying it preserves string ordering, error kinds, offsets and precedence;
+it cannot replay lexical effects. Successful numeric evaluation avoids recursive node
+and generic-value dispatch. The plan call stays out of line: measured compiler
+inlining otherwise enlarged every recursive tree frame with register storage.
+Whole-record validation still precedes execution.
+
+Paired measurements justify this narrow plan: sharing loads removes most repeated
+record scans; lowering alone also improves numeric work inside streamed loops. Static
+indexed lookup already has a compact specialized node and needs no further lowering.
+The bounded registers are not a general IR, and do not justify native code generation.
+Fallback inputs do extra work, and compile time/storage increase for lowered regions.
+See PERFORMANCE for both gains and costs.
 
 ## Decisions and measured limits
 
 The tree exists because precedence, short-circuiting and typed operators now need
 structure. Constructors add owned containers only when they are requested. There is
-no execution IR, JIT or input DOM. Function execution uses the same tree and values.
+no general execution IR, JIT or input DOM. Function execution uses the same tree and values.
 Fallback operators reuse scalar evaluation and calls. Coalescing stores its left
 expression once as the argument of a shadowable `$exists` call, then re-evaluates
 that argument when selected. This follows reference execution without exponentially
 duplicating nested fallback trees at compile time.
 Compilation preserves JSONata’s literal-versus-computed position rules and direct
-nested-array syntax, even when their values are constant. See specialization below.
+nested-array syntax, even when their values are constant. See compile-time specialization above.
 
 The custom safe scanner combines validation and selective capture for standalone
 paths. Element/member cursors reuse its grammar instead of adding a trusted second
@@ -212,16 +242,15 @@ Keep direct tree evaluation. Parsing already resolves precedence, static paths a
 array focus; execution separates scalar operands, replayable streams and retained
 containers. Those distinctions encode observable shape and error behavior. Flattening
 them into one owned result or one generic iterator would reintroduce collection or
-move complexity elsewhere. Modules remain small and cohesive; specialization annotates this tree rather than
-introducing a second general execution representation.
+move complexity elsewhere. Modules remain small and cohesive; specialization retains this tree, with bounded numeric regions where measurement
+justifies a smaller execution representation.
 
-Profiles locate the current costs in scanning and the scalar/stream ownership boundary,
-not instruction decoding. Returning known selections directly removes a redundant
+Milestone 7 profiles located costs in scanning and the scalar/stream ownership boundary. Returning known selections directly removes a redundant
 stream walk; borrowing removes temporary ownership within live stages. Neither needs
-an IR. An IR should next earn its place through concrete field-demand fusion or
-function/control-flow requirements, with a measured benefit over this tree. It would
-not by itself eliminate subtree rescanning, negative-position replays or member-wise
-constructor evaluation. Those costs remain explicit; no cache or scanner index was added.
+an IR. Milestone 11 earns bounded numeric lowering through repeated-load sharing and lower
+scalar overhead inside streams. It does not eliminate nested subtree rescanning,
+negative-position replays or member-wise constructor evaluation. Those costs remain
+explicit; no record cache or scanner index was added.
 
 Milestone 9 profiles and repeated runs find no lexical frame creation or variable
 lookup on ordinary filters/folds. M8's larger context/operand layouts remain; the
@@ -259,7 +288,10 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
 10. **Complete: compiler specialization.** Fold context-independent expressions, retain
     immutable static constructors, resolve builtin references and index static object
     lookups. Reuse validating path capture for a direct lookup's record-derived key.
-11. **Next semantic work:** parent/context/index tuples and the function library.
+11. **Complete: execution-plan evaluation.** Bounded numeric regions share path loads
+    and execute primitive operations; unsupported values retry their pure tree. Existing
+    traversal, constructors, static lookup and lexical control flow remain direct.
+12. **Next semantic work:** parent/context/index tuples and the function library.
     Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
     a final value. String conversion/concatenation and chaining remain useful gaps.
     Host invocation still needs a lifetime/resource contract.

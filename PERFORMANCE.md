@@ -87,6 +87,15 @@ with `HashMap`; repeated-field controls validate the whole record and parse two 
 fields once using the fixture's fixed ASCII layout. They are architectural controls,
 not general JSONata implementations. Evaluation timing excludes serialization.
 
+Execution fixtures compare arithmetic-heavy expressions, comparisons, conditional
+branches and static constructors with computed members at 100 B–1 MiB. Streamed
+numeric predicates and mapped sums cover 8–16,384 rows; a separate static lookup
+contains 8,192 keys. A type-error fixture measures plan fallback. Rust controls
+validate the same records, read fixture-specific numeric fields once and compute the
+same scalar or filtered sum. Constructor controls return the static schema plus its
+computed member; neither side serializes during timing. They do not implement general
+JSONata navigation or error behavior. Numeric compilation has its own row.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
 ordinary paths, filters, aggregates and scalar operators without lexical features
@@ -106,7 +115,7 @@ validation, result cardinality and serialization work, with pinned versions,
 commands, machine/compiler details and repeated raw results.
 
 Profile before adding scan fusion beyond the current path, SIMD, indexes, caches,
-execution IR or JIT. Allocation is permitted when semantics need construction,
+a broader execution IR or JIT. Allocation is permitted when semantics need construction,
 retention, equality, broad sequences or closures. Preserve fast common paths
 without complicating them for speculative features.
 
@@ -738,3 +747,80 @@ per-record cache or input DOM was introduced.
 [specialization comparisons](benchmarks/m10/specialization.csv) retain the evidence.
 Processes ran sequentially; brief source/artifact work overlapped timing and host
 activity was not controlled. No cross-engine, tail-latency or retained-RSS claim follows.
+
+## Milestone 11 — bounded numeric execution plans
+
+Same Apple M4/compiler/profile. **606 workloads**: 13 compilation and 593 evaluation
+cases, including 399 with zero allocations. Every evaluation workload has exactly
+the same allocation calls and requested bytes as the M10 tree baseline. Final
+`just all`, `just build`, 568 classified conformance cases and **31,200 differential
+comparisons** pass. No language semantics were added.
+
+Retain the small numeric register plan described in ARCHITECTURE. The full-run table
+below uses seven-sample medians, with validation and complete consumption included.
+Focused process repeats confirm the gains; no samples are discarded. Rust controls
+have the narrower fixture-specific contract described above.
+
+| Workload | Bytes | M10 tree records/s | Plan records/s | Rust control records/s |
+| --- | ---: | ---: | ---: | ---: |
+| Repeated fields | 500 | 238,075 | 1,011,311 | 2,952,456 |
+| Repeated fields | 1,048,576 | 147 | 632 | 1,855 |
+| Arithmetic-heavy scalar | 500 | 295,934 | 1,074,021 | 3,134,733 |
+| Arithmetic-heavy scalar | 1,048,576 | 174 | 631 | 1,856 |
+| Static schema + computed member | 500 | 286,069 | 918,536 | 3,147,412 |
+| Numeric filter + sum, 128 rows | 1,082 | 41,160 | 56,449 | 290,316 |
+| Numeric map + sum, 128 rows | 1,082 | 34,037 | 72,569 | — |
+| Static lookup, 8,192 keys | 501 | 1,855,943 | 1,952,211 | 3,258,258 |
+
+Repeated fields improve about **4.3×**, arithmetic **3.5–3.6×**, mapped sums **2.1×**,
+and filtered sums **1.37×**. Lookup is an unchanged control: its existing indexed
+node and validating key capture already avoid tree traversal through the table.
+Different fields still scan separately after validation; the two-field 1 MiB plan
+reads the record three times versus the Rust control's validation plus fixed-position
+field reads. General capture fusion, nested subtree rescanning and replay remain
+larger opportunities than native arithmetic code generation.
+
+Two prototype runs with load sharing disabled isolate instruction lowering from
+scan elimination. At 1,082 B, numeric filter and mapped-sum throughput improve
+24–25% and 29%, respectively, over their paired trees. Arithmetic over a 500 B record
+barely changes without shared loads. Lowering earns its place inside numeric loops,
+but shared demands explain most of the record-wide arithmetic gain. Those controls
+used the initial inlined prototype; the final plan keeps its register frame separate.
+
+Inlining the prototype enlarged each recursive tree frame from 960 to 1,408 bytes
+on this compiler and regressed sequence equality by 17–20%. Keeping the plan call
+out of line restores the 960-byte tree frame; those workloads now differ by roughly
+2–3%. This is the only retained adjustment beyond lowering and load sharing. Runtime
+value/context/sequence representations and lexical boundaries are unchanged.
+
+Costs and open regressions:
+
+- The deliberately invalid numeric input runs about **30% slower** (9.83M → 6.84M
+  records/s): the guard retries the original pure tree to preserve exact diagnostics.
+  It still allocates nothing. Numeric-region compilation rises from 69 allocations /
+  4,674 requested bytes to 129 / 7,694, and from about 1.85 to 2.82 µs.
+- Unlowered 500 B validation/path workloads are about **2% slower**. The 100 B
+  validation case loses **9–11%**; wide last-position filters lose **8–12%** in
+  repeats. These are real measured differences, not an overall speedup claim.
+  There is no plan execution, added scan pass or allocation on these paths. Scanner
+  instruction counts are unchanged; the precise code-generation/layout cause remains
+  unisolated. Preserving existing enum tags did not recover the loss and was discarded.
+- The two M10 regressions remain open. Escaped-string comparison is within 1% of M10;
+  600,386 B grouping loses a further **5%**. Sampling still puts grouping mostly in
+  scanning, and escaped comparison in scanning/UTF-16 decoding, without lexical frame
+  work. Consuming owned scalar conversion recovered only 2–3% on escaped strings and
+  no repeatable grouping gain; that experiment was discarded. No broad scanner or
+  value redesign is justified by this investigation.
+
+The plan keeps ordinary borrowing and streaming, including predicates inside existing
+folds. Constructed-output fixtures retain their four allocations / 312 requested
+bytes; numeric loops remain allocation-free. There is no general IR, JIT, branch
+lowering or replacement sequence evaluator. Further lowering should earn its place
+against this baseline, with attention to unlowered workloads as well as hot regions.
+
+[Full comparison](benchmarks/m11/comparison.csv), [tree samples](benchmarks/m11/tree-full.csv),
+[final samples](benchmarks/m11/final-full.csv), [numeric repeat](benchmarks/m11/final-execution-repeat.csv),
+and [compiler-workload repeat](benchmarks/m11/final-compiler-repeat.csv) retain the evidence.
+[Environment, commands, variant mapping and source hashes](benchmarks/m11/environment.json)
+cover focused regression runs, rejected patches, sampling profiles and frame disassembly.
+Profile timings are instrumented and excluded from these tables.
