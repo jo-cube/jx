@@ -15,6 +15,7 @@ pub(crate) struct Node {
 
 #[derive(Clone, Debug)]
 pub(crate) enum Kind {
+    Plan(Box<crate::plan::Plan>),
     Path(Path),
     Prepared(Box<crate::constant::Prepared>),
     StaticLookup(Box<crate::constant::Data>, Box<Node>),

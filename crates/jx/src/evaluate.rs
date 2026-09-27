@@ -176,7 +176,7 @@ impl<'e, 'i> Operand<'e, 'i> {
         }
     }
 
-    fn number(&self, offset: usize) -> Result<Option<f64>, Error> {
+    pub(crate) fn number(&self, offset: usize) -> Result<Option<f64>, Error> {
         match self {
             Self::Missing => Ok(None),
             Self::One(value) => match value.atomic() {
@@ -193,6 +193,7 @@ impl<'e, 'i> Operand<'e, 'i> {
 impl Node {
     pub(crate) fn run<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
         let value = match &self.kind {
+            Kind::Plan(plan) => return plan.run(input).map_or_else(|| plan.source.run(input), Ok),
             Kind::StaticLookup(data, key) => {
                 let key = crate::retain::materialize(key, input)?;
                 return crate::lookup::constant(data, key, self.offset)

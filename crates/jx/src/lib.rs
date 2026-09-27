@@ -29,6 +29,7 @@ mod navigate;
 mod ordering;
 mod parse;
 mod path;
+mod plan;
 mod retain;
 mod route;
 mod runtime;
