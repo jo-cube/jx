@@ -2,7 +2,7 @@
 
 ## Current execution
 
-`source → expression tree → effect analysis and specialization → bounded numeric lowering → validating selection or execution → result stream`
+`source → expression tree → effect analysis and specialization → bounded region lowering → validating selection or execution → result stream`
 
 - `parse/lex.rs` and `parse.rs` own tokenization, precedence and grouping. Field
   names and encoded string literals are owned once; operators retain source offsets.
@@ -155,47 +155,66 @@ this index for compiled objects and the ordinary member traversal for dynamic/ra
 objects. A direct call with a static object lowers to a small `StaticLookup` tree node:
 primitive results need no temporary object identity. At the expression root, a plain
 path key reuses validating path capture, avoiding a second scan of the record. Other
-keys and enclosing expressions use the existing evaluator. Generic array lookup
+keys use the existing evaluator; numeric regions can embed the indexed lookup. Generic array lookup
 retains its normalized result; it is not a second navigation engine.
 
 Builtin references resolve once when no declaration anywhere in the expression can
 shadow them. Ordinary references then need neither name lookup nor a lexical arena.
 The conservative whole-expression shadowing rule is unchanged. Lexical constant
 propagation is deferred: captured frames observe later rebinding. Repeated numeric
-paths share loads within a lowered region (below); capture across different fields
-or regions remains deferred.
+paths share loads within a lowered region (below). Direct numeric field demands can
+share one raw-object scan; capture across regions remains deferred.
 Static constructor grouping still has quadratic compile cost for distinct keys, paid
 once rather than per record. No general IR, JIT, scanner cache or input DOM is needed
 for these specializations.
 
-## Numeric execution plans
+## Execution plans
 
-`plan.rs` lowers pure arithmetic and numeric ordering regions after constant folding.
-The bounded register plan contains static path loads, constants, unary negation and
-binary operations. Identical paths (including their leading `$` distinction) share a
-load within one invocation. Regions need at least three operations and fit within
-32 instructions; larger or unsupported trees can contain smaller lowered children.
-The limit bounds stack storage, not expression support. Branches, function calls,
-constructors and stream iteration continue to use the existing tree and may invoke
-numeric regions in their operands, members or predicates.
+`plan/` lowers pure regions after constant folding. Programs still fit in 32 slots;
+operands and forward branch targets use byte indexes. Instructions load paths or
+indexed static lookups, create primitive constants, negate, perform numeric binary
+operations, test effective boolean values, copy/merge results and jump. Scalar
+regions need at least three operations. Calls, lexical effects, general sequences,
+string operations and unsupported/oversized regions retain tree evaluation; their
+eligible children can still lower. There is no general IR or JIT.
 
-Registers hold primitive numbers, booleans or missing on the stack. No record cache,
-heap allocation, retained sequence or general value hierarchy is added. Loads use the
-same borrowed path selection and normalization as the tree. Each invocation starts
-fresh, so mapped candidates and independent records cannot share values accidentally.
-The original pure subtree remains the fallback for type/shape mismatches and nonfinite
-operands. Replaying it preserves string ordering, error kinds, offsets and precedence;
-it cannot replay lexical effects. Successful numeric evaluation avoids recursive node
-and generic-value dispatch. The plan call stays out of line: measured compiler
-inlining otherwise enlarged every recursive tree frame with register storage.
-Whole-record validation still precedes execution.
+Numbers, booleans and missing stay in stack registers. Repeated path loads share a
+slot only when that load dominates its use. Conditional joins restore the preceding
+load set; skipped branches neither evaluate arithmetic nor trigger guards. When all
+path demands are direct fields and there are at least two path demands, a raw-object cursor fills
+those registers in one pass, preserving escaped/duplicate keys. Unsupported fields
+are marked and checked only when loaded. This capture reads unselected demands too;
+see PERFORMANCE for its short-circuit cost. Other contexts use existing borrowed path
+selection. Static lookup calls the existing immutable index and delays constructing
+any result until its numeric/boolean shape is accepted.
 
-Paired measurements justify this narrow plan: sharing loads removes most repeated
-record scans; lowering alone also improves numeric work inside streamed loops. Static
-indexed lookup already has a compact specialized node and needs no further lowering.
-The bounded registers are not a general IR, and do not justify native code generation.
-Fallback inputs do extra work, and compile time/storage increase for lowered regions.
-See PERFORMANCE for both gains and costs.
+Two enclosing operations reuse this same primitive program:
+
+- A streaming fold accepts a plain object path prefix, optional boolean predicates,
+  and one numeric mapped stage. It visits candidates once, sharing surviving field
+  loads between predicates and mapping, and reuses `aggregate::Fold` for count/sum/
+  min/max. Nested source arrays, positional predicates and general sequence boundaries
+  stay with the tree. No candidate collection, stage views or lexical frames are needed
+  on the accepted path.
+- A fixed object compiles distinct constant keys and their reference ordering once.
+  Computed primitive members share one program; prepared constant subtrees retain
+  expression storage and fresh identity. Existing owned object storage holds the
+  output, without the generic constructor's temporary key groups. Dynamic keys,
+  grouped array contexts and directly borrowed member values keep tree construction.
+
+Each plan retains its original pure tree. A type/shape miss retries that entire region
+before publishing output, preserving exact errors and upstream-stage precedence.
+No lexical effects can replay. Outputs that directly select input tokens stay on the
+tree, preserving borrowing and large numeric tokens. Consumer cancellation between
+mapped outputs continues through the existing stream. Whole-record validation precedes
+all execution. Register execution stays out of line to avoid enlarging recursive tree
+frames; construction has a separate instantiation of the same instruction loop.
+
+These plans are a useful primitive lowering boundary, not a second general evaluator.
+The numeric control flow could feed a future JIT, but traversal guards and general
+sequence ownership remain external semantic operations. Measurements still identify
+validation/scanning and normalization as larger opportunities than native arithmetic.
+See PERFORMANCE for gains, fallback/compile costs and unchanged workloads.
 
 ## Decisions and measured limits
 
@@ -231,8 +250,8 @@ Raw arrays, explicit stage sequences and normalized operands are separate states
 collapsing them would break chained positions and last-step array preservation.
 
 Array traversal can rescan a subtree at each nesting/path level: worst-case
-O(bytes × input depth). Scalar operands also rescan demanded paths separately after
-validation. The benchmarks retain deep arrays, tiny records, multi-field scalars
+O(bytes × input depth). Unplanned scalar operands also rescan demanded paths separately
+after validation. The benchmarks retain deep arrays, tiny records, multi-field scalars
 and structural equality so these costs remain visible. Add capture fusion, indexes,
 trusted skipping or specialization only for a measured benefit with a simple design.
 
@@ -242,15 +261,16 @@ Keep direct tree evaluation. Parsing already resolves precedence, static paths a
 array focus; execution separates scalar operands, replayable streams and retained
 containers. Those distinctions encode observable shape and error behavior. Flattening
 them into one owned result or one generic iterator would reintroduce collection or
-move complexity elsewhere. Modules remain small and cohesive; specialization retains this tree, with bounded numeric regions where measurement
-justifies a smaller execution representation.
+move complexity elsewhere. Specialization retains this tree, with bounded regions
+where measurement justifies a smaller execution representation.
 
 Milestone 7 profiles located costs in scanning and the scalar/stream ownership boundary. Returning known selections directly removes a redundant
 stream walk; borrowing removes temporary ownership within live stages. Neither needs
 an IR. Milestone 11 earns bounded numeric lowering through repeated-load sharing and lower
-scalar overhead inside streams. It does not eliminate nested subtree rescanning,
-negative-position replays or member-wise constructor evaluation. Those costs remain
-explicit; no record cache or scanner index was added.
+scalar overhead inside streams. Milestone 12 broadens this to primitive branches,
+fixed objects and numeric folds, and shares direct field capture. Nested subtree
+rescanning, negative-position replays and general constructor grouping remain explicit;
+no record cache or scanner index was added.
 
 Milestone 9 profiles and repeated runs find no lexical frame creation or variable
 lookup on ordinary filters/folds. M8's larger context/operand layouts remain; the
@@ -291,7 +311,13 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
 11. **Complete: execution-plan evaluation.** Bounded numeric regions share path loads
     and execute primitive operations; unsupported values retry their pure tree. Existing
     traversal, constructors, static lookup and lexical control flow remain direct.
-12. **Next semantic work:** parent/context/index tuples and the function library.
+12. **Complete: broader execution regions.** Primitive branches, shared direct-field
+    capture, fused numeric map/filter/folds, indexed lookups within numeric regions,
+    and fixed objects with computed leaves. General sequence and lexical semantics
+    retain their tree boundaries.
+13. **Next performance work:** demand-aware validation/traversal, guided by the
+    remaining scans and nested-array costs before native code generation.
+    **Next semantic work:** parent/context/index tuples and the function library.
     Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
     a final value. String conversion/concatenation and chaining remain useful gaps.
     Host invocation still needs a lifetime/resource contract.

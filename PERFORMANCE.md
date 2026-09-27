@@ -96,6 +96,13 @@ same scalar or filtered sum. Constructor controls return the static schema plus 
 computed member; neither side serializes during timing. They do not implement general
 JSONata navigation or error behavior. Numeric compilation has its own row.
 
+Region-plan fixtures add boolean/conditional control flow, fixed objects with shared
+numeric demands, 4,096-key quote calculations, and nested-path invoice folds with
+optional output construction. Records span 100 B–1 MiB and 1–16,384 rows. Wide objects
+and untaken branches measure sparse demands and capture overhead. The invoice Rust
+control uses validating path capture plus a reader for the fixed ASCII row layout;
+it checks the same numeric total, without general JSONata shape/error handling.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
 ordinary paths, filters, aggregates and scalar operators without lexical features
@@ -824,3 +831,86 @@ and [compiler-workload repeat](benchmarks/m11/final-compiler-repeat.csv) retain 
 [Environment, commands, variant mapping and source hashes](benchmarks/m11/environment.json)
 cover focused regression runs, rejected patches, sampling profiles and frame disassembly.
 Profile timings are instrumented and excluded from these tables.
+
+## Milestone 12 — branches, capture and enclosing operations
+
+Same machine/compiler/profile. **646 workloads**, including 632 evaluations and 423
+zero-allocation cases. Fresh M11 tree and plan baselines use the same final harness.
+Seven-sample medians below include full validation and consumption. Focused process
+repeats confirm the main gains. The final full dataset combines completed groups
+following a session interruption; raw partial/rerun samples and the deterministic
+replacement rule are recorded in the environment file.
+
+| Workload | Bytes | M11 tree records/s | M11 plan records/s | M12 records/s |
+| --- | ---: | ---: | ---: | ---: |
+| Arithmetic-heavy scalar | 500 | 295,059 | 1,076,523 | 1,552,112 |
+| Conditional with reused fields | 500 | 468,507 | 646,768 | 1,594,220 |
+| Boolean branches | 500 | 538,015 | 529,445 | 1,447,749 |
+| Fixed object with computed members | 500 | 432,457 | 425,583 | 1,473,751 |
+| Arithmetic-heavy scalar | 1,048,576 | 174 | 632 | 943 |
+| Filter + sum, 128 rows | 1,082 | 40,969 | 56,591 | 84,391 |
+| Numeric map + sum, 128 rows | 1,082 | 33,575 | 71,951 | 82,666 |
+| Invoice filter/map/sum, 128 rows | 4,488 | 27,939 | 26,589 | 32,839 |
+| Mapped fixed objects, 128 rows | 4,488 | 17,425 | 17,323 | 30,975 |
+| 4,096-key lookup + repeated quantity | 490 | 427,506 | 417,703 | 597,840 |
+| Two demanded fields among 514 keys | 7,583 | 21,151 | 28,466 | 71,756 |
+
+The isolated no-capture control retains branches, folds and fixed objects but loads
+fields separately. At 500 B, capture adds about **1.45×** for conditionals, **2.62×**
+for boolean branches and **1.41×** for fixed objects over that control. Broader lowering
+alone helps whole conditionals and constructors; shared input work remains essential.
+Standalone indexed lookup remains essentially unchanged (8,192 keys: 1.95M → 1.99M
+records/s); its useful plan role is inside a larger region with repeated demands.
+
+All 632 evaluation cases preserve or reduce allocation calls **and** requested bytes.
+Twenty constructor cases improve: fixed-object output goes from 4 calls / 568 B to
+3 / 248 B; mapped two-member objects go from 3 / 296 B to 2 / 136 B per output.
+Primitive programs and fused numeric folds remain allocation-free. Compilation is
+slightly costlier: the conditional fixture goes from 75 allocations / 3,282 B to
+85 / 3,780 B, and about 1.42 → 1.56 µs. Arithmetic compilation is nearly unchanged
+(2.82 → 2.86 µs). Register cells and instructions remain 16 B; the bounded register
+array is 512 B. Out-of-line execution keeps the recursive tree frame at 976 B versus
+M11's 960 B, rather than incorporating that array into every tree frame.
+
+Costs and boundaries:
+
+- Type-error fallback is **8–9% slower** than M11 (6.93M → 6.34M records/s), still
+  allocation-free. Boolean-capable loads can reach the numeric guard later before
+  retrying the original tree. Exact diagnostics and error precedence remain intact.
+- The untaken 496 B branch loses **5–6%** because capture reads compiled demands from
+  the unselected arm. Disabling capture recovers it. Guards and computations remain
+  lazy; no unselected expression errors are exposed. Adding adaptive branching or a
+  general value register model was not justified.
+- General sequence boundaries, nested candidate arrays, dynamic keys, lexical calls
+  and directly borrowed constructor members retain the tree. An early prototype that
+  converted bare numeric outputs was rejected: it lost original large-number tokens.
+  The retained lowering boundary preserves those bytes and borrowing.
+- Fresh full/focused runs mostly recover M11's tiny-record and last-position losses:
+  100 B validation is 11.09M → 12.23M records/s in repeats; wide last-position filters
+  gain about 8–11%. The 600,386 B grouping control returns from 265 to 280 records/s.
+  No scanner-source change explains this; code-generation/layout causality remains
+  unisolated. Escaped-string comparison remains essentially unchanged. Other unlowered
+  controls include roughly 5–6% single-run losses for tiny lookup and distinct grouping;
+  these are not evidence for another representation change.
+
+Rust controls still delimit the opportunity: arithmetic reaches 3.23M records/s at
+500 B and 1,859 at 1 MiB, versus 1.55M and 943. The latter is largely validation plus
+one demand scan versus validation with fixture-specific reads. Invoice Rust reaches
+65,788 records/s versus 32,839; the simpler filtered-sum control reaches 310,948 versus
+84,391. Source-prefix/container rescanning, numeric parsing, generic traversal and
+instruction dispatch remain costs. A 3 s invoice profile places about 58% of leaf
+samples in scanner value/string routines and 18% in the program loop (capture and
+dispatch combined); instrumented timings are excluded. Broadening the plan has not removed general
+sequence normalization or positional replay. Demand-aware validation and traversal
+are the next useful experiment; these results do not yet justify Cranelift.
+
+[Full comparison](benchmarks/m12/comparison.csv), [M11 tree](benchmarks/m12/m11-tree-full.csv),
+[M11 plan](benchmarks/m12/m11-plan-full.csv), [M12 samples](benchmarks/m12/final-full.csv),
+[focused region repeat](benchmarks/m12/final-plan-repeat.csv),
+[numeric repeat](benchmarks/m12/final-execution-repeat.csv), and
+[no-capture control](benchmarks/m12/no-capture.csv) retain the measurements.
+[Environment and commands](benchmarks/m12/environment.json) and
+[control patch](benchmarks/m12/no-capture.patch) describe reproduction.
+[Invoice profile](benchmarks/m12/profile-invoice.txt) and
+[frame measurements](benchmarks/m12/tree-frames.txt) retain the supporting inspection.
+`just all`, `just build`, all 568 classified cases and 35,761 differential comparisons pass.

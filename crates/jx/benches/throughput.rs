@@ -14,6 +14,8 @@ mod filters;
 mod lexical;
 #[path = "workloads/navigation.rs"]
 mod navigation;
+#[path = "workloads/plans.rs"]
+mod plans;
 #[path = "workloads/scalars.rs"]
 mod scalars;
 use std::{
@@ -287,4 +289,5 @@ fn main() {
     navigation::run(smoke);
     compiler::run(smoke);
     execution::run(smoke);
+    plans::run(smoke);
 }

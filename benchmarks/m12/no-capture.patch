@@ -1,0 +1,29 @@
+--- a/crates/jx/src/plan/lower.rs
++++ b/crates/jx/src/plan/lower.rs
+@@ -18,25 +18,8 @@
+         Some(at)
+     }
+     pub(super) fn finish(self, result: u8) -> Program {
+-        let capture: Box<[(Box<str>, u8)]> = if self.paths.len() >= 2
+-            && self.lookups.is_empty()
+-            && self.paths.iter().all(|p| p.fields.len() == 1)
+-        {
+-            self.instructions
+-                .iter()
+-                .enumerate()
+-                .filter_map(|(slot, instruction)| match instruction {
+-                    Instruction::Load(path) => {
+-                        Some((self.paths[usize::from(*path)].fields[0].clone(), slot as u8))
+-                    }
+-                    _ => None,
+-                })
+-                .collect()
+-        } else {
+-            Box::new([])
+-        };
+         Program {
+-            capture,
++            capture: Box::new([]),
+             instructions: self.instructions.into_boxed_slice(),
+             paths: self.paths.into_boxed_slice(),
+             lookups: self.lookups.into_boxed_slice(),
