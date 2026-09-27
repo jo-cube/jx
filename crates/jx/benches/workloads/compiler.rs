@@ -2,7 +2,14 @@ use super::measure_allocations;
 use serde_json::{Value, json};
 use std::{collections::HashMap, hint::black_box};
 
-fn workload(name: &str, source: &str, input: &[u8], expected: Value, limit: u64, smoke: bool) {
+pub(super) fn workload(
+    name: &str,
+    source: &str,
+    input: &[u8],
+    expected: Value,
+    limit: u64,
+    smoke: bool,
+) {
     let expression = jx::compile(source).unwrap();
     let mut actual = Vec::new();
     expression

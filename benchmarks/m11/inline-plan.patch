@@ -1,0 +1,11 @@
+--- a/crates/jx/src/plan.rs
++++ b/crates/jx/src/plan.rs
+@@ -41,8 +41,6 @@
+ impl Plan {
+     // A type/shape miss retries the original pure tree, preserving diagnostic
+     // offsets and error precedence. The successful numeric path allocates nothing.
+-    // Keep the register frame out of recursive tree evaluation.
+-    #[inline(never)]
+     pub fn run<'e, 'i>(&'e self, context: &Context<'e, 'i>) -> Option<Operand<'e, 'i>> {
+         let mut slots = [Cell::Missing; SLOTS];
+         for (at, instruction) in self.instructions.iter().enumerate() {

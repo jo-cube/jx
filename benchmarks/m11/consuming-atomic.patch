@@ -1,0 +1,78 @@
+--- a/crates/jx/src/value.rs
++++ b/crates/jx/src/value.rs
+@@ -51,15 +51,19 @@
+     }
+ 
+     pub(crate) fn atomic(&self) -> Self {
+-        match *self {
++        self.clone().into_atomic()
++    }
++
++    pub(crate) fn into_atomic(self) -> Self {
++        match self {
+             Self::Raw(raw) => match raw.as_bytes()[0] {
+                 b'n' => Self::Null,
+                 b't' => Self::Boolean(true),
+                 b'f' => Self::Boolean(false),
+                 b'-' | b'0'..=b'9' => Self::Number(raw.as_str().parse().expect("validated number")),
+-                _ => self.clone(),
++                _ => Self::Raw(raw),
+             },
+-            _ => self.clone(),
++            value => value,
+         }
+     }
+ 
+--- a/crates/jx/src/compare.rs
++++ b/crates/jx/src/compare.rs
+@@ -60,7 +60,7 @@
+ }
+ 
+ fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
+-    match (left.atomic(), right.atomic()) {
++    match (left.into_atomic(), right.into_atomic()) {
+         (Value::Function(left), Value::Function(right)) => {
+             std::rc::Rc::ptr_eq(&left, &right)
+                 || matches!((&left.kind, &right.kind), (crate::function::FunctionKind::Builtin(a), crate::function::FunctionKind::Builtin(b)) if a == b)
+@@ -133,7 +133,7 @@
+         match operand {
+             Operand::Missing => Ok(None),
+             Operand::One(value) => {
+-                let value = value.atomic();
++                let value = value.into_atomic();
+                 if matches!(value, Value::Number(_))
+                     || value.json().is_some_and(|raw| raw.as_bytes()[0] == b'"')
+                 {
+--- a/crates/jx/src/aggregate.rs
++++ b/crates/jx/src/aggregate.rs
+@@ -109,7 +109,7 @@
+         if matches!(self.aggregate, Aggregate::Count) {
+             return;
+         }
+-        let Value::Number(number) = value.atomic() else {
++        let Value::Number(number) = value.into_atomic() else {
+             // Preserve upstream evaluation errors over argument-type errors.
+             self.invalid = true;
+             return;
+--- a/crates/jx/src/ordering.rs
++++ b/crates/jx/src/ordering.rs
+@@ -67,7 +67,7 @@
+             (None, None) => continue,
+             (None, _) => return Ok(Ordering::Greater),
+             (_, None) => return Ok(Ordering::Less),
+-            (Some(a), Some(b)) => match (a.atomic(), b.atomic()) {
++            (Some(a), Some(b)) => match (a.into_atomic(), b.into_atomic()) {
+                 (Value::Number(a), Value::Number(b)) => {
+                     // NaN is unequal and not less in the reference comparator.
+                     if a == b {
+--- a/crates/jx/src/navigate.rs
++++ b/crates/jx/src/navigate.rs
+@@ -73,7 +73,7 @@
+     fn integer(value: Operand<'_, '_>, offset: usize) -> Result<Option<f64>, Error> {
+         match value {
+             Operand::Missing => Ok(None),
+-            Operand::One(value) => match value.atomic() {
++            Operand::One(value) => match value.into_atomic() {
+                 Value::Number(n) if n.is_finite() && n.fract() == 0.0 => Ok(Some(n)),
+                 _ => Err(type_error(offset)),
+             },

@@ -1,0 +1,58 @@
+{
+  "recorded_at_utc": "2026-09-27T08:03:18.830724+00:00",
+  "baseline_commit": "6930d91a04aa325efe500f3157d2cbee4a74aab7",
+  "machine": {
+    "cpu": "Apple M4",
+    "architecture": "arm64",
+    "memory_bytes": 25769803776,
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.1\nBuildVersion:\t\t25F80"
+  },
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "profile": "Workspace release: thin LTO, codegen-units=1; no target-cpu override",
+  "environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_BUILD_TARGET": null,
+    "CARGO_PROFILE_RELEASE_DEBUG": null,
+    "JX_BENCH_FILTER": null,
+    "JX_BENCH_BYTES": null,
+    "JX_BENCH_SAMPLE_MS": null
+  },
+  "workloads": 606,
+  "compilation_workloads": 13,
+  "zero_allocation_evaluation_workloads": 399,
+  "allocation_comparison": "All 593 evaluation workloads have identical calls and requested bytes in tree-full.csv and final-full.csv.",
+  "samples_per_workload": 7,
+  "warmup_records": 64,
+  "minimum_sample_ms": 50,
+  "timing_batch_records": 32,
+  "baseline_setup": "git archive 6930d91 into target/m11/tree; copy final crates/jx/benches from the working tree. No engine changes. Run commands from that checkout.",
+  "commands": {
+    "full": "cargo bench -p jx --bench throughput --locked (same command as just bench), sequentially: inline-full.csv, tree-full.csv, final-full.csv",
+    "final_checks": "just all; just build",
+    "differential": "node scripts/check-SUITE.cjs target/m11/jsonata target/release/jx for sequences, scalars, filters, aggregates, constructors, lexical, navigation, compiler, execution",
+    "initial_execution": "JX_BENCH_FILTER=execution cargo bench -p jx --bench throughput --locked. Run order: tree-execution-first, inline-execution-first, no-sharing-first, tree-execution-repeat, inline-execution-repeat, no-sharing-repeat.",
+    "variants": "Apply inline-plan.patch to final source for the inlined prototype; additionally apply repeated-loads.patch for no-sharing. Apply consuming-atomic.patch to the M10 baseline for the discarded ownership experiment. Apply preserved-tags.patch to final source for the discarded enum-order control.",
+    "atomic": "JX_BENCH_FILTER=escaped_strings (or wide_group) JX_BENCH_SAMPLE_MS=250 cargo bench -p jx --bench throughput --locked. Run order: tree-strings, atomic-strings, tree-group, atomic-group, atomic-strings-repeat, tree-strings-repeat, atomic-group-repeat, tree-group-repeat.",
+    "tags": "JX_BENCH_FILTER=ascii/ JX_BENCH_BYTES=100 JX_BENCH_SAMPLE_MS=150 cargo bench -p jx --bench throughput --locked; tags-ascii-first, tree-ascii-repeat, tags-ascii-repeat. Then wide_last and scalar/sequence_ without byte restriction at 150 ms for tags then tree. tags-execution uses execution and the default 50 ms.",
+    "final_repeats": "JX_BENCH_FILTER=execution and compiler/ at 50 ms; ascii/ with JX_BENCH_BYTES=100 and 500, wide_last and scalar/sequence_ at 150 ms; wide_group and escaped_strings at 250 ms. Files named final-*.csv.",
+    "profile": "Run the built throughput binary with JX_BENCH_FILTER=scalar/escaped_strings (26 B), navigation/wide_group (600386 B), or execution/filtered_sum (8586 B), JX_BENCH_BYTES selecting that size and JX_BENCH_SAMPLE_MS=1000. After its first sample, sample PID 3 1 -file report.txt. Profile timings are instrumented and excluded from comparison tables.",
+    "disassembly": "xcrun llvm-objdump --disassemble-symbols=__RNvMs2_NtCsawzG9XU6kRE_2jx8evaluateNtNtB7_10expression4Node3run target/release/deps/throughput-ad1fdffe799128d8; retain the prologue for each variant.",
+    "summary": "comparison.csv uses the median of each seven-sample workload in tree-full.csv and final-full.csv, including all workloads, with no outlier removal."
+  },
+  "notes": [
+    "tree-initial-partial.csv contains all 560 original workloads plus an incomplete new execution group. Its new filtered-sum fixture stopped on an untimed expected JSON number mismatch (22 versus 22.0); the expectation was corrected. The main comparison uses the later complete tree-full.csv.",
+    "Source manifests describe the final benchmark expectations. Unit/integration tests were expanded after early prototype measurements; release engine behavior was unchanged by those additions.",
+    "The final runtime differs from inline-full only by keeping Plan::run out of line. This restores the tree frame from 1408 to 960 bytes including saved registers on this compiler; registers occupy their own invocation frame.",
+    "Consuming atomic conversion and preserving enum tags were not integrated. Patches are reproduction evidence only.",
+    "Timing is single-threaded, with no benchmark processes or builds run concurrently. Files with profile prefixes are excluded from timing comparisons.",
+    "No new language semantics or conformance classifications; 568 pinned cases and 31200 differential comparisons pass."
+  ],
+  "source_hash_manifests": {
+    "final": "plan-source.json",
+    "M10_tree_with_new_harness": "tree-source.json",
+    "inlined_no_sharing": "no-sharing-source.json",
+    "discarded_owned_conversion": "atomic-source.json",
+    "discarded_enum_order": "preserved-tags-source.json"
+  }
+}

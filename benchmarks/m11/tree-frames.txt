@@ -1,0 +1,77 @@
+tree
+
+target/m11/tree/target/release/deps/throughput-ad1fdffe799128d8:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+000000010002e4a4 <__RNvMs2_NtCsawzG9XU6kRE_2jx8evaluateNtNtB7_10expression4Node3run>:
+10002e4a4: 6db923e9    	stp	d9, d8, [sp, #-0x70]!
+10002e4a8: a9016ffc    	stp	x28, x27, [sp, #0x10]
+10002e4ac: a90267fa    	stp	x26, x25, [sp, #0x20]
+10002e4b0: a9035ff8    	stp	x24, x23, [sp, #0x30]
+10002e4b4: a90457f6    	stp	x22, x21, [sp, #0x40]
+10002e4b8: a9054ff4    	stp	x20, x19, [sp, #0x50]
+10002e4bc: a9067bfd    	stp	x29, x30, [sp, #0x60]
+10002e4c0: 910183fd    	add	x29, sp, #0x60
+10002e4c4: d10d43ff    	sub	sp, sp, #0x350
+10002e4c8: aa0203f4    	mov	x20, x2
+10002e4cc: aa0103f6    	mov	x22, x1
+10002e4d0: aa0003fb    	mov	x27, x0
+10002e4d4: 910803f3    	add	x19, sp, #0x200
+10002e4d8: 910403fc    	add	x28, sp, #0x100
+10002e4dc: 528001a8    	mov	w8, #0xd                ; =13
+10002e4e0: f0000529    	adrp	x9, 0x1000d5000 <__RNvNtNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7flt2dec8strategy5grisu12CACHED_POW10+0x390>
+10002e4e4: 9134e929    	add	x9, x9, #0xd3a
+10002e4e8: 394002ca    	ldrb	w10, [x22]
+
+inlined plan
+
+target/release/deps/throughput-ad1fdffe799128d8:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+000000010002ef44 <__RNvMs2_NtCsawzG9XU6kRE_2jx8evaluateNtNtB7_10expression4Node3run>:
+10002ef44: 6db923e9    	stp	d9, d8, [sp, #-0x70]!
+10002ef48: a9016ffc    	stp	x28, x27, [sp, #0x10]
+10002ef4c: a90267fa    	stp	x26, x25, [sp, #0x20]
+10002ef50: a9035ff8    	stp	x24, x23, [sp, #0x30]
+10002ef54: a90457f6    	stp	x22, x21, [sp, #0x40]
+10002ef58: a9054ff4    	stp	x20, x19, [sp, #0x50]
+10002ef5c: a9067bfd    	stp	x29, x30, [sp, #0x60]
+10002ef60: 910183fd    	add	x29, sp, #0x60
+10002ef64: d11443ff    	sub	sp, sp, #0x510
+10002ef68: f90003ff    	str	xzr, [sp]
+10002ef6c: aa0203f5    	mov	x21, x2
+10002ef70: aa0103f6    	mov	x22, x1
+10002ef74: a9088be0    	stp	x0, x2, [sp, #0x88]
+10002ef78: 910d43f8    	add	x24, sp, #0x350
+10002ef7c: 528001ca    	mov	w10, #0xe               ; =14
+10002ef80: 394002c8    	ldrb	w8, [x22]
+10002ef84: 51001909    	sub	w9, w8, #0x6
+10002ef88: 7100151f    	cmp	w8, #0x5
+
+Final, separate plan call
+
+target/release/deps/throughput-ad1fdffe799128d8:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+000000010002ef44 <__RNvMs2_NtCsawzG9XU6kRE_2jx8evaluateNtNtB7_10expression4Node3run>:
+10002ef44: 6db923e9    	stp	d9, d8, [sp, #-0x70]!
+10002ef48: a9016ffc    	stp	x28, x27, [sp, #0x10]
+10002ef4c: a90267fa    	stp	x26, x25, [sp, #0x20]
+10002ef50: a9035ff8    	stp	x24, x23, [sp, #0x30]
+10002ef54: a90457f6    	stp	x22, x21, [sp, #0x40]
+10002ef58: a9054ff4    	stp	x20, x19, [sp, #0x50]
+10002ef5c: a9067bfd    	stp	x29, x30, [sp, #0x60]
+10002ef60: 910183fd    	add	x29, sp, #0x60
+10002ef64: d10d43ff    	sub	sp, sp, #0x350
+10002ef68: aa0203f4    	mov	x20, x2
+10002ef6c: aa0103f6    	mov	x22, x1
+10002ef70: aa0003fb    	mov	x27, x0
+10002ef74: 910803f3    	add	x19, sp, #0x200
+10002ef78: 910403fc    	add	x28, sp, #0x100
+10002ef7c: 528001c8    	mov	w8, #0xe                ; =14
+10002ef80: f0000549    	adrp	x9, 0x1000d9000 <__RNvNtNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7flt2dec8strategy5grisu12CACHED_POW10+0x310>
+10002ef84: 9136f129    	add	x9, x9, #0xdbc
+10002ef88: 394002ca    	ldrb	w10, [x22]

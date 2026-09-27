@@ -6,6 +6,8 @@ mod aggregates;
 mod compiler;
 #[path = "workloads/constructors.rs"]
 mod constructors;
+#[path = "workloads/execution.rs"]
+mod execution;
 #[path = "workloads/filters.rs"]
 mod filters;
 #[path = "workloads/lexical.rs"]
@@ -284,4 +286,5 @@ fn main() {
     lexical::run(smoke);
     navigation::run(smoke);
     compiler::run(smoke);
+    execution::run(smoke);
 }
