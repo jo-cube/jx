@@ -90,10 +90,16 @@ pub(crate) fn constant<'e, 'i>(
     key: Option<Value<'e, 'i>>,
     offset: usize,
 ) -> Result<Option<Value<'e, 'i>>, Error> {
+    Ok(constant_data(data, key, offset)?.map(crate::constant::Data::value))
+}
+
+pub(crate) fn constant_data<'e, 'i>(
+    data: &'e crate::constant::Data,
+    key: Option<Value<'e, 'i>>,
+    offset: usize,
+) -> Result<Option<&'e crate::constant::Data>, Error> {
     let key = key_body(&key, offset)?;
-    Ok(data
-        .find(|name| string::units(name).cmp(string::units(key)))
-        .map(crate::constant::Data::value))
+    Ok(data.find(|name| string::units(name).cmp(string::units(key))))
 }
 
 pub(crate) fn select<'e, 'i>(

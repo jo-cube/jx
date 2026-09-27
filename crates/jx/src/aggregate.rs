@@ -20,12 +20,7 @@ impl Aggregate {
             }
             return Err(type_error(offset));
         };
-        let mut fold = Fold {
-            aggregate: self,
-            count: 0,
-            number: None,
-            invalid: false,
-        };
+        let mut fold = Fold::new(self);
         let mut first = None;
         let mut many = false;
         let mut consume = |value| {
@@ -69,12 +64,7 @@ impl Aggregate {
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
         let defined = value.is_some();
-        let mut fold = Fold {
-            aggregate: self,
-            count: 0,
-            number: None,
-            invalid: false,
-        };
+        let mut fold = Fold::new(self);
         if let Some(value) = value {
             if value.is_array() {
                 value.elements().for_each(|item| fold.push(item));
@@ -86,14 +76,26 @@ impl Aggregate {
     }
 }
 
-struct Fold {
+pub(crate) struct Fold {
     aggregate: Aggregate,
     count: usize,
     number: Option<f64>,
     invalid: bool,
 }
 impl Fold {
-    fn finish<'e, 'i>(self, defined: bool, offset: usize) -> Result<Operand<'e, 'i>, Error> {
+    pub(crate) fn new(aggregate: Aggregate) -> Self {
+        Self {
+            aggregate,
+            count: 0,
+            number: None,
+            invalid: false,
+        }
+    }
+    pub(crate) fn finish<'e, 'i>(
+        self,
+        defined: bool,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
         if self.invalid {
             return Err(type_error(offset));
         }
@@ -104,7 +106,7 @@ impl Fold {
         };
         Ok(number.map_or(Operand::Missing, |n| Operand::One(Value::Number(n))))
     }
-    fn push(&mut self, value: Value<'_, '_>) {
+    pub(crate) fn push(&mut self, value: Value<'_, '_>) {
         self.count += 1;
         if matches!(self.aggregate, Aggregate::Count) {
             return;
