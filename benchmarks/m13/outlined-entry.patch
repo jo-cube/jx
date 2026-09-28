@@ -1,0 +1,11 @@
+--- a/crates/jx/src/plan.rs
++++ b/crates/jx/src/plan.rs
+@@ -206,6 +206,8 @@
+     })
+ }
+ impl Plan {
++    // Keep validation/capture scratch off the unplanned entry path.
++    #[inline(never)]
+     pub(crate) fn evaluate<'e, 'i>(
+         &'e self,
+         input: &'i [u8],

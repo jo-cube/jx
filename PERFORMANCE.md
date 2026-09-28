@@ -914,3 +914,85 @@ are the next useful experiment; these results do not yet justify Cranelift.
 [Invoice profile](benchmarks/m12/profile-invoice.txt) and
 [frame measurements](benchmarks/m12/tree-frames.txt) retain the supporting inspection.
 `just all`, `just build`, all 568 classified cases and 35,761 differential comparisons pass.
+
+## Milestone 13 — demand-aware validation and traversal
+
+Same machine/compiler/profile; **679 workloads**, 665 evaluations, 456 allocation-free.
+The final harness runs against committed M12 and M13, including full validation and
+consumption. Each full run completes uninterrupted; medians use all seven samples.
+Longer process repeats cover planned regions, nested demands and regression controls.
+No JSONata semantics, dependencies, input index, cache or JIT are added.
+
+| Workload | Bytes | M12 records/s | M13 records/s | Ratio |
+| --- | ---: | ---: | ---: | ---: |
+| Arithmetic | 500 | 1,553,608 | 2,705,413 | 1.74× |
+| Arithmetic | 1,048,576 | 946 | 1,847 | 1.95× |
+| Conditional, tiny record | 100 | 4,717,401 | 6,743,427 | 1.43× |
+| Nested object fields | 500 | 686,457 | 2,784,691 | 4.06× |
+| Nested conditional | 1,048,576 | 318 | 1,856 | 5.84× |
+| 4,096-key lookup + quantity | 490 | 582,496 | 1,684,848 | 2.89× |
+| Repeated 4,096-key lookup | 500 | 617,088 | 1,438,780 | 2.33× |
+| Sparse nested object | 38,497 | 8,320 | 29,195 | 3.51× |
+| Invoice filter/map/sum | 4,488 | 32,485 | 60,605 | 1.87× |
+| Nested-field filter/map/sum | 8,454 | 15,585 | 38,410 | 2.46× |
+| Untaken conditional | 496 | 1,606,784 | 2,973,333 | 1.85× |
+
+Root plans capture compiled path demands during validation instead of scanning the
+record again. Nested object prefixes share traversal; static lookup keys participate
+in the same capture. For the nested conditional with padding inside `payload`, M12
+walks that large region during validation and five field-selection scans; M13 walks
+it once. Fold source paths are captured in that first pass, then element cursors
+capture candidate fields while locating their boundaries. Candidates are not collected.
+The ordinary standalone path/lookup selector remains separate and lightweight.
+
+Captured raw spans are converted only when a load executes, removing number conversion
+for untaken branches. Key matching and span capture still cover those branches; choosing
+an arm before complete validation would complicate duplicate-key and error behavior.
+All **665 evaluation cases retain the same allocation calls and requested bytes**.
+An initial 24-byte-per-slot capture representation lost about 9% on mapped constructors;
+optional raw spans plus a deferred-array bit mask and less initialization reduce
+that cost. The original enum scratch representation is removed. Programs retain 32 primitive
+registers; capture adds 32 borrowed slots and one mask. The recursive `Node::run` frame
+is 960 B on this build, versus M12's 976 B; scratch stays outside that frame.
+
+A 3 s invoice profile still places **59%** of leaf samples in scanner routines
+(including capture), **8%** in key matching and **11%** in the primitive program.
+The M12 program includes capture work now attributed to scanner routines, so those
+percentages are not a like-for-like dispatch comparison. Rust controls reach 3.15M
+arithmetic records/s at 500 B and 1,858 at 1 MiB; M13 reaches 2.71M and 1,847.
+The invoice Rust control reaches 65.4k versus M13's 60.6k. These fixture-specific
+controls validate input but do not implement general JSONata semantics.
+
+Remaining costs and tradeoffs:
+
+- Raw mapped constructors still create capture scratch after their enclosing tree
+  cursor has located each candidate. The 128-row case is 30.8k → 29.2k records/s
+  in the full runs and 30.4k → 29.1k in repeats (about 4% slower). General array
+  normalization, negative-position replays and capture across independent tree
+  regions remain outside this milestone.
+- Across 137 longer-repeat workloads, tiny validation/path controls lose about
+  2–3%; unplanned numeric-array aggregates lose roughly 3–7%. These paths do not
+  initialize or use capture slots, but share the refactored scanner. No extra parser
+  dispatch call survives inlining; the precise code-generation cause is unisolated.
+  An isolated out-of-line root-plan entry reduces `evaluate::scalar`'s frame from
+  1,040 B to 448 B (M12: 336 B), but does not recover those aggregate losses and
+  slows tiny plans about 2%. It is not retained. A second grammar or input index
+  is not justified to chase these losses. The
+  apparent 10% raw-member serialization loss at 10 KiB does **not** repeat
+  (80.1k → 79.8k). All full and repeat samples remain available.
+- Compilation pays for demand metadata: scalar fixture allocations rise from
+  65 / 3,604 B to 72 / 4,054 B; numeric-plan compilation is 133 / 7,768 B versus
+  132 / 7,864 B. Ordinary path compilation remains 8 allocations / 578 B.
+- Arrays along an object demand defer that load to the existing pure tree. Capturing
+  and then falling back can still repeat work. Source arrays are validated before
+  a second traversal computes folds; no trusted selective parser has been introduced.
+
+[Full comparison](benchmarks/m13/comparison.csv), [M12 samples](benchmarks/m13/m12-full.csv),
+[M13 samples](benchmarks/m13/final-full.csv), [M12 repeats](benchmarks/m13/m12-repeat.csv),
+[M13 repeats](benchmarks/m13/final-repeat.csv), and
+[environment/commands](benchmarks/m13/environment.json) retain the evidence.
+[Before profile](benchmarks/m13/m12-profile.txt), [after profile](benchmarks/m13/final-profile.txt)
+and [frame inspection](benchmarks/m13/frames.txt) support the traversal review.
+`just all`, `just build`, all 568 classified conformance cases and 37,746 upstream
+differential comparisons pass. Exact validation-error mutation tests cover malformed
+captured/unselected fields, duplicate parents, UTF-8, trailing bytes and depth limits.

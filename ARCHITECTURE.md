@@ -2,7 +2,7 @@
 
 ## Current execution
 
-`source → expression tree → effect analysis and specialization → bounded region lowering → validating selection or execution → result stream`
+`source → expression tree → effect analysis and specialization → bounded region lowering → validating selection/capture → execution → result stream`
 
 - `parse/lex.rs` and `parse.rs` own tokenization, precedence and grouping. Field
   names and encoded string literals are owned once; operators retain source offsets.
@@ -162,8 +162,8 @@ Builtin references resolve once when no declaration anywhere in the expression c
 shadow them. Ordinary references then need neither name lookup nor a lexical arena.
 The conservative whole-expression shadowing rule is unchanged. Lexical constant
 propagation is deferred: captured frames observe later rebinding. Repeated numeric
-paths share loads within a lowered region (below). Direct numeric field demands can
-share one raw-object scan; capture across regions remains deferred.
+paths share loads within a lowered region (below). Nested object paths and static
+lookup keys share demand capture; capture across independent regions remains deferred.
 Static constructor grouping still has quadratic compile cost for distinct keys, paid
 once rather than per record. No general IR, JIT, scanner cache or input DOM is needed
 for these specializations.
@@ -180,13 +180,21 @@ eligible children can still lower. There is no general IR or JIT.
 
 Numbers, booleans and missing stay in stack registers. Repeated path loads share a
 slot only when that load dominates its use. Conditional joins restore the preceding
-load set; skipped branches neither evaluate arithmetic nor trigger guards. When all
-path demands are direct fields and there are at least two path demands, a raw-object cursor fills
-those registers in one pass, preserving escaped/duplicate keys. Unsupported fields
-are marked and checked only when loaded. This capture reads unselected demands too;
-see PERFORMANCE for its short-circuit cost. Other contexts use existing borrowed path
-selection. Static lookup calls the existing immutable index and delays constructing
-any result until its numeric/boolean shape is accepted.
+load set; skipped branches neither evaluate arithmetic nor trigger guards.
+
+`json/demand.rs` stores a small tree of compiled path prefixes, with bit masks naming
+at most 32 load destinations. A root plan captures borrowed spans while validating
+the entire record. Matching nested prefixes share traversal; static lookup keys use
+the same capture. A duplicate parent clears all its descendant destinations before
+replacement, including missing fields. Intermediate arrays mark affected loads for
+tree fallback, preserving JSONata normalization. No input index or record cache exists.
+
+Captured spans and primitive registers are separate stack storage. Number conversion,
+lookup and type guards run only when the corresponding instruction executes; untaken
+branches still incur key matching/span capture, but no conversion. Plans inside tree
+execution use the same scanner over their already validated raw context. Constructed
+contexts retain ordinary path selection. Standalone paths and indexed lookups keep
+their existing validating selector and need no multi-demand scratch storage.
 
 Two enclosing operations reuse this same primitive program:
 
@@ -194,8 +202,10 @@ Two enclosing operations reuse this same primitive program:
   and one numeric mapped stage. It visits candidates once, sharing surviving field
   loads between predicates and mapping, and reuses `aggregate::Fold` for count/sum/
   min/max. Nested source arrays, positional predicates and general sequence boundaries
-  stay with the tree. No candidate collection, stage views or lexical frames are needed
-  on the accepted path.
+  stay with the tree. Source selection shares object-prefix capture, and the raw array
+  cursor captures candidate demands while locating each element boundary. Validation
+  still finishes before folding begins. No candidate collection, stage views or lexical
+  frames are needed on the accepted path.
 - A fixed object compiles distinct constant keys and their reference ordering once.
   Computed primitive members share one program; prepared constant subtrees retain
   expression storage and fresh identity. Existing owned object storage holds the
@@ -228,9 +238,10 @@ duplicating nested fallback trees at compile time.
 Compilation preserves JSONata’s literal-versus-computed position rules and direct
 nested-array syntax, even when their values are constant. See compile-time specialization above.
 
-The custom safe scanner combines validation and selective capture for standalone
-paths. Element/member cursors reuse its grammar instead of adding a trusted second
-parser. Validation covers every byte, including unselected fields, before any output.
+The safe scanner combines validation and selective capture for paths and root plans.
+Path selection, demand capture and cursors share the object grammar and scalar scanner;
+there is no trusted second parser. Validation covers every byte, including unselected
+fields, before any semantic execution or output.
 JSON container depth is capped at 128; all production Rust forbids unsafe.
 
 Callbacks keep traversal state on the bounded native stack. Suspending two callbacks
@@ -252,8 +263,9 @@ collapsing them would break chained positions and last-step array preservation.
 Array traversal can rescan a subtree at each nesting/path level: worst-case
 O(bytes × input depth). Unplanned scalar operands also rescan demanded paths separately
 after validation. The benchmarks retain deep arrays, tiny records, multi-field scalars
-and structural equality so these costs remain visible. Add capture fusion, indexes,
-trusted skipping or specialization only for a measured benefit with a simple design.
+and structural equality so these costs remain visible. Region-local demand capture
+removes repeated object-prefix scans; general sequence traversal still uses cursors.
+Further traversal machinery needs a measured benefit and a simple design.
 
 ## Consolidation review
 
@@ -268,9 +280,10 @@ Milestone 7 profiles located costs in scanning and the scalar/stream ownership b
 stream walk; borrowing removes temporary ownership within live stages. Neither needs
 an IR. Milestone 11 earns bounded numeric lowering through repeated-load sharing and lower
 scalar overhead inside streams. Milestone 12 broadens this to primitive branches,
-fixed objects and numeric folds, and shares direct field capture. Nested subtree
-rescanning, negative-position replays and general constructor grouping remain explicit;
-no record cache or scanner index was added.
+fixed objects and numeric folds. Milestone 13 fuses root validation with nested-demand
+capture and fuses numeric-fold candidate capture with element scanning. These reuse
+the existing grammar and preserve the fallback tree. General nested-array rescanning,
+negative-position replays and constructor grouping remain explicit costs.
 
 Milestone 9 profiles and repeated runs find no lexical frame creation or variable
 lookup on ordinary filters/folds. M8's larger context/operand layouts remain; the
@@ -315,12 +328,14 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
     capture, fused numeric map/filter/folds, indexed lookups within numeric regions,
     and fixed objects with computed leaves. General sequence and lexical semantics
     retain their tree boundaries.
-13. **Next performance work:** demand-aware validation/traversal, guided by the
-    remaining scans and nested-array costs before native code generation.
-    **Next semantic work:** parent/context/index tuples and the function library.
-    Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
-    a final value. String conversion/concatenation and chaining remain useful gaps.
-    Host invocation still needs a lifetime/resource contract.
+13. **Complete: demand-aware validation/traversal.** Root plans capture required
+    object paths during validation; raw fold cursors capture candidates in one scan.
+    General array normalization remains on the tree; no JIT or input index is added.
+
+Next semantic work: parent/context/index tuples and the function library.
+Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
+a final value. String conversion/concatenation and chaining remain useful gaps.
+Host invocation still needs a lifetime/resource contract.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
 language support does not require every expression to use the same execution path.

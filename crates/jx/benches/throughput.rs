@@ -6,6 +6,8 @@ mod aggregates;
 mod compiler;
 #[path = "workloads/constructors.rs"]
 mod constructors;
+#[path = "workloads/demands.rs"]
+mod demands;
 #[path = "workloads/execution.rs"]
 mod execution;
 #[path = "workloads/filters.rs"]
@@ -290,4 +292,5 @@ fn main() {
     compiler::run(smoke);
     execution::run(smoke);
     plans::run(smoke);
+    demands::run(smoke);
 }
