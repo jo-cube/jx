@@ -25,6 +25,25 @@ async function main() {
     for (const input of ['{"x":1,"\\u0078":7,"y":3}', '{"x":1e999,"y":3}', '{"x":-0,"y":0}']) {
         for (const expr of scalar) await check({expr,input});
     }
+    const nested = ['payload.x*payload.x+payload.y*payload.y',
+        'active ? payload.x*payload.y+1 : 0',
+        '{"n":payload.x+payload.y,"m":payload.x*payload.y}',
+        '$lookup({"a":3,"undefined":9},payload.key)*payload.x+payload.x+1',
+        '$sum(payload.rows[x>0].(x*y+1))'];
+    for (const x of atoms) for (const y of atoms) {
+        const payload = {x,y,key:'a',rows:[{x,y},{x:2,y:3}]};
+        for (const expr of nested) {
+            await check({expr,data:{active:true,payload}});
+            await check({expr,data:{active:false,payload:[payload]}});
+        }
+    }
+    for (const input of [
+        '{"payload":{"x":2,"y":3},"payload":{"y":4}}',
+        '{"payload":{"x":2,"y":3},"\\u0070ayload":null}',
+        '{"payload":[{"x":2,"y":3}],"payload":{"x":4,"y":5}}',
+        '{"payload":{"rows":[{"x":2,"y":3}]},"payload":{}}',
+        '{"active":false,"payload":{"x":null,"y":[1,2]}}',
+    ]) for (const expr of nested) await check({expr,input});
     console.log(`Checked ${checked()} expanded-plan evaluations against upstream`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

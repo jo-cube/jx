@@ -135,3 +135,53 @@ fn deterministic_mutations_agree_with_serde_on_common_json_domain() {
         );
     }
 }
+
+#[test]
+fn planned_capture_preserves_complete_validation_and_exact_diagnostics() {
+    let expressions = [
+        "x*x+y*y+x",
+        "active ? payload.x*payload.x+payload.y : 0",
+        r#"{"n":payload.x*payload.y+1}"#,
+        "$sum(payload.rows[x>0].(x*y+1))",
+        r#"$lookup({"a":3},key)*x+x*x+x"#,
+    ]
+    .map(|source| jx::compile(source).unwrap());
+    let seeds: &[&[u8]] = &[
+        br#"{"active":false,"x":2,"y":3,"payload":{"x":2,"y":3,"rows":[{"x":2,"y":3}]},"key":"a","ignored":[true,null,"\u0041"]}"#,
+        br#"{"payload":{"x":1},"payload":{"y":2},"x":1,"\u0078":2}"#,
+    ];
+    let check = |input: &[u8]| {
+        if let Err(expected) = validate(input) {
+            for expression in &expressions {
+                assert_eq!(
+                    expression.evaluate(input).unwrap_err(),
+                    expected,
+                    "{input:?}"
+                );
+            }
+        }
+    };
+    for seed in seeds {
+        for at in 0..seed.len() {
+            for byte in b"{}[],:\"\\-+0129.etfnul \n\t\x00\xff" {
+                let mut input = seed.to_vec();
+                input[at] = *byte;
+                check(&input);
+            }
+            check(&seed[..at]);
+        }
+        let mut trailing = seed.to_vec();
+        trailing.extend_from_slice(b" false");
+        check(&trailing);
+    }
+    for depth in [MAX_DEPTH - 1, MAX_DEPTH, MAX_DEPTH + 1] {
+        check(
+            format!(
+                r#"{{"active":false,"ignored":{}0{}}}"#,
+                "[".repeat(depth),
+                "]".repeat(depth)
+            )
+            .as_bytes(),
+        );
+    }
+}

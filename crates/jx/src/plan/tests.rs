@@ -224,3 +224,38 @@ fn fixed_objects_lookup_and_capture_match_the_tree() {
         assert_eq!(result(&expression.root, input), result(&plan.source, input));
     }
 }
+
+#[test]
+fn nested_demands_preserve_replacement_and_array_fallback() {
+    for source in [
+        "payload.x*payload.x+payload.y*payload.y",
+        "active ? payload.x*payload.y+1 : 0",
+        r#"{"n":payload.x+payload.y,"m":payload.x*payload.y}"#,
+        r#"$lookup({"a":3,"undefined":9},payload.key)*payload.x+payload.x+1"#,
+        "$sum(payload.rows[x>0].(x*y+1))",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        let Kind::Plan(plan) = &expression.root.kind else {
+            panic!("{source}");
+        };
+        for input in [
+            r#"{"active":true,"payload":{"x":2,"y":3,"key":"a","rows":[{"x":2,"y":3}]}}"#,
+            r#"{"active":false,"payload":{"x":null,"y":[1,2]}}"#,
+            r#"{"payload":{"x":2,"y":3},"payload":{"y":4}}"#,
+            r#"{"payload":{"x":2,"y":3},"\u0070ayload":null}"#,
+            r#"{"payload":[{"x":2,"y":3}]}"#,
+            r#"{"payload":[{"x":2,"y":3}],"payload":{"x":4,"y":5}}"#,
+            r#"{"payload":{"x":2,"y":3},"payload":[]}"#,
+            r#"{"payload":{"rows":[{"x":2,"y":3}]},"payload":{}}"#,
+            r#"[{"payload":{"x":2,"y":3}}]"#,
+            r#"{"payload":{"x":2,"\u0078":4,"y":3}}"#,
+            r#"{}"#,
+        ] {
+            assert_eq!(
+                result(&expression.root, input.as_bytes()),
+                result(&plan.source, input.as_bytes()),
+                "{source}: {input}"
+            );
+        }
+    }
+}

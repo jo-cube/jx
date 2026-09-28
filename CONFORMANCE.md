@@ -426,10 +426,15 @@ behavior. The compiler check adds 947 comparisons covering constant folding, con
 identity/shape, indexed lookup, dynamic keys and builtin shadowing. Numeric-plan checks
 add 4,443 comparisons across input shapes, IEEE boundaries, repeated loads and streamed
 contexts. Offline plan/tree tests also compare exact error offsets and floating-point
-bits. Expanded-plan checks add 4,561 branch, aggregate, constructor and lookup
+bits. Expanded-plan checks add 6,546 branch, aggregate, constructor and lookup
 comparisons, with offline coverage for skipped demands, duplicate keys, exact errors
-and borrowed numeric tokens. Milestones 11–12 change execution only; upstream
+and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
 The known upstream
 empty-root-array mutation during object construction is excluded from generated
 constructor/lexical comparisons. Normal `just all` needs neither Node nor the upstream checkout.
+
+Demand capture does not change language coverage. Plan/tree checks include nested
+prefixes, duplicate parent replacement and array fallback. Mutation tests require
+identical validation errors (including offsets) for captured and unselected input,
+including invalid UTF-8, trailing content and excessive nesting.
