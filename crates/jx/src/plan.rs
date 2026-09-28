@@ -3,6 +3,7 @@ use crate::{
     constant::Data,
     evaluate::Operand,
     expression::{Kind, Node, Op, Path},
+    json::{Captured, Captures, Demand},
     sequence::Context,
 };
 mod lower;
@@ -10,7 +11,7 @@ mod object;
 mod pipeline;
 use lower::Lower;
 
-const SLOTS: usize = 32;
+const SLOTS: usize = crate::json::CAPTURE_SLOTS;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Plan {
@@ -29,7 +30,7 @@ struct Program {
     paths: Box<[Path]>,
     lookups: Box<[(Box<Data>, Path)]>,
     result: u8,
-    capture: Box<[(Box<str>, u8)]>,
+    capture: Demand,
 }
 #[derive(Clone, Debug)]
 enum Instruction {
@@ -48,7 +49,6 @@ enum Instruction {
 }
 #[derive(Clone, Copy)]
 enum Cell {
-    Unsupported,
     Missing,
     Number(f64),
     Boolean(bool),
@@ -71,7 +71,6 @@ impl Cell {
     }
     fn operand<'e, 'i>(self) -> Operand<'e, 'i> {
         match self {
-            Self::Unsupported => unreachable!("loads guard unsupported values"),
             Self::Missing => Operand::Missing,
             Self::Number(n) => Operand::One(Value::Number(n)),
             Self::Boolean(b) => Operand::One(Value::Boolean(b)),
@@ -80,41 +79,35 @@ impl Cell {
 }
 impl Program {
     fn run<'e, 'i>(&'e self, context: &Context<'e, 'i>) -> Option<Cell> {
-        self.execute(context, |slots| slots[usize::from(self.result)])
+        self.execute(context, None, |slots| slots[usize::from(self.result)])
     }
     // Keep the register frame out of recursive tree evaluation.
     #[inline(never)]
     fn execute<'e, 'i, T>(
         &'e self,
         context: &Context<'e, 'i>,
+        captured: Option<&Captures<'i>>,
         finish: impl FnOnce(&[Cell; SLOTS]) -> T,
     ) -> Option<T> {
         let mut slots = [Cell::Missing; SLOTS];
-        let captured = if let Value::Raw(raw) = context.value
-            && raw.as_bytes()[0] == b'{'
+        let mut local;
+        let captured = if captured.is_some() {
+            captured
+        } else if let Value::Raw(raw) = context.value
             && !self.capture.is_empty()
         {
-            // Populate only compiled demands. Unsupported cells are checked when
-            // loaded, so an unselected branch cannot force a fallback or error.
-            for (key, value) in raw.members() {
-                for (name, slot) in &self.capture {
-                    if crate::json::string::matches(key, name) {
-                        slots[usize::from(*slot)] =
-                            cell(Operand::One(Value::Raw(value))).unwrap_or(Cell::Unsupported);
-                    }
-                }
-            }
-            true
+            local = Captures::default();
+            raw.capture(&self.capture, &mut local);
+            Some(&local)
         } else {
-            false
+            None
         };
         let mut at = 0;
         while at < self.instructions.len() {
             slots[at] = match self.instructions[at] {
-                Instruction::Load(_) if captured => match slots[at] {
-                    Cell::Unsupported => return None,
-                    value => value,
-                },
+                Instruction::Load(_) if captured.is_some() => {
+                    cell(captured_operand(captured?.get(at))?)?
+                }
                 Instruction::Load(path) => cell(
                     self.paths[usize::from(path)]
                         .select_context(context)
@@ -123,7 +116,11 @@ impl Program {
                 )?,
                 Instruction::Lookup(index) => {
                     let (data, path) = &self.lookups[usize::from(index)];
-                    let key = match path.select_context(context).operand().ok()? {
+                    let operand = match captured {
+                        Some(values) => captured_operand(values.get(at))?,
+                        None => path.select_context(context).operand().ok()?,
+                    };
+                    let key = match operand {
                         Operand::Missing => None,
                         Operand::One(value) => Some(value),
                         Operand::Many(_) => return None,
@@ -167,6 +164,13 @@ impl Program {
         Some(finish(&slots))
     }
 }
+fn captured_operand(value: Captured<'_>) -> Option<Operand<'_, '_>> {
+    match value {
+        Captured::Missing => Some(Operand::Missing),
+        Captured::Raw(raw) => Some(Operand::One(Value::Raw(raw))),
+        Captured::Deferred => None,
+    }
+}
 fn cell(operand: Operand<'_, '_>) -> Option<Cell> {
     match operand {
         Operand::Missing => Some(Cell::Missing),
@@ -202,6 +206,34 @@ fn binary(op: Op, a: Cell, b: Cell) -> Option<Cell> {
     })
 }
 impl Plan {
+    pub(crate) fn evaluate<'e, 'i>(
+        &'e self,
+        input: &'i [u8],
+    ) -> Result<Operand<'e, 'i>, crate::Error> {
+        let demand = match &self.execution {
+            Execution::Scalar(p) => &p.capture,
+            Execution::Object(o) => &o.program.capture,
+            Execution::Fold(p) => &p.demand,
+        };
+        let mut captured = Captures::default();
+        let raw = crate::json::capture(input, demand, &mut captured)?;
+        let context = Context {
+            value: Value::Raw(raw),
+            wrapped: true,
+            scope: None,
+        };
+        let result = match &self.execution {
+            Execution::Scalar(p) => p
+                .execute(&context, Some(&captured), |s| s[usize::from(p.result)])
+                .map(Cell::operand),
+            Execution::Object(o) if raw.as_bytes()[0] != b'[' => {
+                o.run_captured(&context, Some(&captured))
+            }
+            Execution::Object(_) => None,
+            Execution::Fold(p) => p.run_captured(captured.get(0)),
+        };
+        result.map_or_else(|| self.source.run(&context), Ok)
+    }
     // Only pure regions may retry: fallback preserves offsets and error precedence.
     pub fn run<'e, 'i>(&'e self, context: &Context<'e, 'i>) -> Option<Operand<'e, 'i>> {
         match &self.execution {

@@ -1,8 +1,10 @@
+mod demand;
 mod scan;
 pub(crate) mod string;
 
+pub(crate) use demand::{CAPTURE_SLOTS, Captured, Captures, Demand};
 pub use scan::MAX_DEPTH;
-pub(crate) use scan::{Elements, Members, Selection, select};
+pub(crate) use scan::{Elements, Members, Selection, capture, select};
 
 /// A validated JSON value borrowing its original UTF-8 encoding.
 /// Arrays here are JSON values, not JSONata result sequences.

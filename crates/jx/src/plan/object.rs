@@ -3,7 +3,7 @@ use crate::json::{RawJson, string};
 
 #[derive(Clone, Debug)]
 pub(super) struct Object {
-    program: Program,
+    pub(super) program: Program,
     members: Box<[(Box<str>, Member)]>,
 }
 #[derive(Clone, Debug)]
@@ -13,6 +13,13 @@ enum Member {
 }
 impl Object {
     pub(super) fn run<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Option<Operand<'e, 'i>> {
+        self.run_captured(input, None)
+    }
+    pub(super) fn run_captured<'e, 'i>(
+        &'e self,
+        input: &Context<'e, 'i>,
+        captured: Option<&Captures<'i>>,
+    ) -> Option<Operand<'e, 'i>> {
         if !input.wrapped && input.value.is_array() {
             return None;
         }
@@ -21,7 +28,7 @@ impl Object {
             wrapped: false,
             scope: None,
         };
-        self.program.execute(&context, |slots| {
+        self.program.execute(&context, captured, |slots| {
             let mut members = Vec::with_capacity(self.members.len());
             for (key, member) in &self.members {
                 let value = match member {

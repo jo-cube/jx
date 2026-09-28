@@ -4,6 +4,7 @@ use crate::{aggregate::Fold, builtin::Builtin};
 #[derive(Clone, Debug)]
 pub(super) struct Pipeline {
     source: Box<[Box<str>]>,
+    pub(super) demand: Demand,
     program: Program,
     aggregate: crate::expression::Aggregate,
     offset: usize,
@@ -15,6 +16,11 @@ impl Pipeline {
         if !input.wrapped && input.value.is_array() {
             return None;
         }
+        if let Value::Raw(raw) = input.value {
+            let mut captured = Captures::default();
+            raw.capture(&self.demand, &mut captured);
+            return self.run_captured(captured.get(0));
+        }
         let mut source = input.value.clone();
         for field in &self.source {
             if source.is_array() {
@@ -22,9 +28,18 @@ impl Pipeline {
             }
             source = source.field(field)?;
         }
+        self.consume(source)
+    }
+    pub(super) fn run_captured<'e, 'i>(&'e self, source: Captured<'i>) -> Option<Operand<'e, 'i>> {
+        let Captured::Raw(raw) = source else {
+            return None;
+        };
+        self.consume(Value::Raw(raw))
+    }
+    fn consume<'e, 'i>(&'e self, source: Value<'e, 'i>) -> Option<Operand<'e, 'i>> {
         let mut fold = Fold::new(self.aggregate);
         let mut defined = false;
-        let mut consume = |value: Value<'e, 'i>| -> Option<()> {
+        let mut consume = |value: Value<'e, 'i>, captured: Option<&Captures<'i>>| -> Option<()> {
             if value.is_array() || matches!(value, Value::Undefined) {
                 return None;
             }
@@ -33,22 +48,33 @@ impl Pipeline {
                 wrapped: false,
                 scope: None,
             };
-            match self.program.run(&context)? {
+            match self
+                .program
+                .execute(&context, captured, |s| s[usize::from(self.program.result)])?
+            {
                 Cell::Missing => {}
                 Cell::Number(n) => {
                     defined = true;
                     fold.push(Value::Number(n));
                 }
-                Cell::Boolean(_) | Cell::Unsupported => return None,
+                Cell::Boolean(_) => return None,
             }
             Some(())
         };
-        if source.is_array() {
+        if let Value::Raw(raw) = source
+            && raw.is_array()
+        {
+            let mut elements = raw.elements();
+            let mut captured = Captures::default();
+            while let Some(raw) = elements.next_captured(&self.program.capture, &mut captured) {
+                consume(Value::Raw(raw), Some(&captured))?;
+            }
+        } else if source.is_array() {
             for value in source.elements() {
-                consume(value)?;
+                consume(value, None)?;
             }
         } else {
-            consume(source)?;
+            consume(source, None)?;
         }
         fold.finish(defined, self.offset).ok()
     }
@@ -107,7 +133,10 @@ pub(super) fn lower(node: &Node) -> Option<Pipeline> {
         }
         result
     };
+    let mut demand = Demand::default();
+    demand.insert(&fields, 0);
     Some(Pipeline {
+        demand,
         source: fields.into_boxed_slice(),
         program: lower.finish(result),
         aggregate: *aggregate,

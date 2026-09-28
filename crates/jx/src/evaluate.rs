@@ -109,6 +109,11 @@ impl<'e, 'i> Evaluation<'e, 'i> {
 }
 
 pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
+    if let Kind::Plan(plan) = &node.kind {
+        return Ok(Evaluation {
+            result: results(plan.evaluate(input)?),
+        });
+    }
     let value = Value::Raw(crate::validate(input)?);
     let scope = node
         .effects
@@ -129,14 +134,18 @@ pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluati
         ) {
         Results::Expression(node, context)
     } else {
-        match node.run(&context)? {
-            Operand::Missing => Results::Scalar(None),
-            Operand::One(value) => Results::Scalar(Some(value)),
-            Operand::Many(Stream::Path(path)) => Results::Path(path),
-            Operand::Many(Stream::Expression(node, context)) => Results::Expression(node, context),
-        }
+        results(node.run(&context)?)
     };
     Ok(Evaluation { result })
+}
+
+fn results<'e, 'i>(operand: Operand<'e, 'i>) -> Results<'e, 'i> {
+    match operand {
+        Operand::Missing => Results::Scalar(None),
+        Operand::One(value) => Results::Scalar(Some(value)),
+        Operand::Many(Stream::Path(path)) => Results::Path(path),
+        Operand::Many(Stream::Expression(node, context)) => Results::Expression(node, context),
+    }
 }
 
 #[derive(Clone)]

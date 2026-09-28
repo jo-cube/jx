@@ -18,23 +18,15 @@ impl Lower {
         Some(at)
     }
     pub(super) fn finish(self, result: u8) -> Program {
-        let capture: Box<[(Box<str>, u8)]> = if self.paths.len() >= 2
-            && self.lookups.is_empty()
-            && self.paths.iter().all(|p| p.fields.len() == 1)
-        {
-            self.instructions
-                .iter()
-                .enumerate()
-                .filter_map(|(slot, instruction)| match instruction {
-                    Instruction::Load(path) => {
-                        Some((self.paths[usize::from(*path)].fields[0].clone(), slot as u8))
-                    }
-                    _ => None,
-                })
-                .collect()
-        } else {
-            Box::new([])
-        };
+        let mut capture = Demand::default();
+        for (slot, instruction) in self.instructions.iter().enumerate() {
+            let path = match instruction {
+                Instruction::Load(path) => &self.paths[usize::from(*path)],
+                Instruction::Lookup(index) => &self.lookups[usize::from(*index)].1,
+                _ => continue,
+            };
+            capture.insert(&path.fields, slot);
+        }
         Program {
             capture,
             instructions: self.instructions.into_boxed_slice(),
