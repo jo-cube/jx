@@ -35,10 +35,7 @@ impl Aggregate {
             }
             Ok(())
         };
-        let result = match argument.stream(input) {
-            Some(stream) => stream.walk(&mut consume),
-            None => argument.run(input)?.walk(&mut consume),
-        };
+        let result = argument.consume(input, &mut consume);
         match result {
             Err(Halt::Evaluation(error)) => return Err(error),
             Err(Halt::Stop) => unreachable!("aggregate consumes its complete argument"),

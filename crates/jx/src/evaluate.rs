@@ -123,10 +123,11 @@ pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluati
         value,
         wrapped: true,
     };
-    let result = if !node.effects
+    let result = if (!node.effects || matches!(node.kind, Kind::Tuples(..)))
         && matches!(
             node.kind,
             Kind::Route(..)
+                | Kind::Tuples(..)
                 | Kind::Filter(..)
                 | Kind::Wildcard
                 | Kind::Descendants
@@ -228,6 +229,7 @@ impl Node {
                 return path.select_context(input).operand();
             }
             Kind::Route(..)
+            | Kind::Tuples(..)
             | Kind::Filter(..)
             | Kind::Wildcard
             | Kind::Descendants

@@ -110,6 +110,22 @@ pub(crate) fn keep<'e, 'i>(
     path: bool,
     input: &Context<'e, 'i>,
 ) -> Result<Operand<'e, 'i>, Error> {
+    if let Kind::Tuples(steps, focus) = &node.kind {
+        let mut items = Vec::new();
+        match crate::tuple::route_values(steps, *focus, input, &mut |value| {
+            items.push(value);
+            Ok(())
+        }) {
+            Err(crate::sequence::Halt::Evaluation(error)) => return Err(error),
+            Err(crate::sequence::Halt::Stop) => unreachable!(),
+            Ok(()) => {}
+        }
+        return Ok(if items.is_empty() {
+            Operand::Missing
+        } else {
+            Operand::One(Value::kept(items))
+        });
+    }
     if let Kind::Route(steps, focus) = &node.kind {
         return crate::route::keep(steps, *focus, input);
     }

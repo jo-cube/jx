@@ -11,10 +11,7 @@ pub(crate) fn visit<'e, 'i>(
         output(value);
         Ok(())
     };
-    let result = match node.stream(context) {
-        Some(stream) => stream.walk(&mut emit),
-        None => node.run(context)?.walk(&mut emit),
-    };
+    let result = node.consume(context, &mut emit);
     match result {
         Ok(()) => Ok(()),
         Err(crate::sequence::Halt::Evaluation(error)) => Err(error),

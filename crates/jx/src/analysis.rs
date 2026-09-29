@@ -36,6 +36,11 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
             bound.insert(name.to_string());
         }
         Kind::Lambda(params, _) => bound.extend(params.iter().map(|p| p.to_string())),
+        Kind::Route(steps, _) | Kind::Tuples(steps, _) => {
+            for b in steps.iter().filter_map(|s| s.bindings.as_deref()) {
+                bound.extend(b.names().map(str::to_owned));
+            }
+        }
         _ => {}
     });
     visit(root, &mut |node| {
@@ -59,9 +64,12 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
             node.kind,
             Kind::Variable(_) | Kind::Bind(..) | Kind::Lambda(..) | Kind::Call(..)
         );
-        if let Kind::Route(steps, _) = &mut node.kind {
+        if let Kind::Route(steps, _) | Kind::Tuples(steps, _) = &mut node.kind {
             for step in steps {
-                step.effects = step.node.effects || step.predicates.iter().any(|p| p.effects);
+                step.effects = step.bindings.is_some()
+                    || step.node.effects
+                    || step.predicates.iter().any(|p| p.effects);
+                node.effects |= step.bindings.is_some();
             }
         }
         let mut effects = node.effects;
@@ -76,7 +84,7 @@ fn visit(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
 }
 pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
     match &mut node.kind {
-        Kind::Route(steps, _) => {
+        Kind::Route(steps, _) | Kind::Tuples(steps, _) => {
             for step in steps {
                 f(&mut step.node);
                 for p in &mut step.predicates {
@@ -148,7 +156,7 @@ fn mutates_scope(node: &Node) -> bool {
         Kind::Filter(base, args) | Kind::Call(base, args) => {
             mutates_scope(base) || args.iter().any(mutates_scope)
         }
-        Kind::Route(steps, _) => steps
+        Kind::Route(steps, _) | Kind::Tuples(steps, _) => steps
             .iter()
             .any(|s| mutates_scope(&s.node) || s.predicates.iter().any(mutates_scope)),
         Kind::Array(args, _) | Kind::Builtin(_, args) => args.iter().any(mutates_scope),
@@ -166,5 +174,46 @@ fn mutates_scope(node: &Node) -> bool {
             mutates_scope(base) || terms.iter().any(|(n, _)| mutates_scope(n))
         }
         _ => false,
+    }
+}
+
+// Scoped sorting in the pinned reference loses the tuple marker until the next
+// map. Keep that host-internal representation out of the value model explicitly.
+pub(crate) fn check_composition(root: &mut Node) -> Result<(), crate::Error> {
+    fn literal(node: &Node) -> bool {
+        matches!(
+            node.kind,
+            Kind::Number(_)
+                | Kind::Boolean(_)
+                | Kind::Null
+                | Kind::String(_)
+                | Kind::Missing
+                | Kind::Prepared(_)
+        )
+    }
+    let mut invalid = None;
+    visit(root, &mut |node| {
+        let unsupported = match &node.kind {
+            Kind::Reduce(base, _) | Kind::Sort(base, _) => crate::tuple::ends_sorted(base),
+            Kind::Filter(base, predicates) => {
+                crate::tuple::ends_sorted(base) && predicates.iter().any(|p| !literal(p))
+            }
+            Kind::Tuples(steps, _) => steps.iter().any(|step| {
+                crate::tuple::ends_sorted(&step.node) && step.predicates.iter().any(|p| !literal(p))
+            }),
+            _ => false,
+        };
+        if unsupported {
+            invalid = Some(node.offset);
+        }
+    });
+    if let Some(offset) = invalid {
+        Err(crate::Error::new(
+            crate::ErrorKind::UnsupportedExpression,
+            offset,
+            "context operations immediately after tuple sorting are deferred; insert .$ first",
+        ))
+    } else {
+        Ok(())
     }
 }

@@ -45,6 +45,9 @@ impl<'e, 'i> Stream<'e, 'i> {
                         view.walk(output)
                     })
                 }
+                Kind::Tuples(steps, focus) => {
+                    crate::tuple::route_values(steps, *focus, context, output)
+                }
                 Kind::Filter(base, predicates) => {
                     crate::filter::with_filters(base, predicates, context, &mut |view| {
                         view.walk(output)
@@ -165,6 +168,20 @@ impl<'e, 'i> View<'_, 'e, 'i> {
 }
 
 impl Node {
+    pub(crate) fn consume<'e, 'i>(
+        &'e self,
+        context: &Context<'e, 'i>,
+        output: &mut Output<'_, 'e, 'i>,
+    ) -> Walk {
+        if matches!(self.kind, Kind::Tuples(..)) {
+            return Stream::Expression(self, context.clone()).walk(output);
+        }
+        match self.stream(context) {
+            Some(stream) => stream.walk(output),
+            None => self.run(context)?.walk(output),
+        }
+    }
+
     // Expose deferred results without a cardinality preflight. Consumers that
     // require a scalar still normalize through Stream::operand.
     #[inline]

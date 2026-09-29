@@ -23,6 +23,7 @@ pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
     }
     crate::analysis::prepare(&mut root)?;
     crate::compile::prepare(&mut root);
+    crate::analysis::check_composition(&mut root)?;
     crate::plan::prepare(&mut root);
     Ok(Expression { root })
 }

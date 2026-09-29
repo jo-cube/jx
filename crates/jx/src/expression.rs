@@ -21,6 +21,7 @@ pub(crate) enum Kind {
     StaticLookup(Box<crate::constant::Data>, Box<Node>),
     BuiltinReference(crate::builtin::Builtin),
     Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
+    Tuples(Box<[Step]>, bool),
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
     Keep(Box<Node>, bool), // Whole path versus a stage/expression boundary.
@@ -91,6 +92,7 @@ impl Op {
 pub(crate) struct Step {
     pub node: Node,
     pub predicates: Box<[Node]>,
+    pub bindings: Option<Box<crate::tuple::Bindings>>,
     pub lookup: bool,
     pub effects: bool,
 }
@@ -106,7 +108,9 @@ pub(crate) enum Aggregate {
 impl Node {
     pub(crate) fn array_focus(&self) -> bool {
         match &self.kind {
-            Kind::Array(_, preserve) | Kind::Route(_, preserve) => *preserve,
+            Kind::Array(_, preserve) | Kind::Route(_, preserve) | Kind::Tuples(_, preserve) => {
+                *preserve
+            }
             Kind::Filter(base, _) | Kind::Group(base) | Kind::Keep(base, _) => base.array_focus(),
             _ => false,
         }

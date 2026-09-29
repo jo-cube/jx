@@ -10,6 +10,9 @@ pub(crate) fn evaluate<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
+    if crate::tuple::active(base) {
+        return crate::tuple::sorted(base, terms, context, offset);
+    }
     let mut items = Vec::new();
     crate::retain::visit(base, context, &mut |value| items.push(value))?;
     if items.len() == 1 && items[0].is_array() {
@@ -25,10 +28,21 @@ pub(crate) fn evaluate<'e, 'i>(
         }
         _ => {}
     }
-    let mut indices: Vec<_> = (0..items.len()).collect();
-    let mut scratch = vec![0; items.len()];
-    merge_sort(&mut indices, &mut scratch, &mut |a, b| {
-        compare(&items[a], &items[b], terms, context, offset)
+    let indices = indices(items.len(), |a, b| {
+        contexts(
+            &Context {
+                value: items[a].clone(),
+                wrapped: false,
+                scope: context.scope.clone(),
+            },
+            &Context {
+                value: items[b].clone(),
+                wrapped: false,
+                scope: context.scope.clone(),
+            },
+            terms,
+            offset,
+        )
     })?;
     Ok(Operand::One(Value::array(
         indices
@@ -39,30 +53,15 @@ pub(crate) fn evaluate<'e, 'i>(
     )))
 }
 
-fn compare<'e, 'i>(
-    left: &Value<'e, 'i>,
-    right: &Value<'e, 'i>,
+pub(crate) fn contexts<'e, 'i>(
+    left: &Context<'e, 'i>,
+    right: &Context<'e, 'i>,
     terms: &'e [(Node, bool)],
-    context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Ordering, Error> {
     for (term, descending) in terms {
-        let a = crate::retain::materialize(
-            term,
-            &Context {
-                value: left.clone(),
-                wrapped: false,
-                scope: context.scope.clone(),
-            },
-        )?;
-        let b = crate::retain::materialize(
-            term,
-            &Context {
-                value: right.clone(),
-                wrapped: false,
-                scope: context.scope.clone(),
-            },
-        )?;
+        let a = crate::retain::materialize(term, left)?;
+        let b = crate::retain::materialize(term, right)?;
         let order = match (a, b) {
             (None, None) => continue,
             (None, _) => return Ok(Ordering::Greater),
@@ -124,4 +123,14 @@ fn merge_sort(
     }
     indices.copy_from_slice(scratch);
     Ok(())
+}
+
+pub(crate) fn indices(
+    length: usize,
+    mut compare: impl FnMut(usize, usize) -> Result<Ordering, Error>,
+) -> Result<Vec<usize>, Error> {
+    let mut indices: Vec<_> = (0..length).collect();
+    let mut scratch = vec![0; length];
+    merge_sort(&mut indices, &mut scratch, &mut compare)?;
+    Ok(indices)
 }

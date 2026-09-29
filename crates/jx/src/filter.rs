@@ -82,23 +82,13 @@ impl<'e, 'i> Filter<'_, 'e, 'i> {
                 scope: self.context.scope.clone(),
             };
             let predicate = self.predicate.run(&context)?;
-            let numeric = numbers(&predicate, self.predicate.offset, &mut |_| Ok(()))?;
-            if numeric {
-                numbers(&predicate, self.predicate.offset, &mut |number| {
-                    let number = number.floor();
-                    let target = if number < 0.0 {
-                        self.length()? as f64 + number
-                    } else {
-                        number
-                    };
-                    if target == index as f64 {
-                        output(context.value.clone())?;
-                    }
-                    Ok(())
-                })?;
-            } else if predicate.truth(self.predicate.offset)? {
-                output(context.value)?;
-            }
+            select(
+                &predicate,
+                self.predicate.offset,
+                index,
+                || self.length(),
+                &mut || output(context.value.clone()),
+            )?;
             index += 1;
             Ok(())
         })
@@ -144,4 +134,30 @@ fn numbers(
         Operand::Many(stream) => stream.walk(&mut item)?,
     }
     Ok(numeric)
+}
+
+pub(crate) fn select(
+    predicate: &Operand<'_, '_>,
+    offset: usize,
+    index: usize,
+    mut length: impl FnMut() -> Result<usize, Halt>,
+    output: &mut dyn FnMut() -> Walk,
+) -> Walk {
+    if numbers(predicate, offset, &mut |_| Ok(()))? {
+        numbers(predicate, offset, &mut |number| {
+            let number = number.floor();
+            let target = if number < 0.0 {
+                length()? as f64 + number
+            } else {
+                number
+            };
+            if target == index as f64 {
+                output()?;
+            }
+            Ok(())
+        })?;
+    } else if predicate.truth(offset)? {
+        output()?;
+    }
+    Ok(())
 }
