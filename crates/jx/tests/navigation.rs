@@ -82,14 +82,7 @@ fn range_limits_and_deferred_tuple_navigation_are_explicit() {
             jx::ErrorKind::NumericRange
         );
     }
-    for expr in [
-        "1..3",
-        "a[1..3]",
-        "a.%",
-        "a@$x",
-        "a#$i",
-        "a{\"x\":1}{\"y\":2}",
-    ] {
+    for expr in ["1..3", "a[1..3]", "a.%", "a{\"x\":1}{\"y\":2}"] {
         assert_eq!(
             jx::compile(expr).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression

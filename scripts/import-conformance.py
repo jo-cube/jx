@@ -27,7 +27,7 @@ EXPRESSION_GROUPS = {
     "wildcards": (10, set()),
     "descendent-operator": (17, set()),
     "range-operator": (25, {21, 22, 23, 24}),
-    "sorting": (21, {20}),
+    "sorting": (21, set()),
     "inclusion-operator": (9, set()),
     "coalescing-operator": (15, set()),
     "default-operator": (19, set()),
@@ -59,6 +59,7 @@ EXPRESSION_GROUPS = {
 ERROR_KINDS = {
     "T2003": "TypeError", "T2004": "TypeError", "T2007": "TypeError", "T2008": "TypeError",
     "S0212": "UnsupportedExpression",
+    "S0214": "UnsupportedExpression", "S0215": "UnsupportedExpression", "S0216": "UnsupportedExpression",
     "T1003": "TypeError", "D1009": "DuplicateKey",
     "T0410": "TypeError", "T0412": "TypeError",
     "D1001": "NumericRange", "T2001": "TypeError", "T2002": "TypeError",
@@ -121,6 +122,14 @@ def inventory(suite):
                 statuses = [status]
             yield path, statuses
 
+    for filename, statuses in {
+        "index.json": ["supported"] * 15 + ["deferred"],
+        "errors.json": ["error"] * 4,
+        "library-joins.json": ["supported", "supported", "deferred"] + ["supported"] * 8,
+        "employee-map-reduce.json": ["syntax", "supported", "syntax", "syntax", "syntax", "syntax"] + ["supported"] * 6,
+    }.items():
+        yield suite / "groups" / "joins" / filename, statuses
+
 
 def main():
     source = Path(sys.argv[1]).resolve()
@@ -141,6 +150,9 @@ def main():
         spec = json.loads(path.read_text())
         cases = spec if isinstance(spec, list) else [spec]
         assert len(cases) == len(statuses), str(relative)
+        for case in cases:
+            if "expr-file" in case:
+                shutil.copyfile(path.parent / case["expr-file"], target.parent / case["expr-file"])
         for index, (case, status) in enumerate(zip(cases, statuses)):
             if case.get("dataset") is not None:
                 datasets.add(case["dataset"])

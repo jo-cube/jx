@@ -209,3 +209,15 @@ fn kept_sequences_and_reductions_preserve_record_framing() {
     assert!(output.status.success());
     assert_eq!(output.stdout, b"{\"x\":[2,1]}\n");
 }
+
+#[test]
+fn scoped_paths_reset_bindings_and_preserve_sequence_framing() {
+    let input = b"{\"a\":[10,20]}\n{\"a\":[30]}\n{\"a\":[]}\n";
+    let output = run(&["a#$i.{\"value\":$,\"index\":$i}"], input);
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"value\":10,\"index\":0}\n{\"value\":20,\"index\":1}\n{\"value\":30,\"index\":0}\n"
+    );
+    assert_eq!(run(&["a#$i.$i[]"], input).stdout, b"[0,1]\n[0]\n");
+}
