@@ -996,3 +996,69 @@ and [frame inspection](benchmarks/m13/frames.txt) support the traversal review.
 `just all`, `just build`, all 568 classified conformance cases and 37,746 upstream
 differential comparisons pass. Exact validation-error mutation tests cover malformed
 captured/unselected fields, duplicate parents, UTF-8, trailing bytes and depth limits.
+
+## Milestone 14: scoped path composition
+
+`@`/`#` paths carry streamed values and evaluated bindings through the existing
+scalar, filter, ordering and grouping semantics. Ordinary paths do not create rows
+or scope frames; eligible scalar leaves still use M13 demand capture. No scanner,
+plan instructions, input index or JIT machinery changes in this milestone.
+
+On the same Apple M4 / Rust 1.98.1 release configuration, compare committed M13
+`7279177` with M14: **679 → 723 workloads**, including 43 new evaluation cases and
+one scoped-path compilation case. Full runs use seven 50 ms samples; 59 existing
+workloads also have seven 150 ms repeats. All **665 existing evaluation cases keep
+identical allocation calls and requested bytes**; 456 remain allocation-free.
+Compilation of the ordinary path remains eight allocations, 578 → 618 requested
+bytes from added step metadata. Scoped-path compilation is measured separately.
+
+Representative full-run medians (records/s):
+
+| Workload | Bytes | M13 | M14 | M14 allocations / requested bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Shallow path | 500 | 3.19M | 3.20M | 0 / 0 |
+| Planned arithmetic | 500 | 2.74M | 2.74M | 0 / 0 |
+| Varying 4K static lookup | 501 | 1.69M | 1.71M | 0 / 0 |
+| Planned invoice sum, 128 rows | 4,488 | 60.8k | 60.3k | 0 / 0 |
+| Planned mapped objects, 128 rows | 4,488 | 29.5k | 29.3k | 256 / 17,408 |
+| Scoped indices, two rows | 500 | — | 1.05M | 11 / 1,104 |
+| Scoped filter + sum, two rows | 500 | — | 793k | 13 / 1,648 |
+| Scoped constructor with plan leaves | 500 | — | 670k | 17 / 1,696 |
+
+Wide scoped sums reach 20.9k records/s at 128 rows (6,666 B) and 2,625 at 1,024
+rows (56,043 B), requesting 454 / 57,088 B and 3,590 / 451,328 B respectively.
+Bindings and short-lived lexical frames allocate per candidate; streaming bounds
+live rows but does not mean zero allocation. Sorting, grouping and predicates that
+may index from the end retain rows. Padded 1 MiB scoped fixtures reach about 943
+records/s; requested storage stays the same as their two-row 500 B versions.
+These byte counts measure total allocation requests, not peak resident memory.
+
+The unbound join `rows@$r.bands[kind=$r.kind]` repeats the root-field scan per row:
+its aggregate reaches 1,055 records/s at 128 rows and 19 at 1,024. Binding `bands`
+once before the path gives 6,678 and 833 respectively, with the same result and
+borrowed leaves. This is an explicit workload-level reuse opportunity, not an
+automatic optimizer claim. Nested tuple traversal and lexical-frame costs remain
+measurable; no dynamic indexing or tuple-specific plan lowering is added.
+
+Regressions and negative evidence:
+
+- Full-run tiny-filter/retention losses of 7–11% shrink in longer repeats: wide
+  predicates lose about 2–3%, 100 B singleton retention about 4%, and computed-last
+  selection about 1%. The apparent 9% bound-static-lookup loss does not repeat.
+- Unplanned sequence sums lose 3–7% in repeats (24,936 → 23,306 records/s at 4,017 B;
+  1,496 → 1,389 at 87,201 B). Tiny raw-member construction loses about 5%; one wide
+  last-position case also loses about 5%. Their allocations are unchanged. Shared
+  tree dispatch/consumption changed, but the precise code-generation cause is not
+  isolated; these paths do not initialize tuple bindings or change JSON scanning.
+- Repeated planned arithmetic/conditionals and invoice sums stay within about 1%;
+  mapped objects lose about 1% at 128 rows. An isolated generic filter callback
+  experiment gives no consistent improvement across 27 paired workloads and is
+  not retained. No annotations or specialized fast paths are added to chase noise.
+
+[Full comparison](benchmarks/m14/comparison.csv), [M13 samples](benchmarks/m14/m13-full.csv),
+[M14 samples](benchmarks/m14/final-full.csv), [longer repeats](benchmarks/m14/repeat-comparison.csv)
+and [environment/commands](benchmarks/m14/environment.json) retain the measurements.
+`just all`, `just build`, all 611 classified upstream cases and 38,686 differential
+comparisons pass. The exact engine/test/harness hashes are in
+[source.json](benchmarks/m14/source.json); callback experiment samples and its small
+patch preserve the discarded result separately from final timings.

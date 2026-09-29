@@ -1,0 +1,11 @@
+--- a/crates/jx/src/filter.rs
++++ b/crates/jx/src/filter.rs
+@@ -141,7 +141,7 @@
+     offset: usize,
+     index: usize,
+     mut length: impl FnMut() -> Result<usize, Halt>,
+-    output: &mut dyn FnMut() -> Walk,
++    mut output: impl FnMut() -> Walk,
+ ) -> Walk {
+     if numbers(predicate, offset, &mut |_| Ok(()))? {
+         numbers(predicate, offset, &mut |number| {

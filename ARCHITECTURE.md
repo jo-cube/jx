@@ -131,6 +131,31 @@ addition to the parser's 128-level limit. Tail-call elimination and function sig
 remain deferred. Scope and function control flow remain direct evaluation; numeric lowering does not
 change frame retention or lexical lifetimes.
 
+### Scoped path rows
+
+`Kind::Tuples` marks paths carrying `@`/`#` bindings at compilation. `tuple.rs`
+streams rows containing a value and shared, evaluated bindings; `tuple/stages.rs`
+handles map/filter/index composition. Ordinary `Kind::Route`, `Context`, `Value`
+and plan instructions do not carry tuple state. Scalars and planned leaves still
+execute through `Node::run`; predicates, ordering comparisons and object grouping
+share their existing semantic routines. This is path context propagation, not a
+second expression evaluator or an input index.
+
+Each row evaluation installs its bindings in a short-lived child of the existing
+scope arena. Closures capture that frame through the same arena indices as other
+lexical functions. Rows share immutable binding lists until a binding changes.
+One-shot consumers (`Node::consume`, used by constructors and aggregates) can walk
+scoped paths directly; scalar normalization and lexical storage retain evaluated
+results. `Node::stream` still exposes only replay-safe expressions.
+Top-level scoped paths stream through the callback API.
+
+Map/boolean-filter/index stages need no complete row collection. Ambiguous numeric
+predicates may need negative indexing, so they retain rows once instead of replaying
+lexical effects. Sorting and grouping retain rows, preserving their bindings. Group
+values merge current context and bindings together. The transition from a plain path
+holds at most one pending item to settle array/sequence cardinality. No scanner
+changes are needed: demand capture continues inside eligible planned expressions.
+
 ## Compile-time specialization
 
 `compile.rs` runs bottom-up after scope/effect analysis. A conservative whitelist
@@ -332,7 +357,10 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
     object paths during validation; raw fold cursors capture candidates in one scan.
     General array normalization remains on the tree; no JIT or input index is added.
 
-Next semantic work: parent/context/index tuples and the function library.
+14. **Complete: scoped path composition.** Positional/context bindings, streamed
+    joins, binding-preserving filtering/sorting/grouping and closure capture.
+
+Next semantic work: parent ancestry and the function library.
 Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
 a final value. String conversion/concatenation and chaining remain useful gaps.
 Host invocation still needs a lifetime/resource contract.

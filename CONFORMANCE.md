@@ -19,7 +19,8 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Indexes / predicates | Literal/computed indexes, numeric lists from input, effective-boolean predicates, chained filters |
 | Wildcards / descendants | `*` and `**`, including composed paths, predicates and aggregates |
 | Ordering / grouping | Stable `^(<key, >key)` and postfix `{key:value}` |
-| Parent/context/index tuples | `%`, `@` and `#` navigation remain deferred together |
+| Context/index bindings | `@` and `#` path bindings, joins, filters, sorting and grouped bindings |
+| Parent navigation | `%` remains deferred; requires static ancestry resolution |
 | Literals | Binary64 numbers, booleans, null, single/double quoted strings |
 | Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
 | Parentheses | Expression grouping, lexical blocks and grouped path steps; `()` is missing |
@@ -98,8 +99,43 @@ ordinary shadowable `$exists`. RHS evaluation is conditional.
 
 [Readable navigation cases](tests/semantics/navigation.json) and Rust/CLI tests freeze
 these rules, validation, borrowed output, cancellation and resource limits. `%` parent
-navigation and `@`/`#` tuple bindings remain unsupported; ancestry needs to survive
-reduction stages. String concatenation/conversion, chaining and general builtins remain deferred.
+navigation remains unsupported; ancestry needs to survive reduction stages. String concatenation/conversion, chaining and general builtins remain deferred.
+
+## Scoped paths
+
+`rows#$i` binds each result's zero-based position; `rows@$r` binds the selected value
+while keeping the preceding context for the next step. Thus
+`rows@$r.bands[kind=$r.kind]` joins two fields of the same object. Bindings follow
+candidates through maps, filters, sorting and grouping, shadow lexical variables,
+and end at the path/parentheses boundary. Closures can retain a candidate's bindings.
+
+A `#` directly on a map step counts that step's local results. After a filter it
+counts the combined filtered sequence. Once a path carries bindings, subsequent
+step predicates filter the combined tuple sequence: `a#$i.b[0]` selects one `b`
+overall. Arrays and sequences still normalize independently; tuple steps append
+one level, including explicit array-valued results. `[]` retains the final shape.
+
+Grouping combines both current values and each named binding by key before evaluating
+member values. Equal keys from different members still fail. Sorting keeps bindings
+attached to their candidates. The pinned reference ignores a direct `#` on a sort
+that already carries tuples; `^(key)[true]#$i` explicitly indexes the sorted stream.
+Context-dependent predicates, grouping and another sort immediately after sorting an
+existing tuple stream are explicitly deferred: the reference drops its tuple marker
+and exposes internal objects there. Literal predicates remain supported. Insert a
+map (`^(key).$[predicate]` or `^(key).${key:value}`) to restore the binding context.
+Readable cases freeze these boundaries.
+
+Boolean predicates and nonnegative literal positions stream. Predicates that may
+need the sequence length retain rows once; sorting/grouping also retain their inputs.
+Bindings store evaluated values, never replayable expressions. Input leaves stay
+borrowed. Cancellation stops streamed stages, and full JSON validation remains first.
+
+`tests/semantics/tuples.json`, ownership/cancellation regressions and the complete
+upstream `joins` group cover these rules. One explicit host-boundary policy: grouping
+an empty tuple stream produces `{}`, consistent with ordinary empty grouping;
+JSONata 2.2.0 instead throws an uncoded JavaScript exception. This local case is tested
+separately from differential cases. `%` ancestry, string concatenation and the broader
+function library remain deferred.
 
 ## Filters
 
@@ -348,7 +384,7 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 
 ## Executable coverage
 
-`just conformance` executes all **568** imported cases from complete `fields`,
+`just conformance` executes all **611** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
@@ -356,16 +392,16 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 `array-constructor`, `object-constructor`, `variables`, `blocks`, `conditionals`,
 `closures`, `lambdas`, `higher-order-functions`, `function-boolean`, `function-exists`,
 `wildcards`, `descendent-operator`, `range-operator`, `sorting`, `inclusion-operator`,
-`coalescing-operator`, `default-operator` and `function-lookup`
+`coalescing-operator`, `default-operator`, `function-lookup` and `joins`
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 481 | Semantic JSON result or missing matches upstream |
-| Supported errors | 55 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 13 | Compile-time `UnsupportedExpression` |
-| Deferred builtin calls | 16 | Runtime `UnsupportedExpression` |
+| Supported results | 514 | Semantic JSON result or missing matches upstream |
+| Supported errors | 59 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 17 | Compile-time `UnsupportedExpression` |
+| Deferred builtin calls | 18 | Runtime `UnsupportedExpression` |
 | Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
 
 These are selected groups, not a percentage of the full suite. No imported case
@@ -409,6 +445,7 @@ node scripts/check-navigation.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-compiler.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-execution.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-plans.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-tuples.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -430,6 +467,8 @@ bits. Expanded-plan checks add 6,546 branch, aggregate, constructor and lookup
 comparisons, with offline coverage for skipped demands, duplicate keys, exact errors
 and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
+Scoped-path checks add **940** comparisons across root/array shapes, local/global
+positions, joins, closures, sorting, grouping, and the imported supported join cases.
 The known upstream
 empty-root-array mutation during object construction is excluded from generated
 constructor/lexical comparisons. Normal `just all` needs neither Node nor the upstream checkout.

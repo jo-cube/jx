@@ -20,6 +20,8 @@ mod navigation;
 mod plans;
 #[path = "workloads/scalars.rs"]
 mod scalars;
+#[path = "workloads/tuples.rs"]
+mod tuples;
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     hint::black_box,
@@ -293,4 +295,5 @@ fn main() {
     execution::run(smoke);
     plans::run(smoke);
     demands::run(smoke);
+    tuples::run(smoke);
 }
