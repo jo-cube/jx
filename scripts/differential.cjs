@@ -9,7 +9,7 @@ assert.equal(spawnSync('git', ['-C', upstream, 'rev-parse', 'HEAD'], {encoding:'
     '8ee4476f8a228bfc7a62979ae0a9c13a4043cd03');
 const jsonata = require(path.join(upstream, 'src/jsonata'));
 const kinds = {T2003:"TypeError", T2004:"TypeError", T2007:"TypeError", T2008:"TypeError", D2014:"NumericRange", T1005:'TypeError', T1006:'TypeError', T1007:'TypeError', T1008:'TypeError', T2001:'TypeError', T2002:'TypeError', T2009:'TypeError', T2010:'TypeError',
-    D1002:'TypeError', D1001:'NumericRange', T0410:'TypeError', T0412:'TypeError', T1003:'TypeError', D1009:'DuplicateKey'};
+    T0411:'TypeError', D3020:'NumericRange', D3060:'NumericRange', D3061:'NumericRange', D3050:'TypeError', D1002:'TypeError', D1001:'NumericRange', T0410:'TypeError', T0412:'TypeError', T1003:'TypeError', D1009:'DuplicateKey'};
 function items(value) {
     const result = value === undefined ? [] : Array.isArray(value) && value.sequence && !value.keepSingleton ? Array.from(value) : [value];
     return JSON.parse(JSON.stringify(result));

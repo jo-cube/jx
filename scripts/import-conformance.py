@@ -61,7 +61,8 @@ ERROR_KINDS = {
     "S0212": "UnsupportedExpression",
     "S0214": "UnsupportedExpression", "S0215": "UnsupportedExpression", "S0216": "UnsupportedExpression",
     "T1003": "TypeError", "D1009": "DuplicateKey",
-    "T0410": "TypeError", "T0412": "TypeError",
+    "T0410": "TypeError", "T0411": "TypeError", "T0412": "TypeError",
+    "D3020": "NumericRange", "D3060": "NumericRange", "D3061": "NumericRange", "D3050": "TypeError",
     "D1001": "NumericRange", "T2001": "TypeError", "T2002": "TypeError",
     "T2009": "TypeError", "T2010": "TypeError", "S0102": "NumericRange",
     "S0103": "UnsupportedExpression", "S0104": "UnsupportedExpression",
@@ -69,9 +70,31 @@ ERROR_KINDS = {
 
 
 DEFERRED_CALLS = {
-    "boolean-expresssions": {16, 29, 30}, "inclusion-operator": {8}, "predicates": {3},
-    "object-constructor": {10, 11, 12, 22, 25},
-    "lambdas": {10, 11, 12},
+    "boolean-expresssions": {30},
+    "object-constructor": {10, 11, 12},
+    "lambdas": {12},
+}
+
+# Entire builtin groups; exceptional dependencies remain explicit.
+BUILTIN_GROUPS = {
+    "function-average": (13, {"case002.json": "syntax"}),
+    "function-length": (17, {}), "function-uppercase": (2, {}),
+    "function-lowercase": (2, {}), "function-trim": (3, {}),
+    "function-substring": (19, {}), "function-substringBefore": (5, {}),
+    "function-substringAfter": (5, {}), "function-contains": (7, {}),
+    "function-split": (19, {"case004.json": "deferred"}),
+    "function-join": (12, {}), "function-abs": (4, {}),
+    "function-floor": (4, {}), "function-ceil": (4, {}),
+    "function-sqrt": (4, {}), "function-power": (7, {}),
+    "function-append": (6, {}), "function-reverse": (4, {}),
+    "function-distinct": (1, {}), "function-keys": (7, {}),
+    "function-spread": (4, {"case003.json": "deferred"}),
+    "function-merge": (5, {}), "function-typeOf": (13, {}),
+    "hof-map": (12, {"case002.json": "deferred", "case003.json": "syntax", "case004.json": "syntax", "case0011.json": "syntax"}),
+    "hof-filter": (4, {"case000.json": "syntax", "case001.json": "syntax"}),
+    "hof-reduce": (11, {"case001.json": "syntax", "case010.json": "syntax"}),
+    "function-each": (3, {"case000.json": "syntax"}),
+    "function-sift": (5, {"case002.json": "syntax"}),
 }
 
 def inventory(suite):
@@ -94,7 +117,9 @@ def inventory(suite):
                 statuses[i] = "supported"
         if path.name == "sequence-of-arrays.json":
             statuses = ["supported"] * 4
-        if path.name in {"case044.json", "large.json"}:
+        if path.name == "case044.json":
+            statuses = ["supported"]
+        if path.name == "large.json":
             statuses = ["deferred"] * len(cases)
         yield path, statuses
 
@@ -125,10 +150,19 @@ def inventory(suite):
     for filename, statuses in {
         "index.json": ["supported"] * 15 + ["deferred"],
         "errors.json": ["error"] * 4,
-        "library-joins.json": ["supported", "supported", "deferred"] + ["supported"] * 8,
+        "library-joins.json": ["supported"] * 11,
         "employee-map-reduce.json": ["syntax", "supported", "syntax", "syntax", "syntax", "syntax"] + ["supported"] * 6,
     }.items():
         yield suite / "groups" / "joins" / filename, statuses
+
+    for group, (count, exceptions) in BUILTIN_GROUPS.items():
+        files = sorted((suite / "groups" / group).glob("*.json"))
+        assert len(files) == count, group
+        assert exceptions.keys() <= {p.name for p in files}, group
+        for path in files:
+            spec = json.loads(path.read_text())
+            cases = spec if isinstance(spec, list) else [spec]
+            yield path, [exceptions.get(path.name, "error" if "code" in case else "supported") for case in cases]
 
 
 def main():
