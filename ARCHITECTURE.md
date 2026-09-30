@@ -30,7 +30,7 @@
   Candidate context explicitly distinguishes top-level array wrapping from local
   mapping. Numeric filters count only when a negative index needs the length.
   Each live stage retains that length across replays, avoiding recursive recounts.
-- `aggregate.rs` folds `$count`, `$sum`, `$min` and `$max` over the same deferred
+- `aggregate.rs` folds `$count`, `$sum`, `$min`, `$max` and `$average` over the same deferred
   path/filter streams. `Node::stream` exposes them without scalar cardinality
   preflight; other argument expressions use `Node::run`. One pending value resolves
   missing/singleton/multiple shape before interpreting a sole raw array as the
@@ -77,7 +77,7 @@
   values. Object equality uses a temporary map of borrowed left members and applies
   last-key-wins on both sides. These allocations are confined to equality.
 - `Value` is the small public output union: raw input, primitive scalars or a
-  compiled string literal, dynamic or compiled container, opaque function, or undefined inside
+  compiled or owned string, dynamic or compiled container, opaque function, or undefined inside
   multi-item sequences. Containers retain their internal sequence/array shape. Its
   two lifetimes distinguish input from expression storage. `as_raw()` extracts input
   slices that can outlive the expression. Values are `Clone`, no longer `Copy`;
@@ -119,12 +119,33 @@ This conservative boundary favors correctness over streaming lexical pipelines. 
 not turn ordinary paths or filters into collections. Retained output can still be cancelled,
 but lexical evaluation may finish before the first callback. Input validation remains first.
 
-`builtin.rs` registers four aggregates plus `$boolean`, `$not`, `$exists` and `$lookup`. Builtins are
-first-class, shadowable values; unimplemented standard names are recognizable functions
-whose calls fail explicitly. `function.rs` handles closures and dynamic calls. Functions
-have identity equality, false effective-boolean value, and no host JSON serialization or
-public host invocation API. Escaped JSON results retain their ordinary borrowing lifetimes;
-opaque function results cannot be invoked after their evaluation's arena is gone.
+`builtin.rs` resolves static names and keeps streaming aggregates/boolean helpers and
+indexed lookup on their existing paths. `builtin/library.rs` describes fixed builtin
+parameters, optional context substitution, arity and constant-fold eligibility;
+implementations live in string, collection and higher-order modules. There is no
+runtime registry or user-defined signature system. Direct library calls use three
+stack argument slots. Dynamic calls and callbacks share `function::invoke`.
+
+Computed strings use `OwnedString`: shared immutable JSON encoding, including lone
+UTF-16 surrogates. Raw strings and literals keep their borrowing; comparisons, keys,
+serialization and constant capture use the same encoded-string access as before.
+`$length` counts codepoints without copying; transforming strings owns new storage.
+Type names borrow static literals. No input record becomes an owned tree.
+
+Higher-order functions evaluate arguments once before invoking callbacks. Raw arrays
+stay borrowed; result sequences are retained, and callbacks receive the original
+array/object only when their arity requests it. `$reduce` retains its accumulator,
+not a second mapped collection. Map/filter/each finish their output before exposing
+it; cancellation then stops output consumption. Existing path predicates and numeric
+folds still stream, including `$average` through eligible execution plans.
+
+Calls normalize native sequence results at the expression boundary, after postfix
+`[]` can retain them. Lambda tail calls preserve native sequence shape for their
+caller, matching observable nesting in higher-order results. Analysis marks these
+call sites; it does not perform tail-call elimination. Folding preserves both call
+boundaries. Builtins remain first-class and shadowable; unimplemented standard names
+fail explicitly when called. Opaque functions have no JSON encoding or public host
+invocation API. Escaped JSON values keep their ordinary borrowing lifetimes.
 
 Calls are bounded by 64 active invocations and 512 accumulated body-tree levels, in
 addition to the parser's 128-level limit. Tail-call elimination and function signatures
@@ -226,7 +247,7 @@ Two enclosing operations reuse this same primitive program:
 - A streaming fold accepts a plain object path prefix, optional boolean predicates,
   and one numeric mapped stage. It visits candidates once, sharing surviving field
   loads between predicates and mapping, and reuses `aggregate::Fold` for count/sum/
-  min/max. Nested source arrays, positional predicates and general sequence boundaries
+  min/max/average. Nested source arrays, positional predicates and general sequence boundaries
   stay with the tree. Source selection shares object-prefix capture, and the raw array
   cursor captures candidate demands while locating each element boundary. Validation
   still finishes before folding begins. No candidate collection, stage views or lexical
@@ -360,7 +381,12 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
 14. **Complete: scoped path composition.** Positional/context bindings, streamed
     joins, binding-preserving filtering/sorting/grouping and closure capture.
 
-Next semantic work: parent ancestry and the function library.
+15. **Complete: standard-library expansion.** String and numeric helpers, collection/
+    object operations, type introspection and map/filter/reduce/each/sift callbacks.
+    Fixed builtin signatures, owned computed strings and native sequence boundaries
+    reuse the existing value, closure and plan machinery.
+
+Next semantic work: parent ancestry and remaining common library/operators.
 Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
 a final value. String conversion/concatenation and chaining remain useful gaps.
 Host invocation still needs a lifetime/resource contract.

@@ -103,6 +103,11 @@ and untaken branches measure sparse demands and capture overhead. The invoice Ru
 control uses validating path capture plus a reader for the fixed ASCII row layout;
 it checks the same numeric total, without general JSONata shape/error handling.
 
+Builtin fixtures cover string normalization, literal split/join, numeric helpers,
+streaming average, type/keys, native and closure callbacks, reduction and sifting at
+100 B–1 MiB. Mixed 8/128/1,024-row inputs add filter/reduce, planned average, grouping,
+ordered labels, merging constructed objects and distinct projections.
+
 The process-wide counting allocator records allocation/reallocation calls and
 requested bytes. Timed workloads are single-threaded; compilation allocates but
 ordinary paths, filters, aggregates and scalar operators without lexical features
@@ -1062,3 +1067,66 @@ and [environment/commands](benchmarks/m14/environment.json) retain the measureme
 comparisons pass. The exact engine/test/harness hashes are in
 [source.json](benchmarks/m14/source.json); callback experiment samples and its small
 patch preserve the discarded result separately from final timings.
+
+## Milestone 15 — standard-library expansion
+
+Same machine/compiler/profile; committed M14 `0d5aa9e` is the baseline. **800
+workloads** now include 16 compilation cases and 784 evaluations. All **708 existing
+evaluation cases preserve allocation calls and requested bytes**, including their
+456 allocation-free cases. Of 76 new evaluation cases, 23 allocate nothing, bringing
+the total to **479**. Full runs take seven 50 ms samples; longer sequential repeats
+cover 73 existing and 14 new workloads. A second paired run checks 11 regression
+controls. Baseline overlap/interruption details are recorded in the environment file.
+
+Selected new full-run medians include validation and complete consumption:
+
+| Workload | Bytes | Records/s | Allocations / requested bytes |
+| --- | ---: | ---: | ---: |
+| String length | 500 | 1,440,651 | 0 / 0 |
+| Trim + uppercase | 500 | 827,957 | 23 / 387 |
+| Map native `$abs`, three items | 500 | 1,151,208 | 3 / 224 |
+| Map captured closure, three items | 500 | 675,195 | 11 / 1,208 |
+| Reduce numeric array, three items | 500 | 935,340 | 8 / 904 |
+| Planned filter/map/average, 128 rows | 4,537 | 75,741 | 0 / 0 |
+| Higher-order filter/reduce, 128 rows | 4,537 | 17,328 | 396 / 52,680 |
+| Map constructors + merge, 1,024 rows | 37,737 | 212 | 17,438 / 1,107,312 |
+
+`$average` reuses the existing primitive fold and eligible numeric plan. Direct
+string length, numeric helpers and type names need no heap storage. Transforming
+strings uses UTF-16 work buffers and shared encoded output. Higher-order calls
+retain evaluated sequences once and invoke the existing closure runtime; raw array
+inputs and output leaves still borrow. Callback scope frames allocate, and requesting
+the original collection can require a singleton wrapper. Reduce holds an accumulator
+rather than a second mapped collection. Padded 1 MiB fixtures retain the same
+allocation counts/bytes as their 500 B versions; record padding is never copied.
+
+Relevant limitations and regression evidence:
+
+- Distinct/key deduplication and merge use linear searches. Wide distinct-key merging
+  is quadratic: the same mixed workload reaches 6,238 records/s at 128 rows and 212
+  at 1,024. These include callback, string and constructor work. Requested bytes
+  above are cumulative allocator requests, not peak memory.
+- Existing planned arithmetic is effectively unchanged in repeats (2.721M → 2.723M
+  records/s at 500 B); invoice sums and mapped objects remain close to M14. The
+  apparent full-run 21% lexical lookup and 9% grouping losses at 64 KiB disappear
+  in repeats. Nested filtered sums remain within 1%; unplanned sequence sums gain
+  about 1–2% on these runs. No general speedup follows from these controls.
+- Tiny validation/path controls lose about **2–3%** across two paired repeats.
+  A 4K static last-key hit loses **4–7%**; the 128-row last-position filter loses
+  **1.5–7.2%**, showing significant run variation. Allocations are unchanged, and
+  these controls execute no new library calls, scope frames or scanning passes.
+  Scanner and plan sources are unchanged; the precise code-generation cause remains
+  unisolated. No special-case paths or annotations are added to chase these losses.
+- Compilation also marks lambda tail-call boundaries to preserve observable native
+  sequence shape. Plain-path compilation is 4.89M → 4.42M/s in the full runs, with
+  unchanged eight allocations / 618 requested bytes. Compile cost remains separate
+  from repeated execution.
+
+[Full comparison](benchmarks/m15/comparison.csv), [M14 samples](benchmarks/m15/m14-full.csv),
+[M15 samples](benchmarks/m15/final-full.csv), [longer repeats](benchmarks/m15/repeat-comparison.csv),
+[second controls](benchmarks/m15/control-comparison.csv), and
+[environment/commands](benchmarks/m15/environment.json) retain the evidence.
+[Source hashes](benchmarks/m15/source.json), [checks](benchmarks/m15/checks.log) and
+[differential results](benchmarks/m15/differential.txt) identify the tested build.
+`just all`, `just build`, all 820 classified upstream cases and 40,012 differential
+comparisons pass. Regex, transforms and the remaining library gaps stay explicit in CONFORMANCE.

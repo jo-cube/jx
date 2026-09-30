@@ -2,6 +2,8 @@
 #![allow(unsafe_code)]
 #[path = "workloads/aggregates.rs"]
 mod aggregates;
+#[path = "workloads/builtins.rs"]
+mod builtins;
 #[path = "workloads/compiler.rs"]
 mod compiler;
 #[path = "workloads/constructors.rs"]
@@ -296,4 +298,5 @@ fn main() {
     plans::run(smoke);
     demands::run(smoke);
     tuples::run(smoke);
+    builtins::run(smoke);
 }
