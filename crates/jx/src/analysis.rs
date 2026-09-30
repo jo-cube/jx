@@ -76,7 +76,32 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         children(node, &mut |child| effects |= child.effects);
         node.effects = effects;
     });
+    visit(root, &mut |node| {
+        if let Kind::Lambda(_, body) = &mut node.kind {
+            tail_calls(body);
+        }
+    });
     Ok(())
+}
+// The reference returns native sequences through tail calls without normalizing
+// them inside the lambda. This affects nested higher-order results even without TCO.
+fn tail_calls(node: &mut Node) {
+    match &mut node.kind {
+        Kind::Call(..) | Kind::Builtin(..) => node.tail_call = true,
+        Kind::Group(body) => tail_calls(body),
+        Kind::Block(items) => {
+            if let Some(last) = items.last_mut() {
+                tail_calls(last);
+            }
+        }
+        Kind::Conditional(_, yes, no) => {
+            tail_calls(yes);
+            if let Some(no) = no {
+                tail_calls(no);
+            }
+        }
+        _ => {}
+    }
 }
 fn visit(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
     children(node, &mut |child| visit(child, f));

@@ -59,7 +59,7 @@ fn sequence<'e, 'i>(
     }
 }
 
-fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
+pub(crate) fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
     match (left.atomic(), right.atomic()) {
         (Value::Function(left), Value::Function(right)) => {
             std::rc::Rc::ptr_eq(&left, &right)

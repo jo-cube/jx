@@ -43,7 +43,7 @@ pub use error::{Error, ErrorKind};
 pub use evaluate::{ConsumeError, Evaluation};
 pub use function::Function;
 pub use json::{MAX_DEPTH, RawJson, validate};
-pub use value::Value;
+pub use value::{OwnedString, Value};
 
 /// Immutable compiled expression; share across callers with independent inputs.
 #[derive(Clone, Debug)]

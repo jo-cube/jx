@@ -214,6 +214,7 @@ fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {
         offset,
         depth,
         effects: false,
+        tail_call: false,
     })
 }
 fn depth_error(offset: usize) -> Error {

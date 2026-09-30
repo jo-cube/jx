@@ -221,3 +221,27 @@ fn scoped_paths_reset_bindings_and_preserve_sequence_framing() {
     );
     assert_eq!(run(&["a#$i.$i[]"], input).stdout, b"[0,1]\n[0]\n");
 }
+
+#[test]
+fn builtins_frame_sequences_and_escape_computed_strings() {
+    let input = b"{\"a\":[1,2]}\n{\"a\":[3]}\n{\"a\":[]}\n{}\n";
+    assert_eq!(
+        run(&["$map(a,function($v){$v*2})"], input).stdout,
+        b"2\n4\n6\n"
+    );
+    assert_eq!(
+        run(&["$map(a,function($v){$v*2})[]"], input).stdout,
+        b"[2,4]\n[6]\n"
+    );
+    let output = run(
+        &["$uppercase(text)"],
+        b"{\"text\":\"a\\\"b\\nc\"}\n{\"text\":null}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"\"A\\\"B\\u000aC\"\n");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("line 2:")
+    );
+}

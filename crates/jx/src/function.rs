@@ -58,28 +58,24 @@ pub(crate) fn call<'e, 'i>(
     let Some(Value::Function(function)) = target else {
         return Err(type_error(offset));
     };
+    invoke(&function, &arguments, context, offset)
+}
+
+pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
     match &function.kind {
-        FunctionKind::Builtin(builtin @ Builtin::Deferred(_)) => builtin.value(None, offset),
-        FunctionKind::Builtin(Builtin::Lookup) => {
-            let (object, key) = match arguments.len() {
-                1 => (Some(context.value.clone()), arguments.pop().unwrap()),
-                2 => {
-                    let key = arguments.pop().unwrap();
-                    (arguments.pop().unwrap(), key)
-                }
-                _ => return Err(type_error(offset)),
-            };
-            crate::lookup::values(object, key, offset)
-        }
-        FunctionKind::Builtin(builtin) => {
-            if arguments.is_empty() && matches!(builtin, Builtin::Boolean | Builtin::Not) {
-                return builtin.value(Some(context.value.clone()), offset);
-            }
-            if arguments.len() != 1 {
-                return Err(type_error(offset));
-            }
-            builtin.value(arguments.pop().unwrap(), offset)
-        }
+        FunctionKind::Builtin(builtin) => builtin.arity(),
+        FunctionKind::Lambda { params, .. } => params.len(),
+    }
+}
+
+pub(crate) fn invoke<'e, 'i>(
+    function: &Function<'e, 'i>,
+    arguments: &[Option<Value<'e, 'i>>],
+    context: &Context<'e, 'i>,
+    offset: usize,
+) -> Result<Operand<'e, 'i>, Error> {
+    match &function.kind {
+        FunctionKind::Builtin(builtin) => builtin.values(arguments, context, offset),
         FunctionKind::Lambda {
             params,
             body,

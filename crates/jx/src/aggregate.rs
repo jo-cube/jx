@@ -99,6 +99,7 @@ impl Fold {
         let number = match self.aggregate {
             Aggregate::Count => Some(self.count as f64),
             Aggregate::Sum if defined => Some(self.number.unwrap_or(0.0)),
+            Aggregate::Average => self.number.map(|n| n / self.count as f64),
             _ => self.number,
         };
         Ok(number.map_or(Operand::Missing, |n| Operand::One(Value::Number(n))))
@@ -114,7 +115,7 @@ impl Fold {
             return;
         };
         self.number = Some(match self.aggregate {
-            Aggregate::Sum => self.number.unwrap_or(0.0) + number,
+            Aggregate::Sum | Aggregate::Average => self.number.unwrap_or(0.0) + number,
             Aggregate::Min | Aggregate::Max => match self.number {
                 None => number,
                 Some(previous) if previous.is_nan() || number.is_nan() => f64::NAN,

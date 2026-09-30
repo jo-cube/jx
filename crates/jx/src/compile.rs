@@ -10,7 +10,16 @@ use crate::{
 // with the existing semantics; failures stay in the tree as runtime failures.
 pub(crate) fn prepare(node: &mut Node) -> bool {
     let mut constant = true;
-    if let Kind::Binary(Op::Coalesce, test, no) = &mut node.kind {
+    if let Kind::Keep(child, _) = &mut node.kind
+        && matches!(child.kind, Kind::Builtin(..) | Kind::Call(..))
+    {
+        // Keep the call boundary: folding would normalize a singleton sequence
+        // before [] can retain it. Its arguments may still be compiled constants.
+        crate::analysis::children(child, &mut |arg| {
+            prepare(arg);
+        });
+        constant = false;
+    } else if let Kind::Binary(Op::Coalesce, test, no) = &mut node.kind {
         // Its call argument is also the selected branch; keep that call boundary.
         crate::analysis::children(test, &mut |child| {
             constant &= prepare(child);
@@ -67,7 +76,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
     constant
 }
 fn eligible(node: &Node) -> bool {
-    if node.effects {
+    if node.effects || node.tail_call {
         return false;
     }
     match &node.kind {
@@ -84,11 +93,7 @@ fn eligible(node: &Node) -> bool {
         | Kind::Negate(_)
         | Kind::Binary(..)
         | Kind::Conditional(..) => true,
-        Kind::Builtin(builtin, args) => match builtin {
-            Builtin::Deferred(_) => false,
-            Builtin::Lookup => args.len() == 2,
-            _ => !args.is_empty(),
-        },
+        Kind::Builtin(builtin, args) => builtin.constant(args),
         _ => false,
     }
 }

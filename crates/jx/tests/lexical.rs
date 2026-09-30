@@ -88,12 +88,7 @@ fn deferred_features_and_constructor_binding_races_are_explicit() {
             "{source}"
         );
     }
-    for source in [
-        "$average([1,2])",
-        "$map([1],function($x){$x})",
-        "($f:=$random;$f())",
-        "($f:=$substring;$f('abc',1))",
-    ] {
+    for source in ["($f:=$random;$f())", "$sort([2,1])"] {
         assert_eq!(
             jx::compile(source)
                 .unwrap()

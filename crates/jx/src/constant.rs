@@ -45,6 +45,7 @@ impl Data {
             Value::Number(n) => Self::Number(*n),
             Value::Boolean(b) => Self::Boolean(*b),
             Value::StringLiteral(s) => Self::String(s.as_str().into()),
+            Value::String(_) => Self::String(value.json()?.as_str().into()),
             Value::Constant(c) => c.data.clone(),
             Value::Array(a) => Self::Array(
                 a.items

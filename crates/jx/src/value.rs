@@ -15,6 +15,8 @@ pub enum Value<'expression, 'input> {
     /// Undefined retained inside a multi-item sequence; serializes as null.
     Undefined,
     StringLiteral(RawJson<'expression>),
+    /// A computed string, with shared immutable JSON encoding.
+    String(OwnedString),
     Array(std::rc::Rc<crate::container::Array<'expression, 'input>>),
     Object(std::rc::Rc<crate::container::Object<'expression, 'input>>),
 }
@@ -41,6 +43,7 @@ impl<'i> Value<'_, 'i> {
             Self::Object(object) => object.write_compact(&mut output),
             Self::Raw(value) => value.write_compact(output),
             Self::StringLiteral(value) => output.write_all(value.as_bytes()),
+            Self::String(value) => output.write_all(value.json.as_bytes()),
             Self::Number(value) if !value.is_finite() => output.write_all(b"null"),
             Self::Number(0.0) => output.write_all(b"0"),
             Self::Number(value) => write!(output, "{value}"),
@@ -67,6 +70,7 @@ impl<'i> Value<'_, 'i> {
         match self {
             Self::Raw(raw) => Some(*raw),
             Self::StringLiteral(raw) => Some(*raw),
+            Self::String(value) => Some(RawJson(&value.json)),
             _ => None,
         }
     }
@@ -136,4 +140,32 @@ pub(crate) fn range_error(offset: usize) -> Error {
         offset,
         "numeric operand exceeds binary64 range",
     )
+}
+
+/// Immutable storage for a computed JSON string, including escaped surrogate units.
+#[derive(Clone, Debug)]
+pub struct OwnedString {
+    json: std::rc::Rc<str>,
+}
+impl OwnedString {
+    pub(crate) fn units(units: impl IntoIterator<Item = u16>) -> Self {
+        use std::fmt::Write;
+        let mut json = String::from("\"");
+        for ch in char::decode_utf16(units) {
+            match ch {
+                Ok('"') => json.push_str("\\\""),
+                Ok('\\') => json.push_str("\\\\"),
+                Ok(ch) if ch < ' ' => write!(json, "\\u{:04x}", ch as u32).unwrap(),
+                Ok(ch) => json.push(ch),
+                Err(ch) => write!(json, "\\u{:04x}", ch.unpaired_surrogate()).unwrap(),
+            }
+        }
+        json.push('"');
+        Self { json: json.into() }
+    }
+    pub(crate) fn body(body: &str) -> Self {
+        Self {
+            json: format!("\"{body}\"").into(),
+        }
+    }
 }

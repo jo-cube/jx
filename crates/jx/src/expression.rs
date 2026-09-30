@@ -11,6 +11,8 @@ pub(crate) struct Node {
     pub depth: usize,
     // Reads/writes lexical state or creates/calls functions; unsafe to replay.
     pub effects: bool,
+    // Native sequence results survive a lambda tail call until its caller normalizes.
+    pub tail_call: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -101,6 +103,7 @@ pub(crate) struct Step {
 pub(crate) enum Aggregate {
     Count,
     Sum,
+    Average,
     Min,
     Max,
 }

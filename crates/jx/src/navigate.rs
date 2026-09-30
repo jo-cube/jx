@@ -181,14 +181,25 @@ pub(crate) fn keep<'e, 'i>(
         }
     }
     let force = path && is_path(node);
-    let result = node.run(input)?;
+    // A call's sequence is normalized after this postfix operator, while a
+    // parenthesized/retained value has already crossed that boundary.
+    let result = match &node.kind {
+        Kind::Builtin(builtin, args) => builtin.evaluate(args, input, node.offset)?,
+        Kind::Call(target, args) => crate::function::call(target, args, input, node.offset)?,
+        _ => node.run(input)?,
+    };
     Ok(match result {
         Operand::Missing => Operand::Missing,
         Operand::One(value) if force && (!value.is_array() || value.preserves_array()) => {
             Operand::One(Value::kept(vec![value]))
         }
         Operand::One(value) if value.unpacks_sequence() => {
-            Operand::One(Value::kept(value.elements().collect()))
+            let items: Vec<_> = value.elements().collect();
+            if items.is_empty() {
+                Operand::Missing
+            } else {
+                Operand::One(Value::kept(items))
+            }
         }
         Operand::Many(stream) => {
             let mut items = Vec::new();

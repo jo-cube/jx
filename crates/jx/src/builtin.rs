@@ -1,3 +1,8 @@
+mod collections;
+mod higher;
+mod library;
+mod strings;
+
 use crate::{
     Error, Value,
     evaluate::Operand,
@@ -13,11 +18,16 @@ pub(crate) enum Builtin {
     Not,
     Exists,
     Lookup,
+    Library(library::Library),
     Deferred(&'static str),
 }
 impl Builtin {
     pub fn named(name: &str) -> Option<Self> {
+        if let Some(function) = library::Library::named(name) {
+            return Some(Self::Library(function));
+        }
         Some(match name {
+            "average" => Self::Aggregate(Aggregate::Average),
             "count" => Self::Aggregate(Aggregate::Count),
             "sum" => Self::Aggregate(Aggregate::Sum),
             "min" => Self::Aggregate(Aggregate::Min),
@@ -35,6 +45,9 @@ impl Builtin {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if let Self::Library(function) = self {
+            return function.evaluate(args, context, offset);
+        }
         if matches!(self, Self::Lookup) {
             return crate::lookup::evaluate(args, context, offset);
         }
@@ -86,6 +99,45 @@ impl Builtin {
             truth != matches!(self, Self::Not),
         )))
     }
+    pub fn values<'e, 'i>(
+        self,
+        args: &[Option<Value<'e, 'i>>],
+        context: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
+        match self {
+            Self::Library(function) => function.values(args, context, offset),
+            Self::Lookup => match args {
+                [key] => crate::lookup::values(Some(context.value.clone()), key.clone(), offset),
+                [object, key] => crate::lookup::values(object.clone(), key.clone(), offset),
+                _ => Err(type_error(offset)),
+            },
+            Self::Deferred(_) => self.value(None, offset),
+            Self::Boolean | Self::Not if args.is_empty() => {
+                self.value(Some(context.value.clone()), offset)
+            }
+            _ => match args {
+                [value] => self.value(value.clone(), offset),
+                _ => Err(type_error(offset)),
+            },
+        }
+    }
+    pub fn arity(self) -> usize {
+        match self {
+            Self::Library(function) => function.arity(),
+            Self::Lookup => 2,
+            _ => 1,
+        }
+    }
+    pub fn constant(self, args: &[Node]) -> bool {
+        match self {
+            Self::Library(function) => function.constant(args),
+            Self::Deferred(_) => false,
+            Self::Lookup => args.len() == 2,
+            _ => !args.is_empty(),
+        }
+    }
+
     pub fn value<'e, 'i>(
         self,
         value: Option<Value<'e, 'i>>,
@@ -110,7 +162,9 @@ impl Builtin {
                 };
                 value.truth(offset)? != matches!(self, Self::Not)
             }
-            Self::Aggregate(_) | Self::Deferred(_) | Self::Lookup => unreachable!(),
+            Self::Aggregate(_) | Self::Deferred(_) | Self::Lookup | Self::Library(_) => {
+                unreachable!()
+            }
         };
         Ok(Operand::One(Value::Boolean(result)))
     }
@@ -118,51 +172,23 @@ impl Builtin {
 
 // Known standard names must not silently behave like unbound user variables.
 const DEFERRED: &[&str] = &[
-    "average",
     "string",
-    "substring",
-    "substringBefore",
-    "substringAfter",
-    "lowercase",
-    "uppercase",
-    "length",
-    "trim",
     "pad",
     "match",
-    "contains",
     "replace",
-    "split",
-    "join",
     "formatNumber",
     "formatBase",
     "formatInteger",
     "parseInteger",
     "number",
-    "floor",
-    "ceil",
     "round",
-    "abs",
-    "sqrt",
-    "power",
     "random",
-    "map",
     "zip",
-    "filter",
     "single",
-    "reduce",
-    "sift",
-    "keys",
-    "append",
-    "spread",
-    "merge",
-    "reverse",
-    "each",
     "error",
     "assert",
-    "type",
     "sort",
     "shuffle",
-    "distinct",
     "base64encode",
     "base64decode",
     "encodeUrlComponent",

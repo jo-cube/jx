@@ -157,6 +157,25 @@ pub(crate) enum Operand<'e, 'i> {
 }
 
 impl<'e, 'i> Operand<'e, 'i> {
+    pub(crate) fn normalize(self) -> Self {
+        if let Self::One(value) = &self
+            && value.unpacks_sequence()
+        {
+            let mut items = value.elements();
+            let Some(first) = items.next() else {
+                return Self::Missing;
+            };
+            if items.next().is_none() {
+                return if matches!(first, Value::Undefined) {
+                    Self::Missing
+                } else {
+                    Self::One(first)
+                };
+            }
+        }
+        self
+    }
+
     pub(crate) fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
             Self::Missing => Ok(()),
@@ -260,7 +279,15 @@ impl Node {
                 return crate::runtime::block(items, input)
                     .map(|v| v.map_or(Operand::Missing, Operand::One));
             }
-            Kind::Builtin(builtin, args) => return builtin.evaluate(args, input, self.offset),
+            Kind::Builtin(builtin, args) => {
+                return builtin.evaluate(args, input, self.offset).map(|result| {
+                    if self.tail_call {
+                        result
+                    } else {
+                        result.normalize()
+                    }
+                });
+            }
             Kind::Variable(name) => {
                 let value = input
                     .scope
@@ -292,7 +319,13 @@ impl Node {
             }
             Kind::Lambda(params, body) => crate::Function::lambda(params, body, input),
             Kind::Call(target, args) => {
-                return crate::function::call(target, args, input, self.offset);
+                return crate::function::call(target, args, input, self.offset).map(|result| {
+                    if self.tail_call {
+                        result
+                    } else {
+                        result.normalize()
+                    }
+                });
             }
             Kind::Array(items, preserve) => crate::construct::array(items, *preserve, input)?,
             Kind::Object(pairs) => crate::construct::object(pairs, input, self.offset)?,
