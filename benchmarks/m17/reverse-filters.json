@@ -1,0 +1,26 @@
+[
+  {
+    "filter": "demand/repeated_lookup",
+    "bytes": 100
+  },
+  {
+    "filter": "demand/repeated_lookup",
+    "bytes": 500
+  },
+  {
+    "filter": "execution/lookup_8192",
+    "bytes": 501
+  },
+  {
+    "filter": "plan/lookup_",
+    "bytes": 490
+  },
+  {
+    "filter": "compiler/varying_lookup",
+    "bytes": 501
+  },
+  {
+    "filter": "builtin/merged_objects",
+    "bytes": 4537
+  }
+]

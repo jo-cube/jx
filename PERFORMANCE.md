@@ -1209,3 +1209,78 @@ Regression investigation and remaining costs:
 [checks](benchmarks/m16/checks.log) and [differential results](benchmarks/m16/differential.txt)
 identify the tested build. `just all`, `just build`, all **924** classified upstream cases
 and **42,754** differential comparisons pass. Related limitations remain in CONFORMANCE.
+
+## Milestone 17 — regex and matcher text processing
+
+Same machine/compiler/profile; committed M16 `d278789` is the baseline. **1,013
+workloads** include 20 compilation cases and 993 evaluations. All **892 existing
+evaluations preserve allocation calls and requested bytes**, including 520 allocation-free
+cases. Full runs use seven 50 ms samples; sequential 150 ms pairs cover 50 existing
+workloads, with ten suspected regressions repeated in reverse order at 300 ms.
+No timing run overlaps compilation or differential tests.
+
+Selected new full-run medians include validation and complete consumption:
+
+| Workload | Bytes | Records/s | Allocations / requested bytes |
+| --- | ---: | ---: | ---: |
+| Regex contains | 500 | 1,472,197 | 3 / 152 |
+| Capture matches | 500 | 766,233 | 30 / 1,376 |
+| Template replacement | 500 | 960,910 | 15 / 477 |
+| Capture replacement | 500 | 834,064 | 19 / 817 |
+| Callback replacement | 500 | 384,052 | 62 / 3,012 |
+| Regex split | 500 | 737,195 | 30 / 1,064 |
+| Regex-filtered sum, 1,024 rows | 27,060 | 2,853 | 7,196 / 489,384 |
+| Filter/replace/construct, 1,024 rows | 27,060 | 1,256 | 16,418 / 900,112 |
+| Unicode contains | 32,779 | 11,899 | 18 / 172,192 |
+| Unicode zero-limit replacement | 32,779 | 21,030 | 2 / 112 |
+
+Patterns compile once through `regress` 0.12; its only runtime dependency is `memchr`.
+Regex compilation is measured separately (about 198k/s for the capture expression).
+Plain ASCII subjects borrow their encoded bodies; other subjects decode once to shared
+UTF-16 storage. No-match and zero-limit replacements preserve their input. Zero limits
+avoid decoding even large Unicode subjects. Padded 1 MiB fixtures keep their 500 B
+allocation counts/bytes. Matching itself can allocate backend capture/search storage;
+these are not zero-allocation workloads.
+
+One measured simplification is retained: decode a replacement template once and append
+native capture ranges directly. In matched 500 B pairs, replacement improves **776k →
+936k records/s**, with **24 / 653 B → 15 / 477 B**; capture replacement improves **607k →
+830k**, with **36 / 1,289 B → 19 / 817 B**. Callback replacement improves **347k → 384k**,
+with **68 / 3,084 B → 62 / 3,012 B**. Both implementations preserve observable matcher
+continuation calls, including calls after the final accepted item at a limit.
+
+Remaining costs and regression evidence:
+
+- The purpose-written Rust contains control captures its field during full validation
+  and uses the same precompiled engine: **3.128M/s** at 500 B and **1,855/s** at 1 MiB,
+  versus **1.472M/s** and **943/s** through the tree. General regex calls still validate
+  then scan their argument path separately. Extending demand capture is a clearer
+  opportunity than adding string/function instructions solely for coverage.
+- `$match` retains its output; direct matcher calls and callbacks construct full match
+  objects. Regex predicates through generic function chains can retain lexical results
+  and allocate scope frames. Neither matcher liveness nor scalar predicate fusion is
+  added here. Ordinary value/sequence layouts, scanner and plan instructions are unchanged.
+- Replacement is incremental, but backend searches allocate per match and final strings
+  require encoding. Replacing 16,384 matches in an 81,931 B subject reaches **557/s**,
+  requesting **65,574 allocations / 4,800,697 B**. The engine supports backreferences
+  and lookarounds rather than promising linear-time execution. Requested bytes are
+  cumulative allocations, not peak memory.
+- Tiny scalar, ordinary projection, arithmetic, array count and last-position controls
+  remain close in longer repeats. Most initial full-run losses do not repeat. Reversed
+  comparisons still show **3–6%** losses for selected static/repeated lookups and about
+  **3%** for a merged-object workload. Allocations and scan counts are unchanged;
+  `Node::run` retains its **1,072 B** frame. Sampled lookup runs show the same string
+  decoding, constant lookup and scanner routines, with no matcher execution. Profiles
+  include harness setup; they do not isolate a causal code-generation change. No
+  speculative fast paths or annotations are added for these losses.
+
+[Full comparison](benchmarks/m17/comparison.csv),
+[longer repeats](benchmarks/m17/repeat-comparison.csv),
+[reverse repeats](benchmarks/m17/reverse-comparison.csv),
+[replacement pairs](benchmarks/m17/replacement-comparison.json) and
+[environment/commands](benchmarks/m17/environment.json) retain the evidence.
+[Source hashes](benchmarks/m17/source.json), [frames](benchmarks/m17/frames.txt),
+[checks](benchmarks/m17/checks.log) and [differential results](benchmarks/m17/differential.txt)
+identify the tested build. `just all`, `just build`, all **977** classified upstream cases
+and **44,221** differential comparisons pass. Unicode case-folding and coercion boundaries
+remain explicit in CONFORMANCE; no regex execution plan or JIT is introduced.

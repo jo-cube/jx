@@ -1,0 +1,47 @@
+[
+  {
+    "workload": "matcher/replace",
+    "input_bytes": 500,
+    "before": {
+      "records_per_second": 775814.0,
+      "allocations_per_record": 24.0,
+      "allocated_bytes_per_record": 653.0
+    },
+    "after": {
+      "records_per_second": 935684.0,
+      "allocations_per_record": 15.0,
+      "allocated_bytes_per_record": 477.0
+    },
+    "ratio": 1.2060674336890027
+  },
+  {
+    "workload": "matcher/replace_captures",
+    "input_bytes": 500,
+    "before": {
+      "records_per_second": 607155.0,
+      "allocations_per_record": 36.0,
+      "allocated_bytes_per_record": 1289.0
+    },
+    "after": {
+      "records_per_second": 829911.0,
+      "allocations_per_record": 19.0,
+      "allocated_bytes_per_record": 817.0
+    },
+    "ratio": 1.3668848975961658
+  },
+  {
+    "workload": "matcher/replace_callback",
+    "input_bytes": 500,
+    "before": {
+      "records_per_second": 346906.0,
+      "allocations_per_record": 68.0,
+      "allocated_bytes_per_record": 3084.0
+    },
+    "after": {
+      "records_per_second": 384083.0,
+      "allocations_per_record": 62.0,
+      "allocated_bytes_per_record": 3012.0
+    },
+    "ratio": 1.1071673594576052
+  }
+]

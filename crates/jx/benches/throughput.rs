@@ -18,6 +18,8 @@ mod execution;
 mod filters;
 #[path = "workloads/lexical.rs"]
 mod lexical;
+#[path = "workloads/matchers.rs"]
+mod matchers;
 #[path = "workloads/navigation.rs"]
 mod navigation;
 #[path = "workloads/plans.rs"]
@@ -302,4 +304,5 @@ fn main() {
     tuples::run(smoke);
     builtins::run(smoke);
     composition::run(smoke);
+    matchers::run(smoke);
 }

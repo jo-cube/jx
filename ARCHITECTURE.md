@@ -124,7 +124,7 @@ indexed lookup on their existing paths. `builtin/library.rs` describes fixed bui
 parameters, optional context substitution, arity and constant-fold eligibility;
 implementations live in string, collection and higher-order modules. There is no
 runtime registry or user-defined signature system. Direct library calls use three
-stack argument slots. Dynamic calls and callbacks share `function::invoke`.
+stack argument slots; `$replace` alone uses four. Dynamic calls and callbacks share `function::invoke`.
 
 Computed strings use `OwnedString`: shared immutable JSON encoding, including lone
 UTF-16 surrogates. Raw strings and literals keep their borrowing; comparisons, keys,
@@ -203,6 +203,32 @@ lexical effects. Sorting and grouping retain rows, preserving their bindings. Gr
 values merge current context and bindings together. The transition from a plain path
 holds at most one pending item to settle array/sequence cardinality. No scanner
 changes are needed: demand capture continues inside eligible planned expressions.
+
+## Regex and matcher boundary
+
+`matcher/` owns compiled ECMAScript patterns, per-evaluation cursors, retained
+subjects and text consumers. `regress` 0.12 supplies parsing and matching, including
+lookarounds/backreferences; only `std`/`utf16` features are enabled. Its only runtime
+dependency is `memchr`. `Value` and plan instructions are unchanged.
+
+A regex literal owns its immutable compiled pattern. Evaluating it creates a callable
+matcher with a shared position cell; `next` functions retain that same cursor and their
+own subject. Calling the matcher resets the cursor, including on another subject;
+failed searches reset it to zero. Continuations observe this shared state, matching the
+reference. Neither compiled expressions nor unrelated functions own matcher state.
+ASCII subjects borrow encoded input/expression bodies. Other subjects decode once to
+shared UTF-16 units, preserving lone surrogates, legacy code-unit matching and indexes.
+Escaped pattern surrogate units are exposed individually at compile time because the
+engine otherwise joins them. Legacy `/i` compatibility restrictions are in CONFORMANCE.
+
+Native text consumers keep only one capture record at a time. `$contains` needs no
+match object; replacement templates decode once and append capture ranges directly.
+Callbacks and direct matcher calls create the ordinary object with `match/start/end/
+groups/next`; custom matchers use the same invocation and object model. `$match` retains
+its output sequence; split retains its output array. Output strings own new storage;
+unchanged replacements and whole-source matches keep borrowing. Existing function
+serialization rules still apply to matcher objects containing `next`.
+There is no regex execution-plan lowering or per-record pattern compilation.
 
 ## Compile-time specialization
 
@@ -417,7 +443,11 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
     concatenation, chaining, retained partial arguments and callable composition.
     Static builtin chains reuse existing specialization and streaming plans.
 
-Next semantic work: regex/matcher strings, parent ancestry and remaining library functions.
+17. **Complete: regex and matchers.** Compiled patterns, stateful callable matchers,
+    retained continuations and incremental match/split/replace consumption, including
+    custom matchers and replacement closures.
+
+Next semantic work: parent ancestry, transforms and remaining library functions.
 Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
 a final value. Host invocation still needs a lifetime/resource contract.
 

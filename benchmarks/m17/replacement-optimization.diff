@@ -1,0 +1,128 @@
+--- a/crates/jx/src/matcher/cursor.rs
++++ b/crates/jx/src/matcher/cursor.rs
+@@ -34,6 +34,42 @@
+         match self {
+             Self::Native(_, input, m) => groups(input, m),
+             Self::Custom(value, _, _) => value.field("groups").unwrap(),
++        }
++    }
++    pub fn matched_len(&self) -> usize {
++        match self {
++            Self::Native(_, _, m) => m.end() - m.start(),
++            Self::Custom(value, _, _) => {
++                crate::json::string::units(value.field("match").unwrap().string_body().unwrap())
++                    .count()
++            }
++        }
++    }
++    pub fn group_count(&self) -> usize {
++        match self {
++            Self::Native(_, _, m) => m.captures.len(),
++            Self::Custom(value, _, _) => value.field("groups").unwrap().elements().count(),
++        }
++    }
++    pub fn append_group(&self, index: usize, output: &mut Vec<u16>) {
++        match self {
++            Self::Native(_, input, m) => {
++                if let Some(range) = m.group(index) {
++                    input.append(range, output);
++                }
++            }
++            Self::Custom(value, _, _) => {
++                let group = if index == 0 {
++                    value.field("match")
++                } else {
++                    value.field("groups").unwrap().elements().nth(index - 1)
++                };
++                if let Some(value) = group
++                    && let Some(body) = value.string_body()
++                {
++                    output.extend(crate::json::string::units(body));
++                }
++            }
+         }
+     }
+     pub fn object(&self) -> Value<'e, 'i> {
+--- a/crates/jx/src/matcher/processing/replacement.rs
++++ b/crates/jx/src/matcher/processing/replacement.rs
+@@ -1,5 +1,8 @@
+-use super::*;
+-use crate::matcher::cursor::Hit;
++use crate::matcher::{
++    cursor::{Cursor, Hit},
++    text::Text,
++};
++use crate::{Error, OwnedString, Value, json::string, sequence::Context, value::type_error};
+ 
+ fn append(value: &Value<'_, '_>, output: &mut Vec<u16>) {
+     output.extend(string::units(value.string_body().unwrap()));
+@@ -65,6 +68,9 @@
+     let Some(mut hit) = cursor.next(context, offset)? else {
+         return Ok(input.value.clone());
+     };
++    let template = replacement
++        .string_body()
++        .map(|body| string::units(body).collect::<Vec<_>>());
+     let mut output = Vec::new();
+     let mut position = 0;
+     let mut count = 0;
+@@ -86,10 +92,9 @@
+             }
+             append(&value, &mut output);
+         } else {
+-            expand(replacement, &hit, &mut output);
++            expand(template.as_ref().unwrap(), &hit, &mut output);
+         }
+-        position = (hit.start() + string::units(hit.matched().string_body().unwrap()).count())
+-            .min(input.len());
++        position = (hit.start() + hit.matched_len()).min(input.len());
+         count += 1;
+         let next = cursor.next(context, offset)?;
+         if count as f64 >= limit {
+@@ -103,14 +108,12 @@
+     input.append(position..input.len(), &mut output);
+     Ok(finish(output))
+ }
+-fn expand(replacement: &Value<'_, '_>, hit: &Hit<'_, '_>, output: &mut Vec<u16>) {
+-    let source = string::units(replacement.string_body().unwrap()).collect::<Vec<_>>();
+-    let groups = hit.groups();
+-    let groups = groups.elements().collect::<Vec<_>>();
+-    let digits = if groups.is_empty() {
++fn expand(source: &[u16], hit: &Hit<'_, '_>, output: &mut Vec<u16>) {
++    let groups = hit.group_count();
++    let digits = if groups == 0 {
+         1
+     } else {
+-        groups.len().ilog10() as usize + 1
++        groups.ilog10() as usize + 1
+     };
+     let mut at = 0;
+     while at < source.len() {
+@@ -126,7 +129,7 @@
+                 at += 1;
+             }
+             Some(48) => {
+-                append(&hit.matched(), output);
++                hit.append_group(0, output);
+                 at += 1;
+             }
+             Some(49..=57) => {
+@@ -138,16 +141,10 @@
+                         .fold(0usize, |n, &u| n * 10 + usize::from(u - 48))
+                 };
+                 let mut index = parse(digits);
+-                if digits > 1 && index > groups.len() {
++                if digits > 1 && index > groups {
+                     index = parse(digits - 1);
+                 }
+-                if let Some(group) = index
+-                    .checked_sub(1)
+-                    .and_then(|i| groups.get(i))
+-                    .filter(|v| v.string_body().is_some())
+-                {
+-                    append(group, output);
+-                }
++                hit.append_group(index, output);
+                 at += index.ilog10() as usize + 1;
+             }
+             _ => output.push(36),
