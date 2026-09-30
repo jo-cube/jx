@@ -1284,3 +1284,88 @@ Remaining costs and regression evidence:
 identify the tested build. `just all`, `just build`, all **977** classified upstream cases
 and **44,221** differential comparisons pass. Unicode case-folding and coercion boundaries
 remain explicit in CONFORMANCE; no regex execution plan or JIT is introduced.
+
+## Milestone 18 — demanded ancestry and structural updates
+
+Same machine/compiler/profile; M17 `23d1454` is the baseline. **1,099 workloads**
+include 22 compilation cases and 1,077 evaluations. Of **993 existing evaluations**,
+950 preserve allocation calls/bytes and 43 scoped-path cases reduce them; none increase.
+The 520 allocation-free cases remain allocation-free. Full runs use seven 50 ms
+samples; initial 150 ms pairs cover 42 groups, and final reverse-order 300 ms pairs
+cover 18. Timing never overlaps builds, tests or profiling.
+
+Selected final full-run medians include complete validation and consumption:
+
+| Workload | Bytes | Records/s | Allocations / requested bytes |
+| --- | ---: | ---: | ---: |
+| Parent-dependent filter | 500 | 586,789 | 9 / 784 |
+| Two-level parent navigation | 500 | 503,505 | 16 / 1,648 |
+| Parent sort keys | 500 | 633,234 | 14 / 1,088 |
+| Parent in grouped reduction | 500 | 557,309 | 20 / 1,960 |
+| Explicit parent captured by closure | 500 | 529,863 | 16 / 1,840 |
+| Clone view | 500 | 706,841 | 10 / 1,136 |
+| Selective update | 500 | 227,643 | 57 / 5,428 |
+| Update plus compact writing | 500 | 194,824 | 59 / 5,696 |
+| Parent-filtered sum, 1,024 nested items | 33,180 | 2,296 | 2,053 / 205,184 |
+| Parent sort, 1,024 nested items | 33,180 | 429 | 5,136 / 532,736 |
+| Update all 512 nested objects | 33,180 | 998 | 12,490 / 1,434,360 |
+
+Shared immutable row bindings remove per-consumer binding-list copies. Generated parent
+slots cannot be rebound, so their reads need no effect-driven sequence retention.
+During development, the large parent sort improves **329 → 353 → 420 records/s**:
+copying row bindings, sharing them, then streaming immutable parent reads. Allocation
+calls fall **37,904 → 25,616 → 5,136**, requested bytes **4,464,896 → 2,498,816 → 532,736**.
+These are parent-prototype comparisons, not an M17 language comparison. Existing
+500 B indexed/filtered/ordered tuple workloads also reduce allocations (for example
+ordered tuples **23 / 2,216 B → 19 / 1,576 B**). Comparator order and errors are unchanged.
+
+Clone/update counts and bytes stay identical from 500 B through padded 1 MiB inputs:
+untouched strings remain borrowed, not copied into owned trees. At 1 MiB, clone reaches
+**942/s**, selective update **474/s**, no-match transform **631/s**, and update/write
+**352/s**. Full validation, clone numeric checking, selection and ancestor reconstruction
+can each scan input regions; large payloads expose these costs. Changed containers own
+member lists, so updating a wide parent or many locations still allocates with width.
+Cloning runtime constructors copies container structure to break aliases; raw/compiled
+clone views stay lazy. Requested bytes are cumulative allocations, not retained memory.
+
+A separate CLI stream test writes transformed output to `/dev/null`: 10,000 500 B
+records peak at **2.61 MiB RSS**; 64 and 512 independent 1 MiB records peak at **3.52
+and 3.53 MiB**. This includes process/I/O/input buffers and demonstrates bounded reuse
+for this workload, not a universal memory bound. Retained borrowed leaves pin their
+input record; sorting, groups, matches and captured frames can retain more within one
+record. Transform alias/function/cycle boundaries remain explicit in CONFORMANCE.
+
+Regression investigation and remaining costs:
+
+- Chained array/object type checks introduced outlined calls into ordinary membership.
+  Borrowing direct storage once and matching its kind improves the 100 B membership
+  workload **2.82M → 3.02M/s**, with **7–8%** gains in both pair orders. The final sample
+  no longer shows outlined type checks. It adds no metadata or special execution path;
+  final membership is still about **2%** below M17. A clone helper and value-variant
+  reorder provide no repeatable benefit and are removed; their evidence is retained.
+- Full-run planned composition folds remain **14–15%** below M17, but the final reverse
+  pairs reach **1.85M → 1.87M/s** at 74 B and **15.46k → 15.83k/s** at 10,164 B. The
+  large loss does not repeat in isolated runs. Profiles show existing scanner/capture,
+  numeric-plan dispatch and binary64 conversion, without parent/transform execution.
+- Final reverse pairs retain **2–3%** losses in selected mapped/nested folds and about
+  **6%** in a 2 B empty-array and 24 B descendant case. Allocation counts are unchanged;
+  the tree frame shrinks **1,072 → 1,040 B**. Full-run constructor/normalization losses
+  mostly disappear in repeats. Residual code-generation causality is unisolated; no
+  speculative dispatch annotations, input indexes or fast paths are retained.
+- Parent columns still use scoped rows and small binding lists. Parent field reads can
+  rescan captured objects; they never reconstruct ancestors from the root. General
+  sorting/grouping retain rows, and transformed constructed inputs can require identity
+  traversal. Input/clone-view demand capture and more typed execution regions remain
+  opportunities requiring evidence. Tree plus bounded plans stays the foundation.
+
+[Full comparison](benchmarks/m18/comparison.csv),
+[final reverse pairs](benchmarks/m18/final-build-comparison.csv),
+[storage-classification pairs](benchmarks/m18/storage-comparison.csv),
+[initial focused pairs](benchmarks/m18/repeat-comparison.csv),
+[parent stages](benchmarks/m18/parent-comparison.csv),
+[memory check](benchmarks/m18/memory.json) and
+[environment/commands](benchmarks/m18/environment.json) retain the evidence.
+[Source hashes](benchmarks/m18/source.json), [checks](benchmarks/m18/checks.log) and
+[differential results](benchmarks/m18/differential.txt) identify the tested build.
+`just all`, `just build`, **1,036** classified upstream cases and **44,845** differential
+comparisons pass. No input index or new IR/JIT machinery is added.

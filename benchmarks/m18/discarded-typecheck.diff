@@ -1,0 +1,36 @@
+--- a/crates/jx/src/container.rs
++++ b/crates/jx/src/container.rs
+@@ -130,7 +130,7 @@
+         Self::Object(Rc::new(Object { members }))
+     }
+     pub(crate) fn is_array(&self) -> bool {
+-        matches!(self, Self::Copied(c) if c.source.is_array())
++        matches!(self, Self::Copied(c) if c.is_array())
+             || matches!(self, Self::Constant(c) if c.shape().is_some())
+             || matches!(self, Self::Array(_))
+             || matches!(self, Self::Raw(raw) if raw.is_array())
+@@ -176,7 +176,7 @@
+         }
+     }
+     pub(crate) fn is_object(&self) -> bool {
+-        matches!(self, Self::Copied(c) if c.source.is_object())
++        matches!(self, Self::Copied(c) if !c.is_array())
+             || matches!(self, Self::Constant(c) if c.shape().is_none())
+             || matches!(self, Self::Object(_))
+             || matches!(self, Self::Raw(raw) if raw.as_bytes()[0] == b'{')
+--- a/crates/jx/src/transform/copy.rs
++++ b/crates/jx/src/transform/copy.rs
+@@ -8,6 +8,13 @@
+     pub(crate) identity: Rc<()>,
+ }
+ impl<'e, 'i> CopiedValue<'e, 'i> {
++    pub(crate) fn is_array(&self) -> bool {
++        match &self.source {
++            Value::Raw(raw) => raw.is_array(),
++            Value::Constant(value) => value.shape().is_some(),
++            _ => unreachable!("clone views use input or compiled containers"),
++        }
++    }
+     pub(crate) fn same(&self, other: &Self) -> bool {
+         super::rewrite::identity(self) == super::rewrite::identity(other)
+     }

@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/usr/bin/time",
+    "-l",
+    "target/release/jx",
+    "$ ~> |orders.items[price>5]|{\"price\":price+1}|"
+  ],
+  "method": "Python writes one prebuilt record repeatedly into stdin; output /dev/null; CLI writes compact transformed output. macOS time -l RSS is bytes. RSS includes runtime, I/O and input/output buffers, not only retained values.",
+  "record_template": "{\"orders\":[{\"items\":[{\"price\":10,\"label\":\"first\"},{\"price\":2,\"label\":\"second\"}]}],\"payload\":\"<padding>\"}",
+  "runs": [
+    {
+      "input_bytes": 500,
+      "records": 10000,
+      "maximum_resident_set_size": 2736128
+    },
+    {
+      "input_bytes": 1048576,
+      "records": 64,
+      "maximum_resident_set_size": 3686400
+    },
+    {
+      "input_bytes": 1048576,
+      "records": 512,
+      "maximum_resident_set_size": 3702784
+    }
+  ]
+}

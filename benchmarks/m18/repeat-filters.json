@@ -1,0 +1,73 @@
+[
+  {
+    "filter": "ascii/",
+    "bytes": 100
+  },
+  {
+    "filter": "ascii/",
+    "bytes": 500
+  },
+  {
+    "filter": "scalar/arithmetic",
+    "bytes": 500
+  },
+  {
+    "filter": "scalar/singleton"
+  },
+  {
+    "filter": "filter/computed_last",
+    "bytes": 100
+  },
+  {
+    "filter": "filter/predicate",
+    "bytes": 500
+  },
+  {
+    "filter": "aggregate/array_",
+    "bytes": 4017
+  },
+  {
+    "filter": "aggregate/nested_",
+    "bytes": 16396
+  },
+  {
+    "filter": "construct/filtered_summary",
+    "bytes": 100
+  },
+  {
+    "filter": "construct/filtered_summary",
+    "bytes": 500
+  },
+  {
+    "filter": "demand/repeated_lookup",
+    "bytes": 500
+  },
+  {
+    "filter": "compiler/lookup_4096",
+    "bytes": 501
+  },
+  {
+    "filter": "execution/mapped_sum",
+    "bytes": 8586
+  },
+  {
+    "filter": "plan/lookup_",
+    "bytes": 490
+  },
+  {
+    "filter": "tuple/",
+    "bytes": 500
+  },
+  {
+    "filter": "tuple/",
+    "bytes": 4537
+  },
+  {
+    "filter": "builtin/merged_objects",
+    "bytes": 4537
+  },
+  {
+    "filter": "matcher/replace",
+    "bytes": 500
+  }
+]

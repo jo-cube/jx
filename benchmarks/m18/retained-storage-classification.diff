@@ -1,0 +1,44 @@
+--- a/crates/jx/src/container.rs
++++ b/crates/jx/src/container.rs
+@@ -130,10 +130,16 @@
+         Self::Object(Rc::new(Object { members }))
+     }
+     pub(crate) fn is_array(&self) -> bool {
+-        matches!(self, Self::Copied(c) if c.source.is_array())
+-            || matches!(self, Self::Constant(c) if c.shape().is_some())
+-            || matches!(self, Self::Array(_))
+-            || matches!(self, Self::Raw(raw) if raw.is_array())
++        let storage = match self {
++            Self::Copied(copy) => &copy.source,
++            value => value,
++        };
++        match storage {
++            Self::Raw(raw) => raw.is_array(),
++            Self::Constant(value) => value.shape().is_some(),
++            Self::Array(_) => true,
++            _ => false,
++        }
+     }
+     pub(crate) fn preserves_array(&self) -> bool {
+         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Preserved))
+@@ -176,10 +182,16 @@
+         }
+     }
+     pub(crate) fn is_object(&self) -> bool {
+-        matches!(self, Self::Copied(c) if c.source.is_object())
+-            || matches!(self, Self::Constant(c) if c.shape().is_none())
+-            || matches!(self, Self::Object(_))
+-            || matches!(self, Self::Raw(raw) if raw.as_bytes()[0] == b'{')
++        let storage = match self {
++            Self::Copied(copy) => &copy.source,
++            value => value,
++        };
++        match storage {
++            Self::Raw(raw) => raw.as_bytes()[0] == b'{',
++            Self::Constant(value) => value.shape().is_none(),
++            Self::Object(_) => true,
++            _ => false,
++        }
+     }
+ }
+ 

@@ -26,6 +26,8 @@ mod navigation;
 mod plans;
 #[path = "workloads/scalars.rs"]
 mod scalars;
+#[path = "workloads/structure.rs"]
+mod structure;
 #[path = "workloads/tuples.rs"]
 mod tuples;
 use std::{
@@ -305,4 +307,5 @@ fn main() {
     builtins::run(smoke);
     composition::run(smoke);
     matchers::run(smoke);
+    structure::run(smoke);
 }
