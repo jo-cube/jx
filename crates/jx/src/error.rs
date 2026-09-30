@@ -9,6 +9,7 @@ pub enum ErrorKind {
     TypeError,
     DuplicateKey,
     NumericRange,
+    RegexError,
 }
 
 /// Offsets are zero-based bytes in the expression or input record.

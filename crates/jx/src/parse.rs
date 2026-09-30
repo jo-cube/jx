@@ -114,7 +114,14 @@ impl<'a> Parser<'a> {
         }
         let offset = self.offset;
         let mut lookup = false;
-        let kind = match self.advance()? {
+        let token = if matches!(self.token, Token::Operator(Op::Divide)) {
+            let pattern = self.lexer.regex(offset)?;
+            self.advance()?;
+            return Ok((node(Kind::Regex(Box::new(pattern)), offset, 1)?, false));
+        } else {
+            self.advance()?
+        };
+        let kind = match token {
             Token::Number(n) => Kind::Number(n),
             Token::String(s) => Kind::String(s),
             Token::Name("true") => Kind::Boolean(true),

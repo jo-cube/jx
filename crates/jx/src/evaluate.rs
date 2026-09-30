@@ -260,6 +260,7 @@ impl Node {
                 });
             }
             Kind::BuiltinReference(builtin) => crate::Function::builtin(*builtin),
+            Kind::Regex(pattern) => crate::matcher::literal(pattern),
             Kind::Path(path) => {
                 if path.fields.is_empty() {
                     return Ok(if matches!(input.value, Value::Undefined) {

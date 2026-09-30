@@ -1,6 +1,6 @@
 mod collections;
 mod higher;
-mod library;
+pub(crate) mod library;
 mod strings;
 
 use crate::{
@@ -233,8 +233,6 @@ impl Builtin {
 // Known standard names must not silently behave like unbound user variables.
 const DEFERRED: &[&str] = &[
     "pad",
-    "match",
-    "replace",
     "formatNumber",
     "formatBase",
     "formatInteger",

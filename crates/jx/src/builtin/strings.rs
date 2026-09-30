@@ -1,6 +1,6 @@
 use super::library::{Library, number};
 use crate::{
-    Error, ErrorKind, OwnedString, Value,
+    Error, OwnedString, Value,
     json::string,
     value::{range_error, type_error},
 };
@@ -153,13 +153,6 @@ pub(super) fn call<'e, 'i>(
             )
         }
         Library::Before | Library::After | Library::Contains | Library::Split => {
-            if matches!(args[1], Some(Value::Function(_))) {
-                return Err(Error::new(
-                    ErrorKind::UnsupportedExpression,
-                    offset,
-                    "matcher callbacks are deferred",
-                ));
-            }
             let pattern = match &args[1] {
                 Some(pattern) => units(pattern),
                 None if matches!(function, Library::Before | Library::After) => {

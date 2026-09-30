@@ -19,6 +19,8 @@ pub(crate) enum Library {
     After,
     Contains,
     Split,
+    Match,
+    Replace,
     Join,
     Abs,
     Floor,
@@ -88,6 +90,8 @@ impl Library {
             "substringAfter" => Self::After,
             "contains" => Self::Contains,
             "split" => Self::Split,
+            "match" => Self::Match,
+            "replace" => Self::Replace,
             "join" => Self::Join,
             "abs" => Self::Abs,
             "floor" => Self::Floor,
@@ -121,6 +125,8 @@ impl Library {
             Self::Before | Self::After => (&[String, String], 2, true),
             Self::Contains => (&[String, Pattern], 2, true),
             Self::Split => (&[String, Pattern, Number], 2, true),
+            Self::Match => (&[String, Function, Number], 2, true),
+            Self::Replace => (&[String, Pattern, Pattern, Number], 3, true),
             Self::Join => (&[Strings, String], 1, false),
             Self::Abs | Self::Floor | Self::Ceil | Self::Sqrt => (&[Number], 1, true),
             Self::Power => (&[Number, Number], 2, true),
@@ -182,6 +188,19 @@ impl Library {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if self == Self::Replace {
+            let mut values = [None, None, None, None];
+            for (i, arg) in args.iter().enumerate() {
+                let value = crate::retain::materialize(arg, context)?;
+                if i < values.len() {
+                    values[i] = value;
+                }
+            }
+            if args.len() > values.len() {
+                return Err(type_error(offset));
+            }
+            return self.values(&values[..args.len()], context, offset);
+        }
         let mut values = [None, None, None];
         for (i, arg) in args.iter().enumerate() {
             let value = crate::retain::materialize(arg, context)?;
@@ -200,6 +219,18 @@ impl Library {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if self == Self::Replace {
+            self.validated::<4>(args, context, offset)
+        } else {
+            self.validated::<3>(args, context, offset)
+        }
+    }
+    fn validated<'e, 'i, const N: usize>(
+        self,
+        args: &[Option<Value<'e, 'i>>],
+        context: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
         let (params, required, contextual) = self.signature();
         let fits = |skip: usize| {
             args.len() + skip >= required
@@ -213,7 +244,7 @@ impl Library {
         } else {
             return Err(type_error(offset));
         };
-        let mut values = [None, None, None];
+        let mut values: [_; N] = std::array::from_fn(|_| None);
         if skip == 1 {
             values[0] = Some(context.value.clone());
             if !params[0].accepts(&values[0]) {
@@ -257,6 +288,10 @@ impl Library {
                 offset,
             )?,
             Self::Number => crate::convert::number(values[0].clone(), offset)?,
+            Self::Match | Self::Replace => crate::matcher::call(self, &values, context, offset)?,
+            Self::Contains | Self::Split if matches!(values[1], Some(Value::Function(_))) => {
+                crate::matcher::call(self, &values, context, offset)?
+            }
             Self::Length
             | Self::Uppercase
             | Self::Lowercase
@@ -266,7 +301,7 @@ impl Library {
             | Self::After
             | Self::Contains
             | Self::Split
-            | Self::Join => super::strings::call(self, &values, offset)?,
+            | Self::Join => super::strings::call(self, values[..3].try_into().unwrap(), offset)?,
             Self::Abs | Self::Floor | Self::Ceil | Self::Sqrt | Self::Power => {
                 let Some(value) = &values[0] else {
                     return Ok(Operand::Missing);
@@ -289,14 +324,14 @@ impl Library {
                 Some(Value::Number(result))
             }
             Self::Map | Self::Filter | Self::Reduce | Self::Each | Self::Sift => {
-                super::higher::call(self, &values, context, offset)?
+                super::higher::call(self, values[..3].try_into().unwrap(), context, offset)?
             }
-            _ => super::collections::call(self, &values, offset)?,
+            _ => super::collections::call(self, values[..3].try_into().unwrap(), offset)?,
         };
         Ok(result.map_or(Operand::Missing, Operand::One))
     }
 }
-pub(super) fn number(value: &Option<Value<'_, '_>>) -> Option<f64> {
+pub(crate) fn number(value: &Option<Value<'_, '_>>) -> Option<f64> {
     match value.as_ref()?.atomic() {
         Value::Number(n) => Some(n),
         _ => unreachable!("validated numeric argument"),

@@ -168,6 +168,37 @@ impl<'a> Lexer<'a> {
         Ok((token, start))
     }
 
+    pub(super) fn regex(&mut self, start: usize) -> Result<crate::matcher::Pattern, Error> {
+        let body = self.at;
+        let mut depth = 0i32;
+        let mut escaped = false;
+        while let Some(byte) = self.byte() {
+            if !escaped && byte == b'/' && depth == 0 {
+                let pattern = &self.source[body..self.at];
+                self.at += 1;
+                let flags = self.at;
+                while self.byte().is_some_and(|b| matches!(b, b'i' | b'm')) {
+                    self.at += 1;
+                }
+                return crate::matcher::Pattern::compile(
+                    pattern,
+                    &self.source[flags..self.at],
+                    start,
+                );
+            }
+            if !escaped {
+                match byte {
+                    b'(' | b'[' | b'{' => depth += 1,
+                    b')' | b']' | b'}' => depth -= 1,
+                    _ => {}
+                }
+            }
+            escaped = !escaped && byte == b'\\';
+            self.at += 1;
+        }
+        Err(error(start))
+    }
+
     fn string(&mut self, quote: u8, start: usize) -> Result<Box<str>, Error> {
         let mut json = String::from("\"");
         while let Some(byte) = self.byte() {

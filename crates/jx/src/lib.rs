@@ -25,6 +25,7 @@ mod filter;
 mod function;
 mod json;
 mod lookup;
+mod matcher;
 mod members;
 mod navigate;
 mod ordering;

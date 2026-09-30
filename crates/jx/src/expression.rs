@@ -27,6 +27,7 @@ pub(crate) enum Kind {
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
     Keep(Box<Node>, bool), // Whole path versus a stage/expression boundary.
+    Regex(Box<crate::matcher::Pattern>),
     Wildcard,
     Descendants,
     Range(Box<Node>, Box<Node>),

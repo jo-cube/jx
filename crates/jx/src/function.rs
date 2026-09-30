@@ -15,6 +15,8 @@ pub struct Function<'e, 'i> {
 #[derive(Debug)]
 pub(crate) enum FunctionKind<'e, 'i> {
     Builtin(Builtin),
+    Matcher(Rc<crate::matcher::State<'e>>),
+    MatchNext(Rc<crate::matcher::Continuation<'e, 'i>>),
     Partial {
         target: Rc<Function<'e, 'i>>,
         arguments: Box<[composition::Argument<'e, 'i>]>,
@@ -71,6 +73,8 @@ pub(crate) fn call<'e, 'i>(
 pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
     match &function.kind {
         FunctionKind::Builtin(builtin) => builtin.arity(),
+        FunctionKind::Matcher(_) => 2,
+        FunctionKind::MatchNext(_) => 0,
         FunctionKind::Lambda { params, .. } => params.len(),
         FunctionKind::Partial { arguments, .. } => arguments
             .iter()
@@ -88,6 +92,8 @@ pub(crate) fn invoke<'e, 'i>(
 ) -> Result<Operand<'e, 'i>, Error> {
     match &function.kind {
         FunctionKind::Builtin(builtin) => builtin.values(arguments, context, offset),
+        FunctionKind::Matcher(state) => crate::matcher::invoke(state, arguments, offset),
+        FunctionKind::MatchNext(next) => next.invoke(offset),
         FunctionKind::Partial {
             target,
             arguments: bound,
