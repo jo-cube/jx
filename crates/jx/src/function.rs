@@ -17,6 +17,10 @@ pub(crate) enum FunctionKind<'e, 'i> {
     Builtin(Builtin),
     Matcher(Rc<crate::matcher::State<'e>>),
     MatchNext(Rc<crate::matcher::Continuation<'e, 'i>>),
+    Transform {
+        definition: &'e crate::transform::Definition,
+        frame: usize,
+    },
     Partial {
         target: Rc<Function<'e, 'i>>,
         arguments: Box<[composition::Argument<'e, 'i>]>,
@@ -80,7 +84,7 @@ pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
             .iter()
             .filter(|arg| matches!(arg, composition::Argument::Hole))
             .count(),
-        FunctionKind::Chain(..) => 1,
+        FunctionKind::Chain(..) | FunctionKind::Transform { .. } => 1,
     }
 }
 
@@ -94,6 +98,9 @@ pub(crate) fn invoke<'e, 'i>(
         FunctionKind::Builtin(builtin) => builtin.values(arguments, context, offset),
         FunctionKind::Matcher(state) => crate::matcher::invoke(state, arguments, offset),
         FunctionKind::MatchNext(next) => next.invoke(offset),
+        FunctionKind::Transform { definition, frame } => {
+            crate::transform::invoke(definition, *frame, arguments, context, offset)
+        }
         FunctionKind::Partial {
             target,
             arguments: bound,

@@ -27,6 +27,9 @@ pub(crate) enum Kind {
     Filter(Box<Node>, Box<[Node]>),
     Group(Box<Node>),
     Keep(Box<Node>, bool), // Whole path versus a stage/expression boundary.
+    // Generated ancestry slots cannot be rebound; reading them is replay-safe.
+    Parent(Box<str>),
+    Transform(Box<crate::transform::Definition>),
     Regex(Box<crate::matcher::Pattern>),
     Wildcard,
     Descendants,

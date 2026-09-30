@@ -7,7 +7,7 @@ use crate::{
     expression::{Kind, Node, Op, Path, Step},
 };
 use lex::{Lexer, Token, error};
-const MAX_DEPTH: usize = 128;
+pub(crate) const MAX_DEPTH: usize = 128;
 
 pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
     let mut lexer = Lexer { source, at: 0 };
@@ -21,6 +21,7 @@ pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
     if !matches!(parser.token, Token::End) {
         return Err(error(parser.offset));
     }
+    crate::provenance::prepare(&mut root)?;
     crate::analysis::prepare(&mut root)?;
     crate::compile::prepare(&mut root);
     crate::analysis::check_composition(&mut root)?;
@@ -129,6 +130,8 @@ impl<'a> Parser<'a> {
             Token::Name("null") => Kind::Null,
             Token::Operator(Op::Multiply) => Kind::Wildcard,
             Token::Descendants => Kind::Descendants,
+            Token::Operator(Op::Remainder) => Kind::Parent(Box::default()),
+            Token::Pipe => self.transform(nesting)?,
             Token::Name("function") => self.lambda(nesting)?,
             Token::Name(name) | Token::Quoted(name) => {
                 lookup = true;
@@ -166,6 +169,7 @@ impl<'a> Parser<'a> {
                     .max()
                     .unwrap_or(0)
             }
+            Kind::Transform(definition) => 1 + definition.depth(),
             Kind::Array(args, _) | Kind::Block(args) => {
                 1 + args.iter().map(|n| n.depth).max().unwrap_or(0)
             }

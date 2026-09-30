@@ -149,12 +149,15 @@ fn write_json(
     Ok(())
 }
 
-fn write_number(n: f64, output: &mut String) {
-    let n = if n.fract() != 0.0 {
+pub(crate) fn rounded_number(n: f64) -> f64 {
+    if n.fract() != 0.0 {
         format!("{n:.14e}").parse::<f64>().unwrap()
     } else {
         n
-    };
+    }
+}
+fn write_number(n: f64, output: &mut String) {
+    let n = rounded_number(n);
     if n == 0.0 {
         output.push('0');
         return;

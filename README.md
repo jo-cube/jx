@@ -4,7 +4,7 @@ A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
 result sequences, scalar operators, filters, aggregates, constructors, lexical
 variables, conditionals, closures, wildcard navigation, grouping, ordering, indexed/joined paths,
-common string/collection/higher-order functions, conversions, function pipelines and regex/matcher text processing**.
+common string/collection/higher-order functions, conversions, function pipelines, regex/matcher text processing, parent navigation and structural transforms**.
 Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
@@ -25,6 +25,8 @@ target/release/jx 'orders#$i.{"index":$i,"id":id}' records.ndjson
 target/release/jx '$join($map(orders,function($r){$uppercase($trim($r.name))}),", ")' records.ndjson
 target/release/jx 'orders ~> $map(function($r){$r.name & "=" & $number($r.price)}) ~> $join(", ")' records.ndjson
 target/release/jx 'orders[name ~> /hat/i].{"name":$replace(name,/hat/i,"cap")}' records.ndjson
+target/release/jx 'orders.items[price > %.limit].{"order":%.id,"price":price}' records.ndjson
+target/release/jx '$ ~> |orders[price > 10]|{"price":price*1.2},"obsolete"|' records.ndjson
 target/release/jx --max-record-bytes 1048576 '$' records.ndjson
 ```
 
@@ -56,8 +58,10 @@ object’s members to resolve duplicate keys and ordering. Higher-order function
 arguments and output once, keeping borrowed leaves; string transformations own their results.
 `$string` performs JSONata conversion separately from token-preserving output; string inputs
 keep borrowing. Static builtin chains retain their ordinary streaming execution; partial
-functions store evaluated arguments. Input is never converted to a JSON tree
-without a DOM. Regex literals compile once with `regress`; matcher cursors are local to
+functions store evaluated arguments. Parent access captures only statically demanded
+path contexts. `$clone` gives input/compiled containers fresh identities through immutable
+views; transforms rebuild changed containers and their ancestors while sharing untouched
+structure and borrowed leaves. Input is never parsed into a general JSON DOM. Regex literals compile once with `regress`; matcher cursors are local to
 one evaluation, and continuations retain their subject. ASCII subjects stay borrowed;
 escaped/non-ASCII subjects decode once to UTF-16. `serde_json` is a test-only oracle and fixture reader.
 

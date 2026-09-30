@@ -8,7 +8,13 @@ use std::collections::HashSet;
 // Conservative across scopes: compile cost is cheap, observable rebinding is not.
 pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
     let mut invalid = None;
+    let mut transform_binding = None;
     visit(root, &mut |node| {
+        if let Kind::Transform(definition) = &node.kind
+            && (mutates_scope(&definition.pattern) || mutates_scope(&definition.update))
+        {
+            transform_binding = Some(node.offset);
+        }
         if let Kind::Array(items, _) = &node.kind
             && items.len() > 1
             && items.iter().any(mutates_scope)
@@ -23,6 +29,13 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
             invalid = Some(node.offset);
         }
     });
+    if let Some(offset) = transform_binding {
+        return Err(crate::Error::new(
+            crate::ErrorKind::UnsupportedExpression,
+            offset,
+            "unscoped transform bindings are deferred",
+        ));
+    }
     if let Some(offset) = invalid {
         return Err(crate::Error::new(
             crate::ErrorKind::UnsupportedExpression,
@@ -79,7 +92,8 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         }
         node.effects = matches!(
             node.kind,
-            Kind::Variable(_)
+            Kind::Transform(_)
+                | Kind::Variable(_)
                 | Kind::Bind(..)
                 | Kind::Lambda(..)
                 | Kind::Call(..)
@@ -131,6 +145,13 @@ fn visit(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
 }
 pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
     match &mut node.kind {
+        Kind::Transform(d) => {
+            f(&mut d.pattern);
+            f(&mut d.update);
+            if let Some(delete) = &mut d.delete {
+                f(delete);
+            }
+        }
         Kind::Route(steps, _) | Kind::Tuples(steps, _) => {
             for step in steps {
                 f(&mut step.node);

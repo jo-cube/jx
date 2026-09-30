@@ -11,6 +11,7 @@ use std::rc::Rc;
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Bindings {
     pub focus: Option<Box<str>>,
+    pub ancestors: Vec<Box<str>>,
     pub index: Option<Box<str>>,
     // Position bindings after a filter apply to the combined stage sequence.
     pub indices: Vec<(usize, Box<str>)>,
@@ -28,7 +29,7 @@ impl Bindings {
 #[derive(Clone)]
 struct Row<'e, 'i> {
     value: Value<'e, 'i>,
-    bindings: Rc<Vec<(&'e str, Value<'e, 'i>)>>,
+    bindings: Rc<crate::runtime::BindingValues<'e, 'i>>,
 }
 type Emit<'a, 'e, 'i> = dyn FnMut(Row<'e, 'i>) -> Walk + 'a;
 type Source<'a, 'e, 'i> = dyn FnMut(&mut Emit<'_, 'e, 'i>) -> Walk + 'a;
@@ -46,10 +47,7 @@ impl<'e, 'i> Row<'e, 'i> {
             .scope
             .as_ref()
             .expect("tuple path has lexical runtime");
-        let child = scope.child(scope.frame);
-        for (name, value) in self.bindings.iter() {
-            child.bind(name, value.clone());
-        }
+        let child = scope.shared(self.bindings.clone());
         let result = run(&Context {
             value: self.value.clone(),
             wrapped: false,
@@ -63,7 +61,9 @@ impl<'e, 'i> Row<'e, 'i> {
 pub(crate) fn active(node: &Node) -> bool {
     match &node.kind {
         Kind::Tuples(..) => true,
-        Kind::Sort(base, _) | Kind::Keep(base, _) => active(base),
+        Kind::Sort(base, _) | Kind::Keep(base, _) | Kind::Filter(base, _) => active(base),
+        Kind::Group(base) => crate::provenance::captured(base),
+        Kind::Block(items) => items.last().is_some_and(crate::provenance::captured),
         _ => false,
     }
 }
@@ -105,10 +105,45 @@ fn walk<'e, 'i>(node: &'e Node, context: &Context<'e, 'i>, output: &mut Emit<'_,
     match &node.kind {
         Kind::Tuples(steps, focus) => route(steps, *focus, context, output),
         Kind::Keep(base, _) => walk(base, context, output),
+        Kind::Group(base) => block(std::slice::from_ref(base), context, output),
+        Kind::Block(items) => block(items, context, output),
+        Kind::Filter(base, predicates) => {
+            let mut input = |emit: &mut Emit<'_, 'e, 'i>| walk(base, context, emit);
+            stages::postfilters(&mut input, predicates, context, output)
+        }
         Kind::Sort(base, terms) => ordered(base, terms, context, node.offset, output),
         _ => unreachable!("tuple path boundary"),
     }
 }
+fn block<'e, 'i>(
+    nodes: &'e [Node],
+    context: &Context<'e, 'i>,
+    output: &mut Emit<'_, 'e, 'i>,
+) -> Walk {
+    let scope = context.scope.as_ref().expect("scoped path runtime");
+    let child = scope.child(scope.frame);
+    let local = Context {
+        scope: Some(child.clone()),
+        ..context.clone()
+    };
+    let result = (|| {
+        let Some((last, prefix)) = nodes.split_last() else {
+            return Ok(());
+        };
+        for node in prefix {
+            crate::retain::materialize(node, &local)?;
+        }
+        walk(last, &local, &mut |mut row| {
+            if row.bindings.iter().any(|(name, _)| !name.starts_with('!')) {
+                Rc::make_mut(&mut row.bindings).retain(|(name, _)| name.starts_with('!'));
+            }
+            output(row)
+        })
+    })();
+    child.release();
+    result
+}
+
 fn source<'e, 'i>(
     node: &'e Node,
     context: &Context<'e, 'i>,
@@ -271,4 +306,16 @@ pub(crate) fn sorted<'e, 'i>(
         }
     })
     .map(|value| value.map_or(Operand::Missing, Operand::One))
+}
+
+pub(crate) fn filtered_values<'e, 'i>(
+    base: &'e Node,
+    predicates: &'e [Node],
+    context: &Context<'e, 'i>,
+    output: &mut Output<'_, 'e, 'i>,
+) -> Walk {
+    let mut source = |emit: &mut Emit<'_, 'e, 'i>| walk(base, context, emit);
+    stages::postfilters(&mut source, predicates, context, &mut |row| {
+        output(row.value)
+    })
 }

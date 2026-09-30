@@ -85,7 +85,6 @@ fn invalid_bindings_and_parent_navigation_remain_explicit() {
         "a#name",
         "a[0]@$x",
         "a^(id)@$x",
-        "a.%",
         "a#$$",
         r#"a#$i^($i){"positions":$i}"#,
         r#"a#$i^($i)[true]{"positions":$i}"#,

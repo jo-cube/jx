@@ -254,7 +254,6 @@ const DEFERRED: &[&str] = &[
     "eval",
     "toMillis",
     "fromMillis",
-    "clone",
     "now",
     "millis",
 ];

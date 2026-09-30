@@ -21,6 +21,30 @@ impl Parser<'_> {
         })
     }
 
+    pub(super) fn transform(&mut self, nesting: usize) -> Result<Kind, Error> {
+        let pattern = self.expression(0, nesting + 1)?;
+        if !matches!(self.token, Token::Pipe) {
+            return Err(error(self.offset));
+        }
+        self.advance()?;
+        let update = self.expression(0, nesting + 1)?;
+        let delete = if matches!(self.token, Token::Comma) {
+            self.advance()?;
+            Some(self.expression(0, nesting + 1)?)
+        } else {
+            None
+        };
+        if !matches!(self.token, Token::Pipe) {
+            return Err(error(self.offset));
+        }
+        self.advance()?;
+        Ok(Kind::Transform(Box::new(crate::transform::Definition {
+            pattern,
+            update,
+            delete,
+        })))
+    }
+
     pub(super) fn lambda(&mut self, nesting: usize) -> Result<Kind, Error> {
         if !matches!(self.token, Token::Open) {
             return Err(error(self.offset));

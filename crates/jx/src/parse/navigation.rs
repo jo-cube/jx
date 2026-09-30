@@ -65,6 +65,8 @@ impl Parser<'_> {
                     | Token::ObjectOpen
                     | Token::Operator(Op::Multiply)
                     | Token::Descendants
+                    | Token::Operator(Op::Remainder)
+                    | Token::Pipe
             ) {
                 return Err(error(self.offset));
             }

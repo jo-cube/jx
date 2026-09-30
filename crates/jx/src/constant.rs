@@ -28,7 +28,7 @@ pub(crate) enum Data {
 #[derive(Clone, Debug)]
 pub struct ConstantValue<'e> {
     pub(crate) data: &'e Data,
-    identity: Rc<()>,
+    pub(crate) identity: Rc<()>,
 }
 
 #[derive(Clone, Debug)]

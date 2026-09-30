@@ -2,7 +2,7 @@
 
 ## Current execution
 
-`source → expression tree → effect analysis and specialization → bounded region lowering → validating selection/capture → execution → result stream`
+`source → expression tree → demanded ancestry → effect analysis and specialization → bounded region lowering → validating selection/capture → execution → result stream`
 
 - `parse/lex.rs` and `parse.rs` own tokenization, precedence and grouping. Field
   names and encoded string literals are owned once; operators retain source offsets.
@@ -77,7 +77,7 @@
   values. Object equality uses a temporary map of borrowed left members and applies
   last-key-wins on both sides. These allocations are confined to equality.
 - `Value` is the small public output union: raw input, primitive scalars or a
-  compiled or owned string, dynamic or compiled container, opaque function, or undefined inside
+  compiled or owned string, dynamic or compiled container, immutable clone view, opaque function, or undefined inside
   multi-item sequences. Containers retain their internal sequence/array shape. Its
   two lifetimes distinguish input from expression storage. `as_raw()` extracts input
   slices that can outlive the expression. Values are `Clone`, no longer `Copy`;
@@ -98,7 +98,8 @@ in the expression can shadow their name. Pure expressions allocate no scope aren
 static aggregates retain their streaming folds. There is no per-record name analysis.
 
 `runtime.rs` owns an evaluation-local arena of parent-linked frames with small linear
-binding lists. Bindings store missing/values/retained sequences, never replayable streams.
+binding lists. Tuple frames share immutable row bindings; assignment copies them only
+when needed. Ordinary lexical frames still own their lists. Bindings store missing/values/retained sequences, never replayable streams.
 Blocks and calls create frames; assignment replaces a binding in the current frame.
 Closures hold their body, captured current value/wrapping, and frame index. Captures
 observe subsequent rebinding in that frame, supporting forward and recursive references.
@@ -390,6 +391,37 @@ new navigation features do not enlarge them. Stopping infallible traversal looka
 after two items removes a measured redundant pass. Sorting/grouping retain only
 where their semantics require it. See PERFORMANCE for residual costs and variation.
 
+## Parent contexts and structural updates
+
+`provenance.rs` resolves `%` at compilation into an immutable, compiler-generated
+binding of a demanded path stage's incoming context. Parent means expression-path
+ancestry, not physical JSON containment. Only affected paths become tuple streams;
+ordinary values carry no ancestry, and ordinary paths/plans keep their existing
+execution. Rows carry these bindings through filters, sorting and grouping. Parent
+reads are replay-safe; user-variable reads retain their existing effect rules.
+Parenthesized paths preserve ancestry while ending user `@`/`#` bindings.
+Normalized path depths are refreshed for compile/call resource budgets. Closures
+can retain an explicitly bound parent through the existing lexical frame model.
+
+`transform.rs` represents `|pattern|update[,delete]|` as another captured callable.
+`$clone` applies JSONata conversion rules, rather than raw token serialization.
+`CopiedValue` is a fresh-identity view over validated input or compiled containers;
+access lazily wraps containers and converts scalar leaves. Dynamic containers copy
+member structure to break aliases, retaining borrowed strings. Cloning checks all
+numeric leaves before returning, including unselected infinity. Clone views expose
+ordinary container operations. Type predicates borrow direct storage once rather than
+recursing through views; ordinary paths/plans allocate no clone storage.
+
+Transforms select locations once, then apply merges/deletions in order. A local
+change map keys cloned container identities; raw byte ranges prune unchanged
+subtrees when rebuilding ancestors. It indexes updates, not the input document.
+Updated containers own member lists; untouched subtrees keep immutable sharing and
+input borrowing. Overlapping/repeated selections observe preceding updates, and
+deletion evaluates after merge. The result never mutates the original argument.
+Mutable aliases escaping through unscoped assignments, custom cloners, cyclic or
+function-valued updates are explicit boundaries in CONFORMANCE. There is no
+mutable-document overlay, universal ancestry tracking or second evaluator.
+
 ## Milestones
 
 1. **Complete:** identity/object paths, UTF-8 JSON validation, borrowed evaluation,
@@ -447,9 +479,14 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
     retained continuations and incremental match/split/replace consumption, including
     custom matchers and replacement closures.
 
-Next semantic work: parent ancestry, transforms and remaining library functions.
-Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
-a final value. Host invocation still needs a lifetime/resource contract.
+18. **Complete: parent provenance and structural updates.** Demand-only ancestry,
+    shared row environments, clone views and selective copy/update reconstruction.
+    Direct tree and bounded plans remain the execution model.
+
+Next semantic work: remaining library functions and function signatures/tail calls.
+Full mutable transform aliasing needs a deliberate transient-document model; do not
+broaden immutable copy/update by approximating those effects. Host invocation still
+needs a lifetime/resource contract.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
 language support does not require every expression to use the same execution path.

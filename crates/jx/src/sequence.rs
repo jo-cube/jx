@@ -48,6 +48,9 @@ impl<'e, 'i> Stream<'e, 'i> {
                 Kind::Tuples(steps, focus) => {
                     crate::tuple::route_values(steps, *focus, context, output)
                 }
+                Kind::Filter(base, predicates) if crate::tuple::active(base) => {
+                    crate::tuple::filtered_values(base, predicates, context, output)
+                }
                 Kind::Filter(base, predicates) => {
                     crate::filter::with_filters(base, predicates, context, &mut |view| {
                         view.walk(output)

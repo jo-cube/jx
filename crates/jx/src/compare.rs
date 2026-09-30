@@ -181,6 +181,7 @@ pub(crate) fn includes(left: Operand<'_, '_>, right: Operand<'_, '_>) -> Result<
     let mut found = false;
     let mut compare = |right: Value<'_, '_>| {
         found |= match (&left, &right) {
+            (Value::Copied(a), Value::Copied(b)) => a.same(b),
             (Value::Constant(a), Value::Constant(b)) => a.same(b),
             (Value::Array(a), Value::Array(b)) => std::rc::Rc::ptr_eq(a, b),
             (Value::Object(a), Value::Object(b)) => std::rc::Rc::ptr_eq(a, b),

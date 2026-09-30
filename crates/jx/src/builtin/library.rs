@@ -10,6 +10,7 @@ use crate::{
 pub(crate) enum Library {
     String,
     Number,
+    Clone,
     Length,
     Uppercase,
     Lowercase,
@@ -54,6 +55,7 @@ enum Param {
     Object,
     Function,
     Json,
+    Container,
 }
 impl Param {
     fn accepts(self, value: &Option<Value<'_, '_>>) -> bool {
@@ -71,6 +73,7 @@ impl Param {
             Self::String => value.string_body().is_some(),
             Self::Pattern => value.string_body().is_some() || matches!(value, Value::Function(_)),
             Self::Object => value.is_object(),
+            Self::Container => value.is_object() || value.is_array(),
             Self::Function => matches!(value, Value::Function(_)),
             Self::Json => !matches!(value, Value::Function(_)),
         }
@@ -81,6 +84,7 @@ impl Library {
         Some(match name {
             "string" => Self::String,
             "number" => Self::Number,
+            "clone" => Self::Clone,
             "length" => Self::Length,
             "uppercase" => Self::Uppercase,
             "lowercase" => Self::Lowercase,
@@ -120,6 +124,7 @@ impl Library {
         match self {
             Self::String => (&[Any, Boolean], 1, true),
             Self::Number => (&[Numeric], 1, true),
+            Self::Clone => (&[Container], 1, true),
             Self::Length | Self::Uppercase | Self::Lowercase | Self::Trim => (&[String], 1, true),
             Self::Substring => (&[String, Number, Number], 2, true),
             Self::Before | Self::After => (&[String, String], 2, true),
@@ -179,7 +184,7 @@ impl Library {
         // Optional context matching can depend on argument types, not only count.
         !matches!(
             self,
-            Self::Map | Self::Filter | Self::Reduce | Self::Each | Self::Sift
+            Self::Clone | Self::Map | Self::Filter | Self::Reduce | Self::Each | Self::Sift
         ) && (!context || args.len() == params.len() || self == Self::String && args.len() == 1)
     }
     pub fn evaluate<'e, 'i>(
@@ -279,6 +284,7 @@ impl Library {
             }
         }
         let result = match self {
+            Self::Clone => crate::transform::clone(values[0].clone(), offset)?,
             Self::String => crate::convert::string(
                 values[0].clone(),
                 matches!(

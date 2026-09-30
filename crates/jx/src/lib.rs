@@ -32,10 +32,12 @@ mod ordering;
 mod parse;
 mod path;
 mod plan;
+mod provenance;
 mod retain;
 mod route;
 mod runtime;
 mod sequence;
+mod transform;
 mod tuple;
 mod value;
 
@@ -45,6 +47,7 @@ pub use error::{Error, ErrorKind};
 pub use evaluate::{ConsumeError, Evaluation};
 pub use function::Function;
 pub use json::{MAX_DEPTH, RawJson, validate};
+pub use transform::CopiedValue;
 pub use value::{OwnedString, Value};
 
 /// Immutable compiled expression; share across callers with independent inputs.

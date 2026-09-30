@@ -261,6 +261,7 @@ impl Node {
             }
             Kind::BuiltinReference(builtin) => crate::Function::builtin(*builtin),
             Kind::Regex(pattern) => crate::matcher::literal(pattern),
+            Kind::Transform(definition) => crate::transform::literal(definition, input),
             Kind::Path(path) => {
                 if path.fields.is_empty() {
                     return Ok(if matches!(input.value, Value::Undefined) {
@@ -312,7 +313,7 @@ impl Node {
                     }
                 });
             }
-            Kind::Variable(name) => {
+            Kind::Variable(name) | Kind::Parent(name) => {
                 let value = input
                     .scope
                     .as_ref()

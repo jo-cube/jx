@@ -7,8 +7,29 @@ use std::{
 #[derive(Debug)]
 struct Frame<'e, 'i> {
     parent: Option<usize>,
-    bindings: Vec<(&'e str, Value<'e, 'i>)>,
+    bindings: Bindings<'e, 'i>,
     captured: bool,
+}
+
+pub(crate) type BindingValues<'e, 'i> = Vec<(&'e str, Value<'e, 'i>)>;
+#[derive(Debug)]
+enum Bindings<'e, 'i> {
+    Owned(BindingValues<'e, 'i>),
+    Shared(Rc<BindingValues<'e, 'i>>),
+}
+impl<'e, 'i> Bindings<'e, 'i> {
+    fn values(&self) -> &BindingValues<'e, 'i> {
+        match self {
+            Self::Owned(values) => values,
+            Self::Shared(values) => values,
+        }
+    }
+    fn mutable(&mut self) -> &mut BindingValues<'e, 'i> {
+        match self {
+            Self::Owned(values) => values,
+            Self::Shared(values) => Rc::make_mut(values),
+        }
+    }
 }
 
 // Frames own values; closures contain frame indices, never an owning back-edge.
@@ -30,7 +51,7 @@ impl<'e, 'i> Scope<'e, 'i> {
             runtime: Rc::new(Runtime {
                 frames: RefCell::new(vec![Frame {
                     parent: None,
-                    bindings: vec![("$", root)],
+                    bindings: Bindings::Owned(vec![("$", root)]),
                     captured: false,
                 }]),
                 depth: Cell::new(0),
@@ -44,7 +65,13 @@ impl<'e, 'i> Scope<'e, 'i> {
         let mut at = Some(self.frame);
         while let Some(index) = at {
             let frame = &frames[index];
-            if let Some((_, value)) = frame.bindings.iter().rev().find(|(key, _)| *key == name) {
+            if let Some((_, value)) = frame
+                .bindings
+                .values()
+                .iter()
+                .rev()
+                .find(|(key, _)| *key == name)
+            {
                 return Some(value.clone());
             }
             at = frame.parent;
@@ -53,19 +80,31 @@ impl<'e, 'i> Scope<'e, 'i> {
     }
     pub fn bind(&self, name: &'e str, value: Value<'e, 'i>) {
         let mut frames = self.runtime.frames.borrow_mut();
-        let bindings = &mut frames[self.frame].bindings;
+        let bindings = frames[self.frame].bindings.mutable();
         if let Some((_, previous)) = bindings.iter_mut().find(|(key, _)| *key == name) {
             *previous = value;
         } else {
             bindings.push((name, value));
         }
     }
+    pub fn at(&self, frame: usize) -> Self {
+        Self {
+            runtime: self.runtime.clone(),
+            frame,
+        }
+    }
     pub fn child(&self, parent: usize) -> Self {
+        self.frame(parent, Bindings::Owned(Vec::new()))
+    }
+    pub fn shared(&self, values: Rc<BindingValues<'e, 'i>>) -> Self {
+        self.frame(self.frame, Bindings::Shared(values))
+    }
+    fn frame(&self, parent: usize, bindings: Bindings<'e, 'i>) -> Self {
         let mut frames = self.runtime.frames.borrow_mut();
         let frame = frames.len();
         frames.push(Frame {
             parent: Some(parent),
-            bindings: Vec::new(),
+            bindings,
             captured: false,
         });
         Self {

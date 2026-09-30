@@ -12,6 +12,7 @@ pub(super) enum Token<'a> {
     Variable(&'a str),
     Bind,
     Semi,
+    Pipe,
     Question,
     Comma,
     ObjectOpen,
@@ -70,6 +71,7 @@ impl<'a> Lexer<'a> {
                 }
             }
             b',' => Token::Comma,
+            b'|' => Token::Pipe,
             b'{' => Token::ObjectOpen,
             b'}' => Token::ObjectClose,
             b':' if self.take(b'=') => Token::Bind,

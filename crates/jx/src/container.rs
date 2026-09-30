@@ -59,6 +59,7 @@ impl<'e, 'i> Object<'e, 'i> {
 
 pub(crate) enum Elements<'a, 'e, 'i> {
     Raw(json::Elements<'i>),
+    Copied(Box<Elements<'a, 'e, 'i>>, &'a crate::CopiedValue<'e, 'i>),
     Constant(&'a crate::ConstantValue<'e>, usize),
     Constructed(std::slice::Iter<'a, Value<'e, 'i>>),
 }
@@ -67,6 +68,7 @@ impl<'e, 'i> Iterator for Elements<'_, 'e, 'i> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Raw(items) => items.next().map(Value::Raw),
+            Self::Copied(items, copy) => items.next().map(|value| copy.child(value)),
             Self::Constant(value, index) => {
                 let item = value.element(*index);
                 *index += 1;
@@ -82,6 +84,7 @@ impl<'e, 'i> Iterator for Elements<'_, 'e, 'i> {
     {
         match self {
             Self::Raw(items) => items.for_each(|v| f(Value::Raw(v))),
+            Self::Copied(items, copy) => items.for_each(|v| f(copy.child(v))),
             Self::Constructed(items) => items.cloned().for_each(f),
             Self::Constant(value, mut index) => {
                 while let Some(item) = value.element(index) {
@@ -127,9 +130,16 @@ impl<'e, 'i> Value<'e, 'i> {
         Self::Object(Rc::new(Object { members }))
     }
     pub(crate) fn is_array(&self) -> bool {
-        matches!(self, Self::Constant(c) if c.shape().is_some())
-            || matches!(self, Self::Array(_))
-            || matches!(self, Self::Raw(raw) if raw.is_array())
+        let storage = match self {
+            Self::Copied(copy) => &copy.source,
+            value => value,
+        };
+        match storage {
+            Self::Raw(raw) => raw.is_array(),
+            Self::Constant(value) => value.shape().is_some(),
+            Self::Array(_) => true,
+            _ => false,
+        }
     }
     pub(crate) fn preserves_array(&self) -> bool {
         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Preserved))
@@ -138,6 +148,7 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn elements(&self) -> Elements<'_, 'e, 'i> {
         match self {
             Self::Raw(raw) => Elements::Raw(raw.elements()),
+            Self::Copied(copy) => Elements::Copied(Box::new(copy.source.elements()), copy),
             Self::Constant(c) => Elements::Constant(c, 0),
             Self::Array(array) => Elements::Constructed(array.items.iter()),
             _ => unreachable!("array value"),
@@ -146,6 +157,7 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn field(&self, field: &str) -> Option<Self> {
         match self {
             Self::Raw(raw) => raw.field(field).map(Self::Raw),
+            Self::Copied(copy) => copy.field(field),
             Self::Constant(c) => c.field(|k| json::string::units(k).cmp(field.encode_utf16())),
             Self::Object(object) => object
                 .members
@@ -163,20 +175,29 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn members(&self) -> Members<'_, 'e, 'i> {
         match self {
             Self::Raw(raw) => Members::Raw(raw.members()),
+            Self::Copied(copy) => Members::Copied(Box::new(copy.source.members()), copy),
             Self::Constant(c) => Members::Constant(c, 0),
             Self::Object(object) => Members::Constructed(object.members.iter()),
             _ => unreachable!("object value"),
         }
     }
     pub(crate) fn is_object(&self) -> bool {
-        matches!(self, Self::Constant(c) if c.shape().is_none())
-            || matches!(self, Self::Object(_))
-            || matches!(self, Self::Raw(raw) if raw.as_bytes()[0] == b'{')
+        let storage = match self {
+            Self::Copied(copy) => &copy.source,
+            value => value,
+        };
+        match storage {
+            Self::Raw(raw) => raw.as_bytes()[0] == b'{',
+            Self::Constant(value) => value.shape().is_none(),
+            Self::Object(_) => true,
+            _ => false,
+        }
     }
 }
 
 pub(crate) enum Members<'a, 'e, 'i> {
     Raw(json::Members<'i>),
+    Copied(Box<Members<'a, 'e, 'i>>, &'a crate::CopiedValue<'e, 'i>),
     Constant(&'a crate::ConstantValue<'e>, usize),
     Constructed(std::slice::Iter<'a, (Value<'e, 'i>, Value<'e, 'i>)>),
 }
@@ -185,6 +206,12 @@ impl<'a, 'e: 'a, 'i: 'a> Iterator for Members<'a, 'e, 'i> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Raw(items) => items.next().map(|(key, value)| (key, Value::Raw(value))),
+            Self::Copied(items, copy) => loop {
+                let (key, value) = items.next()?;
+                if !matches!(value, Value::Undefined) {
+                    return Some((key, copy.child(value)));
+                }
+            },
             Self::Constant(value, index) => {
                 let item = value.member(*index);
                 *index += 1;
