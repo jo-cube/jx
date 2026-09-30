@@ -24,13 +24,13 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Literals | Binary64 numbers, booleans, null, single/double quoted strings |
 | Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
 | Parentheses | Expression grouping, lexical blocks and grouped path steps; `()` is missing |
-| Other operators | `in`, array ranges, `??`, `?:`, `:=`, `? :`; concatenation `&` deferred |
+| Other operators | `in`, array ranges, `??`, `?:`, `:=`, `? :`; concatenation `&` and chaining `~>` supported |
 | Aggregates | `$count`, `$sum`, `$min`, `$max`, `$average`; direct streaming folds and first-class calls |
 | Constructors | Arrays, objects, computed keys/values, nested and mapped construction; see below |
 | Singleton retention | `expr[]` preserves sequence shape; missing stays missing |
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures and higher-order values |
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
-| Deferred runtime/language | Signatures, tail-call elimination, partial application, chaining, transforms and regex |
+| Deferred runtime/language | Signatures, tail-call elimination, untyped native partials, transforms and regex |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments, general unquoted Unicode names | Deferred syntax; compile error |
 | Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null`, `function` require backticks when used as fields |
@@ -99,7 +99,7 @@ ordinary shadowable `$exists`. RHS evaluation is conditional.
 
 [Readable navigation cases](tests/semantics/navigation.json) and Rust/CLI tests freeze
 these rules, validation, borrowed output, cancellation and resource limits. `%` parent
-navigation remains unsupported; ancestry needs to survive reduction stages. String concatenation/conversion, chaining and general builtins remain deferred.
+navigation remains unsupported; ancestry needs to survive reduction stages. Regex, transforms and remaining builtins remain deferred.
 
 ## Scoped paths
 
@@ -134,8 +134,7 @@ borrowed. Cancellation stops streamed stages, and full JSON validation remains f
 upstream `joins` group cover these rules. One explicit host-boundary policy: grouping
 an empty tuple stream produces `{}`, consistent with ordinary empty grouping;
 JSONata 2.2.0 instead throws an uncoded JavaScript exception. This local case is tested
-separately from differential cases. `%` ancestry, string concatenation and the broader
-function library remain deferred.
+separately from differential cases. `%` ancestry, remaining library functions remain deferred.
 
 ## Filters
 
@@ -183,8 +182,7 @@ consumption. Consumer cancellation deliberately stops further semantic evaluatio
 Direct `$count(expr)`, `$sum(expr)`, `$min(expr)`, `$max(expr)` and `$average(expr)` calls compose with
 paths, filters, operators and other aggregate calls. `orders.$sum(price)` aggregates
 in each candidate context; `$sum(orders.price)` aggregates the combined result.
-These builtins also support references and dynamic calls. Partial application and
-chaining (`~>`) remain deferred. Statically unshadowed direct calls stream their arguments.
+These builtins also support references and dynamic calls. Chaining (`~>`) and typed partial calls are supported. Statically unshadowed direct calls stream their arguments.
 
 | Normalized argument | `$count` | `$sum` | `$min` / `$max` |
 | --- | --- | --- | --- |
@@ -297,13 +295,12 @@ while isolated empty-array semantics remain covered by the readable corpus.
 
 ## Scalar semantics
 
-Precedence follows JSONata: paths/unary minus, multiplicative, additive, comparison,
+Precedence follows JSONata: paths/unary minus, multiplicative, additive/concatenation, comparison/chaining,
 `and`, then `or`. Binary operators associate left. `and`/`or` short-circuit the RHS;
 truth conversion handles missing, null, primitives, nested arrays and objects.
 Arrays/sequences are true if any member is true; empty objects/arrays are false.
 Boolean NOT is the supported function `$not`; there is no `!`
-operator or unary `+`. String concatenation and implicit string-to-number coercion
-are not implemented.
+operator or unary `+`. Concatenation `&` uses JSONata string conversion; arithmetic never implicitly converts strings.
 
 | Operands | Arithmetic / unary minus | Ordering | `=` / `!=` |
 | --- | --- | --- | --- |
@@ -334,6 +331,45 @@ Parser nesting and expression-tree depth are capped at 128 (`DepthLimit`). Upstr
 codes/text are not a stable API. [100 readable scalar cases](tests/semantics/scalars.json)
 and separate regression tests freeze these rules, validation order, depth limits,
 Unicode, binary64 boundaries and CLI runtime errors.
+
+## Conversion and composition
+
+`$string(value[, pretty])` preserves strings and missing, converts functions to `""`,
+and canonicalizes other values as JSON text. Fractional numbers round to 15 significant
+digits; integer precision and ECMAScript exponent thresholds are preserved. Nested
+functions become empty strings, undefined array members become null, undefined object
+members are omitted, duplicate raw keys resolve last-wins, and integer keys come first.
+`pretty=true` indents two spaces. Top-level non-finite numbers fail with `NumericRange`;
+nested infinity also fails, while nested NaN becomes null. This conversion is separate
+from the byte-preserving API/CLI serialization policy above.
+
+`$number` preserves numbers/missing, maps booleans to 1/0, and accepts finite decimal
+text or unsigned `0x`/`0o`/`0b` text. Leading decimal zeros follow the pinned reference.
+Whitespace, leading `+`, incomplete fractions/exponents and nonnumeric text fail;
+null, arrays, objects and functions are type errors. Unescaped numeric text needs no
+owned copy. The reference's asymmetric radix regex also admits some malformed prefixes:
+these produce NaN, as explicitly tested, rather than broad JavaScript coercion.
+
+`&` evaluates both operands and applies string conversion, treating missing as empty.
+An empty side can preserve the other string's borrowing. Arithmetic remains strict.
+`lhs ~> f(args)` prepends `lhs`; `lhs ~> f` calls with one argument, or composes when
+both sides are functions. A composed function takes one argument and ignores extras.
+Bare RHS call predicates are bypassed by the pinned reference; parenthesize the complete
+pipeline before filtering. A first-step or direct-expression `[]` propagates retention to the chain result;
+a later path-step `[]` keeps only its argument. Parentheses end that propagation.
+
+`f(?, value)` binds evaluated values once and returns a function whose parameters are
+the remaining holes, in order. Omitted parameters become undefined; extra supplied
+expressions still evaluate. Repeated partials merge slots once; lexical focus and
+captured environments remain intact. Builtin partials do not substitute context or
+promote scalars to arrays. Typed array calls and numeric conversion are supported;
+JavaScript signature-bypass coercions remain runtime `UnsupportedExpression`.
+Native `$string` partials are deferred because the pinned reference cannot represent
+its default parameter; use `$string` as a callback or wrap it in a lambda.
+
+[178 readable cases](tests/semantics/composition.json), borrowing/escape/error/guard
+regressions and CLI tests freeze these boundaries. Known builtin call chains compile
+to ordinary calls, preserving streaming aggregation and numeric-plan lowering.
 
 ## Lexical runtime
 
@@ -375,8 +411,8 @@ Limits and explicit policies:
 
 | Area | Implemented functions |
 | --- | --- |
-| Strings | `$length`, `$uppercase`, `$lowercase`, `$trim`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join` |
-| Numbers | `$abs`, `$floor`, `$ceil`, `$sqrt`, `$power`; aggregates above |
+| Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join` |
+| Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$sqrt`, `$power`; aggregates above |
 | Collections | `$append`, `$reverse`, `$distinct` |
 | Objects / types | `$keys`, `$spread`, `$merge`, `$type`, `$lookup` |
 | Higher-order | `$map`, `$filter`, `$reduce`, `$each`, `$sift` |
@@ -385,7 +421,7 @@ Limits and explicit policies:
 Fixed signatures follow the pinned reference: context substitution is distinct from
 an explicit missing argument; null does not stand in for missing. Array parameters
 accept scalar singleton inputs; typed arrays reject wrong member types. Arguments
-finish before signature checks or callbacks. String/numeric functions do not coerce
+finish before signature checks or callbacks. Apart from the explicit conversion functions, string/numeric helpers do not coerce
 values. `$length`/`$substring` count Unicode codepoints; empty-separator `$split`
 uses UTF-16 units, including isolated surrogates. `$trim` collapses only space, tab,
 LF and CR. String matching is literal; matcher callbacks and regex remain deferred.
@@ -413,9 +449,9 @@ without a callback. These raise local `TypeError`. The readable
 CLI tests freeze supported boundaries. [Official function documentation](https://docs.jsonata.org/string-functions)
 and complete imported groups remain the authority.
 
-Still deferred: `$string`/`$number`, rounding/formatting, padding/replacement, regex,
+Still deferred: rounding/formatting, padding/replacement, regex,
 zip/sort/shuffle/single, error/assert, encoding/decoding, date/time, eval/clone,
-chaining/partial application and user-defined signatures. Known deferred calls raise
+untyped native partial coercions and user-defined signatures. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
 
 ## Lookup and specialization
@@ -434,7 +470,7 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 
 ## Executable coverage
 
-`just conformance` executes all **820** imported cases from complete `fields`,
+`just conformance` executes all **924** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
@@ -444,16 +480,17 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 `wildcards`, `descendent-operator`, `range-operator`, `sorting`, `inclusion-operator`,
 `coalescing-operator`, `default-operator`, `function-lookup` and `joins`, plus complete groups for the implemented library functions
 (including `hof-map`, `hof-filter`, `hof-reduce`, `function-each`, `function-sift`
-and `function-typeOf`)
+`function-typeOf`, `function-string`, `function-number`, `string-concat`,
+`function-applications` and `partial-application`)
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 689 | Semantic JSON result or missing matches upstream |
-| Supported errors | 90 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 27 | Compile-time `UnsupportedExpression` |
-| Deferred builtin calls | 11 | Runtime `UnsupportedExpression` |
+| Supported results | 802 | Semantic JSON result or missing matches upstream |
+| Supported errors | 115 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 2 | Compile-time `UnsupportedExpression` |
+| Deferred builtin calls | 2 | Runtime `UnsupportedExpression` |
 | Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
 
 These are selected groups, not a percentage of the full suite. No imported case
@@ -499,6 +536,7 @@ node scripts/check-execution.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-plans.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-tuples.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-builtins.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-composition.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -520,11 +558,12 @@ bits. Expanded-plan checks add 6,546 branch, aggregate, constructor and lookup
 comparisons, with offline coverage for skipped demands, duplicate keys, exact errors
 and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
-Scoped-path checks add **941** comparisons across root/array shapes, local/global
+Scoped-path checks add **947** comparisons across root/array shapes, local/global
 positions, joins, closures, sorting, grouping, and the imported supported join cases.
-Builtin checks add **1,325** comparisons covering fixed signatures, missing/null,
+Builtin checks add **1,426** comparisons covering fixed signatures, missing/null,
 Unicode, callback arity/context, closure effects, nested sequences and mixed pipelines.
-The known upstream
+Conversion/composition checks add **2,635** comparisons across numeric/escaping
+boundaries, partials, closures, sequence shapes and mixed pipelines. The known upstream
 empty-root-array mutation during object construction is excluded from generated
 constructor/lexical comparisons. Normal `just all` needs neither Node nor the upstream checkout.
 

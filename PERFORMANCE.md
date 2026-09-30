@@ -1130,3 +1130,82 @@ Relevant limitations and regression evidence:
 [differential results](benchmarks/m15/differential.txt) identify the tested build.
 `just all`, `just build`, all 820 classified upstream cases and 40,012 differential
 comparisons pass. Regex, transforms and the remaining library gaps stay explicit in CONFORMANCE.
+
+## Milestone 16 — conversion and function composition
+
+Same machine/compiler/profile; committed M15 `1d6f3bf` is the baseline. **910
+workloads** include 18 compilation cases and 892 evaluations. All **784 existing
+evaluations preserve allocation calls and requested bytes**; 41 new allocation-free
+cases bring the harness total to **520**, including Rust controls. Full runs use
+seven 50 ms samples. Longer sequential comparisons cover 78 existing workloads,
+19 additional controls, 17 conversion cases and 18 mixed pipelines. Baseline overlap
+and experimental-run boundaries are recorded in the environment file.
+
+Selected new full-run medians include validation and complete consumption:
+
+| Workload | Bytes | Records/s | Allocations / requested bytes |
+| --- | ---: | ---: | ---: |
+| Borrowed string conversion | 500 | 2,893,820 | 0 / 0 |
+| Numeric string conversion | 500 | 2,711,038 | 0 / 0 |
+| Number stringification | 500 | 1,587,544 | 8 / 105 |
+| Concatenation | 500 | 699,591 | 14 / 251 |
+| Direct string pipeline | 500 | 938,387 | 16 / 242 |
+| Function-value composition | 500 | 668,834 | 34 / 1,254 |
+| Repeated partial use | 500 | 506,519 | 35 / 2,218 |
+| Conversion/filter/map/sum, 128 rows | 3,886 | 22,624 | 145 / 22,856 |
+| Chained numeric filter/map/sum, 128 rows | 1,180 | 130,640 | 0 / 0 |
+
+Two small changes have measurable value:
+
+- A root conversion of one static path captures its argument during full validation.
+  The matched 150 ms before/after measurements improve numeric text **1.525M →
+  2.807M records/s (1.84×)** and borrowed strings **1.565M → 2.987M (1.91×)** at
+  500 B, with no allocation change. Object stringification improves 1.43×; ordinary
+  composition controls remain close. The fixed-layout Rust numeric-text control uses
+  the same validating selector plus Rust parsing and reaches 2.933M/s in the full run.
+- Joining validated string bodies removes a redundant decode/encode pass. Focused
+  concatenation improves **618k → 708k records/s**, with **20 / 300 B → 14 / 251 B**.
+  Its pre-change samples come from an experimental harness with a subsequently fixed,
+  unrelated fixture failure; final checks and all authoritative timings pass.
+
+Known builtin call chains lower to ordinary calls. Direct and chained numeric folds
+remain allocation-free and within about 1% in longer repeats at 8, 128 and 1,024 rows.
+No string/function plan instructions are added. Partial calls fill small argument lists
+on the stack; repeated partial creation merges bound slots once. Borrowed strings,
+numeric text and retained input leaves are not copied. Padded 1 MiB conversions keep
+their 500 B allocation counts/bytes; root conversions reach about 1,854–1,859 records/s.
+Compilation stays separate: ordinary paths retain eight allocations / 618 B.
+
+Regression investigation and remaining costs:
+
+- Larger full-run closure losses do not repeat: 1,692 B mapped calls are 42,209 →
+  42,584 records/s; the 1 KiB closure control is 485,233 → 487,545. Padded 10/64 KiB
+  validation/path controls also converge. Repeated 500 B arithmetic is 2.746M →
+  2.730M/s; invoice sums and nested filtered sums remain close to M15.
+- A 4,017 B array count loses about **3.8%** and a 2,736 B last-position filter about
+  **2.6%** in repeats; tiny mapped calls lose about 2%. Allocations and traversal
+  passes are unchanged. Scanner and plan source are untouched. The recursive tree
+  frame grows **32 B (1,040 → 1,072 B)**; conversion/composition helpers stay outside
+  it. Remaining code-generation causality is unisolated; no speculative fast paths
+  or annotations are added for these small differences.
+- General conversions inside larger tree regions still use separate validation and
+  field scans. JSONata stringification owns formatted output and temporarily retains
+  each object's members for duplicate/order rules. It is deliberately separate from
+  token-preserving output. Fractional formatting and escaped numeric input also need
+  temporary storage; no general DOM is built.
+- Dynamic calls/composed functions retain evaluated arguments and intermediate sequences.
+  Higher-order pipelines therefore pay callback/frame and collection costs, unlike
+  streamed path predicates and known aggregate chains. At 1,024 rows, the numeric
+  conversion pipeline requests 1,047 allocations / 180,552 B; label/filter/sort/join
+  requests 3,636 / 341,457 B. These are cumulative requests, not peak memory. Longer
+  allocating mixed runs are 5–10% below full-run medians; both datasets are retained.
+
+[Full comparison](benchmarks/m16/comparison.csv), [longer repeats](benchmarks/m16/repeat-comparison.csv),
+[focused controls](benchmarks/m16/control-comparison.csv),
+[capture experiment](benchmarks/m16/path-capture-comparison.csv),
+[mixed repeats](benchmarks/m16/mixed-repeat.csv) and
+[environment/commands](benchmarks/m16/environment.json) retain the evidence.
+[Source hashes](benchmarks/m16/source.json), [frames](benchmarks/m16/frames.txt),
+[checks](benchmarks/m16/checks.log) and [differential results](benchmarks/m16/differential.txt)
+identify the tested build. `just all`, `just build`, all **924** classified upstream cases
+and **42,754** differential comparisons pass. Related limitations remain in CONFORMANCE.

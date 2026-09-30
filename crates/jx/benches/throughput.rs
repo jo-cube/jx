@@ -6,6 +6,8 @@ mod aggregates;
 mod builtins;
 #[path = "workloads/compiler.rs"]
 mod compiler;
+#[path = "workloads/composition.rs"]
+mod composition;
 #[path = "workloads/constructors.rs"]
 mod constructors;
 #[path = "workloads/demands.rs"]
@@ -299,4 +301,5 @@ fn main() {
     demands::run(smoke);
     tuples::run(smoke);
     builtins::run(smoke);
+    composition::run(smoke);
 }

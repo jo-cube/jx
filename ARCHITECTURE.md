@@ -152,6 +152,33 @@ addition to the parser's 128-level limit. Tail-call elimination and function sig
 remain deferred. Scope and function control flow remain direct evaluation; numeric lowering does not
 change frame retention or lexical lifetimes.
 
+### Conversion and composition
+
+`convert.rs` implements JSONata stringification, independently of token-preserving
+`write_compact`. It visits borrowed/constructed members, resolves duplicate/order rules,
+canonicalizes escaping and numbers, and optionally indents. Strings pass through;
+booleans/null/functions use static literals. `convert/number.rs` checks decimal/radix
+text without allocating for unescaped input. Computed conversion/concatenation strings
+use the existing immutable encoded storage. Concatenation joins validated string bodies
+without a redundant decode/encode pass; it preserves UTF-16 units across the boundary.
+
+`function/composition.rs` adds retained partial arguments and pairs of callable values
+to the existing `FunctionKind`. Bound arguments evaluate once before target resolution;
+missing and holes stay distinct. Repeated partial application merges bound slots once.
+Invocation fills small argument lists on the stack and uses the existing lambda/builtin
+call path. Closures keep their original focus/frame; there are no owning arena back-edges.
+Composed functions normalize the intermediate result, then invoke the second function.
+Native partials support typed calls; JavaScript signature-bypass coercions and native
+partials with default parameters remain explicit limitations in CONFORMANCE.
+
+Analysis rewrites an unshadowed `lhs ~> $builtin(args)` to its ordinary builtin call
+with `lhs` first. This preserves streaming folds, constant folding and existing plan
+lowering, without function allocation or a lexical arena. Dynamic invocation and
+function-value composition retain tree execution. No string/function plan instructions
+or generic boxing are added to unrelated expressions. A root conversion of one static
+path reuses the fully validating selector and retains its result once, avoiding the
+separate validation and field scan. Other conversion calls use normal argument retention.
+
 ### Scoped path rows
 
 `Kind::Tuples` marks paths carrying `@`/`#` bindings at compilation. `tuple.rs`
@@ -386,10 +413,13 @@ where their semantics require it. See PERFORMANCE for residual costs and variati
     Fixed builtin signatures, owned computed strings and native sequence boundaries
     reuse the existing value, closure and plan machinery.
 
-Next semantic work: parent ancestry and remaining common library/operators.
+16. **Complete: conversion and composition.** Deliberate `$string` / `$number`,
+    concatenation, chaining, retained partial arguments and callable composition.
+    Static builtin chains reuse existing specialization and streaming plans.
+
+Next semantic work: regex/matcher strings, parent ancestry and remaining library functions.
 Ancestry must survive filtering, sorting and grouping; it cannot be inferred from
-a final value. String conversion/concatenation and chaining remain useful gaps.
-Host invocation still needs a lifetime/resource contract.
+a final value. Host invocation still needs a lifetime/resource contract.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
 language support does not require every expression to use the same execution path.

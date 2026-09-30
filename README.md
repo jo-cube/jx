@@ -3,7 +3,9 @@
 A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
 result sequences, scalar operators, filters, aggregates, constructors, lexical
-variables, conditionals, closures, wildcard navigation, grouping, ordering, indexed/joined paths, and common string/collection/higher-order functions**. Full JSONata is the semantic target; see
+variables, conditionals, closures, wildcard navigation, grouping, ordering, indexed/joined paths,
+common string/collection/higher-order functions, conversions and function pipelines**.
+Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
 Requires Rust **1.98.1** and [just](https://just.systems). The workspace contains
@@ -21,6 +23,7 @@ target/release/jx '($prices:=orders.price; {"total":$sum($prices),"count":$count
 target/release/jx 'orders[price > 10]^(>price){kind:{"ids":id[],"total":$sum(price)}}' records.ndjson
 target/release/jx 'orders#$i.{"index":$i,"id":id}' records.ndjson
 target/release/jx '$join($map(orders,function($r){$uppercase($trim($r.name))}),", ")' records.ndjson
+target/release/jx 'orders ~> $map(function($r){$r.name & "=" & $number($r.price)}) ~> $join(", ")' records.ndjson
 target/release/jx --max-record-bytes 1048576 '$' records.ndjson
 ```
 
@@ -49,7 +52,10 @@ equality may retain borrowed members or one sequence. Sorting, grouping and `[]`
 retention store their output; scoped paths allocate binding/frame storage and can stream
 boolean filters and aggregates; wildcard/descendant object enumeration retains one
 object’s members to resolve duplicate keys and ordering. Higher-order functions retain
-arguments and output once, keeping borrowed leaves; string transformations own their results. Input is never converted to a JSON tree
+arguments and output once, keeping borrowed leaves; string transformations own their results.
+`$string` performs JSONata conversion separately from token-preserving output; string inputs
+keep borrowing. Static builtin chains retain their ordinary streaming execution; partial
+functions store evaluated arguments. Input is never converted to a JSON tree
 and there is no engine runtime dependency; `serde_json` is a test-only oracle and fixture reader.
 
 The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact

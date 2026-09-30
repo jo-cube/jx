@@ -1,0 +1,17 @@
+[
+  {
+    "filter": "lexical/mapped_calls"
+  },
+  {
+    "filter": "lexical/closure_call",
+    "bytes": 1024
+  },
+  {
+    "filter": "ascii/",
+    "bytes": 65536
+  },
+  {
+    "filter": "ascii/",
+    "bytes": 10240
+  }
+]

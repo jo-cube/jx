@@ -1,0 +1,14 @@
+42 readable sequence cases match JSONata 2.2.0
+5894 generated/curated evaluations match the reference CLI stream
+1936 scalar evaluations match JSONata 2.2.0, including error kinds and per-record output
+3820 filter evaluations match JSONata 2.2.0, including errors and sequence boundaries
+4948 aggregate evaluations match JSONata 2.2.0, including errors and sequence boundaries
+Checked 5000 constructor evaluations against upstream
+Checked 2796 lexical evaluations against upstream
+Checked 1374 navigation evaluations against upstream
+Checked 947 compiler evaluations against upstream
+Checked 4443 execution evaluations against upstream
+Checked 6546 expanded-plan evaluations against upstream
+Checked 947 scoped path evaluations against upstream
+Checked 1426 builtin evaluations against upstream
+Checked 2635 conversion/composition evaluations against upstream
