@@ -132,7 +132,7 @@ fn validation_cancellation_and_mapped_aggregate_errors() {
 
 #[test]
 fn aggregate_calls_keep_syntax_and_depth_limits_explicit() {
-    for source in ["$sum(1,)", "$sum(,1)", "$sum(1", "$sum(?)", "a ~> $sum()"] {
+    for source in ["$sum(1,)", "$sum(,1)", "$sum(1"] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression,

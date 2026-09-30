@@ -57,7 +57,6 @@ fn compile_errors_and_expression_depth_are_bounded() {
         "1.",
         "1e",
         "!true",
-        "a & b",
         "'\\y'",
         "\"\\u123\"",
     ] {

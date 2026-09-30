@@ -26,7 +26,7 @@ REASONS = {
 EXPRESSION_GROUPS = {
     "wildcards": (10, set()),
     "descendent-operator": (17, set()),
-    "range-operator": (25, {21, 22, 23, 24}),
+    "range-operator": (25, set()),
     "sorting": (21, set()),
     "inclusion-operator": (9, set()),
     "coalescing-operator": (15, set()),
@@ -34,7 +34,7 @@ EXPRESSION_GROUPS = {
     "variables": (13, set()),
     "blocks": (7, set()),
     "conditionals": (9, set()),
-    "closures": (2, {0, 1}),
+    "closures": (2, set()),
     "lambdas": (14, set()),
     "higher-order-functions": (3, set()),
     "function-boolean": (24, set()),
@@ -49,12 +49,12 @@ EXPRESSION_GROUPS = {
     "predicates": (4, set()),
     "simple-array-selectors": (23, set()),
     "multiple-array-selectors": (3, set()),
-    "function-count": (14, {2}),
-    "function-sum": (7, {2}),
+    "function-count": (14, set()),
+    "function-sum": (7, set()),
     # Upstream keeps both min and max in this group.
-    "function-max": (27, {2, 16}),
+    "function-max": (27, set()),
     "array-constructor": (21, set()),
-    "object-constructor": (27, {20, 21}),
+    "object-constructor": (27, set()),
 }
 ERROR_KINDS = {
     "T2003": "TypeError", "T2004": "TypeError", "T2007": "TypeError", "T2008": "TypeError",
@@ -64,36 +64,37 @@ ERROR_KINDS = {
     "T0410": "TypeError", "T0411": "TypeError", "T0412": "TypeError",
     "D3020": "NumericRange", "D3060": "NumericRange", "D3061": "NumericRange", "D3050": "TypeError",
     "D1001": "NumericRange", "T2001": "TypeError", "T2002": "TypeError",
+    "D2014": "NumericRange", "D3001": "NumericRange", "D3030": "TypeError", "T2006": "TypeError", "T1007": "TypeError", "T1008": "TypeError",
     "T2009": "TypeError", "T2010": "TypeError", "S0102": "NumericRange",
     "S0103": "UnsupportedExpression", "S0104": "UnsupportedExpression",
 }
 
 
-DEFERRED_CALLS = {
-    "boolean-expresssions": {30},
-    "object-constructor": {10, 11, 12},
-    "lambdas": {12},
-}
+DEFERRED_CALLS = {"lambdas": {12}}
 
 # Entire builtin groups; exceptional dependencies remain explicit.
 BUILTIN_GROUPS = {
-    "function-average": (13, {"case002.json": "syntax"}),
+    "function-string": (31, {}), "function-number": (34, {}),
+    "string-concat": (12, {}),
+    "function-applications": (22, {"case019.json": "deferred", "case021.json": "syntax"}),
+    "partial-application": (5, {}),
+    "function-average": (13, {}),
     "function-length": (17, {}), "function-uppercase": (2, {}),
     "function-lowercase": (2, {}), "function-trim": (3, {}),
     "function-substring": (19, {}), "function-substringBefore": (5, {}),
     "function-substringAfter": (5, {}), "function-contains": (7, {}),
-    "function-split": (19, {"case004.json": "deferred"}),
+    "function-split": (19, {}),
     "function-join": (12, {}), "function-abs": (4, {}),
     "function-floor": (4, {}), "function-ceil": (4, {}),
     "function-sqrt": (4, {}), "function-power": (7, {}),
     "function-append": (6, {}), "function-reverse": (4, {}),
     "function-distinct": (1, {}), "function-keys": (7, {}),
-    "function-spread": (4, {"case003.json": "deferred"}),
+    "function-spread": (4, {}),
     "function-merge": (5, {}), "function-typeOf": (13, {}),
-    "hof-map": (12, {"case002.json": "deferred", "case003.json": "syntax", "case004.json": "syntax", "case0011.json": "syntax"}),
-    "hof-filter": (4, {"case000.json": "syntax", "case001.json": "syntax"}),
-    "hof-reduce": (11, {"case001.json": "syntax", "case010.json": "syntax"}),
-    "function-each": (3, {"case000.json": "syntax"}),
+    "hof-map": (12, {}),
+    "hof-filter": (4, {}),
+    "hof-reduce": (11, {}),
+    "function-each": (3, {}),
     "function-sift": (5, {"case002.json": "syntax"}),
 }
 
@@ -120,7 +121,7 @@ def inventory(suite):
         if path.name == "case044.json":
             statuses = ["supported"]
         if path.name == "large.json":
-            statuses = ["deferred"] * len(cases)
+            statuses = ["supported"] * len(cases)
         yield path, statuses
 
     for group, (count, deferred) in EXPRESSION_GROUPS.items():
@@ -148,10 +149,10 @@ def inventory(suite):
             yield path, statuses
 
     for filename, statuses in {
-        "index.json": ["supported"] * 15 + ["deferred"],
+        "index.json": ["supported"] * 16,
         "errors.json": ["error"] * 4,
         "library-joins.json": ["supported"] * 11,
-        "employee-map-reduce.json": ["syntax", "supported", "syntax", "syntax", "syntax", "syntax"] + ["supported"] * 6,
+        "employee-map-reduce.json": ["supported"] * 12,
     }.items():
         yield suite / "groups" / "joins" / filename, statuses
 

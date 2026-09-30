@@ -245,3 +245,31 @@ fn builtins_frame_sequences_and_escape_computed_strings() {
             .contains("line 2:")
     );
 }
+
+#[test]
+fn conversion_and_chaining_preserve_ndjson_boundaries() {
+    let output = run(
+        &[r#"{"label":"n=" & $number(n),"json":$string(obj)}"#],
+        b"{\"n\":\"03\",\"obj\":{\"v\":1.200}}\n{\"n\":true}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"label\":\"n=3\",\"json\":\"{\\\"v\\\":1.2}\"}\n{\"label\":\"n=1\"}\n"
+    );
+    let input = b"{\"a\":[1,2]}\n{\"a\":[3]}\n{}\n";
+    assert_eq!(
+        run(&["a ~> $map($string)"], input).stdout,
+        b"\"1\"\n\"2\"\n\"3\"\n"
+    );
+    assert_eq!(
+        run(&["a ~> $map($string)[]"], input).stdout,
+        b"[\"1\",\"2\"]\n[\"3\"]\n"
+    );
+    let output = run(
+        &["($p:=$number(?);$p(n))"],
+        b"{\"n\":\"2\"}\n{\"n\":null}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"2\n");
+}

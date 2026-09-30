@@ -1,0 +1,2233 @@
+[
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": null
+    },
+    "items": [
+      "null"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": true
+    },
+    "items": [
+      "true"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": false
+    },
+    "items": [
+      "false"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": 0
+    },
+    "items": [
+      "0"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": -0.25
+    },
+    "items": [
+      "-0.25"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": 1e-07
+    },
+    "items": [
+      "1e-7"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": 1e+21
+    },
+    "items": [
+      "1e+21"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": ""
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": "plain"
+    },
+    "items": [
+      "plain"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": "a\n\"b"
+    },
+    "items": [
+      "a\n\"b"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": []
+    },
+    "items": [
+      "[]"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": [
+        1
+      ]
+    },
+    "items": [
+      "[1]"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      "[1,2]"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": [
+        null,
+        1
+      ]
+    },
+    "items": [
+      "[null,1]"
+    ]
+  },
+  {
+    "expr": "$string(v)",
+    "data": {
+      "v": {
+        "a": 1,
+        "b": "hi"
+      }
+    },
+    "items": [
+      "{\"a\":1,\"b\":\"hi\"}"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": null
+    },
+    "items": [
+      "null"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": true
+    },
+    "items": [
+      "true"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": false
+    },
+    "items": [
+      "false"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": 0
+    },
+    "items": [
+      "0"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": -0.25
+    },
+    "items": [
+      "-0.25"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": 1e-07
+    },
+    "items": [
+      "1e-7"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": 1e+21
+    },
+    "items": [
+      "1e+21"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": ""
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": "plain"
+    },
+    "items": [
+      "plain"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": "a\n\"b"
+    },
+    "items": [
+      "a\n\"b"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": []
+    },
+    "items": [
+      "[]"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": [
+        1
+      ]
+    },
+    "items": [
+      "[\n  1\n]"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      "[\n  1,\n  2\n]"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": [
+        null,
+        1
+      ]
+    },
+    "items": [
+      "[\n  null,\n  1\n]"
+    ]
+  },
+  {
+    "expr": "$string(v,true)",
+    "data": {
+      "v": {
+        "a": 1,
+        "b": "hi"
+      }
+    },
+    "items": [
+      "{\n  \"a\": 1,\n  \"b\": \"hi\"\n}"
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": null
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": true
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": false
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": 0
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": -0.25
+    },
+    "items": [
+      -0.25
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": 1e-07
+    },
+    "items": [
+      1e-07
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": 1e+21
+    },
+    "items": [
+      1e+21
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": ""
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "plain"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "a\n\"b"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": []
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": [
+        1
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": [
+        null,
+        1
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": {
+        "a": 1,
+        "b": "hi"
+      }
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": null
+    },
+    "items": [
+      "null!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": true
+    },
+    "items": [
+      "true!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": false
+    },
+    "items": [
+      "false!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": 0
+    },
+    "items": [
+      "0!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": -0.25
+    },
+    "items": [
+      "-0.25!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": 1e-07
+    },
+    "items": [
+      "1e-7!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": 1e+21
+    },
+    "items": [
+      "1e+21!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": ""
+    },
+    "items": [
+      "!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": "plain"
+    },
+    "items": [
+      "plain!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": "a\n\"b"
+    },
+    "items": [
+      "a\n\"b!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": []
+    },
+    "items": [
+      "[]!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": [
+        1
+      ]
+    },
+    "items": [
+      "[1]!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      "[1,2]!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": [
+        null,
+        1
+      ]
+    },
+    "items": [
+      "[null,1]!"
+    ]
+  },
+  {
+    "expr": "v & \"!\"",
+    "data": {
+      "v": {
+        "a": 1,
+        "b": "hi"
+      }
+    },
+    "items": [
+      "{\"a\":1,\"b\":\"hi\"}!"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": null
+    },
+    "items": [
+      "null"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": true
+    },
+    "items": [
+      "true"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": false
+    },
+    "items": [
+      "false"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": 0
+    },
+    "items": [
+      "0"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": -0.25
+    },
+    "items": [
+      "-0.25"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": 1e-07
+    },
+    "items": [
+      "1e-7"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": 1e+21
+    },
+    "items": [
+      "1e+21"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": ""
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": "plain"
+    },
+    "items": [
+      "plain"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": "a\n\"b"
+    },
+    "items": [
+      "a\n\"b"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": []
+    },
+    "items": [
+      "[]"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": [
+        1
+      ]
+    },
+    "items": [
+      "[1]"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      "[1,2]"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": [
+        null,
+        1
+      ]
+    },
+    "items": [
+      "[null,1]"
+    ]
+  },
+  {
+    "expr": "missing & v",
+    "data": {
+      "v": {
+        "a": 1,
+        "b": "hi"
+      }
+    },
+    "items": [
+      "{\"a\":1,\"b\":\"hi\"}"
+    ]
+  },
+  {
+    "expr": "$string(missing)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": []
+  },
+  {
+    "expr": "$string()",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "{\"a\":[{\"v\":1},{\"v\":2},{}]}"
+    ]
+  },
+  {
+    "expr": "$string(true)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "true"
+    ]
+  },
+  {
+    "expr": "$string($string)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$string(function(){1})",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$string({\"f\":$sum,\"a\":[function(){1},0/0,missing[true][]]})",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "{\"f\":\"\",\"a\":[\"\",null,null]}"
+    ]
+  },
+  {
+    "expr": "$string({\"2\":2,\"1\":1,\"a\":1.2000},true)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "{\n  \"1\": 1,\n  \"2\": 2,\n  \"a\": 1.2\n}"
+    ]
+  },
+  {
+    "expr": "$string(22/7)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "3.14285714285714"
+    ]
+  },
+  {
+    "expr": "$string(-0.0)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "0"
+    ]
+  },
+  {
+    "expr": "$string(1/0)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$string(0/0)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$string({\"n\":1/0})",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$string({\"n\":0/0})",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "{\"n\":null}"
+    ]
+  },
+  {
+    "expr": "$string(1,3)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number()",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(missing)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": []
+  },
+  {
+    "expr": "$number(1/0)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$number(0/0)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "missing & missing",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "null & false",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "nullfalse"
+    ]
+  },
+  {
+    "expr": "1+2 & 3*4",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "312"
+    ]
+  },
+  {
+    "expr": "\"x\" & 1= \"x1\"",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "[1,2] & [3,4]",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "[1,2][3,4]"
+    ]
+  },
+  {
+    "expr": "$string(a.v)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "[1,2]"
+    ]
+  },
+  {
+    "expr": "$string(a.v[])",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "[1,2]"
+    ]
+  },
+  {
+    "expr": "$string(a.v[true])",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "[1,2,null]"
+    ]
+  },
+  {
+    "expr": "a.v & \":\"",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "items": [
+      "[1,2]:"
+    ]
+  },
+  {
+    "expr": "$number(a.v)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        },
+        {}
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "-0"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "00"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0123"
+    },
+    "items": [
+      123
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "-007"
+    },
+    "items": [
+      -7
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "000.00123000"
+    },
+    "items": [
+      0.00123
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "1e2"
+    },
+    "items": [
+      100
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "1E-2"
+    },
+    "items": [
+      0.01
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "1."
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "+1"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": ".5"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": " 1"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "1 "
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": ""
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "Infinity"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "NaN"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "1e500"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0x12"
+    },
+    "items": [
+      18
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0B101"
+    },
+    "items": [
+      5
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0O12"
+    },
+    "items": [
+      10
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "-0x1"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0x"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0b2"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "0x1g"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "oops0o1"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "oops0b1"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$number(v)",
+    "data": {
+      "v": "😀"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "text ~> $trim() ~> $uppercase()",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "USER@EXAMPLE.COM"
+    ]
+  },
+  {
+    "expr": "text ~> $trim ~> $uppercase",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "USER@EXAMPLE.COM"
+    ]
+  },
+  {
+    "expr": "text ~> $substringAfter(\"@\") ~> $substringBefore(\".\")",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "example"
+    ]
+  },
+  {
+    "expr": "missing ~> $substringAfter(\"@\") ~> $substringBefore(\".\")",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": []
+  },
+  {
+    "expr": "($f:=$trim ~> $uppercase;$f(text))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "USER@EXAMPLE.COM"
+    ]
+  },
+  {
+    "expr": "($f:=$substringAfter(?,\"@\") ~> $substringBefore(?,\".\");$f(text))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "example"
+    ]
+  },
+  {
+    "expr": "($f:=function($x,$y){$x+$y};$p:=$f(?,2);[$p(n),$p(4)])",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        4,
+        6
+      ]
+    ]
+  },
+  {
+    "expr": "($f:=function($x,$y){[$x,$y]};$p:=$f(?);$p(1,2))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "($p:=$substring(?,0,?);$p(?,5)(text))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      " user"
+    ]
+  },
+  {
+    "expr": "($p:=$substringAfter(?,\"@\");text.$p())",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": []
+  },
+  {
+    "expr": "($p:=$number(?);$map([\"1\",\"2\"],$p))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "($x:=0;$f:=function($a,$b){[$a,$b]};$p:=$f(?,$x:=$x+1);[$p(4),$p(5),$x])",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        4,
+        1,
+        5,
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "($n:=0;$f:=function($x){$x};($f:=$f)(?)($n:=$n+1))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "($f:=function($x){$x};$g:=$f(?)~>$f;$g({\"x\":1}))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": 1
+      }
+    ]
+  },
+  {
+    "expr": "($p:=function($x,$y){$x+$y}(?,n);a.v.$p($))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      3,
+      4
+    ]
+  },
+  {
+    "expr": "($n:=n;$p:=function($x){$x+$n}(?);($n:=100;$p(2)))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "($string:=function($v){\"local\"};n ~> $string())",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "local"
+    ]
+  },
+  {
+    "expr": "[1..3] ~> $map(function($v){$string($v)}) ~> $join(\"-\")",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "1-2-3"
+    ]
+  },
+  {
+    "expr": "[1..3] ~> $map($string)[]",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        "1",
+        "2",
+        "3"
+      ]
+    ]
+  },
+  {
+    "expr": "[1] ~> $filter(function(){true})[]",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "[1,2] ~> $map($string)[0]",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "1",
+      "2"
+    ]
+  },
+  {
+    "expr": "[1,2] ~> ($map($string))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "n ~> 1",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "missing ~> $string",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": []
+  },
+  {
+    "expr": "null ~> $number",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "($f:=function($a,$b){[$a,$b]};n ~> $f(4))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        2,
+        4
+      ]
+    ]
+  },
+  {
+    "expr": "($f:=function($x){[$,$$,$x]};n ~> $f)",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        {
+          "text": " user@example.com ",
+          "n": 2,
+          "a": [
+            {
+              "v": 1
+            },
+            {
+              "v": 2
+            }
+          ]
+        },
+        {
+          "text": " user@example.com ",
+          "n": 2,
+          "a": [
+            {
+              "v": 1
+            },
+            {
+              "v": 2
+            }
+          ]
+        },
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "n ~> $lookup",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "a.v ~> $sum()",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "a.v ~> $map(function($v){\"v=\" & $v})",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "v=1",
+      "v=2"
+    ]
+  },
+  {
+    "expr": "a.v ~> $filter(function($v){$v>1}) ~> $sum()",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "a{ $string(v):$sum(v) }",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "1": 1,
+        "2": 2
+      }
+    ]
+  },
+  {
+    "expr": "a[$number(v)>1].{\"label\":\"v=\"&v,\"n\":$number(v)}",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "label": "v=2",
+        "n": 2
+      }
+    ]
+  },
+  {
+    "expr": "$lookup({\"1\":\"one\",\"2\":\"two\"},$string(n))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "two"
+    ]
+  },
+  {
+    "expr": "$reduce(a.v,function($a,$b){$a & \",\" & $b}, \"\")",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      ",1,2"
+    ]
+  },
+  {
+    "expr": "$map(a,function($r){$r.v ~> $string})",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      "1",
+      "2"
+    ]
+  },
+  {
+    "expr": "($f:=$keys ~> $count;[$f({\"x\":1}),$f({})])",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  {
+    "expr": "($f:=$map(?,function($v){$v*2}) ~> $sum;$f([1,2,3]))",
+    "data": {
+      "text": " user@example.com ",
+      "n": 2,
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      12
+    ]
+  },
+  {
+    "expr": "($f:=function($x,$y){$x};$p:=$f(?,$f:=function($x,$y){\"new\"});$p(7))",
+    "data": null,
+    "items": [
+      "new"
+    ]
+  },
+  {
+    "expr": "($f:=function($x,$y){[$x,$y]};$f(?,?)(?,2)(3))",
+    "data": null,
+    "items": [
+      [
+        3,
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "($p:=$map(?,function($v){$v});$p([1])[])",
+    "data": null,
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "($x:=1;$f:=function($v){$v+$x};$g:=$f~>$f;$x:=2;$g(3))",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "a[] ~> $map($string)",
+    "data": {
+      "a": [
+        1
+      ],
+      "rows": [
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      [
+        "1"
+      ]
+    ]
+  },
+  {
+    "expr": "rows.v[] ~> $map($string)",
+    "data": {
+      "a": [
+        1
+      ],
+      "rows": [
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      "1"
+    ]
+  },
+  {
+    "expr": "a[].v ~> $map($string)",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      [
+        "1"
+      ]
+    ]
+  },
+  {
+    "expr": "(a[]) ~> $map($string)",
+    "data": {
+      "a": [
+        1
+      ],
+      "rows": [
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      "1"
+    ]
+  },
+  {
+    "expr": "[1].$[] ~> $map($string)",
+    "data": null,
+    "items": [
+      "1"
+    ]
+  },
+  {
+    "expr": "($o:={\"f\":function($x){$x}};1 ~> $o.f[])",
+    "data": null,
+    "error": "TypeError"
+  }
+]

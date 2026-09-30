@@ -77,8 +77,6 @@ fn evaluations_isolate_scope_and_validate_before_execution() {
 fn deferred_features_and_constructor_binding_races_are_explicit() {
     for source in [
         "function($x)<n:n>{$x}",
-        "$sum(?)",
-        "$ ~> $sum()",
         "($x:=0;[$x:=1,$x:=2,$x])",
         "{\"x\": $x:=1, \"y\":$x}",
     ] {

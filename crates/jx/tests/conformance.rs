@@ -105,7 +105,10 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                             .expect("unordered array")
                             .sort_by_cached_key(Value::to_string);
                     }
-                    assert_eq!(actual, expected, "{id}: {source}");
+                    assert!(
+                        same_json(&actual, &expected),
+                        "{id}: {source}: {actual} != {expected}"
+                    );
                 }
             }
             status @ ("error" | "deferred" | "limit") => {
@@ -183,4 +186,20 @@ fn input_data(root: &Path, case: &Value) -> Value {
     case["dataset"].as_str().map_or(Value::Null, |name| {
         read(&root.join("datasets").join(format!("{name}.json")))
     })
+}
+
+// JSONata uses binary64; fixture exponent notation must not change equality.
+fn same_json(left: &Value, right: &Value) -> bool {
+    match (left, right) {
+        (Value::Number(a), Value::Number(b)) => a.as_f64() == b.as_f64(),
+        (Value::Array(a), Value::Array(b)) => {
+            a.len() == b.len() && a.iter().zip(b).all(|(a, b)| same_json(a, b))
+        }
+        (Value::Object(a), Value::Object(b)) => {
+            a.len() == b.len()
+                && a.iter()
+                    .all(|(key, a)| b.get(key).is_some_and(|b| same_json(a, b)))
+        }
+        _ => left == right,
+    }
 }
