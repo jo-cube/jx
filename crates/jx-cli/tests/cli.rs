@@ -296,3 +296,31 @@ fn matcher_results_keep_ndjson_framing_and_record_isolation() {
     assert_eq!(output.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&output.stderr).contains("(RegexError)"));
 }
+
+#[test]
+fn parent_navigation_and_transforms_preserve_record_boundaries() {
+    let input = br#"{"orders":[{"id":"A","items":[{"n":1},{"n":2}]}]}
+{"orders":[{"id":"B","items":[{"n":3}]}]}
+"#;
+    let output = run(&["orders.items.{ 'order':%.id,'n':n }"], input);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        output.stdout,
+        b"{\"order\":\"A\",\"n\":1}\n{\"order\":\"A\",\"n\":2}\n{\"order\":\"B\",\"n\":3}\n"
+    );
+    let output = run(&["$ ~> |orders.items[n>1]|{'n':n+1}|"], input);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout,b"{\"orders\":[{\"id\":\"A\",\"items\":[{\"n\":1},{\"n\":3}]}]}\n{\"orders\":[{\"id\":\"B\",\"items\":[{\"n\":4}]}]}\n");
+    let output = run(&["$ ~> |orders.items|5|"], input);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("(TypeError)"));
+}

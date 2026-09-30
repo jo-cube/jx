@@ -8,7 +8,7 @@ const cli = path.resolve(process.argv[3]);
 assert.equal(spawnSync('git', ['-C', upstream, 'rev-parse', 'HEAD'], {encoding:'utf8'}).stdout.trim(),
     '8ee4476f8a228bfc7a62979ae0a9c13a4043cd03');
 const jsonata = require(path.join(upstream, 'src/jsonata'));
-const kinds = {D1004:"RegexError",D3010:"TypeError",D3011:"NumericRange",D3012:"TypeError",D3040:"NumericRange",T1010:"TypeError",D3001:"NumericRange", D3030:"TypeError", T2006:"TypeError", T2003:"TypeError", T2004:"TypeError", T2007:"TypeError", T2008:"TypeError", D2014:"NumericRange", T1005:'TypeError', T1006:'TypeError', T1007:'TypeError', T1008:'TypeError', T2001:'TypeError', T2002:'TypeError', T2009:'TypeError', T2010:'TypeError',
+const kinds = {S0217:"UnsupportedExpression",T2011:"TypeError",T2012:"TypeError",T2013:"TypeError",D1004:"RegexError",D3010:"TypeError",D3011:"NumericRange",D3012:"TypeError",D3040:"NumericRange",T1010:"TypeError",D3001:"NumericRange", D3030:"TypeError", T2006:"TypeError", T2003:"TypeError", T2004:"TypeError", T2007:"TypeError", T2008:"TypeError", D2014:"NumericRange", T1005:'TypeError', T1006:'TypeError', T1007:'TypeError', T1008:'TypeError', T2001:'TypeError', T2002:'TypeError', T2009:'TypeError', T2010:'TypeError',
     T0411:'TypeError', D3020:'NumericRange', D3060:'NumericRange', D3061:'NumericRange', D3050:'TypeError', D1002:'TypeError', D1001:'NumericRange', T0410:'TypeError', T0412:'TypeError', T1003:'TypeError', D1009:'DuplicateKey'};
 function items(value) {
     const result = value === undefined ? [] : Array.isArray(value) && value.sequence && !value.keepSingleton ? Array.from(value) : [value];
@@ -18,8 +18,10 @@ let checked = 0;
 async function check(test) {
     const input = test.input ?? JSON.stringify(test.data);
     let expected;
+    let compileError = false;
     try { expected = {items:items(await jsonata(test.expr).evaluate(JSON.parse(input)))}; }
     catch (error) {
+        compileError = error.code?.startsWith("S") ?? false;
         assert.ok(kinds[error.code], `unclassified upstream error ${error.code}: ${JSON.stringify(test)}`);
         expected = {error:kinds[error.code]};
     }
@@ -28,7 +30,7 @@ async function check(test) {
     const child = spawnSync(cli, ['--', test.expr], {input, encoding:'utf8', maxBuffer:4*1024*1024});
     const context = JSON.stringify(test);
     if (expected.error) {
-        assert.equal(child.status, 1, context + child.stderr);
+        assert.equal(child.status, compileError ? 2 : 1, context + child.stderr);
         assert.ok(child.stderr.includes(`(${expected.error})`), context + child.stderr);
         if (!test.streamingError) assert.equal(child.stdout, '', context);
     } else {

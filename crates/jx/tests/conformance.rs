@@ -68,8 +68,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         match row["status"].as_str().unwrap() {
             "supported" => {
                 counts[0] += 1;
-                let data = input_data(&root, case);
-                let input = serde_json::to_vec(&data).unwrap();
+                let input = input_bytes(&root, case, file, index);
                 let mut values: Vec<Value> = Vec::new();
                 compiled
                     .unwrap_or_else(|error| panic!("{id}: {source}: {error}"))
@@ -121,7 +120,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                     "compile" => compiled.unwrap_err(),
                     "evaluate" => compiled
                         .unwrap()
-                        .evaluate(&serde_json::to_vec(&input_data(&root, case)).unwrap())
+                        .evaluate(&input_bytes(&root, case, file, index))
                         .and_then(|result| result.for_each(|_| {}))
                         .err()
                         .unwrap_or_else(|| panic!("expected error: {id}: {source}")),
@@ -179,13 +178,23 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
     );
 }
 
-fn input_data(root: &Path, case: &Value) -> Value {
-    if let Some(data) = case.get("data") {
-        return data.clone();
+// Keep source object order: $keys and iteration expose it semantically.
+fn input_bytes(root: &Path, case: &Value, file: &str, index: usize) -> Vec<u8> {
+    if let Some(dataset) = case["dataset"].as_str() {
+        return fs::read(root.join("datasets").join(format!("{dataset}.json"))).unwrap();
     }
-    case["dataset"].as_str().map_or(Value::Null, |name| {
-        read(&root.join("datasets").join(format!("{name}.json")))
-    })
+    let bytes = fs::read(root.join(file)).unwrap();
+    type Raw = Box<serde_json::value::RawValue>;
+    let raw = if bytes.iter().copied().find(|b| !b.is_ascii_whitespace()) == Some(b'[') {
+        let mut cases: Vec<Raw> = serde_json::from_slice(&bytes).unwrap();
+        cases.swap_remove(index)
+    } else {
+        serde_json::from_slice::<Raw>(&bytes).unwrap()
+    };
+    let fields: std::collections::BTreeMap<String, Raw> = serde_json::from_str(raw.get()).unwrap();
+    fields
+        .get("data")
+        .map_or_else(|| b"null".to_vec(), |data| data.get().as_bytes().to_vec())
 }
 
 // JSONata uses binary64; fixture exponent notation must not change equality.

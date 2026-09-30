@@ -3534,6 +3534,302 @@
       "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
+      "file": "groups/parent-operator/parent.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 1,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 2,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 3,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 4,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 5,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 6,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 7,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 8,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 9,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 10,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 11,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 12,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 13,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 14,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 15,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 16,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 17,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 18,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 19,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 20,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 21,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 22,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 23,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 24,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 25,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 26,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/parent.json",
+      "index": 27,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 1,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 2,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 3,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 4,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 5,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 6,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 7,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 8,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 9,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 10,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 11,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "compile",
+      "kind": "UnsupportedExpression"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 12,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 13,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 14,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/parent-operator/errors.json",
+      "index": 15,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
       "file": "groups/joins/index.json",
       "index": 0,
       "status": "supported",
@@ -5781,6 +6077,102 @@
     },
     {
       "file": "groups/function-sift/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case009.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/transforms/case010.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/transforms/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case012.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/transforms/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/transforms/case014.json",
       "index": 0,
       "status": "supported",
       "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"

@@ -60,6 +60,8 @@ ERROR_KINDS = {
     "D1004": "RegexError", "D3010": "TypeError", "D3011": "NumericRange",
     "D3012": "TypeError", "D3040": "NumericRange", "T1010": "TypeError",
     "T2003": "TypeError", "T2004": "TypeError", "T2007": "TypeError", "T2008": "TypeError",
+    "S0217": "UnsupportedExpression", "S0207": "UnsupportedExpression", "S0211": "UnsupportedExpression",
+    "T1006": "TypeError", "T2011": "TypeError", "T2012": "TypeError", "T2013": "TypeError",
     "S0212": "UnsupportedExpression",
     "S0214": "UnsupportedExpression", "S0215": "UnsupportedExpression", "S0216": "UnsupportedExpression",
     "T1003": "TypeError", "D1009": "DuplicateKey",
@@ -98,6 +100,7 @@ BUILTIN_GROUPS = {
     "hof-reduce": (11, {}),
     "function-each": (3, {}),
     "function-sift": (5, {}),
+    "transforms": (15, {}),
     "regex": (39, {}), "matchers": (2, {}), "function-replace": (12, {}),
 }
 
@@ -150,6 +153,11 @@ def inventory(suite):
                 if group == "lambdas" and index in {6, 7, 8}: status = "limit"
                 statuses = [status]
             yield path, statuses
+
+    for filename, status in {"parent.json": "supported", "errors.json": "error"}.items():
+        path = suite / "groups" / "parent-operator" / filename
+        cases = json.loads(path.read_text())
+        yield path, [status] * len(cases)
 
     for filename, statuses in {
         "index.json": ["supported"] * 16,

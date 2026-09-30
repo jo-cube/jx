@@ -20,17 +20,18 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Wildcards / descendants | `*` and `**`, including composed paths, predicates and aggregates |
 | Ordering / grouping | Stable `^(<key, >key)` and postfix `{key:value}` |
 | Context/index bindings | `@` and `#` path bindings, joins, filters, sorting and grouped bindings |
-| Parent navigation | `%` remains deferred; requires static ancestry resolution |
+| Parent navigation | `%` with statically derivable path ancestry; filters, sorting, grouped paths and tuple bindings |
 | Literals | Binary64 numbers, booleans, null, single/double quoted strings |
 | Operators | `+ - * / %`, `= != < <= > >=`, `and or`, unary `-` |
 | Parentheses | Expression grouping, lexical blocks and grouped path steps; `()` is missing |
 | Other operators | `in`, array ranges, `??`, `?:`, `:=`, `? :`; concatenation `&` and chaining `~>` supported |
 | Aggregates | `$count`, `$sum`, `$min`, `$max`, `$average`; direct streaming folds and first-class calls |
 | Constructors | Arrays, objects, computed keys/values, nested and mapped construction; see below |
+| Structural updates | `|pattern|update[,delete]|` captured callables, `$clone`, selective immutable copy/update; boundaries below |
 | Singleton retention | `expr[]` preserves sequence shape; missing stays missing |
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures and higher-order values |
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
-| Deferred runtime/language | Signatures, tail-call elimination, untyped native partials, transforms |
+| Deferred runtime/language | Signatures, tail-call elimination, untyped native partials |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments, general unquoted Unicode names | Deferred syntax; compile error |
 | Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null`, `function` require backticks when used as fields |
@@ -98,8 +99,8 @@ conditional expansion and re-evaluate a selected left expression; `??` calls the
 ordinary shadowable `$exists`. RHS evaluation is conditional.
 
 [Readable navigation cases](tests/semantics/navigation.json) and Rust/CLI tests freeze
-these rules, validation, borrowed output, cancellation and resource limits. `%` parent
-navigation remains unsupported; ancestry needs to survive reduction stages. Transforms and remaining builtins remain deferred.
+these rules, validation, borrowed output, cancellation and resource limits. Parent and
+transform rules appear below; remaining library coverage stays explicit.
 
 ## Scoped paths
 
@@ -134,7 +135,7 @@ borrowed. Cancellation stops streamed stages, and full JSON validation remains f
 upstream `joins` group cover these rules. One explicit host-boundary policy: grouping
 an empty tuple stream produces `{}`, consistent with ordinary empty grouping;
 JSONata 2.2.0 instead throws an uncoded JavaScript exception. This local case is tested
-separately from differential cases. `%` ancestry, remaining library functions remain deferred.
+separately from differential cases. Remaining library functions stay deferred.
 
 ## Filters
 
@@ -276,6 +277,56 @@ order; asynchronous races between several failing reference members are not emul
 the seeded differential generator excludes mutation-dependent empty-root cases,
 while isolated empty-array semantics remain covered by the readable corpus.
 
+## Parent navigation and transforms
+
+Authority: [path operators](https://docs.jsonata.org/path-operators),
+[transform operator](https://docs.jsonata.org/other-operators) and
+[clone](https://docs.jsonata.org/object-functions). `%` resolves statically to a
+preceding name/wildcard stage's incoming context. Arrays do not add ancestry levels.
+`orders.items[price>%.limit]` reads the enclosing order; `orders.items.price.%.%.id`
+steps back twice. Filters, sort keys, grouped paths and tuple rows preserve demanded
+contexts; grouping combines captured bindings with their corresponding rows.
+
+Parent derivation through a variable, descendant, constructor or sorted stage is a
+compile error, as in the reference. Bare `%`, `$.%` and excessive parents also fail
+compilation. Parent requests inside function bodies, callees, transform updates or
+postfix group members do not resolve against an outside path: bind `%` explicitly
+before capturing it in a closure. Parentheses retain parent provenance while ending
+user path bindings. Expanded paths count toward the 128-level expression and
+512-level function-body budgets. Root-array wrapping follows the reference, which can capture
+the entire root array rather than an individual object. Small cases freeze these
+sometimes surprising boundaries.
+
+`$clone(objectOrArray)` creates fresh container identities, breaks constructor aliases
+and leaves the original unchanged. Conversion follows `$string`/JSON parsing: fractional
+numbers round to 15 significant digits, functions become empty strings, undefined
+object members disappear, undefined array members and nested NaN become null. Infinity
+fails even in an unselected member. Borrowed string encodings, including lone UTF-16
+surrogates, remain intact. Cloning a scalar/null is a type error; missing stays missing.
+
+A transform is a one-argument function with lexical bindings captured at definition.
+It clones first, selects all locations before updates, merges object members at each
+location, then deletes the named string/string-array keys. Missing updates/deletions
+are no-ops; wrong types are errors. Duplicate selections and overlapping locations
+observe earlier updates. Delete expressions see the merged object; `$$` still refers
+to the captured caller root. Numeric array keys and `length` updates preserve array
+shape and holes; deleting an index yields a null JSON slot. Array growth is bounded
+at one million items (`NumericRange`). No-match still clones and checks conversion.
+
+Explicit deferred edges: custom `$clone` overrides, transform locations outside the
+cloned argument, unscoped bindings in the pattern/update, function-valued updates and
+cyclic output raise `UnsupportedExpression`. These need mutable alias/lifetime
+semantics beyond selective immutable updates. Member-local blocks and callbacks
+returning JSON remain supported. Rebinding `$clone` to the builtin itself works;
+a nonfunction override is a type error. Nonempty updates to primitive locations map
+the reference's uncoded host exception to `TypeError`. Prototype-related names retain
+the existing ordinary-JSON-key policy. Whole-record validation precedes output;
+transforms finish before emission and can fail without exposing partial updates.
+
+[Readable parent/clone/transform cases](tests/semantics/structure.json), borrowing,
+validation/cancellation regressions and CLI tests freeze these rules. Complete upstream
+`parent-operator` and `transforms` groups have asserted outcomes, including errors.
+
 ## JSON boundary policies
 
 - Exactly one complete UTF-8 JSON value, with standard JSON whitespace. Validate
@@ -414,7 +465,7 @@ Limits and explicit policies:
 | Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join`, `$match`, `$replace` |
 | Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$sqrt`, `$power`; aggregates above |
 | Collections | `$append`, `$reverse`, `$distinct` |
-| Objects / types | `$keys`, `$spread`, `$merge`, `$type`, `$lookup` |
+| Objects / types | `$keys`, `$spread`, `$merge`, `$type`, `$lookup`, `$clone` |
 | Higher-order | `$map`, `$filter`, `$reduce`, `$each`, `$sift` |
 | Boolean | `$boolean`, `$not`, `$exists` |
 
@@ -450,7 +501,7 @@ CLI tests freeze supported boundaries. [Official function documentation](https:/
 and complete imported groups remain the authority.
 
 Still deferred: rounding/formatting, padding,
-zip/sort/shuffle/single, error/assert, encoding/decoding, date/time, eval/clone,
+zip/sort/shuffle/single, error/assert, encoding/decoding, date/time, eval,
 untyped native partial coercions and user-defined signatures. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
 
@@ -513,7 +564,7 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 
 ## Executable coverage
 
-`just conformance` executes all **977** imported cases from complete `fields`,
+`just conformance` executes all **1036** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
@@ -524,14 +575,14 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 `coalescing-operator`, `default-operator`, `function-lookup` and `joins`, plus complete groups for the implemented library functions
 (including `hof-map`, `hof-filter`, `hof-reduce`, `function-each`, `function-sift`
 `function-typeOf`, `function-string`, `function-number`, `string-concat`,
-`function-applications`, `partial-application`, `regex`, `matchers` and `function-replace`)
+`function-applications`, `partial-application`, `regex`, `matchers`, `function-replace`, `parent-operator` and `transforms`)
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 846 | Semantic JSON result or missing matches upstream |
-| Supported errors | 126 | Asserted compile/evaluate phase and mapped local error kind |
+| Supported results | 886 | Semantic JSON result or missing matches upstream |
+| Supported errors | 145 | Asserted compile/evaluate phase and mapped local error kind |
 | Deferred syntax | 0 | Compile-time `UnsupportedExpression` |
 | Deferred builtin calls | 2 | Runtime `UnsupportedExpression` |
 | Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
@@ -581,6 +632,7 @@ node scripts/check-tuples.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-builtins.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-composition.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-matchers.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-structure.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -604,7 +656,7 @@ and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
 Scoped-path checks add **947** comparisons across root/array shapes, local/global
 positions, joins, closures, sorting, grouping, and the imported supported join cases.
-Builtin checks add **1,426** comparisons covering fixed signatures, missing/null,
+Builtin checks add **1,440** comparisons covering fixed signatures, missing/null,
 Unicode, callback arity/context, closure effects, nested sequences and mixed pipelines.
 Conversion/composition checks add **2,635** comparisons across numeric/escaping
 boundaries, partials, closures, sequence shapes and mixed pipelines. The known upstream
@@ -618,3 +670,8 @@ including invalid UTF-8, trailing content and excessive nesting.
 
 Matcher checks add **1,453** comparisons over regex syntax, UTF-16 boundaries, cursor
 sharing, empty matches, callbacks, limits and mixed filters/grouping/pipelines.
+
+Parent/clone/transform checks add **624** comparisons, including **135** readable
+cases, nested/root-array shape matrices, tuple boundaries, closure captures, sorting,
+sequential/overlapping updates and original-input isolation. The conformance adapter
+preserves dataset and inline object-key order, which `$keys` makes observable.
