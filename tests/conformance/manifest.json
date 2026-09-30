@@ -4432,8 +4432,8 @@
     {
       "file": "groups/function-applications/case021.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/partial-application/case000.json",
@@ -5770,8 +5770,8 @@
     {
       "file": "groups/function-sift/case002.json",
       "index": 0,
-      "status": "syntax",
-      "reason": "Deferred expression syntax; see CONFORMANCE.md"
+      "status": "supported",
+      "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
     },
     {
       "file": "groups/function-sift/case003.json",
@@ -5784,6 +5784,346 @@
       "index": 0,
       "status": "supported",
       "reason": "Implemented paths, sequences, filters, scalar, aggregate or constructor semantics"
+    },
+    {
+      "file": "groups/regex/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case005.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case006.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case007.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case008.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case009.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case010.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case011.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case012.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case013.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case014.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case015.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case016.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case017.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case018.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case019.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case020.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case021.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case022.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "RegexError"
+    },
+    {
+      "file": "groups/regex/case023.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case024.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case025.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case026.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case027.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case028.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case029.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case030.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case031.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case032.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case033.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case034.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case035.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/regex/case036.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/regex/case037.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/regex/case038.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/matchers/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/matchers/case001.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-replace/case000.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/function-replace/case001.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/function-replace/case002.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/function-replace/case003.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/function-replace/case004.json",
+      "index": 0,
+      "status": "supported",
+      "reason": "Implemented regex/matcher text semantics"
+    },
+    {
+      "file": "groups/function-replace/case005.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-replace/case006.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-replace/case007.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "NumericRange"
+    },
+    {
+      "file": "groups/function-replace/case008.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-replace/case009.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-replace/case010.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
+    },
+    {
+      "file": "groups/function-replace/case011.json",
+      "index": 0,
+      "status": "error",
+      "reason": "Implemented compile/runtime error; local kind mapped from upstream code",
+      "phase": "evaluate",
+      "kind": "TypeError"
     }
   ]
 }

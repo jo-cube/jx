@@ -57,6 +57,8 @@ EXPRESSION_GROUPS = {
     "object-constructor": (27, set()),
 }
 ERROR_KINDS = {
+    "D1004": "RegexError", "D3010": "TypeError", "D3011": "NumericRange",
+    "D3012": "TypeError", "D3040": "NumericRange", "T1010": "TypeError",
     "T2003": "TypeError", "T2004": "TypeError", "T2007": "TypeError", "T2008": "TypeError",
     "S0212": "UnsupportedExpression",
     "S0214": "UnsupportedExpression", "S0215": "UnsupportedExpression", "S0216": "UnsupportedExpression",
@@ -76,7 +78,7 @@ DEFERRED_CALLS = {"lambdas": {12}}
 BUILTIN_GROUPS = {
     "function-string": (31, {}), "function-number": (34, {}),
     "string-concat": (12, {}),
-    "function-applications": (22, {"case019.json": "deferred", "case021.json": "syntax"}),
+    "function-applications": (22, {"case019.json": "deferred"}),
     "partial-application": (5, {}),
     "function-average": (13, {}),
     "function-length": (17, {}), "function-uppercase": (2, {}),
@@ -95,7 +97,8 @@ BUILTIN_GROUPS = {
     "hof-filter": (4, {}),
     "hof-reduce": (11, {}),
     "function-each": (3, {}),
-    "function-sift": (5, {"case002.json": "syntax"}),
+    "function-sift": (5, {}),
+    "regex": (39, {}), "matchers": (2, {}), "function-replace": (12, {}),
 }
 
 def inventory(suite):
@@ -194,6 +197,8 @@ def main():
             row = {"file": str(relative), "index": index, "status": status, "reason": REASONS[status]}
             if status == "supported" and path.parent.name in {"variables", "blocks", "conditionals", "lambdas", "higher-order-functions", "function-boolean", "function-exists"}:
                 row["reason"] = "Implemented lexical/function semantics; host JSON bindings adapted to declarations"
+            if status == "supported" and path.parent.name in {"regex", "matchers", "function-replace"}:
+                row["reason"] = "Implemented regex/matcher text semantics"
             if status in {"deferred", "limit"}:
                 row.update(phase="evaluate", kind="DepthLimit" if status == "limit" else "UnsupportedExpression")
             if status == "error":

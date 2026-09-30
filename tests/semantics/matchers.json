@@ -1,0 +1,1228 @@
+[
+  {
+    "expr": "12/3/2",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "12 / (3 / 2)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      8
+    ]
+  },
+  {
+    "expr": "$type(/a/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "function"
+    ]
+  },
+  {
+    "expr": "$string(/a/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$contains(text,/ab+/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "$contains(text,/AB+/i)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "$match(text,/a(b+)/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      {
+        "match": "ab",
+        "index": 0,
+        "groups": [
+          "b"
+        ]
+      },
+      {
+        "match": "abb",
+        "index": 2,
+        "groups": [
+          "bb"
+        ]
+      },
+      {
+        "match": "abb",
+        "index": 5,
+        "groups": [
+          "bb"
+        ]
+      }
+    ]
+  },
+  {
+    "expr": "$match(text,/a(b+)/,0)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": []
+  },
+  {
+    "expr": "$match(text,/a(b+)/,1)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      {
+        "match": "ab",
+        "index": 0,
+        "groups": [
+          "b"
+        ]
+      }
+    ]
+  },
+  {
+    "expr": "$match(text,/a(b+)/,1.5)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      {
+        "match": "ab",
+        "index": 0,
+        "groups": [
+          "b"
+        ]
+      },
+      {
+        "match": "abb",
+        "index": 2,
+        "groups": [
+          "bb"
+        ]
+      }
+    ]
+  },
+  {
+    "expr": "$match(text,/no/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": []
+  },
+  {
+    "expr": "$match(missing,/a/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": []
+  },
+  {
+    "expr": "$match(text,/a/,-1)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$split(text,/b+/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        "a",
+        "a",
+        "a",
+        "cc"
+      ]
+    ]
+  },
+  {
+    "expr": "$split(text,/b+/,0)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$split(text,/b+/,1)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        "a"
+      ]
+    ]
+  },
+  {
+    "expr": "$split(text,/b+/,1.5)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        "a",
+        "a"
+      ]
+    ]
+  },
+  {
+    "expr": "$replace(text,/a(b+)/,\"<$0,$1,$2,$$,$x>\")",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "<ab,b,,$,$x><abb,bb,,$,$x><abb,bb,,$,$x>cc"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a/,\"x\",1)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "xbabbabbcc"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a/,\"x\",0)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "ababbabbcc"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a/,\"x\",1.5)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "xbxbbabbcc"
+    ]
+  },
+  {
+    "expr": "$replace(text,/none/,\"x\")",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "ababbabbcc"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a/,\"x\",-1)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$replace(text,\"ab\",\"$1\")",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "$1$1b$1bcc"
+    ]
+  },
+  {
+    "expr": "$replace(text,\"\",\"x\")",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$replace(missing,/a/,\"x\")",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": []
+  },
+  {
+    "expr": "$replace(text,/a/,function($m){$uppercase($m.match)})",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "AbAbbAbbcc"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a/,function($m){$m.start & \":\" & $m.match})",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "0:ab2:abb5:abbcc"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a/,function($m){42})",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "($prefix:=\"!\";$replace(text,/a/,function($m){$prefix & $m.match}))",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "!ab!abb!abbcc"
+    ]
+  },
+  {
+    "expr": "text ~> /a(b+)/ ~> function($m){[$m.match,$m.start,$m.end,$m.groups]}",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        "ab",
+        0,
+        2,
+        "b"
+      ]
+    ]
+  },
+  {
+    "expr": "text ~> $match(/a(b+)/).match",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "($r:=/a/;$m:=$r(text);[$m.match,$m.start,$m.end,$m.groups,$type($m.next)])",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        "a",
+        0,
+        1,
+        "function"
+      ]
+    ]
+  },
+  {
+    "expr": "($r:=/a/;$m:=$r(text);[$m.next().start,$m.next().start])",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        2,
+        5
+      ]
+    ]
+  },
+  {
+    "expr": "($r:=/a/;$m:=$r(text);$r(\"a\");$m.next().start)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "($r:=/a/;$m:=$r(text);$r(\"zzz\");$m.next().start)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "($r:=/a/;$m:=$r(text);$m.next()~>function($n){$n.next().start})",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      5
+    ]
+  },
+  {
+    "expr": "($r:=/a/;[$r(text,2).start,$r(text,999).match])",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "($r:=/a/;[$contains(text,$r),$match(text,$r).index])",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        true,
+        0,
+        2,
+        5
+      ]
+    ]
+  },
+  {
+    "expr": "($f:=$match(?,/a/);$map([text,text],$f).index)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      0,
+      2,
+      5,
+      0,
+      2,
+      5
+    ]
+  },
+  {
+    "expr": "{\"matches\":$match(text,/a/),\"n\":$count($match(text,/a/)),\"clean\":$replace(text,/a/,\"X\")}",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      {
+        "matches": [
+          {
+            "match": "a",
+            "index": 0,
+            "groups": []
+          },
+          {
+            "match": "a",
+            "index": 2,
+            "groups": []
+          },
+          {
+            "match": "a",
+            "index": 5,
+            "groups": []
+          }
+        ],
+        "n": 3,
+        "clean": "XbXbbXbbcc"
+      }
+    ]
+  },
+  {
+    "expr": "($r:=/a/;$map([text,text],function($s){$r($s).start}))",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      0,
+      0
+    ]
+  },
+  {
+    "expr": "$contains(text,function($s){()})",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      false
+    ]
+  },
+  {
+    "expr": "$match(text,function($s){()})",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": []
+  },
+  {
+    "expr": "$split(text,function($s){()})",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      [
+        "ababbabbcc"
+      ]
+    ]
+  },
+  {
+    "expr": "$replace(text,function($s){()},\"x\")",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "items": [
+      "ababbabbcc"
+    ]
+  },
+  {
+    "expr": "$split(text,$uppercase)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$contains(text,$uppercase)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$match(text,/a/,null)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$replace(text,/a/,null)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$match(1,/a/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$replace(text,/a/)",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$match(text,\"a\")",
+    "data": {
+      "text": "ababbabbcc"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$match(\"a\",/a/,0/0)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$split(\"a\",/a/,0/0)",
+    "data": null,
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$replace(\"a\",/a/,\"x\",0/0)",
+    "data": null,
+    "items": [
+      "a"
+    ]
+  },
+  {
+    "expr": "$replace(\"a\",\"\",\"x\",-1)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$contains(\"a\",/a*/)",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "$match(\"a\",/a*/)",
+    "data": null,
+    "items": [
+      {
+        "match": "a",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "expr": "$match(\"ab\",/a*/)",
+    "data": null,
+    "error": "RegexError"
+  },
+  {
+    "expr": "$match(\"a\",/a?/,1)",
+    "data": null,
+    "items": [
+      {
+        "match": "a",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "expr": "$match(\"ab\",/a?/,1)",
+    "data": null,
+    "error": "RegexError"
+  },
+  {
+    "expr": "$match(\"\",/(?:)/)",
+    "data": null,
+    "items": [
+      {
+        "match": "",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "expr": "$split(\"\",/(?:)/)",
+    "data": null,
+    "items": [
+      [
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "expr": "$split(\"ab\",/^/)",
+    "data": null,
+    "error": "RegexError"
+  },
+  {
+    "expr": "$replace(\"a\",/^/,\"X\")",
+    "data": null,
+    "error": "RegexError"
+  },
+  {
+    "expr": "$replace(\"\",/(?:)/,\"X\")",
+    "data": null,
+    "items": [
+      "X"
+    ]
+  },
+  {
+    "expr": "$replace(\"ab\",/a?/,\"X\",1)",
+    "data": null,
+    "error": "RegexError"
+  },
+  {
+    "expr": "$match(\"a\",/$/)",
+    "data": null,
+    "items": [
+      {
+        "match": "",
+        "index": 1,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "expr": "$match(\"abc\",/(?=b)/)",
+    "data": null,
+    "error": "RegexError"
+  },
+  {
+    "expr": "$replace(\"aaa\",/(a)(a)/,\"$01$12$99$$$0\")",
+    "data": null,
+    "items": [
+      "aa1a29$aaa"
+    ]
+  },
+  {
+    "expr": "$replace(\"abc\",/b/,\"$1$12$0$$$x$\")",
+    "data": null,
+    "items": [
+      "a2b$$x$c"
+    ]
+  },
+  {
+    "expr": "($r:=/a/;$m:=$r(\"a\");$exists($m.next()))",
+    "data": null,
+    "items": [
+      false
+    ]
+  },
+  {
+    "expr": "($r:=/a*/;$m:=$r(\"ab\");$m.next())",
+    "data": null,
+    "error": "RegexError"
+  },
+  {
+    "expr": "$string($match(text,/^a/im))",
+    "data": {
+      "text": "aA\nA"
+    },
+    "items": [
+      "[{\"match\":\"a\",\"index\":0,\"groups\":[]},{\"match\":\"A\",\"index\":3,\"groups\":[]}]"
+    ]
+  },
+  {
+    "expr": "$replace(text,/^a/im,\"[$0]\")",
+    "data": {
+      "text": "aA\nA"
+    },
+    "items": [
+      "[a]A\n[A]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/^a/m))",
+    "data": {
+      "text": "b\na"
+    },
+    "items": [
+      "{\"match\":\"a\",\"index\":2,\"groups\":[]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/^a/m,\"[$0]\")",
+    "data": {
+      "text": "b\na"
+    },
+    "items": [
+      "b\n[a]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/a.b/))",
+    "data": {
+      "text": "a\nb"
+    },
+    "items": []
+  },
+  {
+    "expr": "$replace(text,/a.b/,\"[$0]\")",
+    "data": {
+      "text": "a\nb"
+    },
+    "items": [
+      "a\nb"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/(?<=a)b/))",
+    "data": {
+      "text": "abc"
+    },
+    "items": [
+      "{\"match\":\"b\",\"index\":1,\"groups\":[]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/(?<=a)b/,\"[$0]\")",
+    "data": {
+      "text": "abc"
+    },
+    "items": [
+      "a[b]c"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/a(?=b)/))",
+    "data": {
+      "text": "ab"
+    },
+    "items": [
+      "{\"match\":\"a\",\"index\":0,\"groups\":[]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a(?=b)/,\"[$0]\")",
+    "data": {
+      "text": "ab"
+    },
+    "items": [
+      "[a]b"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/a(?!b)/))",
+    "data": {
+      "text": "ac"
+    },
+    "items": [
+      "{\"match\":\"a\",\"index\":0,\"groups\":[]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a(?!b)/,\"[$0]\")",
+    "data": {
+      "text": "ac"
+    },
+    "items": [
+      "[a]c"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/(a)(b)\\s+\\1\\2/))",
+    "data": {
+      "text": "ab ab"
+    },
+    "items": [
+      "{\"match\":\"ab ab\",\"index\":0,\"groups\":[\"a\",\"b\"]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/(a)(b)\\s+\\1\\2/,\"[$0]\")",
+    "data": {
+      "text": "ab ab"
+    },
+    "items": [
+      "[ab ab]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/(a)?b\\1/))",
+    "data": {
+      "text": "b"
+    },
+    "items": [
+      "{\"match\":\"b\",\"index\":0,\"groups\":[null]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/(a)?b\\1/,\"[$0]\")",
+    "data": {
+      "text": "b"
+    },
+    "items": [
+      "[b]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/a+?/))",
+    "data": {
+      "text": "aaaa"
+    },
+    "items": [
+      "[{\"match\":\"a\",\"index\":0,\"groups\":[]},{\"match\":\"a\",\"index\":1,\"groups\":[]},{\"match\":\"a\",\"index\":2,\"groups\":[]},{\"match\":\"a\",\"index\":3,\"groups\":[]}]"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a+?/,\"[$0]\")",
+    "data": {
+      "text": "aaaa"
+    },
+    "items": [
+      "[a][a][a][a]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/a\\/b/))",
+    "data": {
+      "text": "a/b"
+    },
+    "items": [
+      "{\"match\":\"a/b\",\"index\":0,\"groups\":[]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/a\\/b/,\"[$0]\")",
+    "data": {
+      "text": "a/b"
+    },
+    "items": [
+      "[a/b]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/(?<first>\\w)(\\w+)/))",
+    "data": {
+      "text": "word"
+    },
+    "items": [
+      "{\"match\":\"word\",\"index\":0,\"groups\":[\"w\",\"ord\"]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/(?<first>\\w)(\\w+)/,\"[$0]\")",
+    "data": {
+      "text": "word"
+    },
+    "items": [
+      "[word]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/(ab)|(a)/))",
+    "data": {
+      "text": "ab"
+    },
+    "items": [
+      "{\"match\":\"ab\",\"index\":0,\"groups\":[\"ab\",null]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/(ab)|(a)/,\"[$0]\")",
+    "data": {
+      "text": "ab"
+    },
+    "items": [
+      "[ab]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/k/i))",
+    "data": {
+      "text": "KkK"
+    },
+    "items": [
+      "[{\"match\":\"K\",\"index\":0,\"groups\":[]},{\"match\":\"k\",\"index\":1,\"groups\":[]}]"
+    ]
+  },
+  {
+    "expr": "$replace(text,/k/i,\"[$0]\")",
+    "data": {
+      "text": "KkK"
+    },
+    "items": [
+      "[K][k]K"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/\\uD83D\\uDE00/))",
+    "data": {
+      "text": "😀a"
+    },
+    "items": [
+      "{\"match\":\"😀\",\"index\":0,\"groups\":[]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/\\uD83D\\uDE00/,\"[$0]\")",
+    "data": {
+      "text": "😀a"
+    },
+    "items": [
+      "[😀]a"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/😀+/))",
+    "data": {
+      "text": "😀😀"
+    },
+    "items": [
+      "[{\"match\":\"😀\",\"index\":0,\"groups\":[]},{\"match\":\"😀\",\"index\":2,\"groups\":[]}]"
+    ]
+  },
+  {
+    "expr": "$replace(text,/😀+/,\"[$0]\")",
+    "data": {
+      "text": "😀😀"
+    },
+    "items": [
+      "[😀][😀]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/^b/m))",
+    "data": {
+      "text": "a b"
+    },
+    "items": [
+      "{\"match\":\"b\",\"index\":2,\"groups\":[]}"
+    ]
+  },
+  {
+    "expr": "$replace(text,/^b/m,\"[$0]\")",
+    "data": {
+      "text": "a b"
+    },
+    "items": [
+      "a [b]"
+    ]
+  },
+  {
+    "expr": "$string($match(text,/./))",
+    "data": {
+      "text": "a b"
+    },
+    "items": [
+      "[{\"match\":\"a\",\"index\":0,\"groups\":[]},{\"match\":\"b\",\"index\":2,\"groups\":[]}]"
+    ]
+  },
+  {
+    "expr": "$replace(text,/./,\"[$0]\")",
+    "data": {
+      "text": "a b"
+    },
+    "items": [
+      "[a] [b]"
+    ]
+  },
+  {
+    "expr": "rows[name ~> /hat/i].id",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "$sum(rows[$contains(name,/hat/i)].n)",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      5
+    ]
+  },
+  {
+    "expr": "rows{$replace(name,/hat/i,\"cap\"):$sum(n)}",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      {
+        "red cap": 2,
+        "blue cap": 3,
+        "coat": 4
+      }
+    ]
+  },
+  {
+    "expr": "$map(rows,function($r){{\"id\":$r.id,\"matches\":$match($r.name,/(h)(at)/i)}})",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      {
+        "id": 1,
+        "matches": {
+          "match": "Hat",
+          "index": 4,
+          "groups": [
+            "H",
+            "at"
+          ]
+        }
+      },
+      {
+        "id": 2,
+        "matches": {
+          "match": "hat",
+          "index": 5,
+          "groups": [
+            "h",
+            "at"
+          ]
+        }
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "expr": "($f:=$replace(?,/hat/i,\"cap\");rows.name ~> $map($f))",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      "red cap",
+      "blue cap",
+      "coat"
+    ]
+  },
+  {
+    "expr": "($r:=/hat/i;$s:=function($m){$m.match~>$uppercase};$replace(rows[0].name,$r,$s))",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      "red HAT"
+    ]
+  },
+  {
+    "expr": "rows^(<name).name ~> $map(function($v){$replace($v,/hat/i,\"cap\")})",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      "blue cap",
+      "coat",
+      "red cap"
+    ]
+  },
+  {
+    "expr": "($f:=function($x){$x};$r:=/hat/i;$c:=$f~>$r;rows.name[$c($)])",
+    "data": {
+      "rows": [
+        {
+          "id": 1,
+          "n": 2,
+          "name": "red Hat"
+        },
+        {
+          "id": 2,
+          "n": 3,
+          "name": "blue hat"
+        },
+        {
+          "id": 3,
+          "n": 4,
+          "name": "coat"
+        }
+      ]
+    },
+    "items": [
+      "red Hat",
+      "blue hat"
+    ]
+  }
+]

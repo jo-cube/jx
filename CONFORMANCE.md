@@ -30,7 +30,7 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Singleton retention | `expr[]` preserves sequence shape; missing stays missing |
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures and higher-order values |
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
-| Deferred runtime/language | Signatures, tail-call elimination, untyped native partials, transforms and regex |
+| Deferred runtime/language | Signatures, tail-call elimination, untyped native partials, transforms |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments, general unquoted Unicode names | Deferred syntax; compile error |
 | Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null`, `function` require backticks when used as fields |
@@ -99,7 +99,7 @@ ordinary shadowable `$exists`. RHS evaluation is conditional.
 
 [Readable navigation cases](tests/semantics/navigation.json) and Rust/CLI tests freeze
 these rules, validation, borrowed output, cancellation and resource limits. `%` parent
-navigation remains unsupported; ancestry needs to survive reduction stages. Regex, transforms and remaining builtins remain deferred.
+navigation remains unsupported; ancestry needs to survive reduction stages. Transforms and remaining builtins remain deferred.
 
 ## Scoped paths
 
@@ -411,7 +411,7 @@ Limits and explicit policies:
 
 | Area | Implemented functions |
 | --- | --- |
-| Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join` |
+| Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join`, `$match`, `$replace` |
 | Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$sqrt`, `$power`; aggregates above |
 | Collections | `$append`, `$reverse`, `$distinct` |
 | Objects / types | `$keys`, `$spread`, `$merge`, `$type`, `$lookup` |
@@ -424,7 +424,7 @@ accept scalar singleton inputs; typed arrays reject wrong member types. Argument
 finish before signature checks or callbacks. Apart from the explicit conversion functions, string/numeric helpers do not coerce
 values. `$length`/`$substring` count Unicode codepoints; empty-separator `$split`
 uses UTF-16 units, including isolated surrogates. `$trim` collapses only space, tab,
-LF and CR. String matching is literal; matcher callbacks and regex remain deferred.
+LF and CR. `$contains`/`$split`/`$replace` accept literal strings or matchers.
 
 Map/filter/each return sequences, omitting missing callback results and retaining
 nested arrays. Empty output normalizes to missing; `[]` retains a singleton before
@@ -449,10 +449,53 @@ without a callback. These raise local `TypeError`. The readable
 CLI tests freeze supported boundaries. [Official function documentation](https://docs.jsonata.org/string-functions)
 and complete imported groups remain the authority.
 
-Still deferred: rounding/formatting, padding/replacement, regex,
+Still deferred: rounding/formatting, padding,
 zip/sort/shuffle/single, error/assert, encoding/decoding, date/time, eval/clone,
 untyped native partial coercions and user-defined signatures. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
+
+## Regex and matcher text processing
+
+Authority: [regex/matcher model](https://docs.jsonata.org/regex) and
+[string functions](https://docs.jsonata.org/string-functions). `/pattern/` supports
+`i`/`m` flags; division remains an infix operator. Patterns compile once. ECMAScript
+captures, noncapturing groups, lookarounds, backreferences, greedy/lazy quantifiers
+and named captures are supported. Matching and indexes use UTF-16 code units,
+including lone surrogates. Unmatched capture groups retain undefined and serialize
+as null inside the groups array.
+
+Regex literals return functions. Calling with a string and optional numeric starting
+index returns missing or `{match,start,end,groups,next}`. A matcher owns one shared
+cursor; invoking it resets that cursor, and earlier continuations observe later calls.
+Each continuation retains its own subject. A failed search resets the cursor to zero.
+`next()` stops when the cursor reaches the subject end and raises `RegexError`
+(reference D1004) if its next match is empty. The initial match may be empty.
+
+`$match` returns a normalized result sequence of `{match,index,groups}`;
+`$split` returns an explicit array. Missing source stays missing. Limits are
+nonnegative numbers; fractional matcher limits use the reference loop behavior,
+zero/NaN suppress matching, negative limits raise `NumericRange`. Consumers invoke
+`next` after the final accepted item, even at a limit, preserving errors and side
+effects. Well-formed custom matcher functions use the same protocol; invalid matcher
+results raise `TypeError`.
+
+Regex replacement strings expand `$$`, `$0`, and numbered captures with the
+reference's group-count-dependent digit parsing. Literal replacements copy text
+verbatim and reject an empty pattern. Matcher replacement callbacks receive the
+complete match object, share lexical state, and must return a string. No-match and
+zero-limit replacement preserve the input value. A matcher object's `next` is a
+function: JSON output still rejects it; select its JSON members or use `$match`.
+
+Explicit boundaries: native regex calls require string subjects and numeric offsets;
+JavaScript argument coercions and literal-string replacement by a function are
+unsupported. The engine's legacy `/i` folding differs for dotless-i/long-s:
+case-insensitive patterns containing non-ASCII source or `\u` escapes are rejected
+at compilation, and subjects containing U+0131/U+017F raise `UnsupportedExpression`
+when matched under `/i`. Case-sensitive Unicode and surrogate patterns are supported.
+`g`/`u`/`s` flags are not JSONata literal syntax. Dynamic regex construction, engine
+extensions, and regex timeouts remain deferred. The
+[matcher corpus](tests/semantics/matchers.json), retention regressions, imported groups
+and differential suite freeze these boundaries.
 
 ## Lookup and specialization
 
@@ -470,7 +513,7 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 
 ## Executable coverage
 
-`just conformance` executes all **924** imported cases from complete `fields`,
+`just conformance` executes all **977** imported cases from complete `fields`,
 `missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
 `comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
 `predicates`, `simple-array-selectors`, `multiple-array-selectors`,
@@ -481,15 +524,15 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 `coalescing-operator`, `default-operator`, `function-lookup` and `joins`, plus complete groups for the implemented library functions
 (including `hof-map`, `hof-filter`, `hof-reduce`, `function-each`, `function-sift`
 `function-typeOf`, `function-string`, `function-number`, `string-concat`,
-`function-applications` and `partial-application`)
+`function-applications`, `partial-application`, `regex`, `matchers` and `function-replace`)
 groups of JSONata **2.2.0**, revision
 `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 802 | Semantic JSON result or missing matches upstream |
-| Supported errors | 115 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 2 | Compile-time `UnsupportedExpression` |
+| Supported results | 846 | Semantic JSON result or missing matches upstream |
+| Supported errors | 126 | Asserted compile/evaluate phase and mapped local error kind |
+| Deferred syntax | 0 | Compile-time `UnsupportedExpression` |
 | Deferred builtin calls | 2 | Runtime `UnsupportedExpression` |
 | Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
 
@@ -537,6 +580,7 @@ node scripts/check-plans.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-tuples.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-builtins.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-composition.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-matchers.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -571,3 +615,6 @@ Demand capture does not change language coverage. Plan/tree checks include neste
 prefixes, duplicate parent replacement and array fallback. Mutation tests require
 identical validation errors (including offsets) for captured and unselected input,
 including invalid UTF-8, trailing content and excessive nesting.
+
+Matcher checks add **1,453** comparisons over regex syntax, UTF-16 boundaries, cursor
+sharing, empty matches, callbacks, limits and mixed filters/grouping/pipelines.

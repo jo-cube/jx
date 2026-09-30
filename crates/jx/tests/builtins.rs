@@ -110,20 +110,7 @@ fn computed_strings_preserve_json_encoding_and_surrogate_units() {
 }
 
 #[test]
-fn deferred_matchers_and_host_exceptions_are_explicit() {
-    for source in [
-        "$contains('abc',function(){()})",
-        "$split('abc',function(){()})",
-    ] {
-        assert_eq!(
-            jx::compile(source)
-                .unwrap()
-                .evaluate(b"null")
-                .unwrap_err()
-                .kind,
-            jx::ErrorKind::UnsupportedExpression
-        );
-    }
+fn missing_matchers_and_host_exceptions_are_explicit() {
     // Upstream throws uncoded JavaScript exceptions for these missing matchers.
     for source in [
         "$contains('abc',missing)",

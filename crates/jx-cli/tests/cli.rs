@@ -273,3 +273,26 @@ fn conversion_and_chaining_preserve_ndjson_boundaries() {
     assert_eq!(output.status.code(), Some(1));
     assert_eq!(output.stdout, b"2\n");
 }
+
+#[test]
+fn matcher_results_keep_ndjson_framing_and_record_isolation() {
+    let output = run(
+        &["{'matches':$match(text,/(a)(b)?/),'clean':$replace(text,/a/,'X')}"],
+        br#"{"text":"ab a"}
+{"text":"zzz"}
+{"text":"a"}
+"#,
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout, br#"{"matches":[{"match":"ab","index":0,"groups":["a","b"]},{"match":"a","index":3,"groups":["a",null]}],"clean":"Xb X"}
+{"clean":"zzz"}
+{"matches":{"match":"a","index":0,"groups":["a",null]},"clean":"X"}
+"#);
+    let output = run(&["$match(text,/a*/)"], b"{\"text\":\"ab\"}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("(RegexError)"));
+}
