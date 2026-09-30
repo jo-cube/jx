@@ -8,6 +8,8 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Library {
+    String,
+    Number,
     Length,
     Uppercase,
     Lowercase,
@@ -39,6 +41,8 @@ pub(crate) enum Library {
 #[derive(Clone, Copy)]
 enum Param {
     Any,
+    Boolean,
+    Numeric,
     Number,
     String,
     Pattern,
@@ -56,6 +60,11 @@ impl Param {
         };
         match self {
             Self::Any | Self::Array | Self::Strings | Self::Objects => true,
+            Self::Boolean => matches!(value.atomic(), Value::Boolean(_)),
+            Self::Numeric => {
+                matches!(value.atomic(), Value::Number(_) | Value::Boolean(_))
+                    || value.string_body().is_some()
+            }
             Self::Number => matches!(value.atomic(), Value::Number(_)),
             Self::String => value.string_body().is_some(),
             Self::Pattern => value.string_body().is_some() || matches!(value, Value::Function(_)),
@@ -68,6 +77,8 @@ impl Param {
 impl Library {
     pub fn named(name: &str) -> Option<Self> {
         Some(match name {
+            "string" => Self::String,
+            "number" => Self::Number,
             "length" => Self::Length,
             "uppercase" => Self::Uppercase,
             "lowercase" => Self::Lowercase,
@@ -103,6 +114,8 @@ impl Library {
     fn signature(self) -> (&'static [Param], usize, bool) {
         use Param::*;
         match self {
+            Self::String => (&[Any, Boolean], 1, true),
+            Self::Number => (&[Numeric], 1, true),
             Self::Length | Self::Uppercase | Self::Lowercase | Self::Trim => (&[String], 1, true),
             Self::Substring => (&[String, Number, Number], 2, true),
             Self::Before | Self::After => (&[String, String], 2, true),
@@ -122,8 +135,38 @@ impl Library {
             Self::Sift => (&[Object, Function], 1, true),
         }
     }
+    pub fn partial_values<'e, 'i>(
+        self,
+        args: &[Option<Value<'e, 'i>>],
+        context: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
+        if self == Self::Number {
+            return crate::convert::number(args.first().cloned().flatten(), offset)
+                .map(|value| value.map_or(Operand::Missing, Operand::One));
+        }
+        let (params, _, _) = self.signature();
+        // Upstream native partials bypass signatures and array promotion. Keep
+        // supported typed calls exact; do not emulate arbitrary JavaScript coercion.
+        if args.iter().zip(params).any(|(value, param)| {
+            !param.accepts(value)
+                || matches!(param, Param::Array | Param::Strings | Param::Objects)
+                    && value.as_ref().is_some_and(|v| !v.is_array())
+        }) {
+            return Err(crate::Error::new(
+                crate::ErrorKind::UnsupportedExpression,
+                offset,
+                "untyped native partial application is deferred",
+            ));
+        }
+        self.values(args, context, offset)
+    }
     pub fn arity(self) -> usize {
-        self.signature().0.len()
+        if self == Self::String {
+            1
+        } else {
+            self.signature().0.len()
+        }
     }
     pub fn constant(self, args: &[Node]) -> bool {
         let (params, _, context) = self.signature();
@@ -131,7 +174,7 @@ impl Library {
         !matches!(
             self,
             Self::Map | Self::Filter | Self::Reduce | Self::Each | Self::Sift
-        ) && (!context || args.len() == params.len())
+        ) && (!context || args.len() == params.len() || self == Self::String && args.len() == 1)
     }
     pub fn evaluate<'e, 'i>(
         self,
@@ -205,6 +248,15 @@ impl Library {
             }
         }
         let result = match self {
+            Self::String => crate::convert::string(
+                values[0].clone(),
+                matches!(
+                    values[1].as_ref().map(Value::atomic),
+                    Some(Value::Boolean(true))
+                ),
+                offset,
+            )?,
+            Self::Number => crate::convert::number(values[0].clone(), offset)?,
             Self::Length
             | Self::Uppercase
             | Self::Lowercase

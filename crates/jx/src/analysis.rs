@@ -1,6 +1,6 @@
 use crate::{
     builtin::Builtin,
-    expression::{Kind, Node},
+    expression::{Kind, Node, Op},
 };
 use std::collections::HashSet;
 
@@ -54,6 +54,23 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
                 node.kind = Kind::Builtin(builtin, std::mem::take(args));
             }
         }
+        if let Kind::Binary(Op::Chain, left, right) = &mut node.kind
+            && let Kind::Builtin(builtin, args) = &mut right.kind
+        {
+            let mut arguments = Vec::with_capacity(args.len() + 1);
+            arguments.push(std::mem::replace(
+                left.as_mut(),
+                Node {
+                    kind: Kind::Missing,
+                    offset: 0,
+                    depth: 1,
+                    effects: false,
+                    tail_call: false,
+                },
+            ));
+            arguments.extend(std::mem::take(args));
+            node.kind = Kind::Builtin(*builtin, arguments.into_boxed_slice());
+        }
         if let Kind::Variable(name) = &node.kind
             && !bound.contains(name.as_ref())
             && let Some(builtin) = Builtin::named(name)
@@ -62,7 +79,12 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         }
         node.effects = matches!(
             node.kind,
-            Kind::Variable(_) | Kind::Bind(..) | Kind::Lambda(..) | Kind::Call(..)
+            Kind::Variable(_)
+                | Kind::Bind(..)
+                | Kind::Lambda(..)
+                | Kind::Call(..)
+                | Kind::Partial(..)
+                | Kind::Binary(Op::Chain, ..)
         );
         if let Kind::Route(steps, _) | Kind::Tuples(steps, _) = &mut node.kind {
             for step in steps {
@@ -87,7 +109,7 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
 // them inside the lambda. This affects nested higher-order results even without TCO.
 fn tail_calls(node: &mut Node) {
     match &mut node.kind {
-        Kind::Call(..) | Kind::Builtin(..) => node.tail_call = true,
+        Kind::Call(..) | Kind::Builtin(..) | Kind::Binary(Op::Chain, ..) => node.tail_call = true,
         Kind::Group(body) => tail_calls(body),
         Kind::Block(items) => {
             if let Some(last) = items.last_mut() {
@@ -120,6 +142,12 @@ pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
         Kind::Filter(base, args) | Kind::Call(base, args) => {
             f(base);
             for n in args {
+                f(n);
+            }
+        }
+        Kind::Partial(base, args) => {
+            f(base);
+            for n in args.iter_mut().flatten() {
                 f(n);
             }
         }
@@ -180,6 +208,9 @@ fn mutates_scope(node: &Node) -> bool {
         }
         Kind::Filter(base, args) | Kind::Call(base, args) => {
             mutates_scope(base) || args.iter().any(mutates_scope)
+        }
+        Kind::Partial(base, args) => {
+            mutates_scope(base) || args.iter().flatten().any(mutates_scope)
         }
         Kind::Route(steps, _) | Kind::Tuples(steps, _) => steps
             .iter()

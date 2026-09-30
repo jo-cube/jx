@@ -11,7 +11,10 @@ use crate::{
 pub(crate) fn prepare(node: &mut Node) -> bool {
     let mut constant = true;
     if let Kind::Keep(child, _) = &mut node.kind
-        && matches!(child.kind, Kind::Builtin(..) | Kind::Call(..))
+        && matches!(
+            child.kind,
+            Kind::Builtin(..) | Kind::Call(..) | Kind::Binary(Op::Chain, ..)
+        )
     {
         // Keep the call boundary: folding would normalize a singleton sequence
         // before [] can retain it. Its arguments may still be compiled constants.

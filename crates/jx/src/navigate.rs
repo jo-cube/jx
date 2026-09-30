@@ -186,6 +186,9 @@ pub(crate) fn keep<'e, 'i>(
     let result = match &node.kind {
         Kind::Builtin(builtin, args) => builtin.evaluate(args, input, node.offset)?,
         Kind::Call(target, args) => crate::function::call(target, args, input, node.offset)?,
+        Kind::Binary(crate::expression::Op::Chain, left, right) => {
+            crate::function::chain(left, right, input, node.offset)?
+        }
         _ => node.run(input)?,
     };
     Ok(match result {

@@ -130,7 +130,7 @@ impl<'a> Parser<'a> {
                     rooted: false,
                 })
             }
-            Token::FilterOpen => Kind::Array(self.list(nesting, true)?, false),
+            Token::FilterOpen => Kind::Array(self.array_items(nesting)?, false),
             Token::ObjectOpen => Kind::Object(self.object(nesting)?),
             Token::Variable(name) => Kind::Variable(name.into()),
             Token::Root => Kind::Path(Path {
@@ -166,25 +166,13 @@ impl<'a> Parser<'a> {
         };
         Ok((node(kind, offset, depth)?, lookup))
     }
-    fn arguments(&mut self, nesting: usize) -> Result<Box<[Node]>, Error> {
-        if !matches!(self.token, Token::Open) {
-            return Err(error(self.offset));
-        }
-        self.advance()?;
-        self.list(nesting, false)
-    }
-    fn list(&mut self, nesting: usize, array: bool) -> Result<Box<[Node]>, Error> {
-        let closed = |token: &Token| {
-            matches!(
-                (array, token),
-                (true, Token::FilterClose) | (false, Token::Close)
-            )
-        };
+    fn array_items(&mut self, nesting: usize) -> Result<Box<[Node]>, Error> {
+        let closed = |token: &Token| matches!(token, Token::FilterClose);
         let mut arguments = Vec::new();
         if !closed(&self.token) {
             loop {
                 let mut item = self.expression(0, nesting + 1)?;
-                if array && matches!(self.token, Token::Range) {
+                if matches!(self.token, Token::Range) {
                     let offset = self.offset;
                     self.advance()?;
                     let end = self.expression(0, nesting + 1)?;
@@ -225,7 +213,7 @@ fn depth_error(offset: usize) -> Error {
     )
 }
 
-fn binary(op: Op, mut left: Node, right: Node, offset: usize) -> Result<Node, Error> {
+fn binary(op: Op, mut left: Node, mut right: Node, offset: usize) -> Result<Node, Error> {
     if matches!(op, Op::Coalesce) {
         let depth = left.depth + 1;
         left = node(
@@ -237,10 +225,44 @@ fn binary(op: Op, mut left: Node, right: Node, offset: usize) -> Result<Node, Er
             depth,
         )?;
     }
+    let mut keep = false;
+    if matches!(op, Op::Chain) {
+        keep = chain_retention(&left) || chain_retention(&right);
+        let mut call = &right;
+        while let Kind::Keep(child, _) | Kind::Filter(child, _) = &call.kind {
+            call = child;
+        }
+        if matches!(call.kind, Kind::Call(..)) {
+            // A bare RHS call bypasses its predicates; its retention belongs to
+            // the apply expression. Other RHS values keep their own boundaries.
+            while let Kind::Keep(child, _) | Kind::Filter(child, _) = right.kind {
+                right = *child;
+            }
+        }
+    }
     let depth = 1 + left.depth.max(right.depth);
-    node(
+    let expression = node(
         Kind::Binary(op, Box::new(left), Box::new(right)),
         offset,
         depth,
-    )
+    )?;
+    if keep {
+        node(Kind::Keep(Box::new(expression), false), offset, depth + 1)
+    } else {
+        Ok(expression)
+    }
+}
+
+// A path's first step can carry keepArray; a later [] keeps only that path's
+// sequence. Parentheses do not forward a child's keepArray flag to chaining.
+fn chain_retention(node: &Node) -> bool {
+    match &node.kind {
+        Kind::Keep(_, false) => true,
+        Kind::Keep(child, true)
+        | Kind::Filter(child, _)
+        | Kind::Sort(child, _)
+        | Kind::Reduce(child, _) => chain_retention(child),
+        Kind::Route(steps, _) | Kind::Tuples(steps, _) => chain_retention(&steps[0].node),
+        _ => false,
+    }
 }

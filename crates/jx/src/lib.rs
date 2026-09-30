@@ -17,6 +17,7 @@ mod compile;
 mod constant;
 mod construct;
 mod container;
+mod convert;
 mod error;
 mod evaluate;
 mod expression;
@@ -71,6 +72,16 @@ impl Expression {
                     unreachable!()
                 };
                 lookup::select(data, path, input, self.root.offset)
+            }
+            expression::Kind::Builtin(builtin, args)
+                if builtin.is_conversion()
+                    && args.len() == 1
+                    && matches!(args[0].kind, expression::Kind::Path(_)) =>
+            {
+                let expression::Kind::Path(path) = &args[0].kind else {
+                    unreachable!()
+                };
+                evaluate::path_conversion(*builtin, path, input, self.root.offset)
             }
             _ => evaluate::scalar(&self.root, input),
         }

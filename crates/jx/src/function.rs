@@ -1,7 +1,9 @@
+mod composition;
 use crate::builtin::Builtin;
 use crate::{
     Error, Value, evaluate::Operand, expression::Node, sequence::Context, value::type_error,
 };
+pub(crate) use composition::{chain, partial};
 use std::rc::Rc;
 
 /// Opaque JSONata function value. It can be called inside its evaluation, but has
@@ -13,6 +15,11 @@ pub struct Function<'e, 'i> {
 #[derive(Debug)]
 pub(crate) enum FunctionKind<'e, 'i> {
     Builtin(Builtin),
+    Partial {
+        target: Rc<Function<'e, 'i>>,
+        arguments: Box<[composition::Argument<'e, 'i>]>,
+    },
+    Chain(Rc<Function<'e, 'i>>, Rc<Function<'e, 'i>>),
     Lambda {
         params: &'e [Box<str>],
         body: &'e Node,
@@ -65,6 +72,11 @@ pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
     match &function.kind {
         FunctionKind::Builtin(builtin) => builtin.arity(),
         FunctionKind::Lambda { params, .. } => params.len(),
+        FunctionKind::Partial { arguments, .. } => arguments
+            .iter()
+            .filter(|arg| matches!(arg, composition::Argument::Hole))
+            .count(),
+        FunctionKind::Chain(..) => 1,
     }
 }
 
@@ -76,6 +88,13 @@ pub(crate) fn invoke<'e, 'i>(
 ) -> Result<Operand<'e, 'i>, Error> {
     match &function.kind {
         FunctionKind::Builtin(builtin) => builtin.values(arguments, context, offset),
+        FunctionKind::Partial {
+            target,
+            arguments: bound,
+        } => composition::apply_partial(target, bound, arguments, context, offset),
+        FunctionKind::Chain(first, second) => {
+            composition::apply_chain(first, second, arguments, context, offset)
+        }
         FunctionKind::Lambda {
             params,
             body,

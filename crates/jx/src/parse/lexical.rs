@@ -60,11 +60,38 @@ impl Parser<'_> {
     pub(super) fn calls(&mut self, mut target: Node, nesting: usize) -> Result<Node, Error> {
         while matches!(self.token, Token::Open) {
             let offset = target.offset;
-            let args = self.arguments(nesting)?;
+            self.advance()?;
+            let mut args = Vec::new();
+            if !matches!(self.token, Token::Close) {
+                loop {
+                    args.push(if matches!(self.token, Token::Question) {
+                        self.advance()?;
+                        None
+                    } else {
+                        Some(self.expression(0, nesting + 1)?)
+                    });
+                    if !matches!(self.token, Token::Comma) {
+                        break;
+                    }
+                    self.advance()?;
+                }
+            }
+            if !matches!(self.token, Token::Close) {
+                return Err(error(self.offset));
+            }
+            self.advance()?;
             let depth = 1 + target
                 .depth
-                .max(args.iter().map(|n| n.depth).max().unwrap_or(0));
-            target = node(Kind::Call(Box::new(target), args), offset, depth)?;
+                .max(args.iter().flatten().map(|n| n.depth).max().unwrap_or(0));
+            let kind = if args.iter().any(Option::is_none) {
+                Kind::Partial(Box::new(target), args.into_boxed_slice())
+            } else {
+                Kind::Call(
+                    Box::new(target),
+                    args.into_iter().map(Option::unwrap).collect(),
+                )
+            };
+            target = node(kind, offset, depth)?;
         }
         Ok(target)
     }

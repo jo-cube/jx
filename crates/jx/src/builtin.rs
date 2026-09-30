@@ -122,6 +122,59 @@ impl Builtin {
             },
         }
     }
+    pub fn partial_values<'e, 'i>(
+        self,
+        args: &[Option<Value<'e, 'i>>],
+        context: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
+        if let Self::Library(function) = self {
+            return function.partial_values(args, context, offset);
+        }
+        let numeric = matches!(self, Self::Aggregate(aggregate) if aggregate != Aggregate::Count);
+        let unsupported = || {
+            crate::Error::new(
+                crate::ErrorKind::UnsupportedExpression,
+                offset,
+                "untyped native partial application is deferred",
+            )
+        };
+        if matches!(self, Self::Aggregate(_))
+            && args
+                .first()
+                .and_then(Option::as_ref)
+                .is_some_and(|v| !v.is_array())
+        {
+            return Err(unsupported());
+        }
+        self.values(args, context, offset).map_err(|error| {
+            // The fold validates items while consuming them; no separate array scan.
+            if numeric
+                && matches!(
+                    error.kind,
+                    crate::ErrorKind::TypeError | crate::ErrorKind::NumericRange
+                )
+            {
+                unsupported()
+            } else {
+                error
+            }
+        })
+    }
+
+    pub fn partial_arity(self, offset: usize) -> Result<usize, Error> {
+        if matches!(
+            self,
+            Self::Library(library::Library::String) | Self::Deferred(_)
+        ) {
+            return Err(crate::Error::new(
+                crate::ErrorKind::UnsupportedExpression,
+                offset,
+                "native partial application with default parameters is deferred",
+            ));
+        }
+        Ok(self.arity())
+    }
     pub fn arity(self) -> usize {
         match self {
             Self::Library(function) => function.arity(),
@@ -129,6 +182,13 @@ impl Builtin {
             _ => 1,
         }
     }
+    pub fn is_conversion(self) -> bool {
+        matches!(
+            self,
+            Self::Library(library::Library::String | library::Library::Number)
+        )
+    }
+
     pub fn constant(self, args: &[Node]) -> bool {
         match self {
             Self::Library(function) => function.constant(args),
@@ -172,7 +232,6 @@ impl Builtin {
 
 // Known standard names must not silently behave like unbound user variables.
 const DEFERRED: &[&str] = &[
-    "string",
     "pad",
     "match",
     "replace",
@@ -180,7 +239,6 @@ const DEFERRED: &[&str] = &[
     "formatBase",
     "formatInteger",
     "parseInteger",
-    "number",
     "round",
     "random",
     "zip",

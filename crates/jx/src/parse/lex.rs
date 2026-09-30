@@ -87,6 +87,8 @@ impl<'a> Lexer<'a> {
             b'[' => Token::FilterOpen,
             b']' => Token::FilterClose,
             b')' => Token::Close,
+            b'&' => Token::Operator(Op::Concat),
+            b'~' if self.take(b'>') => Token::Operator(Op::Chain),
             b'+' => Token::Operator(Op::Add),
             b'-' => Token::Operator(Op::Subtract),
             b'*' if self.take(b'*') => Token::Descendants,

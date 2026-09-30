@@ -108,6 +108,29 @@ impl<'e, 'i> Evaluation<'e, 'i> {
     }
 }
 
+pub(crate) fn path_conversion<'e, 'i>(
+    builtin: crate::builtin::Builtin,
+    path: &'e crate::expression::Path,
+    input: &'i [u8],
+    offset: usize,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    let selected = path.select(input)?;
+    let value = crate::retain::collect(|emit| {
+        selected.try_for_each(|value| {
+            emit(value);
+            Ok(())
+        })
+    })?;
+    let context = Context {
+        value: Value::Undefined,
+        wrapped: true,
+        scope: None,
+    };
+    Ok(Evaluation {
+        result: results(builtin.values(&[value], &context, offset)?),
+    })
+}
+
 pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
     if let Kind::Plan(plan) = &node.kind {
         return Ok(Evaluation {
@@ -326,6 +349,24 @@ impl Node {
                         result.normalize()
                     }
                 });
+            }
+            Kind::Partial(target, args) => {
+                crate::function::partial(target, args, input, self.offset)?
+            }
+            Kind::Binary(Op::Chain, left, right) => {
+                return crate::function::chain(left, right, input, self.offset).map(|result| {
+                    if self.tail_call {
+                        result
+                    } else {
+                        result.normalize()
+                    }
+                });
+            }
+            Kind::Binary(Op::Concat, left, right) => {
+                // Complete both operands before conversion; neither may be replayed.
+                let left = crate::retain::materialize(left, input)?;
+                let right = crate::retain::materialize(right, input)?;
+                crate::convert::concat(left, right, self.offset)?
             }
             Kind::Array(items, preserve) => crate::construct::array(items, *preserve, input)?,
             Kind::Object(pairs) => crate::construct::object(pairs, input, self.offset)?,

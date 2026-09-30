@@ -163,6 +163,16 @@ impl OwnedString {
         json.push('"');
         Self { json: json.into() }
     }
+    // Both bodies are valid JSON string encodings. Joining them preserves UTF-16
+    // units, including a surrogate pair spanning the operand boundary.
+    pub(crate) fn concat(left: &str, right: &str) -> Self {
+        let mut json = String::with_capacity(left.len() + right.len() + 2);
+        json.push('"');
+        json.push_str(left);
+        json.push_str(right);
+        json.push('"');
+        Self { json: json.into() }
+    }
     pub(crate) fn body(body: &str) -> Self {
         Self {
             json: format!("\"{body}\"").into(),

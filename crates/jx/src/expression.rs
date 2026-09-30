@@ -39,6 +39,7 @@ pub(crate) enum Kind {
     Conditional(Box<Node>, Box<Node>, Option<Box<Node>>),
     Lambda(Box<[Box<str>]>, Box<Node>),
     Call(Box<Node>, Box<[Node]>),
+    Partial(Box<Node>, Box<[Option<Node>]>),
     Array(Box<[Node]>, bool),
     Object(Box<[(Node, Node)]>),
     Number(f64),
@@ -68,6 +69,8 @@ pub(crate) enum Op {
     In,
     Default,
     Coalesce,
+    Concat,
+    Chain,
 }
 
 impl Op {
@@ -76,6 +79,7 @@ impl Op {
             Self::Or => 25,
             Self::And => 30,
             Self::In
+            | Self::Chain
             | Self::Default
             | Self::Coalesce
             | Self::Equal
@@ -84,7 +88,7 @@ impl Op {
             | Self::LessEqual
             | Self::Greater
             | Self::GreaterEqual => 40,
-            Self::Add | Self::Subtract => 50,
+            Self::Add | Self::Subtract | Self::Concat => 50,
             Self::Multiply | Self::Divide | Self::Remainder => 60,
         }
     }
