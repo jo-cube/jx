@@ -16,6 +16,8 @@ mod demands;
 mod execution;
 #[path = "workloads/filters.rs"]
 mod filters;
+#[path = "workloads/formatting.rs"]
+mod formatting;
 #[path = "workloads/helpers.rs"]
 mod helpers;
 #[path = "workloads/lexical.rs"]
@@ -308,6 +310,7 @@ fn main() {
     tuples::run(smoke);
     builtins::run(smoke);
     helpers::run(smoke);
+    formatting::run(smoke);
     composition::run(smoke);
     matchers::run(smoke);
     structure::run(smoke);

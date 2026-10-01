@@ -465,7 +465,8 @@ Limits and explicit policies:
 | --- | --- |
 | Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$pad`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join`, `$match`, `$replace` |
 | Encoding | `$encodeUrl`, `$encodeUrlComponent`, `$decodeUrl`, `$decodeUrlComponent`, `$base64encode`, `$base64decode`; host boundary below |
-| Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$round`, `$sqrt`, `$power`; aggregates above |
+| Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$round`, `$sqrt`, `$power`, `$formatNumber`, `$formatInteger`, `$parseInteger`, `$formatBase`; aggregates above |
+| Date/time | `$fromMillis`, `$toMillis`, `$now`, `$millis`; pictures and boundaries below |
 | Collections | `$append`, `$reverse`, `$distinct`, `$sort`, variadic `$zip`, `$single` |
 | Objects / types | `$keys`, `$spread`, `$merge`, `$type`, `$lookup`, `$clone` |
 | Higher-order | `$map`, `$filter`, `$reduce`, `$each`, `$sift` |
@@ -502,7 +503,7 @@ without a callback. These raise local `TypeError`. The readable
 CLI tests freeze supported boundaries. [Official function documentation](https://docs.jsonata.org/string-functions)
 and complete imported groups remain the authority.
 
-Still deferred: picture/base formatting and parsing, shuffle/randomness, date/time, eval,
+Still deferred: shuffle/randomness, eval,
 untyped native partial coercions and user-defined signatures. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
 
@@ -544,6 +545,47 @@ text replaces isolated UTF-16 units with U+FFFD; JSON string values still preser
 those units. Full JSON validation and argument evaluation precede helper failures.
 The [helper corpus](tests/semantics/helpers.json) freezes these boundaries separately
 from locally documented guards/deferred host behavior.
+
+## Numeric and date pictures
+
+Authority: [numeric functions](https://docs.jsonata.org/numeric-functions),
+[date/time functions](https://docs.jsonata.org/date-time-functions) and
+[date pictures](https://docs.jsonata.org/date-time). Missing primary inputs stay missing;
+null/wrong types fail signature validation. Arguments finish before validation, and
+constant picture errors remain conditional runtime errors after complete JSON validation.
+
+`$formatNumber` supports positive/negative subpictures, optional/mandatory digits,
+regular/irregular integer and fractional grouping, percent/per-mille, exponents and
+custom decimal-format options. Rounding reuses decimal half-even semantics.
+`$formatInteger` / `$parseInteger` support BMP decimal digit families, grouping,
+letters, Roman numerals, English words and ordinals. Formatting floors integers;
+parsing retains the reference's permissive numeric-prefix and case behavior.
+`$formatBase` half-even rounds the number/radix and accepts bases 2–36.
+
+Date rendering supports Gregorian components, names, widths, ordinals, ISO week/year/
+month components, fractional milliseconds, escaped brackets and timezone pictures.
+Pictured parsing handles separated/adjacent integer fields, names, timezones and
+leading/trailing defaults; missing matches produce missing, interior gaps fail.
+Default parsing accepts the reference ISO grammar with explicit UTC/offset timestamps
+and date-only forms. Invalid calendar components preserve computed NaN (JSON output
+is null), distinct from no match. `$now` and `$millis` share a timestamp per evaluation.
+
+Pinned quirks are deliberate: negative HHMM formatting uses floor hours plus signed
+remaining minutes; pictured negative timezone parsing adds minutes to negative hours;
+`f` renders integer milliseconds but parses decimal fractions; parsed pictured years 0–99
+use the reference's 1900 offset. ISO-week parsing fails with the same D3136 category as
+upstream. Non-finite decimal output follows the reference's picture-dependent strings.
+
+Explicit boundaries: host-local ISO times without a timezone; legacy fractional
+date-only syntax; lone-surrogate picture/subject text; non-ASCII case-insensitive date
+pictures and dotless-i/long-s subjects; multi-unit decimal syntax symbols; large fixed
+integer/decimal/radix output (absolute value ≥10²¹); non-finite exponent, word or infinite
+alphabetic/Roman rendering; and legacy week/day derivation in years 0–99 are deferred.
+Huge padding/Roman outputs and exponent overflow have tested resource guards. Fraction
+precision is at most 100, matching the reference fixed-decimal operation. Typed
+first-class functions/partials work, but their dynamic calls reparse pictures.
+[Readable formatting cases](tests/semantics/formatting.json), Rust validation/reuse
+regressions, CLI tests and all six imported families freeze these distinctions.
 
 ## Regex and matcher text processing
 
@@ -611,14 +653,15 @@ embedding, asynchronous API and parser-recovery tests are outside this inventory
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 1040 | JSON result / missing agrees with upstream |
-| Mapped expected errors | 241 | Compile/evaluate phase and local kind; user messages where applicable |
-| Blocked compatibility | 395 | Specific dependency and current local failure asserted |
+| Supported results | 1338 | JSON result / missing agrees with upstream |
+| Mapped expected errors | 276 | Compile/evaluate phase and local kind; user messages where applicable |
+| Blocked compatibility | 62 | Specific dependency and current local failure asserted |
 | Recursion guard | 3 | Existing bounded calls; tail-call elimination deferred |
 
-The remaining blockers are picture formatting/parsing (**171**), date/time (**153**),
-function signatures (**43**, including two tail-recursion cases), `$eval` (**12**),
-base formatting (**9**), randomness (**4**) and tail-call elimination (**3**).
+The remaining blockers are function signatures (**43**, including two tail-recursion
+cases), `$eval` (**12**), randomness (**4**) and tail-call elimination (**3**).
+M20 promotes all **333** number/integer/base/date family cases: **298** results and
+**35** mapped errors. Picture/date boundaries outside that pinned corpus remain explicit below.
 The legacy singular `transform` group is now entirely supported: its 104 cases
 exercise ordinary queries/constructors; structural updates live in `transforms`.
 M19 promoted **142** cases that the baseline already handled (73 results, 69 mapped errors),
@@ -672,6 +715,7 @@ node scripts/check-composition.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-matchers.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-structure.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-helpers.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-formatting.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -695,7 +739,7 @@ and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
 Scoped-path checks add **947** comparisons across root/array shapes, local/global
 positions, joins, closures, sorting, grouping, and the imported supported join cases.
-Builtin checks add **1,535** comparisons covering fixed signatures, missing/null,
+Builtin checks add **1,868** comparisons covering fixed signatures, missing/null,
 Unicode, callback arity/context, closure effects, nested sequences and mixed pipelines.
 Conversion/composition checks add **2,635** comparisons across numeric/escaping
 boundaries, partials, closures, sequence shapes and mixed pipelines. The known upstream
@@ -718,4 +762,6 @@ preserves dataset and inline object-key order, which `$keys` makes observable.
 Everyday-helper checks add **1,884** comparisons, including **132** readable cases
 (with three explicit local guards/host boundaries), seeded decimal rounding, typed
 partials, stable callbacks, URI/base64 boundaries and mixed lexical/grouped pipelines.
-All 16 differential suites total **46,824** comparisons.
+Formatting checks add **2,313** comparisons across static/dynamic pictures, symbols,
+rounding, integer/word/base forms, calendar/week boundaries, timezones, missing/errors
+and mixed pipelines. All 17 differential suites total **49,470** comparisons.

@@ -1453,3 +1453,78 @@ mapped errors, 395 blockers and three recursion guards**. Blockers are asserted 
 failures, not upstream successes. No IR/JIT or general library framework is added.
 Requested bytes are cumulative allocator requests; retained RSS and latency
 percentiles for these helpers remain unmeasured.
+
+## Milestone 20 — compiled numeric and date pictures
+
+M19 `7a3b905` is the baseline, with the same machine/compiler/profile.
+**1,273 workloads** cover 24 compilation and 1,249 evaluation cases, including
+**560 allocation-free** evaluations. All 550 previous allocation-free cases remain so;
+all 1,163 existing evaluations preserve allocation calls. Requested bytes are unchanged
+for 889; 274 lexical/provenance cases add **16 bytes** to their existing scope arena for
+optional clock storage. Ordinary paths/plans still create no arena or read the clock.
+
+New fixtures cover static/contextual/dynamic number, integer and date pictures,
+integer parsing/words, default ISO conversion, pictured parsing, mixed constructors,
+and filtered maps/folds at 200 B–1 MiB and 8/128/1,024 rows. Compilation is separate.
+Full runs use seven default 50 ms samples; both-order focused comparisons use 300 ms.
+Timing includes complete validation and consumption, excluding serialization/I/O.
+
+The preparation experiment uses the **same engine and expressions**, disabling only
+static picture preparation (and relaxing experimental allocation budgets). Selected
+500 B medians, before → prepared:
+
+| Workload | Records/s | Allocations/record |
+| --- | ---: | ---: |
+| Number, `#,##0.00` | 726,582 → 1,050,109 | 20 → 2 |
+| Integer, `#,##0` | 1,149,434 → 1,338,695 | 5 → 2 |
+| Grouped integer parsing | 1,258,080 → 1,487,127 | 4 → 1 |
+| Date, `[Y0001]-[M01]-[D01]` | 830,034 → 1,214,308 | 15 → 2 |
+| Default ISO rendering | 536,990 → 1,100,694 | 37 → 2 |
+| Pictured date parsing | 225,765 → 1,094,052 | 89 → 6 |
+| Numeric/date/parsed-epoch object | 147,086 → 424,259 | 127 → 13 |
+
+Reverse order confirms about **4.8×** pictured parsing and **2.9×** mixed construction.
+Dynamic pictures retain the parser fallback: final full medians are **579k/s / 20
+allocations** for numbers and **208k/s / 89** for date parsing. Static date matchers
+retain `regress` programs; matching still allocates capture/search storage. Unescaped
+subjects borrow UTF-8. Default ISO parsing reaches **1.54M/s**, allocating nothing.
+A fully constant pictured date folds once and reaches **3.33M/s**, validation only;
+that is a different workload from record-derived dates. Direct contextual forms also
+prepare their static pictures. First-class/native-partial calls still parse dynamically.
+
+Rendering uses stack decimal buffers and reuses its owned UTF-8 result buffer when
+JSON escaping is unnecessary: ordinary number/date results use **2 allocations**,
+rather than an intermediate encoding allocation plus shared storage. Escaped output
+still needs encoding; transformed results remain owned. Shared signature validation
+writes into caller stack slots, avoiding a returned value-array move. Both-order native
+map comparisons improve **3.9% / 4.6%** against the initial shared-validator implementation.
+
+At 1 KiB, static number/pictured parsing/mixed medians are **683k / 687k / 295k/s**;
+at padded 1 MiB they are **943 / 942 / 475/s**. Allocation counts/bytes stay fixed.
+General tree field loads still rescan objects; the mixed case pays multiple scans.
+The 1,024-row filtered date sum reaches **2,609/s**, with **3,072 allocations** (six
+per accepted date), without collecting its navigated sequence. The filtered constructed
+output uses **3,584 calls / 205,312 requested bytes**; construction owns its row members.
+
+Final M19/M20 pairs put scalar arithmetic, predicates, planned arithmetic/branches,
+static lookup and the 1 MiB nested fold within roughly 2%. Tiny validation/shallow paths
+show order-dependent **1.9% / 3.8%** losses in the first pair, disappearing in reverse.
+Native `$map(a,$abs)` at 100 B remains **5.5% slower** in both isolated orders,
+versus **2.2%** in full runs. Its allocation count is unchanged. Stack sampling shows
+scanner/value conversion and shared signature/dispatch work, with no clock or formatter
+execution. The output-slot change recovers a structural cost, but not this entire loss.
+Weak/forced inlining experiments fail to improve it and are removed; no callback-specific
+fast path is added. Native signature/dispatch remains a measured future concern.
+
+[Full comparison](benchmarks/m20/comparison.csv),
+[both-order pairs](benchmarks/m20/paired-comparison.csv),
+[reverse pairs](benchmarks/m20/paired-reverse-comparison.csv),
+[preparation experiment](benchmarks/m20/preparation-comparison.csv),
+[validator experiment](benchmarks/m20/validator-comparison.csv) and
+[environment/reproduction](benchmarks/m20/environment.json) retain raw evidence.
+[Source hashes](benchmarks/m20/source.json), [checks](benchmarks/m20/checks.log) and
+[differentials](benchmarks/m20/differential.txt) identify verification. `just all`,
+`just build`, full `just bench`, all **1,679** classified cases and **49,470** differential
+comparisons pass. All **333** picture/date/base blockers are promoted. No new dependency,
+IR/JIT, input index or per-record cache is introduced. Requested bytes are cumulative;
+peak retained memory and latency percentiles remain unmeasured.

@@ -1,0 +1,78 @@
+{
+  "baseline_commit": "7a3b905cf90e76fc2532e21817f516c7a8fe677d",
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "cpu": "Apple M4",
+  "memory_bytes": 25769803776,
+  "os": "macOS-26.5.1-arm64-arm-64bit",
+  "profile": "release, thin LTO, codegen-units=1; no target-cpu override",
+  "upstream_revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+  "notes": [
+    "M18 release benchmark and CLI copied before any M19 changes; no source dependency on that binary. Rebuild baseline_commit in an isolated checkout to reproduce.",
+    "The final engine adds thirteen fixed builtins, comments/Unicode names, grouping-boundary syntax checks, static-round folding and stack-frame separation. No new value/context variant, function runtime, input cache or execution-plan instruction.",
+    "base64 0.22.1 is the only new production dependency, supplying the binary codec. URI compatibility and Node binary-string conversion remain explicit small adapters.",
+    "capacity pairs precede the scanner change and final static-round/harness additions; these additions do not execute in the paired URI/base64 subjects. Reverse retained-string-capacity.diff on final source to replay the earlier capacity policy.",
+    "scanner pairs precede final static-round/harness additions, which do not execute in their subjects. Reverse retained-scanner-diagnostics.diff on final source to replay the public-error scanner. Both retained patches show final source changes relative to M18.",
+    "Scanner-only static errors avoid drop-bearing owned-message errors inside recursive traversal; successful results/validation grammar are unchanged. Paired nested-fold gain is about 4-5%, allocations unchanged.",
+    "Map reaches 2.15-2.17M records/s in both final full runs, but 1.58-1.62M/s in isolated final repeats versus about 2.00M/s in M18. Both-order samples preserve the discrepancy. Profiles locate existing scanner/signature/value routines, not a new runtime feature, and do not isolate a cause. No speculative layout tuning retained.",
+    "All 1679 language cases/102 groups are classified. Blockers and recursion guards assert local failures, not upstream success. The upstream JS embedding/async/parser-recovery suites are outside this language corpus."
+  ],
+  "environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_TARGET_DIR": null,
+    "JX_BENCH_FILTER": null,
+    "JX_BENCH_BYTES": null,
+    "JX_BENCH_SAMPLE_MS": null
+  },
+  "workloads": {
+    "baseline": 1099,
+    "final": 1186,
+    "compilation": 23,
+    "evaluation": 1163,
+    "new_evaluation": 86,
+    "existing_evaluation": 1077,
+    "allocation_free_evaluation": 550,
+    "existing_allocation_free_preserved": 520,
+    "identical_existing_allocations": 961,
+    "fewer_existing_allocation_calls": 91,
+    "same_calls_changed_requested_bytes": 25,
+    "more_existing_allocation_calls": 0,
+    "final_pair_groups": 24
+  },
+  "verification": {
+    "just_all": "passed; formatting, strict Clippy, tests, 1186-workload smoke/allocation assertions",
+    "just_build": "passed",
+    "classification": {
+      "supported": 1040,
+      "error": 241,
+      "blocked": 395,
+      "limit": 3
+    },
+    "differential_suites": 16,
+    "differential_comparisons": 46824,
+    "readable_helper_cases": 132,
+    "local_helper_boundaries": 3,
+    "just_bench": "passed; full default seven 50 ms samples, all 1186 workloads, all allocation budgets",
+    "source_files": 1490,
+    "source_hashes_verified": true
+  },
+  "method": "64 warmups, seven samples, batches of 32; full runs use default 50 ms; preparation, validator, inlining and M19/M20 pairs use 300 ms, both orders. Includes complete JSON validation and result consumption, excludes compilation/serialization/I/O. Allocation bytes are cumulative requests, not live memory. No tests/builds/profiling overlap the timed comparisons; profiled rates are not performance evidence.",
+  "commands": {
+    "full": "just bench > final-full.csv; M19 reference samples: ../m19/final-repeat.csv",
+    "paired": "For paired-filters.json, execute saved M19/final benchmark binaries with JX_BENCH_FILTER=name, JX_BENCH_BYTES=size, JX_BENCH_SAMPLE_MS=300. Run M19/final then final/M19.",
+    "preparation": "Apply unprepared.patch only for the experimental build; cargo bench -p jx --bench throughput --locked --no-run; save binary; restore patch. JX_BENCH_FILTER=format/ JX_BENCH_BYTES=500 JX_BENCH_SAMPLE_MS=300. Run unprepared/prepared, then reverse.",
+    "validator": "Compare returning (normalized array, skip) with writing caller-owned slots and returning skip. Five focused cases, both orders, 300 ms. Before snapshots have the same owned-buffer implementation.",
+    "inlining": "Repeat five focused cases with #[inline] and #[inline(always)] on Library::arguments. Neither annotation is retained.",
+    "profile": "Launch JX_BENCH_FILTER=builtin/map_builtin JX_BENCH_BYTES=100 JX_BENCH_SAMPLE_MS=3000; /usr/bin/sample PID 10 1 -file sample.txt after 2 s. Instruments unavailable in the installed command-line tools.",
+    "checks": "just all; just build; node scripts/check-*.cjs target/m11/jsonata target/release/jx (each script separately)"
+  },
+  "binary_sha256": {
+    "m19-bench": "fa352cc8e51d56cbaa73fe1814ef54b653b9681515e1686faa6a37c1d99f95e3",
+    "final-bench": "353c6dcbab58585940f3b564249af37d21742552aa8432a3855f21553fd6cf92",
+    "unprepared-current-bench": "6c689e0c310b0540ba2a8b53d79308160591c23bfc26fcbf6e90b8412b950ae7",
+    "owned-bench": "df9b4626759391746037cd2ecd5ae5f088ae61b19c10433e8e82ae82b97b2657",
+    "validator-bench": "d047384dedc4c3d6c41135e69bb23a733ea036557c709ed738cd1aacbce4bbbc",
+    "inline-bench": "84a606a72dab1e79a396dfcd23d6073385908ceee96506414d126e53685fff23",
+    "always-bench": "b234194205937e57d8ad0ff57156d68a30116ccb8e4941f010d8466d4341cc94"
+  }
+}

@@ -339,6 +339,31 @@ sequence ownership remain external semantic operations. Measurements still ident
 validation/scanning and normalization as larger opportunities than native arithmetic.
 See PERFORMANCE for gains, fallback/compile costs and unchanged workloads.
 
+## Numeric and date pictures
+
+`format.rs` dispatches existing builtin signatures to separate number, integer/English
+word, and Gregorian date modules. Direct calls with static pictures/options retain an
+immutable `Program` beside their arguments; dynamic and first-class calls use the same
+parsers/renderers. Preparation preserves contextual argument substitution, evaluation
+order, missing propagation and runtime error timing. Invalid constant pictures remain
+stored evaluation errors, not compilation failures. Fully constant calls use ordinary
+folding. No new plan instructions, dependencies or value variants are needed.
+
+Decimal rendering uses bounded stack text buffers; renderers build only their result.
+Date parsing retains its `regress` matcher for static pictures. Shared signature
+validation writes directly into caller-owned stack slots instead of returning/moving
+a value array; prepared and ordinary calls use the same rules. Ordinary unescaped
+subjects borrow UTF-8; escaped subjects decode only where needed. `OwnedString::text`
+takes owned plain UTF-8, reusing its buffer when no escaping is needed; `body` accepts
+an already encoded JSON body. Picture literals never bypass JSON escaping or use CLI token preservation as conversion.
+
+A compile-time clock flag is separate from lexical effects. `$now`, `$millis` and
+incomplete pictured dates read one timestamp in the existing evaluation-local scope;
+immutable clock reads do not force sequence materialization. Default ISO parsing and
+static pictures with a complete leading year need no clock/scope. Variables referencing
+clock builtins conservatively request it, including before a shadowing assignment.
+Unrelated trees/plans keep their existing value, context and allocation behavior.
+
 ## Decisions and measured limits
 
 The tree exists because precedence, short-circuiting and typed operators now need
@@ -502,9 +527,13 @@ mutable-document overlay, universal ancestry tracking or second evaluator.
     existing builtin/value/callback machinery. Static helpers use constant folding;
     rounding and default sort/single calls with static inputs can precompute results.
 
-Next semantic work: numeric/date picture formatting and parsing, then function
-signatures/tail calls. The complete inventory now makes the outstanding dependencies
-explicit.
+20. **Complete: numeric/date formatting and parsing.** Static picture programs,
+    dynamic fallback, integer/word/base conversion, UTC calendar and date matchers,
+    evaluation-stable clocks, and explicit compatibility/resource boundaries.
+    All 333 previously blocked cases in these families now assert results/errors.
+
+Next semantic work: function signatures/tail calls. The complete inventory makes
+outstanding dependencies explicit; remaining picture boundaries are in CONFORMANCE.
 Full mutable transform aliasing needs a deliberate transient-document model; do not
 broaden immutable copy/update by approximating those effects. Host invocation still
 needs a lifetime/resource contract.

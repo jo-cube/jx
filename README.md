@@ -4,7 +4,7 @@ A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
 result sequences, scalar operators, filters, aggregates, constructors, lexical
 variables, conditionals, closures, wildcard navigation, grouping, ordering, indexed/joined paths,
-common string/collection/higher-order functions (including round, pad, sort/zip/single and encoding), conversions, function pipelines, regex/matcher text processing, parent navigation and structural transforms**.
+common string/collection/higher-order functions (including round, pad, sort/zip/single and encoding), conversions, function pipelines, regex/matcher text processing, parent navigation, structural transforms, and numeric/integer/date pictures**.
 Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
@@ -16,6 +16,7 @@ just all
 just build
 printf '%s\n' '{"customer":{"id":42}}' | target/release/jx 'customer.id'
 target/release/jx 'price * quantity' records.ndjson
+target/release/jx '{"amount":$formatNumber(price,"#,##0.00"),"date":$fromMillis(timestamp,"[Y0001]-[M01]-[D01]")}' records.ndjson
 target/release/jx 'orders[price > 10].id' records.ndjson
 target/release/jx '$sum(orders[price > 10].price)' records.ndjson
 target/release/jx '{"total":$sum(orders[price > 10].price),"ids":[orders.id]}' records.ndjson
@@ -63,7 +64,9 @@ path contexts. `$clone` gives input/compiled containers fresh identities through
 views; transforms rebuild changed containers and their ancestors while sharing untouched
 structure and borrowed leaves. Input is never parsed into a general JSON DOM. Regex literals compile once with `regress`; matcher cursors are local to
 one evaluation, and continuations retain their subject. ASCII subjects stay borrowed;
-escaped/non-ASCII subjects decode once to UTF-16. `base64` supplies the binary codecs; `serde_json` is a test-only oracle and fixture reader.
+escaped/non-ASCII subjects decode once to UTF-16. Static format pictures and date matchers compile once; dynamic pictures parse when called.
+`$now` / `$millis` share one evaluation timestamp; ordinary expressions do not read the clock.
+`base64` supplies the binary codecs; `serde_json` is a test-only oracle and fixture reader.
 
 The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact
 NDJSON synchronously. Missing produces no line; null produces `null`; sequences
