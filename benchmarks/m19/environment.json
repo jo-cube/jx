@@ -1,0 +1,102 @@
+{
+  "baseline_commit": "a7bd174dd8254f23690694232d1f0c4a9191fb62",
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "cpu": "Apple M4",
+  "memory_bytes": 25769803776,
+  "os": "macOS-26.5.1-arm64-arm-64bit",
+  "profile": "release, thin LTO, codegen-units=1; no target-cpu override",
+  "upstream_revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+  "method": "64 warmup evaluations; seven samples, batches of 32. Initial full baseline/final snapshots use 20 ms; final repeat uses default 50 ms. Final M18/final pairs use 300 ms, both-order allocation/scanner pairs use 300 ms, isolated map repeats use 500 ms. Rates use records/seconds, not rounded CSV rate columns. Includes full JSON validation and complete consumption; excludes compilation, framing and OS I/O. Allocation bytes are cumulative requests, not peak live memory. Timing does not overlap builds, tests or profiling.",
+  "commands": {
+    "full": "JX_BENCH_SAMPLE_MS=20 EXECUTABLE > full.csv; final repeat: just bench > final-repeat.csv",
+    "paired": "For each paired-filters.json entry, run final then M18, JX_BENCH_SAMPLE_MS=300, JX_BENCH_FILTER=name and JX_BENCH_BYTES=size. Concatenate under one CSV header.",
+    "capacity": "Before then after UTF-16 lower-bound reservations, then reverse order; JX_BENCH_FILTER=helper JX_BENCH_BYTES=500, and helper/uri_roundtrip plus helper/base64_roundtrip at 1048586 bytes; 300 ms.",
+    "scanner": "For scanner-filters.json, before then static scanner diagnostics; reverse order for scanner-reverse files. 300 ms.",
+    "map": "JX_BENCH_FILTER=builtin/map_builtin JX_BENCH_BYTES=100 JX_BENCH_SAMPLE_MS=500 EXECUTABLE. Order final/M18/before-scanner then before-scanner/M18/final.",
+    "profile": "Same map filter with 1000 ms; after sample 0 prints, /usr/bin/sample PID 3 1 -file PROFILE. Profiled timings are excluded.",
+    "frames": "otool -tV EXECUTABLE; retain exact non-generic symbols ending Node3run/Scanner5value/Scanner6string and prologues.",
+    "inventory": "python3 scripts/probe-conformance.py UPSTREAM CLI observations.json; add --remaining to observe only unclassified rows. Reviewed manifest controls the complete importer.",
+    "checks": [
+      "just all",
+      "just build"
+    ],
+    "differential": [
+      "node scripts/check-aggregates.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-builtins.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-compiler.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-composition.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-constructors.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-execution.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-filters.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-helpers.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-lexical.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-matchers.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-navigation.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-plans.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-scalars.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-sequences.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-structure.cjs target/m11/jsonata target/release/jx",
+      "node scripts/check-tuples.cjs target/m11/jsonata target/release/jx"
+    ]
+  },
+  "notes": [
+    "M18 release benchmark and CLI copied before any M19 changes; no source dependency on that binary. Rebuild baseline_commit in an isolated checkout to reproduce.",
+    "The final engine adds thirteen fixed builtins, comments/Unicode names, grouping-boundary syntax checks, static-round folding and stack-frame separation. No new value/context variant, function runtime, input cache or execution-plan instruction.",
+    "base64 0.22.1 is the only new production dependency, supplying the binary codec. URI compatibility and Node binary-string conversion remain explicit small adapters.",
+    "capacity pairs precede the scanner change and final static-round/harness additions; these additions do not execute in the paired URI/base64 subjects. Reverse retained-string-capacity.diff on final source to replay the earlier capacity policy.",
+    "scanner pairs precede final static-round/harness additions, which do not execute in their subjects. Reverse retained-scanner-diagnostics.diff on final source to replay the public-error scanner. Both retained patches show final source changes relative to M18.",
+    "Scanner-only static errors avoid drop-bearing owned-message errors inside recursive traversal; successful results/validation grammar are unchanged. Paired nested-fold gain is about 4-5%, allocations unchanged.",
+    "Map reaches 2.15-2.17M records/s in both final full runs, but 1.58-1.62M/s in isolated final repeats versus about 2.00M/s in M18. Both-order samples preserve the discrepancy. Profiles locate existing scanner/signature/value routines, not a new runtime feature, and do not isolate a cause. No speculative layout tuning retained.",
+    "All 1679 language cases/102 groups are classified. Blockers and recursion guards assert local failures, not upstream success. The upstream JS embedding/async/parser-recovery suites are outside this language corpus."
+  ],
+  "environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_TARGET_DIR": null,
+    "JX_BENCH_FILTER": null,
+    "JX_BENCH_BYTES": null,
+    "JX_BENCH_SAMPLE_MS": null
+  },
+  "binary_sha256": {
+    "m18-bench": "9b6606d1c1ecbc4df4e230e50d91999758bae293dff71cb5ee60e5079b3e3704",
+    "m18-jx": "75cf741296108e07a18d54e75ad9485b4afec39dddd5f270d0d5160f8b646879",
+    "pre-capacity-bench": "ab0236eeb7d05c04aab6ff97c14cfd8daa9d99faff8ab592358cadf4825d7392",
+    "capacity-bench": "ea32efadbd7c455537f0b8ba778e80f9a1d12faa50f40085057e75d937537f79",
+    "before-scan-error-bench": "ea32efadbd7c455537f0b8ba778e80f9a1d12faa50f40085057e75d937537f79",
+    "scan-error-bench": "132a410f0523ba3f1c74ee8ba1e57e5a28e885bb9bb6a5d4a3e9d0bab98b9631",
+    "final-bench": "fa352cc8e51d56cbaa73fe1814ef54b653b9681515e1686faa6a37c1d99f95e3",
+    "final_cli": "6798d64cb3552001cc07bccbb6f2387b8b49594ff57a5d0d224839e23eba2317"
+  },
+  "workloads": {
+    "baseline": 1099,
+    "final": 1186,
+    "compilation": 23,
+    "evaluation": 1163,
+    "new_evaluation": 86,
+    "existing_evaluation": 1077,
+    "allocation_free_evaluation": 550,
+    "existing_allocation_free_preserved": 520,
+    "identical_existing_allocations": 961,
+    "fewer_existing_allocation_calls": 91,
+    "same_calls_changed_requested_bytes": 25,
+    "more_existing_allocation_calls": 0,
+    "final_pair_groups": 24
+  },
+  "verification": {
+    "just_all": "passed; formatting, strict Clippy, tests, 1186-workload smoke/allocation assertions",
+    "just_build": "passed",
+    "classification": {
+      "supported": 1040,
+      "error": 241,
+      "blocked": 395,
+      "limit": 3
+    },
+    "differential_suites": 16,
+    "differential_comparisons": 46824,
+    "readable_helper_cases": 132,
+    "local_helper_boundaries": 3,
+    "just_bench": "passed; full default seven 50 ms samples, all 1186 workloads, all allocation budgets",
+    "source_files": 1490,
+    "source_hashes_verified": true
+  }
+}

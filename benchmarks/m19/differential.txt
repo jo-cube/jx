@@ -1,0 +1,49 @@
+$ node scripts/check-aggregates.cjs target/m11/jsonata target/release/jx
+4948 aggregate evaluations match JSONata 2.2.0, including errors and sequence boundaries
+
+$ node scripts/check-builtins.cjs target/m11/jsonata target/release/jx
+Checked 1535 builtin evaluations against upstream
+
+$ node scripts/check-compiler.cjs target/m11/jsonata target/release/jx
+Checked 947 compiler evaluations against upstream
+
+$ node scripts/check-composition.cjs target/m11/jsonata target/release/jx
+Checked 2635 conversion/composition evaluations against upstream
+
+$ node scripts/check-constructors.cjs target/m11/jsonata target/release/jx
+Checked 5000 constructor evaluations against upstream
+
+$ node scripts/check-execution.cjs target/m11/jsonata target/release/jx
+Checked 4443 execution evaluations against upstream
+
+$ node scripts/check-filters.cjs target/m11/jsonata target/release/jx
+3820 filter evaluations match JSONata 2.2.0, including errors and sequence boundaries
+
+$ node scripts/check-helpers.cjs target/m11/jsonata target/release/jx
+1884 helper differential comparisons passed
+
+$ node scripts/check-lexical.cjs target/m11/jsonata target/release/jx
+Checked 2796 lexical evaluations against upstream
+
+$ node scripts/check-matchers.cjs target/m11/jsonata target/release/jx
+Checked 1453 regex/matcher evaluations against upstream
+
+$ node scripts/check-navigation.cjs target/m11/jsonata target/release/jx
+Checked 1374 navigation evaluations against upstream
+
+$ node scripts/check-plans.cjs target/m11/jsonata target/release/jx
+Checked 6546 expanded-plan evaluations against upstream
+
+$ node scripts/check-scalars.cjs target/m11/jsonata target/release/jx
+1936 scalar evaluations match JSONata 2.2.0, including error kinds and per-record output
+
+$ node scripts/check-sequences.cjs target/m11/jsonata target/release/jx
+42 readable sequence cases match JSONata 2.2.0
+5894 generated/curated evaluations match the reference CLI stream
+
+$ node scripts/check-structure.cjs target/m11/jsonata target/release/jx
+Checked 624 parent/clone/transform evaluations against upstream
+
+$ node scripts/check-tuples.cjs target/m11/jsonata target/release/jx
+Checked 947 scoped path evaluations against upstream
+

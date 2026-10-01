@@ -123,15 +123,28 @@ but lexical evaluation may finish before the first callback. Input validation re
 `builtin.rs` resolves static names and keeps streaming aggregates/boolean helpers and
 indexed lookup on their existing paths. `builtin/library.rs` describes fixed builtin
 parameters, optional context substitution, arity and constant-fold eligibility;
-implementations live in string, collection and higher-order modules. There is no
+implementations live in cohesive string, collection, higher-order, numeric, padding,
+array, encoding and diagnostic modules. There is no
 runtime registry or user-defined signature system. Direct library calls use three
-stack argument slots; `$replace` alone uses four. Dynamic calls and callbacks share `function::invoke`.
+stack argument slots; `$replace` uses four and variadic `$zip` retains its argument list. Dynamic calls and callbacks share `function::invoke`.
 
 Computed strings use `OwnedString`: shared immutable JSON encoding, including lone
 UTF-16 surrogates. Raw strings and literals keep their borrowing; comparisons, keys,
 serialization and constant capture use the same encoded-string access as before.
 `$length` counts codepoints without copying; transforming strings owns new storage.
+UTF-16 iterators expose bounded size hints; computed strings reserve their lower bound.
 Type names borrow static literals. No input record becomes an owned tree.
+Rounding shifts shortest decimal text in a stack buffer; padding counts/streams
+codepoints. Sort reuses `ordering::indices`, zip uses element cursors, and single
+retains only its selected candidate. Library arguments still finish before callbacks;
+sequences needed as arguments are retained, while raw arrays stay borrowed. URI
+conversion implements strict percent/UTF-8 rules; `base64` supplies binary codecs.
+Only failing user diagnostics own messages (`Cow<str>`); success adds no ownership
+state. Scalar operators have a separate cohesive evaluator method; this and lexical
+parser methods keep recursive frames below the existing
+parser/function guards' stack budget. Scanner diagnostics stay static and copyable;
+conversion to the public owned-message error happens only at validation boundaries.
+The JSON validation grammar and execution plan are unchanged.
 
 Higher-order functions evaluate arguments once before invoking callbacks. Raw arrays
 stay borrowed; result sequences are retained, and callbacks receive the original
@@ -483,7 +496,15 @@ mutable-document overlay, universal ancestry tracking or second evaluator.
     shared row environments, clone views and selective copy/update reconstruction.
     Direct tree and bounded plans remain the execution model.
 
-Next semantic work: remaining library functions and function signatures/tail calls.
+19. **Complete: corpus classification and everyday helpers.** All 1,679 language
+    cases are classified and asserted. Decimal half-even rounding, padding,
+    sort/zip/single, encoding, error/assert, comments and Unicode names share
+    existing builtin/value/callback machinery. Static helpers use constant folding;
+    rounding and default sort/single calls with static inputs can precompute results.
+
+Next semantic work: numeric/date picture formatting and parsing, then function
+signatures/tail calls. The complete inventory now makes the outstanding dependencies
+explicit.
 Full mutable transform aliasing needs a deliberate transient-document model; do not
 broaden immutable copy/update by approximating those effects. Host invocation still
 needs a lifetime/resource contract.

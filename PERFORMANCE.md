@@ -1369,3 +1369,87 @@ Regression investigation and remaining costs:
 [differential results](benchmarks/m18/differential.txt) identify the tested build.
 `just all`, `just build`, **1,036** classified upstream cases and **44,845** differential
 comparisons pass. No input index or new IR/JIT machinery is added.
+
+## Milestone 19 — conformance closure and everyday helpers
+
+Same machine/compiler/profile; M18 `a7bd174` is the baseline. **1,186 workloads**
+include 23 compilation cases and 1,163 evaluations, with **550 allocation-free**
+evaluations. All 520 previous allocation-free cases remain so. Among 1,077 existing
+evaluations, 961 preserve allocation calls/bytes, 91 use fewer calls, and 25 keep
+calls but change requested bytes; none gain calls. Initial full snapshots use seven
+20 ms samples; the final full repeat uses default 50 ms. Selected regression and
+structural-change pairs use 300 ms; isolated callback repeats use 500 ms.
+
+Selected final default-duration medians include validation and full consumption:
+
+| Workload | Bytes | Records/s | Allocations / requested bytes |
+| --- | ---: | ---: | ---: |
+| Round record-derived number | 500 | 1,474,681 | 0 / 0 |
+| Decimal-place rounding | 500 | 1,221,613 | 0 / 0 |
+| Pad computed label | 500 | 1,218,994 | 5 / 83 |
+| Pad unchanged label | 500 | 1,471,935 | 0 / 0 |
+| URI-safe unchanged label | 500 | 1,499,042 | 0 / 0 |
+| Base64 encode label | 500 | 1,329,039 | 5 / 48 |
+| Sort three numeric values | 500 | 1,169,066 | 5 / 264 |
+| Zip three rows | 500 | 807,431 | 11 / 816 |
+| Select one item with a closure | 500 | 949,591 | 8 / 904 |
+| Successful assertion | 500 | 1,466,385 | 0 / 0 |
+| Sort 1,024 projected numbers | 21,428 | 5,150 | 23 / 139,168 |
+| Sort 1,024 rows with a closure | 21,428 | 576 | 15,397 / 1,990,888 |
+| Filter, sort and construct labels | 21,428 | 861 | 13,040 / 1,129,709 |
+| URI round trip, Latin1/UTF-16 text | 1,048,586 | 31.74 | 50 / 44,459,678 |
+| Base64 round trip, same text | 1,048,586 | 115.68 | 32 / 16,812,233 |
+
+Static default rounding/sorting reuse constant folding: their 500 B workloads reach
+3.15M/3.04M records/s, with 0/1 allocation respectively. Static container identity
+still needs its 16-byte token. These differ from dynamic-input workloads, so they
+are not like-for-like speedup claims. Rounding uses stack decimal buffers; unchanged
+padding/URI and successful assertions preserve zero allocation. Sort retains borrowed
+leaves and ordering indexes; zip constructs rows; single retains its candidate only.
+Sequence arguments still normalize before callbacks, and callback sorting pays for
+repeated scoped calls. These are existing retention/call boundaries, not new plans.
+
+Two measured structural improvements are retained:
+
+- UTF-16 iterator size bounds let owned strings reserve a lower bound. For 1 MiB text,
+  URI round-trip allocations fall **85 → 50**, requested bytes **47,185,927 →
+  44,459,678**; base64 falls **64 → 32**, bytes **17,965,628 → 16,812,233**.
+  Both-order throughput changes are within about 1%; retain this for allocation
+  savings, without a throughput claim. Encoding still owns its transformed text.
+- Dynamic user errors require an owned-message public error type. Keeping scanner
+  diagnostics static/copyable and converting only at boundaries improves the nested
+  1 MiB filtered aggregate **3.79%/4.60%** and 100 B validation **1.04%/1.84%**
+  against the public-error scanner, with identical allocation and validation behavior.
+  Separating scalar operators also reduces `Node::run`'s release frame from **1,040
+  to 640 bytes** and keeps bounded recursive tests on the default test-thread stack.
+
+Final 300 ms pairs against M18 put tiny paths, ordinary predicates and planned
+arithmetic/branches within about 1%; 100 B validation remains **1.62% slower**.
+The 1 MiB nested fold is **1.14% slower**, while computed negative-index chains remain
+**9.20% slower** and literal matcher containment **6.34% slower**. The scanner change
+addresses a structural ownership cost; it does not remove sequence replays or all
+code-generation variation. No input index, dispatch annotations or new lowering is added.
+
+Native `$map(a,$abs)` exposes a reproducible methodology discrepancy: final full runs
+reach **2.15–2.17M/s**, but isolated runs reach **1.58–1.62M/s**, versus about **2.00M/s**
+for M18; all use 3 allocations/224 bytes. Profiles show scanner, signatures, value
+conversion/drop and existing callback dispatch, without new helper execution. The
+cause of the context-dependent loss is not isolated. Both measurements are retained;
+a full-run gain cannot dismiss the isolated regression. Callback retention, general
+rescanning and UTF-16/output construction remain practical future costs.
+
+[Full comparison](benchmarks/m19/comparison.csv),
+[default-duration repeat](benchmarks/m19/full-repeat-comparison.csv),
+[longer pairs](benchmarks/m19/paired-comparison.csv),
+[allocation pairs](benchmarks/m19/capacity-comparison.csv),
+[scanner pairs](benchmarks/m19/scanner-comparison.csv) and
+[environment/commands](benchmarks/m19/environment.json) retain raw samples and replay
+instructions. [Source hashes](benchmarks/m19/source.json),
+[checks](benchmarks/m19/checks.log) and
+[differential results](benchmarks/m19/differential.txt) identify verification.
+`just all`, `just build`, full `just bench` and **46,824** differential comparisons
+pass. All **1,679** upstream language cases are classified: **1,040 results, 241
+mapped errors, 395 blockers and three recursion guards**. Blockers are asserted local
+failures, not upstream successes. No IR/JIT or general library framework is added.
+Requested bytes are cumulative allocator requests; retained RSS and latency
+percentiles for these helpers remain unmeasured.

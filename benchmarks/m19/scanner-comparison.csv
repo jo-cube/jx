@@ -1,0 +1,6 @@
+workload,input_bytes,before_records_per_second,after_records_per_second,change_percent,before_allocations,after_allocations,before_requested_bytes,after_requested_bytes
+aggregate/nested_filtered_sum,1048588,67.008532,69.545708,3.786347,0.0,0.0,0.0,0.0
+ascii/validate,100,11855376.091593,11979258.430186,1.044947,0.0,0.0,0.0,0.0
+execution/arithmetic,500,2711443.312102,2744174.082497,1.207135,0.0,0.0,0.0,0.0
+filter/negative_chain,20,108066.492226,107172.566681,-0.827200,0.0,0.0,0.0,0.0
+transform/clone,150,946425.202422,962404.677361,1.688403,10.0,10.0,1136.0,1136.0

@@ -1,0 +1,71 @@
+diff --git a/crates/jx/src/json/string.rs b/crates/jx/src/json/string.rs
+index 1555b0e..81dfdd9 100644
+--- a/crates/jx/src/json/string.rs
++++ b/crates/jx/src/json/string.rs
+@@ -19,6 +19,13 @@ pub(crate) struct Units<'a> {
+ impl Iterator for Units<'_> {
+     type Item = u16;
+ 
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        let bytes = self.chars.as_str().len();
++        let pending = usize::from(self.pending.is_some());
++        // A validated escape uses at most six bytes for one UTF-16 unit.
++        (bytes.div_ceil(6) + pending, Some(bytes + pending))
++    }
++
+     fn next(&mut self) -> Option<Self::Item> {
+         if let Some(unit) = self.pending.take() {
+             return Some(unit);
+@@ -56,3 +63,31 @@ pub(crate) fn units(body: &str) -> Units<'_> {
+         pending: None,
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::units;
++
++    #[test]
++    fn size_hints_bound_remaining_units() {
++        for (body, mut remaining) in [
++            ("", 0),
++            ("abc", 3),
++            ("é😀", 3),
++            (r"\ud800", 1),
++            (r"\ud83d\ude00", 2),
++            (r"a\n\u0000", 3),
++        ] {
++            let mut units = units(body);
++            loop {
++                let (lower, upper) = units.size_hint();
++                assert!(lower <= remaining && upper.unwrap() >= remaining, "{body}");
++                if units.next().is_none() {
++                    assert_eq!(remaining, 0);
++                    break;
++                }
++                remaining -= 1;
++            }
++        }
++    }
++}
+diff --git a/crates/jx/src/value.rs b/crates/jx/src/value.rs
+index 1a12fe4..373df5d 100644
+--- a/crates/jx/src/value.rs
++++ b/crates/jx/src/value.rs
+@@ -153,7 +153,15 @@ pub struct OwnedString {
+ impl OwnedString {
+     pub(crate) fn units(units: impl IntoIterator<Item = u16>) -> Self {
+         use std::fmt::Write;
+-        let mut json = String::from("\"");
++        let units = units.into_iter();
++        let minimum = units.size_hint().0;
++        let mut json = if minimum == 0 {
++            String::from("\"")
++        } else {
++            let mut json = String::with_capacity(minimum.saturating_add(2));
++            json.push('"');
++            json
++        };
+         for ch in char::decode_utf16(units) {
+             match ch {
+                 Ok('"') => json.push_str("\\\""),

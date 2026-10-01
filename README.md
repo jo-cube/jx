@@ -4,7 +4,7 @@ A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
 result sequences, scalar operators, filters, aggregates, constructors, lexical
 variables, conditionals, closures, wildcard navigation, grouping, ordering, indexed/joined paths,
-common string/collection/higher-order functions, conversions, function pipelines, regex/matcher text processing, parent navigation and structural transforms**.
+common string/collection/higher-order functions (including round, pad, sort/zip/single and encoding), conversions, function pipelines, regex/matcher text processing, parent navigation and structural transforms**.
 Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
@@ -63,7 +63,7 @@ path contexts. `$clone` gives input/compiled containers fresh identities through
 views; transforms rebuild changed containers and their ancestors while sharing untouched
 structure and borrowed leaves. Input is never parsed into a general JSON DOM. Regex literals compile once with `regress`; matcher cursors are local to
 one evaluation, and continuations retain their subject. ASCII subjects stay borrowed;
-escaped/non-ASCII subjects decode once to UTF-16. `serde_json` is a test-only oracle and fixture reader.
+escaped/non-ASCII subjects decode once to UTF-16. `base64` supplies the binary codecs; `serde_json` is a test-only oracle and fixture reader.
 
 The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact
 NDJSON synchronously. Missing produces no line; null produces `null`; sequences
