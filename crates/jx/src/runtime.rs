@@ -39,6 +39,7 @@ pub(crate) struct Runtime<'e, 'i> {
     frames: RefCell<Vec<Frame<'e, 'i>>>,
     depth: Cell<usize>,
     tree_depth: Cell<usize>,
+    timestamp: Option<i64>,
 }
 #[derive(Clone, Debug)]
 pub(crate) struct Scope<'e, 'i> {
@@ -46,7 +47,7 @@ pub(crate) struct Scope<'e, 'i> {
     pub frame: usize,
 }
 impl<'e, 'i> Scope<'e, 'i> {
-    pub fn new(root: Value<'e, 'i>) -> Self {
+    pub fn new(root: Value<'e, 'i>, clock: bool) -> Self {
         Self {
             runtime: Rc::new(Runtime {
                 frames: RefCell::new(vec![Frame {
@@ -56,9 +57,13 @@ impl<'e, 'i> Scope<'e, 'i> {
                 }]),
                 depth: Cell::new(0),
                 tree_depth: Cell::new(0),
+                timestamp: clock.then(timestamp),
             }),
             frame: 0,
         }
+    }
+    pub fn timestamp(&self) -> i64 {
+        self.runtime.timestamp.expect("clock analysis")
     }
     pub fn lookup(&self, name: &str) -> Option<Value<'e, 'i>> {
         let frames = self.runtime.frames.borrow();
@@ -179,4 +184,13 @@ pub(crate) fn block<'e, 'i>(
     })();
     child.release();
     result
+}
+
+fn timestamp() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or_else(
+            |e| -(e.duration().as_millis() as i64),
+            |d| d.as_millis() as i64,
+        )
 }

@@ -250,6 +250,7 @@ fn step(kind: Kind, offset: usize) -> Step {
             offset,
             depth: 1,
             effects: false,
+            clock: false,
             tail_call: false,
         },
         predicates: Box::default(),

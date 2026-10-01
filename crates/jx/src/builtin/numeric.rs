@@ -42,7 +42,12 @@ pub(super) fn round_value<'e, 'i, const N: usize>(
 ) -> Option<Value<'e, 'i>> {
     let n = super::library::number(&args[0])?;
     let p = super::library::number(&args[1]).unwrap_or(0.0);
-    let result = if p == 0.0 || p.is_nan() {
+    let result = round(n, p);
+    Some(Value::Number(if result == 0.0 { 0.0 } else { result }))
+}
+
+pub(crate) fn round(n: f64, p: f64) -> f64 {
+    if p == 0.0 || p.is_nan() {
         n.round_ties_even()
     } else if p.fract() != 0.0 || !p.is_finite() || p.abs() >= 1e21 {
         f64::NAN
@@ -50,6 +55,5 @@ pub(super) fn round_value<'e, 'i, const N: usize>(
         if p < 0.0 || n == 0.0 { 0.0 } else { f64::NAN }
     } else {
         shift(shift(n, p as i32).round_ties_even(), -(p as i32))
-    };
-    Some(Value::Number(if result == 0.0 { 0.0 } else { result }))
+    }
 }

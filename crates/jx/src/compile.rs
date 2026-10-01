@@ -21,12 +21,14 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
         crate::analysis::children(child, &mut |arg| {
             prepare(arg);
         });
+        specialize(child);
         constant = false;
     } else if let Kind::Binary(Op::Coalesce, test, no) = &mut node.kind {
         // Its call argument is also the selected branch; keep that call boundary.
         crate::analysis::children(test, &mut |child| {
             constant &= prepare(child);
         });
+        specialize(test);
         constant &= eligible(test);
         constant &= prepare(no);
     } else {
@@ -34,6 +36,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
             constant &= prepare(child);
         });
     }
+    specialize(node);
     constant &= eligible(node);
     if constant
         && !matches!(
@@ -61,6 +64,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
             };
             node.kind = Kind::Prepared(Box::new(prepared));
             node.effects = false;
+            node.clock = false;
         } else {
             constant = false;
         }
@@ -79,7 +83,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
     constant
 }
 fn eligible(node: &Node) -> bool {
-    if node.effects || node.tail_call {
+    if node.effects || node.clock || node.tail_call {
         return false;
     }
     match &node.kind {
@@ -97,6 +101,18 @@ fn eligible(node: &Node) -> bool {
         | Kind::Binary(..)
         | Kind::Conditional(..) => true,
         Kind::Builtin(builtin, args) => builtin.constant(args),
+        Kind::Formatted(call) => call.constant(),
         _ => false,
     }
+}
+
+fn specialize(node: &mut Node) {
+    if let Kind::Builtin(Builtin::Library(function), args) = &mut node.kind
+        && let Some(call) = crate::format::Call::prepare(*function, args, node.offset)
+    {
+        node.kind = Kind::Formatted(Box::new(call));
+    }
+    let mut clock = crate::analysis::own_clock(&node.kind);
+    crate::analysis::children(node, &mut |child| clock |= child.clock);
+    node.clock = clock;
 }

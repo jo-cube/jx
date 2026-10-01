@@ -4,7 +4,7 @@ mod diagnostics;
 mod encoding;
 mod higher;
 pub(crate) mod library;
-mod numeric;
+pub(crate) mod numeric;
 mod padding;
 mod strings;
 
@@ -236,29 +236,4 @@ impl Builtin {
 }
 
 // Known standard names must not silently behave like unbound user variables.
-const DEFERRED: &[&str] = &[
-    "pad",
-    "formatNumber",
-    "formatBase",
-    "formatInteger",
-    "parseInteger",
-    "round",
-    "random",
-    "zip",
-    "single",
-    "error",
-    "assert",
-    "sort",
-    "shuffle",
-    "base64encode",
-    "base64decode",
-    "encodeUrlComponent",
-    "encodeUrl",
-    "decodeUrlComponent",
-    "decodeUrl",
-    "eval",
-    "toMillis",
-    "fromMillis",
-    "now",
-    "millis",
-];
+const DEFERRED: &[&str] = &["random", "shuffle", "eval"];

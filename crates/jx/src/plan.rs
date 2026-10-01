@@ -245,7 +245,7 @@ impl Plan {
 }
 
 pub(crate) fn prepare(node: &mut Node) {
-    if !node.effects {
+    if !node.effects && !node.clock {
         let execution = pipeline::lower(node)
             .map(Execution::Fold)
             .or_else(|| object::lower(node).map(Execution::Object))

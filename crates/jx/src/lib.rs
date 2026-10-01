@@ -22,6 +22,7 @@ mod error;
 mod evaluate;
 mod expression;
 mod filter;
+mod format;
 mod function;
 mod json;
 mod lookup;

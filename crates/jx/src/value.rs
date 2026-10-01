@@ -184,6 +184,27 @@ impl OwnedString {
         json.push('"');
         Self { json: json.into() }
     }
+    pub(crate) fn text(mut text: String) -> Self {
+        use std::fmt::Write;
+        if !text.bytes().any(|b| b < b' ' || b == b'"' || b == b'\\') {
+            text.insert(0, '"');
+            text.push('"');
+            return Self { json: text.into() };
+        }
+        let mut json = String::with_capacity(text.len().saturating_add(2));
+        json.push('"');
+        for ch in text.chars() {
+            match ch {
+                '"' => json.push_str("\\\""),
+                '\\' => json.push_str("\\\\"),
+                ch if ch < ' ' => write!(json, "\\u{:04x}", ch as u32).unwrap(),
+                ch => json.push(ch),
+            }
+        }
+        json.push('"');
+        Self { json: json.into() }
+    }
+    // This body is already JSON-escaped; use text for newly computed UTF-8 text.
     pub(crate) fn body(body: &str) -> Self {
         Self {
             json: format!("\"{body}\"").into(),

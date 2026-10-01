@@ -78,6 +78,7 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
                     offset: 0,
                     depth: 1,
                     effects: false,
+                    clock: false,
                     tail_call: false,
                 },
             ));
@@ -90,6 +91,7 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         {
             node.kind = Kind::BuiltinReference(builtin);
         }
+        node.clock = own_clock(&node.kind);
         node.effects = matches!(
             node.kind,
             Kind::Transform(_)
@@ -109,8 +111,13 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
             }
         }
         let mut effects = node.effects;
-        children(node, &mut |child| effects |= child.effects);
+        let mut clock = node.clock;
+        children(node, &mut |child| {
+            effects |= child.effects;
+            clock |= child.clock;
+        });
         node.effects = effects;
+        node.clock = clock;
     });
     visit(root, &mut |node| {
         if let Kind::Lambda(_, body) = &mut node.kind {
@@ -187,6 +194,11 @@ pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
             f(yes);
             if let Some(no) = no {
                 f(no);
+            }
+        }
+        Kind::Formatted(call) => {
+            for arg in &mut call.args {
+                f(arg);
             }
         }
         Kind::Array(args, _) | Kind::Builtin(_, args) | Kind::Block(args) => {
@@ -292,5 +304,17 @@ pub(crate) fn check_composition(root: &mut Node) -> Result<(), crate::Error> {
         ))
     } else {
         Ok(())
+    }
+}
+
+pub(crate) fn own_clock(kind: &Kind) -> bool {
+    match kind {
+        Kind::Formatted(call) => call.needs_clock(),
+        Kind::Builtin(Builtin::Library(function), args) => function.clock_call(args),
+        Kind::BuiltinReference(Builtin::Library(function)) => function.uses_clock(),
+        Kind::Variable(name) => {
+            matches!(Builtin::named(name),Some(Builtin::Library(f)) if f.uses_clock())
+        }
+        _ => false,
     }
 }

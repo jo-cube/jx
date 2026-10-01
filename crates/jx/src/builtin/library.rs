@@ -1,13 +1,21 @@
 use crate::{
     Error, Value,
     evaluate::Operand,
-    expression::Node,
+    expression::{Kind, Node},
     sequence::Context,
     value::{range_error, type_error},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Library {
+    FormatNumber,
+    FormatInteger,
+    ParseInteger,
+    FormatBase,
+    FromMillis,
+    ToMillis,
+    Now,
+    Millis,
     Round,
     Pad,
     Sort,
@@ -93,8 +101,29 @@ impl Param {
     }
 }
 impl Library {
+    pub fn uses_clock(self) -> bool {
+        matches!(self, Self::ToMillis | Self::Now | Self::Millis)
+    }
+    pub fn clock_call(self, args: &[Node]) -> bool {
+        match self {
+            Self::ToMillis => args.get(1).is_some_and(|n| match &n.kind {
+                Kind::Missing => false,
+                Kind::Prepared(p) => !matches!(p.data, crate::constant::Data::Missing),
+                _ => true,
+            }),
+            _ => self.uses_clock(),
+        }
+    }
     pub fn named(name: &str) -> Option<Self> {
         Some(match name {
+            "formatNumber" => Self::FormatNumber,
+            "formatInteger" => Self::FormatInteger,
+            "parseInteger" => Self::ParseInteger,
+            "formatBase" => Self::FormatBase,
+            "fromMillis" => Self::FromMillis,
+            "toMillis" => Self::ToMillis,
+            "now" => Self::Now,
+            "millis" => Self::Millis,
             "round" => Self::Round,
             "pad" => Self::Pad,
             "sort" => Self::Sort,
@@ -148,6 +177,14 @@ impl Library {
     fn signature(self) -> (&'static [Param], usize, bool) {
         use Param::*;
         match self {
+            Self::FormatNumber => (&[Number, String, Object], 2, true),
+            Self::FormatInteger => (&[Number, String], 2, true),
+            Self::ParseInteger => (&[String, String], 2, true),
+            Self::FormatBase => (&[Number, Number], 1, true),
+            Self::FromMillis => (&[Number, String, String], 1, true),
+            Self::ToMillis => (&[String, String], 1, true),
+            Self::Now => (&[String, String], 0, false),
+            Self::Millis => (&[], 0, false),
             Self::Round => (&[Number, Number], 1, true),
             Self::Pad => (&[String, Number, String], 2, true),
             Self::Sort | Self::Single => (&[Array, Function], 1, false),
@@ -226,8 +263,30 @@ impl Library {
         }
     }
     pub fn constant(self, args: &[Node]) -> bool {
+        if self == Self::ToMillis
+            && args.len() == 1
+            && matches!(
+                &args[0].kind,
+                crate::expression::Kind::String(_) | crate::expression::Kind::Missing
+            )
+        {
+            return true;
+        }
         if matches!(self, Self::Sort | Self::Single) {
             return args.len() == 1;
+        }
+        if matches!(
+            self,
+            Self::FormatNumber | Self::FormatBase | Self::FromMillis
+        ) && args.first().is_some_and(|n| match &n.kind {
+            Kind::Number(_) | Kind::Missing => true,
+            Kind::Prepared(p) => matches!(
+                p.data,
+                crate::constant::Data::Number(_) | crate::constant::Data::Missing
+            ),
+            _ => false,
+        }) {
+            return true;
         }
         if self == Self::Round && args.len() == 1 {
             return true;
@@ -236,7 +295,10 @@ impl Library {
         // Optional context matching can depend on argument types, not only count.
         !matches!(
             self,
-            Self::Clone
+            Self::Now
+                | Self::Millis
+                | Self::ToMillis
+                | Self::Clone
                 | Self::Map
                 | Self::Filter
                 | Self::Reduce
@@ -302,12 +364,13 @@ impl Library {
             self.validated::<3>(args, context, offset)
         }
     }
-    fn validated<'e, 'i, const N: usize>(
+    pub(crate) fn arguments<'e, 'i, const N: usize>(
         self,
         args: &[Option<Value<'e, 'i>>],
         context: &Context<'e, 'i>,
         offset: usize,
-    ) -> Result<Operand<'e, 'i>, Error> {
+        values: &mut [Option<Value<'e, 'i>>; N],
+    ) -> Result<usize, Error> {
         let (params, required, contextual) = self.signature();
         let fits = |skip: usize| {
             args.len() + skip >= required
@@ -321,7 +384,6 @@ impl Library {
         } else {
             return Err(type_error(offset));
         };
-        let mut values: [_; N] = std::array::from_fn(|_| None);
         if skip == 1 {
             values[0] = Some(context.value.clone());
             if !params[0].accepts(&values[0]) {
@@ -355,7 +417,27 @@ impl Library {
                 }
             }
         }
+        Ok(skip)
+    }
+    fn validated<'e, 'i, const N: usize>(
+        self,
+        args: &[Option<Value<'e, 'i>>],
+        context: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
+        let mut values = std::array::from_fn(|_| None);
+        self.arguments::<N>(args, context, offset, &mut values)?;
         let result = match self {
+            Self::FormatNumber
+            | Self::FormatInteger
+            | Self::ParseInteger
+            | Self::FormatBase
+            | Self::FromMillis
+            | Self::ToMillis
+            | Self::Now
+            | Self::Millis => {
+                crate::format::call(self, values[..3].try_into().unwrap(), context, offset, None)?
+            }
             Self::Round => super::numeric::round_value(&values),
             Self::Pad => super::padding::pad(values[..3].try_into().unwrap(), offset)?,
             Self::Sort | Self::Single => {

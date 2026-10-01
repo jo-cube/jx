@@ -189,6 +189,7 @@ fn node(kind: Kind, offset: usize, depth: usize) -> Result<Node, Error> {
         offset,
         depth,
         effects: false,
+        clock: false,
         tail_call: false,
     })
 }

@@ -139,9 +139,8 @@ pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluati
         });
     }
     let value = Value::Raw(crate::validate(input)?);
-    let scope = node
-        .effects
-        .then(|| crate::runtime::Scope::new(value.clone()));
+    let scope =
+        (node.effects || node.clock).then(|| crate::runtime::Scope::new(value.clone(), node.clock));
     let context = Context {
         scope,
         value,
@@ -305,6 +304,7 @@ impl Node {
                 return crate::runtime::block(items, input)
                     .map(|v| v.map_or(Operand::Missing, Operand::One));
             }
+            Kind::Formatted(call) => return call.evaluate(input, self.offset),
             Kind::Builtin(builtin, args) => {
                 return builtin.evaluate(args, input, self.offset).map(|result| {
                     if self.tail_call {

@@ -11,6 +11,8 @@ pub(crate) struct Node {
     pub depth: usize,
     // Reads/writes lexical state or creates/calls functions; unsafe to replay.
     pub effects: bool,
+    // Evaluation-fixed time is initialized only for expressions that can read it.
+    pub clock: bool,
     // Native sequence results survive a lambda tail call until its caller normalizes.
     pub tail_call: bool,
 }
@@ -37,6 +39,7 @@ pub(crate) enum Kind {
     Reduce(Box<Node>, Box<[(Node, Node)]>),
     Sort(Box<Node>, Box<[(Node, bool)]>),
     Builtin(crate::builtin::Builtin, Box<[Node]>),
+    Formatted(Box<crate::format::Call>),
     Variable(Box<str>),
     Bind(Box<str>, Box<Node>),
     Block(Box<[Node]>),
