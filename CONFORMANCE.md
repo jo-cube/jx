@@ -29,9 +29,9 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Constructors | Arrays, objects, computed keys/values, nested and mapped construction; see below |
 | Structural updates | `|pattern|update[,delete]|` captured callables, `$clone`, selective immutable copy/update; boundaries below |
 | Singleton retention | `expr[]` preserves sequence shape; missing stays missing |
-| Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures and higher-order values |
+| Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures, compiled signatures and tail execution |
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
-| Deferred runtime/language | Signatures, tail-call elimination, untyped native partials |
+| Deferred runtime/language | `$eval`, randomness, native host coercions and embedding |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments / names | Non-nesting `/* … */` comments; Unicode field/variable names supported |
 | Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null` require backticks; bare `function` / `λ` are names outside lambda syntax |
@@ -415,7 +415,11 @@ the remaining holes, in order. Omitted parameters become undefined; extra suppli
 expressions still evaluate. Repeated partials merge slots once; lexical focus and
 captured environments remain intact. Builtin partials do not substitute context or
 promote scalars to arrays. Typed array calls and numeric conversion are supported;
-JavaScript signature-bypass coercions remain runtime `UnsupportedExpression`.
+Lambda partials bypass their original signature. Native count reads array/string
+length (UTF-16 for strings), returns zero for missing, reads an object's `length`, and
+returns missing for scalar numbers/booleans; null is a type error. Native zip partials
+take one formal argument, return singleton tuples for arrays and `[]` otherwise.
+Other JavaScript signature-bypass coercions remain runtime `UnsupportedExpression`.
 Native `$string` partials are deferred because the pinned reference cannot represent
 its default parameter; use `$string` as a callback or wrap it in a lambda.
 
@@ -449,8 +453,11 @@ record isolation, cancellation and recursion regressions.
 
 Limits and explicit policies:
 
-- Calls stop with `DepthLimit` after 64 active calls or 512 accumulated body-tree levels.
-  This includes tail recursion; tail-call elimination and optional signatures are deferred.
+- Non-tail calls stop with `DepthLimit` after 64 active calls or 512 accumulated
+  body-tree levels. Tail calls do not grow that stack; each tail chain permits one
+  million iterations, then reports `EvaluationLimit`. This deterministic guard replaces
+  the reference's time guard for the infinite-tail corpus case. Consumer cancellation
+  applies after function evaluation has produced its retained result.
 - Known unimplemented builtins are function values; calling them raises runtime
   `UnsupportedExpression`, including dynamic calls. Unknown user-function calls are `TypeError`.
 - JSONata-js runs constructor members concurrently. Unscoped assignments shared across
@@ -458,6 +465,37 @@ Limits and explicit policies:
   parenthesized blocks; race-dependent shared assignment is deferred.
 - `Value::Function` is opaque. `write_compact` and the CLI reject function output because
   it has no JSON encoding. Host function registration/invocation remains deferred.
+
+### User signatures and tail calls
+
+Authority: [function signatures and tail recursion](https://docs.jsonata.org/programming).
+Signatures compile with their lambda. Simple types, JSON/any types, unions, optional
+`?`, context `-`, variadic `+`, array and function subtype syntax are accepted.
+All arguments evaluate before validation. An explicit missing scalar is valid and
+is distinct from an omitted required slot; a missing function fails unless in a union.
+Context is substituted only when the signature matched an absent slot; explicit
+missing does not substitute it. Array parameters promote supplied scalars, preserve
+borrowed arrays and reject incompatible element types. Context substitution bypasses
+array promotion/subtype validation, matching the reference.
+
+Return types and function sub-signatures are descriptive, not runtime checks. Signatures
+accept at most 128 input parameters; wider signatures report `SignatureError`.
+Array subtype checks intentionally follow the pinned shallow homogeneous rule:
+`a<a<n>>` checks that immediate members are arrays, not their numeric leaves. Optional
+matching retains the reference's positional quirk: a skipped optional slot still
+advances the argument index. Partial lambdas remove the original signature entirely;
+subsequent ordinary tail calls validate their own target signatures.
+The documented primitive `u` union is supported; JSONata 2.2.0's parser ignores that
+symbol. This deliberate difference has a local semantic test, not a differential case.
+
+Direct tail calls through conditional branches and final block expressions run with
+bounded Rust stack and reusable uncaptured frames, including mutual recursion and
+partial/composed callable targets. Captured frames remain live until record completion.
+Arguments use lexical focus; tail signature/context defaults use the original caller's
+focus, including contextual builtins. A pipeline expression or postfix result processing
+is not a tail position in the pinned parser. Non-tail recursion retains its stack guard.
+[Readable cases](tests/semantics/functions.json) and borrowing/frame/limit regressions
+cover these boundaries. No public host invocation, `$eval` or JIT is added.
 
 ## Standard library
 
@@ -504,7 +542,7 @@ CLI tests freeze supported boundaries. [Official function documentation](https:/
 and complete imported groups remain the authority.
 
 Still deferred: shuffle/randomness, eval,
-untyped native partial coercions and user-defined signatures. Known deferred calls raise
+untyped native partial coercions and host-function embedding. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
 
 ## Everyday helpers
@@ -526,7 +564,8 @@ callback receiving value/index/original array and errors for zero or multiple ma
 An explicitly missing callback is a type error for sort/single; omitting it uses the
 default. Typed native partials may omit it. `$zip` accepts one or more arguments,
 promotes scalars, stops at the shortest array, and preserves nested values. Variadic
-native partial application remains explicitly deferred.
+native partial application accepts one formal argument and ignores additional bound
+slots, as in the pinned reference; direct `$zip` remains variadic.
 
 URI encode/decode functions follow the reserved-character and strict UTF-8 rules of
 `encodeURI` / `encodeURIComponent` and their inverses; malformed percent encodings
@@ -653,13 +692,16 @@ embedding, asynchronous API and parser-recovery tests are outside this inventory
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 1338 | JSON result / missing agrees with upstream |
-| Mapped expected errors | 276 | Compile/evaluate phase and local kind; user messages where applicable |
-| Blocked compatibility | 62 | Specific dependency and current local failure asserted |
-| Recursion guard | 3 | Existing bounded calls; tail-call elimination deferred |
+| Supported results | 1376 | JSON result / missing agrees with upstream |
+| Mapped expected errors | 286 | Compile/evaluate phase and local kind; user messages where applicable |
+| Blocked compatibility | 16 | Specific dependency and current local failure asserted |
+| Recursion guard | 1 | Non-tail factorial exceeds the bounded stack |
 
-The remaining blockers are function signatures (**43**, including two tail-recursion
-cases), `$eval` (**12**), randomness (**4**) and tail-call elimination (**3**).
+The remaining blockers are `$eval` (**12**) and randomness (**4**).
+M21 promotes **48** signature/tail/guard cases: **38** results and **10** mapped errors.
+All signature cases and finite tail-recursive cases pass; one non-tail factorial
+remains an explicit local limit. Infinite tail recursion asserts an execution-budget
+error rather than a stack-depth error.
 M20 promotes all **333** number/integer/base/date family cases: **298** results and
 **35** mapped errors. Picture/date boundaries outside that pinned corpus remain explicit below.
 The legacy singular `transform` group is now entirely supported: its 104 cases
@@ -716,6 +758,7 @@ node scripts/check-matchers.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-structure.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-helpers.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-formatting.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-functions.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -739,7 +782,7 @@ and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
 Scoped-path checks add **947** comparisons across root/array shapes, local/global
 positions, joins, closures, sorting, grouping, and the imported supported join cases.
-Builtin checks add **1,868** comparisons covering fixed signatures, missing/null,
+Builtin checks add **1,907** comparisons covering fixed signatures, missing/null,
 Unicode, callback arity/context, closure effects, nested sequences and mixed pipelines.
 Conversion/composition checks add **2,635** comparisons across numeric/escaping
 boundaries, partials, closures, sequence shapes and mixed pipelines. The known upstream
@@ -764,4 +807,8 @@ Everyday-helper checks add **1,884** comparisons, including **132** readable cas
 partials, stable callbacks, URI/base64 boundaries and mixed lexical/grouped pipelines.
 Formatting checks add **2,313** comparisons across static/dynamic pictures, symbols,
 rounding, integer/word/base forms, calendar/week boundaries, timezones, missing/errors
-and mixed pipelines. All 17 differential suites total **49,470** comparisons.
+and mixed pipelines. All 18 differential suites total **50,067** comparisons.
+
+Function-runtime checks add **558** comparisons across signatures, optional/variadic
+matching, context defaults, partials and deep direct/mutual/composed calls. Primitive
+`u` is locally tested against its documented meaning; the pinned parser omits it.

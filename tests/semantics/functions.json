@@ -1,0 +1,611 @@
+[
+  {
+    "name": "signature accepts missing scalar",
+    "expr": "function($x)<n:n>{$x}(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "signature context uses caller focus",
+    "expr": "($f:=function($x)<n-:n>{$x};n.$f())",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "signature context differs from captured body focus",
+    "expr": "($f:=function($x)<n-:n>{[$x,$.n]};n.$f())",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      [
+        7,
+        7
+      ]
+    ]
+  },
+  {
+    "name": "explicit missing does not substitute focus",
+    "expr": "(7).function($x)<n-:n>{$x}(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "array signature promotes scalar",
+    "expr": "function($x)<a<n>:a>{$x}(2)",
+    "data": null,
+    "items": [
+      [
+        2
+      ]
+    ]
+  },
+  {
+    "name": "array signature retains empty array",
+    "expr": "function($x)<a<n>:a>{$x}([])",
+    "data": null,
+    "items": [
+      []
+    ]
+  },
+  {
+    "name": "function subtype is descriptive",
+    "expr": "function($f)<f<n:n>:x>{$f(2)}(function($x){$x+1})",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "return type is descriptive",
+    "expr": "function()<:n>{\"text\"}()",
+    "data": null,
+    "items": [
+      "text"
+    ]
+  },
+  {
+    "name": "optional matching follows reference argument positions",
+    "expr": "function($x,$y)<s?n+:a>{[$x,$y]}(1,2,3)",
+    "data": null,
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "variadic matching reserves later parameters",
+    "expr": "function($x,$y,$z)<n+sn:a>{[$x,$y,$z]}(1,2,\"s\",3)",
+    "data": null,
+    "items": [
+      [
+        1,
+        2,
+        "s"
+      ]
+    ]
+  },
+  {
+    "name": "array context is not singleton promoted",
+    "expr": "(7).function($x)<a-:x>{$x}()",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "partial lambda bypasses original signature",
+    "expr": "($f:=function($x,$y)<nn:n>{$x & $y};$p:=$f(?,\"b\");$p(\"a\"))",
+    "data": null,
+    "items": [
+      "ab"
+    ]
+  },
+  {
+    "name": "nested partial bypasses original signature",
+    "expr": "($f:=function($x,$y,$z)<nnn:s>{$x & $y & $z};$p:=$f(?,\"b\",?);$q:=$p(\"a\",?);$q(\"c\"))",
+    "data": null,
+    "items": [
+      "abc"
+    ]
+  },
+  {
+    "name": "partial application still evaluates discarded arguments",
+    "expr": "($n:=0;$f:=function($x){$x};$p:=$f(?,$n:=$n+1);[$p(4),$n])",
+    "data": null,
+    "items": [
+      [
+        4,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "signature arguments evaluate before validation",
+    "expr": "function($x)<n:n>{$x}(\"bad\",$error(\"after\"))",
+    "data": null,
+    "error": "UserError"
+  },
+  {
+    "name": "wrong scalar",
+    "expr": "function($x)<n:n>{$x}(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "missing function",
+    "expr": "function($f)<f:f>{$f}(missing)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "extra argument",
+    "expr": "function($x)<n:n>{$x}(1,2)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "absent required",
+    "expr": "function($x)<n:n>{$x}()",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "wrong context",
+    "expr": "[\"s\"].function($x)<n-:n>{$x}()",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "typed array rejects mixed",
+    "expr": "function($x)<a<n>:a>{$x}([1,\"2\"])",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "typed array rejects scalar",
+    "expr": "function($x)<a<n>:a>{$x}(\"2\")",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "invalid parameterized scalar",
+    "expr": "function($x)<n<n>>{$x}(1)",
+    "data": null,
+    "error": "SignatureError",
+    "phase": "compile"
+  },
+  {
+    "name": "parameterized union not supported by reference",
+    "expr": "function($x)<(na<n>)>{$x}([])",
+    "data": null,
+    "error": "SignatureError",
+    "phase": "compile"
+  },
+  {
+    "name": "deep accumulator tail recursion",
+    "expr": "($f:=function($n,$a){$n=0?$a:$f($n-1,$a+1)};$f(10000,0))",
+    "data": null,
+    "items": [
+      10000
+    ]
+  },
+  {
+    "name": "mutual tail recursion",
+    "expr": "($even:=function($n){$n=0?true:$odd($n-1)};$odd:=function($n){$n=0?false:$even($n-1)};$even(10001))",
+    "data": null,
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "tail block preserves shadowing",
+    "expr": "($f:=function($n,$a){($next:=$a+1;$n=0?$a:$f($n-1,$next))};$f(1000,0))",
+    "data": null,
+    "items": [
+      1000
+    ]
+  },
+  {
+    "name": "tail arguments evaluate before frame reuse",
+    "expr": "($f:=function($n,$x,$y){$n=0?[$x,$y]:$f($n-1,$y,$x+$y)};$f(10,0,1))",
+    "data": null,
+    "items": [
+      [
+        55,
+        89
+      ]
+    ]
+  },
+  {
+    "name": "closure escaping a tail frame retains old arguments",
+    "expr": "($f:=function($n,$g){$n=0?$g():$f($n-1,function(){$n})};$f(20,function(){0}))",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "earlier captured frames survive multiple tail iterations",
+    "expr": "($f:=function($n,$g){$n=0?$g():$f($n-1,$n=3?function(){$n}:$g)};$f(8,function(){0}))",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "tail call can change function arity",
+    "expr": "($f:=function($n){$n=0?0:$g($n-1,2)};$g:=function($n,$x){$n=0?$x:$f($n-1)};$f(1001))",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "tail calls validate every invocation",
+    "expr": "($f:=function($n)<n:n>{$n=0?0:$f(\"wrong\")};$p:=$f(?);$p(1))",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "tail call through partial lambda",
+    "expr": "($f:=function($n,$a)<nn:n>{$n=0?$a:$f(?,$a+1)($n-1)};$f(1000,0))",
+    "data": null,
+    "items": [
+      1000
+    ]
+  },
+  {
+    "name": "pipeline call retains arguments",
+    "expr": "($f:=function($n,$a){$n=0?$a:($n-1) ~> $f($a+1)};$f(10,0))",
+    "data": null,
+    "items": [
+      10
+    ]
+  },
+  {
+    "name": "tail lambda result retains native sequence boundary",
+    "expr": "($f:=function($n){$n=0?$map([1],function($x){[$x]}):$f($n-1)};$f(1000)[])",
+    "data": null,
+    "items": [
+      [
+        [
+          1
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "tail result remains borrowed",
+    "expr": "($f:=function($n,$x){$n=0?$x:$f($n-1,$x)};$f(1000,obj))",
+    "data": {
+      "obj": {
+        "x": 1
+      }
+    },
+    "items": [
+      {
+        "x": 1
+      }
+    ]
+  },
+  {
+    "name": "native partial count scalar has no length",
+    "expr": "$count(?)(2)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "native partial count string uses UTF16 length",
+    "expr": "$count(?)('😀')",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "native partial count reads object length",
+    "expr": "$count(?)({'length':7})",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "native partial count missing",
+    "expr": "$count(?)(missing)",
+    "data": null,
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native partial zip array",
+    "expr": "$zip(?)([1,2])",
+    "data": null,
+    "items": [
+      [
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "native partial zip scalar",
+    "expr": "$zip(?)(2)",
+    "data": null,
+    "items": [
+      []
+    ]
+  },
+  {
+    "name": "native partial zip ignores excess supplied slots",
+    "expr": "$zip(?,[3,4])([1,2])",
+    "data": null,
+    "items": [
+      [
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "native partial count null",
+    "expr": "$count(?)(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "native partial sum scalar",
+    "expr": "$sum(?)(2)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "tail signature uses original caller focus",
+    "expr": "($f:=function($x)<n-:n>{$x};$g:=function(){$f()};n.$g())",
+    "data": {
+      "n": 7,
+      "obj": {
+        "n": 9
+      }
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "native tail call uses caller focus",
+    "expr": "($f:=function(){$abs()};n.$f())",
+    "data": {
+      "n": 7,
+      "obj": {
+        "n": 9
+      }
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "native lookup tail uses caller object",
+    "expr": "($f:=function(){$lookup(\"n\")};obj.$f())",
+    "data": {
+      "n": 7,
+      "obj": {
+        "n": 9
+      }
+    },
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "prepared contextual native tail call",
+    "expr": "($f:=function(){$formatNumber(\"0.0\")};n.$f())",
+    "data": {
+      "n": 7,
+      "obj": {
+        "n": 9
+      }
+    },
+    "items": [
+      "7.0"
+    ]
+  },
+  {
+    "name": "signature accepts sequence input",
+    "expr": "function($x)<a<n>:n>{$sum($x)}(rows.n)",
+    "data": {
+      "rows": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "signature normalizes singleton path",
+    "expr": "function($x)<n:n>{$x}(rows.n)",
+    "data": {
+      "rows": [
+        {
+          "n": 1
+        }
+      ]
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "retained argument is evaluated once",
+    "expr": "($n:=0;$f:=function($x)<a<n>:n>{$sum($x)+$sum($x)};$r:=$f([1,2][$boolean($n:=$n+1)]);[$r,$n])",
+    "data": null,
+    "items": [
+      [
+        6,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "signed closure keeps captured lexical values",
+    "expr": "($make:=function($x)<n:f<n:n>>{function($y)<n:n>{$x+$y}};$a:=$make(1);$b:=$make(2);[$a(3),$b(3)])",
+    "data": null,
+    "items": [
+      [
+        4,
+        5
+      ]
+    ]
+  },
+  {
+    "name": "signed function shadowing keeps dynamic dispatch",
+    "expr": "($abs:=function($x)<s:s>{$x};$abs(\"s\"))",
+    "data": null,
+    "items": [
+      "s"
+    ]
+  },
+  {
+    "name": "signature counts need not match formal count",
+    "expr": "function($x)<nn:n>{$x}(1,2)",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "missing required value differs from absent slot",
+    "expr": "function($x,$y)<nn:n>{$x}(1,missing)",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "signature whitespace and comments compile once",
+    "expr": "function($x)< n /* input */ : n >{$x+1}(2)",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "shallow nested array subtype follows pinned reference",
+    "expr": "function($x)<a<a<n>>:a>{$x}([[\"s\"]])",
+    "data": null,
+    "items": [
+      [
+        [
+          "s"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "typed scalar variadic arrays reject more than one scalar",
+    "expr": "function($x)<a<n>+:a>{$x}(1,2)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "typed union includes missing",
+    "expr": "function($x)<(ns):x>{$x}(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "primitive u is supported as specified",
+    "expr": "function($x)<u:x>{$x}(true)",
+    "data": null,
+    "items": [
+      true
+    ],
+    "localOnly": true
+  },
+  {
+    "name": "signature context on tail call observes outer input",
+    "expr": "($f:=function($x)<n-:n>{$x};$g:=function(){$f()};n.$g())",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "tail calls through composed function values",
+    "expr": "($id:=function($n){$n};$f:=function($n){$n=0?0:$c($n-1)};$c:=$id ~> $f;$f(10000))",
+    "data": null,
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "tail calls through partial composed values",
+    "expr": "($id:=function($n){$n};$f:=function($n){$n=0?0:$p($n-1)};$c:=$id ~> $f;$p:=$c(?);$f(10000))",
+    "data": null,
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "tail branch current and root remain distinct",
+    "expr": "rows.($f:=function($n){$n=0?{'current':$.v,'root':$$.v}:$f($n-1)};$f(1000))",
+    "data": {
+      "v": 1,
+      "rows": [
+        {
+          "v": 2
+        },
+        {
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "current": 2,
+        "root": 1
+      },
+      {
+        "current": 3,
+        "root": 1
+      }
+    ]
+  },
+  {
+    "name": "native partial min empty string",
+    "expr": "$min(?)('')",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "native partial average empty string",
+    "expr": "$average(?)('')",
+    "data": null,
+    "items": []
+  }
+]

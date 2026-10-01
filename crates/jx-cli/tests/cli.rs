@@ -375,3 +375,26 @@ fn formatting_is_compiled_once_and_streams_records() {
             .contains("(DateTimeError)")
     );
 }
+
+#[test]
+fn signed_tail_functions_stream_and_report_record_errors() {
+    let output = run(
+        &["($f:=function($n,$a)<nn:n>{$n=0?$a:$f($n-1,$a+1)};{'id':id,'steps':$f(n,0)})"],
+        b"{\"id\":1,\"n\":1000}\n{\"id\":2,\"n\":64}\n{\"id\":3,\"n\":\"bad\"}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        output.stdout,
+        b"{\"id\":1,\"steps\":1000}\n{\"id\":2,\"steps\":64}\n"
+    );
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 3"));
+    assert!(error.contains("(TypeError)"));
+    let output = run(&["function($x)<n<n>>{$x}(1)"], b"null\n");
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("(SignatureError)")
+    );
+}

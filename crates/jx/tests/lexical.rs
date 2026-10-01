@@ -75,11 +75,7 @@ fn evaluations_isolate_scope_and_validate_before_execution() {
 
 #[test]
 fn deferred_features_and_constructor_binding_races_are_explicit() {
-    for source in [
-        "function($x)<n:n>{$x}",
-        "($x:=0;[$x:=1,$x:=2,$x])",
-        "{\"x\": $x:=1, \"y\":$x}",
-    ] {
+    for source in ["($x:=0;[$x:=1,$x:=2,$x])", "{\"x\": $x:=1, \"y\":$x}"] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression,
@@ -110,7 +106,7 @@ fn deferred_features_and_constructor_binding_races_are_explicit() {
 
 #[test]
 fn recursion_is_bounded_and_an_error_does_not_poison_reuse() {
-    let expression = jx::compile("($f:=function($n){$n=0?0:$f($n-1)};$f($))").unwrap();
+    let expression = jx::compile("($f:=function($n){$n=0?0:1+$f($n-1)};$f($))").unwrap();
     assert_eq!(
         expression.evaluate(b"1000").unwrap_err().kind,
         jx::ErrorKind::DepthLimit
@@ -118,7 +114,7 @@ fn recursion_is_bounded_and_an_error_does_not_poison_reuse() {
     expression
         .evaluate(b"5")
         .unwrap()
-        .for_each(|v| assert!(matches!(v, jx::Value::Number(0.0))))
+        .for_each(|v| assert!(matches!(v, jx::Value::Number(5.0))))
         .unwrap();
 }
 

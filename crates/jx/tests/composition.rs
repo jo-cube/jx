@@ -125,7 +125,8 @@ fn validation_and_error_order_are_preserved() {
     // Untyped native coercions and the reference's default-parameter partial bug
     // remain explicit instead of silently applying ordinary-call signatures.
     for source in [
-        "$count(?)(2)",
+        "$min(?)({})",
+        "$max(?)({})",
         "$abs(?)('2')",
         "$map(?,$abs)(2)",
         "$string(?)(1)",

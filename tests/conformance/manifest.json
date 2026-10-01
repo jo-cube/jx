@@ -5761,371 +5761,266 @@
     {
       "file": "groups/function-signatures/case000.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case002.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case003.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case004.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case005.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case006.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case007.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case008.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case009.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case010.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case011.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case012.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case013.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case014.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case015.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case016.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case017.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case018.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case019.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case020.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case021.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case022.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case023.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case024.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case025.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case026.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "SignatureError",
       "phase": "compile"
     },
     {
       "file": "groups/function-signatures/case027.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/function-signatures/case028.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/function-signatures/case029.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/function-signatures/case030.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/function-signatures/case031.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/function-signatures/case032.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/function-signatures/case033.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/function-signatures/case034.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "SignatureError",
       "phase": "compile"
     },
     {
       "file": "groups/function-signatures/case035.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case036.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case037.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case038.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case039.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-signatures/case040.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/function-sort/case000.json",
@@ -7948,26 +7843,20 @@
     {
       "file": "groups/lambdas/case006.json",
       "index": 0,
-      "status": "limit",
-      "reason": "Exceeds the documented 64-call recursion guard; tail-call elimination deferred",
-      "phase": "evaluate",
-      "kind": "DepthLimit"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/lambdas/case007.json",
       "index": 0,
-      "status": "limit",
-      "reason": "Exceeds the documented 64-call recursion guard; tail-call elimination deferred",
-      "phase": "evaluate",
-      "kind": "DepthLimit"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/lambdas/case008.json",
       "index": 0,
-      "status": "limit",
-      "reason": "Exceeds the documented 64-call recursion guard; tail-call elimination deferred",
-      "phase": "evaluate",
-      "kind": "DepthLimit"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/lambdas/case009.json",
@@ -9786,9 +9675,8 @@
     {
       "file": "groups/tail-recursion/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "tail-calls",
-      "reason": "Tail-call elimination deferred; bounded recursion guard",
+      "status": "limit",
+      "reason": "Non-tail factorial exceeds the bounded Rust stack guard",
       "kind": "DepthLimit",
       "phase": "evaluate"
     },
@@ -9809,11 +9697,8 @@
     {
       "file": "groups/tail-recursion/case004.json",
       "index": 0,
-      "status": "blocked",
-      "category": "tail-calls",
-      "reason": "Tail-call elimination deferred; bounded recursion guard",
-      "kind": "DepthLimit",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/tail-recursion/case005.json",
@@ -9827,36 +9712,29 @@
       "file": "groups/tail-recursion/case006.json",
       "index": 0,
       "status": "error",
-      "reason": "Expected upstream error mapped to local kind",
-      "kind": "DepthLimit",
+      "reason": "Infinite tail recursion terminates at the deterministic execution budget; upstream uses time guard U1001",
+      "kind": "EvaluationLimit",
       "phase": "evaluate"
     },
     {
       "file": "groups/tail-recursion/case007.json",
       "index": 0,
-      "status": "blocked",
-      "category": "tail-calls",
-      "reason": "Tail-call elimination deferred; bounded recursion guard",
-      "kind": "DepthLimit",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/tail-recursion/case008.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "supported",
+      "reason": "Compiled function signatures and tail-call execution"
     },
     {
       "file": "groups/tail-recursion/case009.json",
       "index": 0,
-      "status": "blocked",
-      "category": "function-signatures",
-      "reason": "User function signatures deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "compile"
+      "status": "error",
+      "reason": "Compiled function signatures and tail-call execution",
+      "kind": "TypeError",
+      "phase": "evaluate"
     },
     {
       "file": "groups/token-conversion/case000.json",
