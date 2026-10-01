@@ -117,8 +117,8 @@ fn analyze(node: &mut Node, next: &mut usize) -> Result<Vec<Seek>, Error> {
                 pending.extend(analyze(arg, next)?);
             }
         }
-        Kind::Lambda(_, body) => {
-            analyze(body, next)?;
+        Kind::Lambda(d) => {
+            analyze(&mut d.body, next)?;
         }
         Kind::Transform(d) => {
             analyze(&mut d.pattern, next)?;

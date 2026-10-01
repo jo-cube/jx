@@ -16,6 +16,8 @@ pub enum ErrorKind {
     EncodingError,
     PictureError,
     DateTimeError,
+    SignatureError,
+    EvaluationLimit,
 }
 
 /// Offsets are zero-based bytes in the expression or input record.

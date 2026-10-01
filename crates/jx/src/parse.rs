@@ -137,7 +137,8 @@ impl<'a> Parser<'a> {
             _ => return Err(error(offset)),
         };
         let depth = match &kind {
-            Kind::Group(n) | Kind::Negate(n) | Kind::Lambda(_, n) => 1 + n.depth,
+            Kind::Group(n) | Kind::Negate(n) => 1 + n.depth,
+            Kind::Lambda(d) => 1 + d.body.depth,
             Kind::Object(pairs) => {
                 1 + pairs
                     .iter()

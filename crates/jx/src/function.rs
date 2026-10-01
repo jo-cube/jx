@@ -1,16 +1,28 @@
+mod arguments;
 mod composition;
+mod signature;
+mod tail;
 use crate::builtin::Builtin;
 use crate::{
     Error, Value, evaluate::Operand, expression::Node, sequence::Context, value::type_error,
 };
 pub(crate) use composition::{chain, partial};
+pub(crate) use signature::Signature;
 use std::rc::Rc;
+pub(crate) use tail::possible as has_tail_calls;
 
 /// Opaque JSONata function value. It can be called inside its evaluation, but has
 /// no JSON encoding or public host invocation API.
 #[derive(Debug)]
 pub struct Function<'e, 'i> {
     pub(crate) kind: FunctionKind<'e, 'i>,
+}
+#[derive(Clone, Debug)]
+pub(crate) struct Definition {
+    pub params: Box<[Box<str>]>,
+    pub body: Node,
+    pub signature: Option<Signature>,
+    pub tail: bool,
 }
 #[derive(Debug)]
 pub(crate) enum FunctionKind<'e, 'i> {
@@ -27,8 +39,7 @@ pub(crate) enum FunctionKind<'e, 'i> {
     },
     Chain(Rc<Function<'e, 'i>>, Rc<Function<'e, 'i>>),
     Lambda {
-        params: &'e [Box<str>],
-        body: &'e Node,
+        definition: &'e Definition,
         focus: Value<'e, 'i>,
         wrapped: bool,
         frame: usize,
@@ -40,15 +51,10 @@ impl<'e, 'i> Function<'e, 'i> {
             kind: FunctionKind::Builtin(builtin),
         }))
     }
-    pub(crate) fn lambda(
-        params: &'e [Box<str>],
-        body: &'e Node,
-        context: &Context<'e, 'i>,
-    ) -> Value<'e, 'i> {
+    pub(crate) fn lambda(definition: &'e Definition, context: &Context<'e, 'i>) -> Value<'e, 'i> {
         Value::Function(Rc::new(Self {
             kind: FunctionKind::Lambda {
-                params,
-                body,
+                definition,
                 focus: context.value.clone(),
                 wrapped: context.wrapped,
                 frame: context.scope.as_ref().expect("lexical runtime").capture(),
@@ -64,14 +70,11 @@ pub(crate) fn call<'e, 'i>(
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
     let target = crate::retain::materialize(target, context)?;
-    let mut arguments = Vec::with_capacity(args.len());
-    for arg in args {
-        arguments.push(crate::retain::materialize(arg, context)?);
-    }
+    let arguments = arguments::Arguments::evaluate(args, context)?;
     let Some(Value::Function(function)) = target else {
         return Err(type_error(offset));
     };
-    invoke(&function, &arguments, context, offset)
+    invoke(&function, arguments.as_slice(), context, offset)
 }
 
 pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
@@ -79,7 +82,7 @@ pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
         FunctionKind::Builtin(builtin) => builtin.arity(),
         FunctionKind::Matcher(_) => 2,
         FunctionKind::MatchNext(_) => 0,
-        FunctionKind::Lambda { params, .. } => params.len(),
+        FunctionKind::Lambda { definition, .. } => definition.params.len(),
         FunctionKind::Partial { arguments, .. } => arguments
             .iter()
             .filter(|arg| matches!(arg, composition::Argument::Hole))
@@ -94,8 +97,23 @@ pub(crate) fn invoke<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
+    invoke_checked(function, arguments, context, offset, true)
+}
+fn invoke_checked<'e, 'i>(
+    function: &Function<'e, 'i>,
+    arguments: &[Option<Value<'e, 'i>>],
+    context: &Context<'e, 'i>,
+    offset: usize,
+    validate: bool,
+) -> Result<Operand<'e, 'i>, Error> {
     match &function.kind {
-        FunctionKind::Builtin(builtin) => builtin.values(arguments, context, offset),
+        FunctionKind::Builtin(builtin) => {
+            if validate {
+                builtin.values(arguments, context, offset)
+            } else {
+                builtin.partial_values(arguments, context, offset)
+            }
+        }
         FunctionKind::Matcher(state) => crate::matcher::invoke(state, arguments, offset),
         FunctionKind::MatchNext(next) => next.invoke(offset),
         FunctionKind::Transform { definition, frame } => {
@@ -109,25 +127,27 @@ pub(crate) fn invoke<'e, 'i>(
             composition::apply_chain(first, second, arguments, context, offset)
         }
         FunctionKind::Lambda {
-            params,
-            body,
+            definition,
             focus,
             wrapped,
             frame,
         } => {
+            if definition.tail {
+                return tail::invoke(function, arguments, context, offset, validate);
+            }
             let scope = context.scope.as_ref().expect("lexical runtime");
+            let validated;
+            let arguments = if validate && let Some(signature) = &definition.signature {
+                validated = signature.validate(arguments, &context.value, offset)?;
+                validated.as_slice()
+            } else {
+                arguments
+            };
+            let params = &definition.params;
+            let body = &definition.body;
             scope.call(offset, body.depth, || {
                 let child = scope.child(*frame);
-                for (index, param) in params.iter().enumerate() {
-                    child.bind(
-                        param,
-                        arguments
-                            .get(index)
-                            .cloned()
-                            .flatten()
-                            .unwrap_or(Value::Undefined),
-                    );
-                }
+                child.bind_arguments(params, arguments);
                 let context = Context {
                     value: focus.clone(),
                     wrapped: *wrapped,
@@ -138,5 +158,18 @@ pub(crate) fn invoke<'e, 'i>(
                 result.map(|value| value.map_or(Operand::Missing, Operand::One))
             })
         }
+    }
+}
+
+fn retained<'e, 'i>(value: Operand<'e, 'i>) -> Result<Option<Value<'e, 'i>>, Error> {
+    match value {
+        Operand::Missing => Ok(None),
+        Operand::One(value) => Ok(Some(value)),
+        Operand::Many(stream) => crate::retain::collect(|emit| {
+            stream.visit(|value| {
+                emit(value);
+                Ok(())
+            })
+        }),
     }
 }

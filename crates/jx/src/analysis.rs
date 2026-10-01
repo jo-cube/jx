@@ -48,7 +48,7 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         Kind::Bind(name, _) => {
             bound.insert(name.to_string());
         }
-        Kind::Lambda(params, _) => bound.extend(params.iter().map(|p| p.to_string())),
+        Kind::Lambda(d) => bound.extend(d.params.iter().map(|p| p.to_string())),
         Kind::Route(steps, _) | Kind::Tuples(steps, _) => {
             for b in steps.iter().filter_map(|s| s.bindings.as_deref()) {
                 bound.extend(b.names().map(str::to_owned));
@@ -120,8 +120,9 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         node.clock = clock;
     });
     visit(root, &mut |node| {
-        if let Kind::Lambda(_, body) = &mut node.kind {
-            tail_calls(body);
+        if let Kind::Lambda(d) = &mut node.kind {
+            tail_calls(&mut d.body);
+            d.tail = crate::function::has_tail_calls(&d.body);
         }
     });
     Ok(())
@@ -183,8 +184,8 @@ pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
         | Kind::Keep(n, _)
         | Kind::Group(n)
         | Kind::Negate(n)
-        | Kind::Bind(_, n)
-        | Kind::Lambda(_, n) => f(n),
+        | Kind::Bind(_, n) => f(n),
+        Kind::Lambda(d) => f(&mut d.body),
         Kind::Binary(_, l, r) | Kind::Range(l, r) => {
             f(l);
             f(r);

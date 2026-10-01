@@ -227,6 +227,18 @@ impl Library {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if self == Self::Zip {
+            return Ok(Operand::One(
+                if args
+                    .iter()
+                    .any(|v| v.as_ref().is_none_or(|v| !v.is_array()))
+                {
+                    Value::array(Vec::new(), false)
+                } else {
+                    super::arrays::zip(args)
+                },
+            ));
+        }
         // Native partials bypass signatures: an omitted optional comparator is
         // still its default. Direct calls with an explicit missing callback fail.
         let args =
@@ -308,10 +320,15 @@ impl Library {
                 | Self::Assert
         ) && (!context || args.len() == params.len() || self == Self::String && args.len() == 1)
     }
-    pub fn evaluate<'e, 'i>(
+    pub fn contextual(self, argc: usize) -> bool {
+        let (params, _, context) = self.signature();
+        context && argc < params.len()
+    }
+    pub fn evaluate_in<'e, 'i>(
         self,
         args: &'e [Node],
         context: &Context<'e, 'i>,
+        caller: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
         if self == Self::Zip {
@@ -319,7 +336,7 @@ impl Library {
                 .iter()
                 .map(|arg| crate::retain::materialize(arg, context))
                 .collect::<Result<Vec<_>, _>>()?;
-            return self.values(&values, context, offset);
+            return self.values(&values, caller, offset);
         }
         if self == Self::Replace {
             let mut values = [None, None, None, None];
@@ -332,7 +349,7 @@ impl Library {
             if args.len() > values.len() {
                 return Err(type_error(offset));
             }
-            return self.values(&values[..args.len()], context, offset);
+            return self.values(&values[..args.len()], caller, offset);
         }
         let mut values = [None, None, None];
         for (i, arg) in args.iter().enumerate() {
@@ -344,7 +361,7 @@ impl Library {
         if args.len() > values.len() {
             return Err(type_error(offset));
         }
-        self.values(&values[..args.len()], context, offset)
+        self.values(&values[..args.len()], caller, offset)
     }
     pub fn values<'e, 'i>(
         self,

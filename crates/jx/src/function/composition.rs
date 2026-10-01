@@ -68,10 +68,11 @@ pub(crate) fn chain<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
+    use super::arguments::Arguments;
     let left = crate::retain::materialize(left, context)?;
     if let Kind::Call(target, args) = &right.kind {
         let target = crate::retain::materialize(target, context)?;
-        let mut arguments = Vec::with_capacity(args.len() + 1);
+        let mut arguments = Arguments::new(args.len() + 1);
         arguments.push(left);
         for arg in args {
             arguments.push(crate::retain::materialize(arg, context)?);
@@ -79,9 +80,10 @@ pub(crate) fn chain<'e, 'i>(
         let Some(Value::Function(function)) = target else {
             return Err(type_error(offset));
         };
-        return invoke(&function, &arguments, context, offset);
+        return invoke(&function, arguments.as_slice(), context, offset);
     }
-    // Grouped call expressions are evaluated normally, not treated as invocations.
+    // Grouped calls are evaluated normally. Bare function chaining invokes with
+    // a null focus in the reference; a pair of functions creates composition.
     let Some(Value::Function(second)) = crate::retain::materialize(right, context)? else {
         return Err(type_error(offset));
     };
@@ -102,6 +104,20 @@ pub(crate) fn chain<'e, 'i>(
         )
     }
 }
+pub(super) fn partial_arguments<'e, 'i>(
+    bound: &[Argument<'e, 'i>],
+    arguments: &[Option<Value<'e, 'i>>],
+) -> super::arguments::Arguments<'e, 'i> {
+    let mut incoming = arguments.iter();
+    let mut result = super::arguments::Arguments::new(bound.len());
+    for arg in bound {
+        result.push(match arg {
+            Argument::Hole => incoming.next().cloned().flatten(),
+            Argument::Value(value) => value.clone(),
+        });
+    }
+    result
+}
 
 pub(super) fn apply_partial<'e, 'i>(
     target: &Function<'e, 'i>,
@@ -110,22 +126,8 @@ pub(super) fn apply_partial<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
-    let mut incoming = arguments.iter();
-    let mut next = |arg: &Argument<'e, 'i>| match arg {
-        Argument::Hole => incoming.next().cloned().flatten(),
-        Argument::Value(value) => value.clone(),
-    };
-    let mut small = [None, None, None];
-    let large;
-    let arguments = if bound.len() <= small.len() {
-        for (slot, arg) in small.iter_mut().zip(bound) {
-            *slot = next(arg);
-        }
-        &small[..bound.len()]
-    } else {
-        large = bound.iter().map(next).collect::<Vec<_>>();
-        &large
-    };
+    let supplied = partial_arguments(bound, arguments);
+    let arguments = supplied.as_slice();
     if let FunctionKind::Builtin(builtin) = target.kind {
         context
             .scope
@@ -135,7 +137,7 @@ pub(super) fn apply_partial<'e, 'i>(
                 builtin.partial_values(arguments, context, offset)
             })
     } else {
-        invoke(target, arguments, context, offset)
+        super::invoke_checked(target, arguments, context, offset, false)
     }
 }
 

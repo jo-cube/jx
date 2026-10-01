@@ -9,6 +9,7 @@ struct Frame<'e, 'i> {
     parent: Option<usize>,
     bindings: Bindings<'e, 'i>,
     captured: bool,
+    vacant: bool,
 }
 
 pub(crate) type BindingValues<'e, 'i> = Vec<(&'e str, Value<'e, 'i>)>;
@@ -54,6 +55,7 @@ impl<'e, 'i> Scope<'e, 'i> {
                     parent: None,
                     bindings: Bindings::Owned(vec![("$", root)]),
                     captured: false,
+                    vacant: false,
                 }]),
                 depth: Cell::new(0),
                 tree_depth: Cell::new(0),
@@ -106,12 +108,25 @@ impl<'e, 'i> Scope<'e, 'i> {
     }
     fn frame(&self, parent: usize, bindings: Bindings<'e, 'i>) -> Self {
         let mut frames = self.runtime.frames.borrow_mut();
-        let frame = frames.len();
-        frames.push(Frame {
-            parent: Some(parent),
-            bindings,
-            captured: false,
-        });
+        let frame = if frames.last().is_some_and(|f| f.vacant) {
+            let last = frames.last_mut().unwrap();
+            if !matches!((&last.bindings, &bindings), (Bindings::Owned(_), Bindings::Owned(v)) if v.is_empty())
+            {
+                last.bindings = bindings;
+            }
+            last.parent = Some(parent);
+            last.vacant = false;
+            frames.len() - 1
+        } else {
+            let index = frames.len();
+            frames.push(Frame {
+                parent: Some(parent),
+                bindings,
+                captured: false,
+                vacant: false,
+            });
+            index
+        };
         Self {
             runtime: self.runtime.clone(),
             frame,
@@ -129,10 +144,54 @@ impl<'e, 'i> Scope<'e, 'i> {
         }
         self.frame
     }
+    pub fn reset(&self, parent: usize) -> bool {
+        let mut frames = self.runtime.frames.borrow_mut();
+        if frames[self.frame].captured {
+            return false;
+        }
+        if self.frame + 1 != frames.len()
+            && !(self.frame + 2 == frames.len() && frames.last().is_some_and(|f| f.vacant))
+        {
+            return false;
+        }
+        let frame = &mut frames[self.frame];
+        frame.parent = Some(parent);
+        frame.bindings.mutable().clear();
+        true
+    }
+    pub fn bind_arguments(&self, params: &'e [Box<str>], arguments: &[Option<Value<'e, 'i>>]) {
+        let mut frames = self.runtime.frames.borrow_mut();
+        let bindings = frames[self.frame].bindings.mutable();
+        for (index, param) in params.iter().enumerate() {
+            let value = arguments
+                .get(index)
+                .cloned()
+                .flatten()
+                .unwrap_or(Value::Undefined);
+            if let Some((_, previous)) = bindings.iter_mut().find(|(key, _)| *key == param.as_ref())
+            {
+                *previous = value;
+            } else {
+                bindings.push((param, value));
+            }
+        }
+    }
+    // Released scopes must no longer be used. Captured scopes are never recycled.
+    // Keep at most one vacant terminal slot, including its parameter capacity.
     pub fn release(&self) {
         let mut frames = self.runtime.frames.borrow_mut();
-        if self.frame + 1 == frames.len() && !frames[self.frame].captured {
-            frames.pop();
+        if frames[self.frame].captured {
+            return;
+        }
+        trim_vacant(&mut frames, self.frame);
+        if self.frame + 1 == frames.len() {
+            let frame = &mut frames[self.frame];
+            match &mut frame.bindings {
+                Bindings::Owned(values) => values.clear(),
+                Bindings::Shared(_) => frame.bindings = Bindings::Owned(Vec::new()),
+            }
+            frame.parent = None;
+            frame.vacant = true;
         }
     }
     pub fn call<T>(
@@ -156,6 +215,12 @@ impl<'e, 'i> Scope<'e, 'i> {
         self.runtime.depth.set(depth);
         self.runtime.tree_depth.set(tree_depth);
         result
+    }
+}
+
+fn trim_vacant(frames: &mut Vec<Frame<'_, '_>>, parent: usize) {
+    if frames.len() == parent + 2 && frames.last().is_some_and(|f| f.vacant) {
+        frames.pop();
     }
 }
 

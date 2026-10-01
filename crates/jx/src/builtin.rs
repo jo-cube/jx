@@ -50,11 +50,28 @@ impl Builtin {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        self.evaluate_in(args, context, context, offset)
+    }
+    pub fn contextual(self, argc: usize) -> bool {
+        match self {
+            Self::Library(f) => f.contextual(argc),
+            Self::Boolean | Self::Not => argc == 0,
+            Self::Lookup => argc == 1,
+            _ => false,
+        }
+    }
+    pub fn evaluate_in<'e, 'i>(
+        self,
+        args: &'e [Node],
+        context: &Context<'e, 'i>,
+        caller: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
         if let Self::Library(function) = self {
-            return function.evaluate(args, context, offset);
+            return function.evaluate_in(args, context, caller, offset);
         }
         if matches!(self, Self::Lookup) {
-            return crate::lookup::evaluate(args, context, offset);
+            return crate::lookup::evaluate_in(args, context, caller, offset);
         }
         if let Self::Deferred(name) = self {
             return Err(crate::Error::new(
@@ -67,7 +84,7 @@ impl Builtin {
             return aggregate.evaluate(args, context, offset);
         }
         if args.is_empty() && matches!(self, Self::Boolean | Self::Not) {
-            return self.value(Some(context.value.clone()), offset);
+            return self.value(Some(caller.value.clone()), offset);
         }
         let [argument] = args else {
             for arg in args {
@@ -136,31 +153,60 @@ impl Builtin {
         if let Self::Library(function) = self {
             return function.partial_values(args, context, offset);
         }
-        let numeric = matches!(self, Self::Aggregate(aggregate) if aggregate != Aggregate::Count);
-        let unsupported = || {
-            crate::Error::new(
-                crate::ErrorKind::UnsupportedExpression,
-                offset,
-                "untyped native partial application is deferred",
-            )
-        };
-        if matches!(self, Self::Aggregate(_))
-            && args
+        if matches!(self, Self::Aggregate(Aggregate::Count)) {
+            let Some(value) = args.first().cloned().flatten() else {
+                return self.value(None, offset);
+            };
+            return match value.atomic() {
+                Value::Undefined => self.value(None, offset),
+                Value::Null => Err(type_error(offset)),
+                value if value.is_array() => self.value(Some(value), offset),
+                value if value.string_body().is_some() => Ok(Operand::One(Value::Number(
+                    crate::json::string::units(value.string_body().unwrap()).count() as f64,
+                ))),
+                value if value.is_object() => crate::lookup::values(
+                    Some(value),
+                    Some(Value::StringLiteral(crate::RawJson("\"length\""))),
+                    offset,
+                ),
+                _ => Ok(Operand::Missing),
+            };
+        }
+        let numeric = matches!(self, Self::Aggregate(_));
+        if numeric
+            && let Some(value) = args
                 .first()
                 .and_then(Option::as_ref)
-                .is_some_and(|v| !v.is_array())
+                .filter(|v| !v.is_array())
         {
-            return Err(unsupported());
+            if value.is_object() || matches!(value, Value::Function(_)) {
+                return Err(crate::Error::new(
+                    crate::ErrorKind::UnsupportedExpression,
+                    offset,
+                    "native array-like object coercion is deferred",
+                ));
+            }
+            if !matches!(self, Self::Aggregate(Aggregate::Sum))
+                && value
+                    .string_body()
+                    .is_some_and(|s| crate::json::string::units(s).next().is_none())
+            {
+                return Ok(Operand::Missing);
+            }
+            return Err(type_error(offset));
         }
         self.values(args, context, offset).map_err(|error| {
-            // The fold validates items while consuming them; no separate array scan.
             if numeric
                 && matches!(
                     error.kind,
                     crate::ErrorKind::TypeError | crate::ErrorKind::NumericRange
                 )
             {
-                unsupported()
+                crate::Error::new(
+                    crate::ErrorKind::UnsupportedExpression,
+                    offset,
+                    "untyped native aggregate coercion is deferred",
+                )
             } else {
                 error
             }
@@ -170,7 +216,7 @@ impl Builtin {
     pub fn partial_arity(self, offset: usize) -> Result<usize, Error> {
         if matches!(
             self,
-            Self::Library(library::Library::String | library::Library::Zip) | Self::Deferred(_)
+            Self::Library(library::Library::String) | Self::Deferred(_)
         ) {
             return Err(crate::Error::new(
                 crate::ErrorKind::UnsupportedExpression,

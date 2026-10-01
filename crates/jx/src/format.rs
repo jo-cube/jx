@@ -273,6 +273,14 @@ impl Call {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<crate::evaluate::Operand<'e, 'i>, Error> {
+        self.evaluate_in(context, context, offset)
+    }
+    pub fn evaluate_in<'e, 'i>(
+        &'e self,
+        context: &Context<'e, 'i>,
+        caller: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<crate::evaluate::Operand<'e, 'i>, Error> {
         let mut evaluated = [None, None, None];
         for (i, arg) in self.args.iter().enumerate() {
             evaluated[i] = crate::retain::materialize(arg, context)?;
@@ -280,7 +288,7 @@ impl Call {
         let mut values = [None, None, None];
         let skip = self.function.arguments::<3>(
             &evaluated[..self.args.len()],
-            context,
+            caller,
             offset,
             &mut values,
         )?;
@@ -291,7 +299,7 @@ impl Call {
             None
         };
         let prepared = (actual_index == self.picture_index).then_some(&self.program);
-        call(self.function, &values, context, offset, prepared).map(|v| {
+        call(self.function, &values, caller, offset, prepared).map(|v| {
             v.map_or(
                 crate::evaluate::Operand::Missing,
                 crate::evaluate::Operand::One,

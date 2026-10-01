@@ -103,6 +103,13 @@ impl Parser<'_> {
             return Err(error(self.offset));
         }
         self.advance()?;
+        let signature = if matches!(self.token, Token::Operator(Op::Less)) {
+            let signature = self.lexer.signature(self.offset)?;
+            self.advance()?;
+            Some(signature)
+        } else {
+            None
+        };
         if !matches!(self.token, Token::ObjectOpen) {
             return Err(error(self.offset));
         }
@@ -112,7 +119,12 @@ impl Parser<'_> {
             return Err(error(self.offset));
         }
         self.advance()?;
-        Ok(Kind::Lambda(params.into_boxed_slice(), Box::new(body)))
+        Ok(Kind::Lambda(Box::new(crate::function::Definition {
+            params: params.into_boxed_slice(),
+            body,
+            signature,
+            tail: false,
+        })))
     }
 
     pub(super) fn calls(&mut self, mut target: Node, nesting: usize) -> Result<Node, Error> {

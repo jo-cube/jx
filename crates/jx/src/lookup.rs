@@ -3,14 +3,15 @@ use crate::{
     value::type_error,
 };
 
-pub(crate) fn evaluate<'e, 'i>(
+pub(crate) fn evaluate_in<'e, 'i>(
     args: &'e [Node],
     input: &Context<'e, 'i>,
+    caller: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
     let (object, key) = match args {
         [key] => (
-            Some(input.value.clone()),
+            Some(caller.value.clone()),
             crate::retain::materialize(key, input)?,
         ),
         [object, key] => {

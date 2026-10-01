@@ -343,7 +343,7 @@ impl Node {
                     Ok(Operand::Missing)
                 };
             }
-            Kind::Lambda(params, body) => crate::Function::lambda(params, body, input),
+            Kind::Lambda(d) => crate::Function::lambda(d, input),
             Kind::Call(target, args) => {
                 return crate::function::call(target, args, input, self.offset).map(|result| {
                     if self.tail_call {

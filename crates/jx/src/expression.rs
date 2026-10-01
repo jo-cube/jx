@@ -44,7 +44,7 @@ pub(crate) enum Kind {
     Bind(Box<str>, Box<Node>),
     Block(Box<[Node]>),
     Conditional(Box<Node>, Box<Node>, Option<Box<Node>>),
-    Lambda(Box<[Box<str>]>, Box<Node>),
+    Lambda(Box<crate::function::Definition>),
     Call(Box<Node>, Box<[Node]>),
     Partial(Box<Node>, Box<[Option<Node>]>),
     Array(Box<[Node]>, bool),

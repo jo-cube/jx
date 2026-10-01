@@ -168,6 +168,39 @@ impl<'a> Lexer<'a> {
         Ok((token, start))
     }
 
+    pub(super) fn signature(&mut self, start: usize) -> Result<crate::function::Signature, Error> {
+        let mut text = String::from("<");
+        let mut depth = 1;
+        while self.at < self.source.len() {
+            if self.source[self.at..].starts_with("/*") {
+                let end = self.source[self.at + 2..]
+                    .find("*/")
+                    .ok_or_else(|| error(self.at))?;
+                self.at += end + 4;
+                continue;
+            }
+            let ch = self.byte().unwrap();
+            self.at += 1;
+            if ch.is_ascii_whitespace() {
+                continue;
+            }
+            if !ch.is_ascii() {
+                return Err(error(start));
+            }
+            text.push(ch as char);
+            if ch == b'<' {
+                depth += 1;
+            }
+            if ch == b'>' {
+                depth -= 1;
+                if depth == 0 {
+                    return crate::function::Signature::compile(&text, start);
+                }
+            }
+        }
+        Err(error(start))
+    }
+
     pub(super) fn regex(&mut self, start: usize) -> Result<crate::matcher::Pattern, Error> {
         let body = self.at;
         let mut depth = 0i32;
