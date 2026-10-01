@@ -18,6 +18,8 @@ mod execution;
 mod filters;
 #[path = "workloads/formatting.rs"]
 mod formatting;
+#[path = "workloads/functions.rs"]
+mod functions;
 #[path = "workloads/helpers.rs"]
 mod helpers;
 #[path = "workloads/lexical.rs"]
@@ -311,6 +313,7 @@ fn main() {
     builtins::run(smoke);
     helpers::run(smoke);
     formatting::run(smoke);
+    functions::run(smoke);
     composition::run(smoke);
     matchers::run(smoke);
     structure::run(smoke);

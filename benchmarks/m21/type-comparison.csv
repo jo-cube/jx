@@ -1,0 +1,8 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+function/direct,500,1222320,1230268,0.65,6.0,6.0,584.0,584.0
+function/signed,500,1153967,1168409,1.25,6.0,6.0,584.0,584.0
+function/signed_named,500,1089996,1083704,-0.58,7.0,7.0,744.0,744.0
+function/signed_callback,500,835244,839852,0.55,8.0,8.0,728.0,728.0
+function/signature_array,500,1112819,1134672,1.96,6.0,6.0,584.0,584.0
+function/signature_optional,500,1119231,1133142,1.24,6.0,6.0,584.0,584.0
+function/signature_variadic,500,778019,801881,3.07,6.0,6.0,584.0,584.0

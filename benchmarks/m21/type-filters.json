@@ -1,0 +1,26 @@
+[
+  {
+    "filter": "function/direct",
+    "bytes": 500
+  },
+  {
+    "filter": "function/signed",
+    "bytes": 500
+  },
+  {
+    "filter": "function/signature_array",
+    "bytes": 500
+  },
+  {
+    "filter": "function/signature_optional",
+    "bytes": 500
+  },
+  {
+    "filter": "function/signature_variadic",
+    "bytes": 500
+  },
+  {
+    "filter": "function/signed_callback",
+    "bytes": 500
+  }
+]

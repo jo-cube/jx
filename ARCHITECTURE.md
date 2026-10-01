@@ -104,7 +104,7 @@ Blocks and calls create frames; assignment replaces a binding in the current fra
 Closures hold their body, captured current value/wrapping, and frame index. Captures
 observe subsequent rebinding in that frame, supporting forward and recursive references.
 Frames own values, but closures do not own the arena: recursion creates no `Rc` cycle.
-Uncaptured terminal frames are popped; captured frames and their ancestors live until
+An uncaptured terminal slot and its binding capacity are recycled; captured frames and their ancestors live until
 that record's evaluation ends. Creating many closures can retain many frames per record.
 
 `Context` carries an optional scope alongside current value and wrapping. `$$` is
@@ -125,7 +125,7 @@ indexed lookup on their existing paths. `builtin/library.rs` describes fixed bui
 parameters, optional context substitution, arity and constant-fold eligibility;
 implementations live in cohesive string, collection, higher-order, numeric, padding,
 array, encoding and diagnostic modules. There is no
-runtime registry or user-defined signature system. Direct library calls use three
+runtime registry. User signatures have a separate compiled parameter matcher. Direct library calls use three
 stack argument slots; `$replace` uses four and variadic `$zip` retains its argument list. Dynamic calls and callbacks share `function::invoke`.
 
 Computed strings use `OwnedString`: shared immutable JSON encoding, including lone
@@ -156,15 +156,33 @@ folds still stream, including `$average` through eligible execution plans.
 Calls normalize native sequence results at the expression boundary, after postfix
 `[]` can retain them. Lambda tail calls preserve native sequence shape for their
 caller, matching observable nesting in higher-order results. Analysis marks these
-call sites; it does not perform tail-call elimination. Folding preserves both call
-boundaries. Builtins remain first-class and shadowable; unimplemented standard names
+call sites; `function/tail.rs` executes tail calls through a loop. Folding preserves
+call boundaries. Builtins remain first-class and shadowable; unimplemented standard names
 fail explicitly when called. Opaque functions have no JSON encoding or public host
 invocation API. Escaped JSON values keep their ordinary borrowing lifetimes.
 
-Calls are bounded by 64 active invocations and 512 accumulated body-tree levels, in
-addition to the parser's 128-level limit. Tail-call elimination and function signatures
-remain deferred. Scope and function control flow remain direct evaluation; numeric lowering does not
-change frame retention or lexical lifetimes.
+Non-tail calls remain bounded by 64 active invocations and 512 accumulated body-tree
+levels, alongside the parser's 128-level limit. A tail chain has a separate deterministic
+one-million-iteration budget (`EvaluationLimit`), so infinite calls do not run forever.
+Scope and function control flow stay in tree execution; numeric lowering is unchanged.
+
+Function definitions hold formal parameters, body, optional compiled signature and a
+tail-control flag. Closures borrow that definition and retain only focus/frame metadata.
+`function/signature.rs` validates masks, optional/variadic matching and shallow array
+subtypes once per invocation; pictures and signatures are never parsed per record.
+Type checks borrow value tags, including validated input tokens; they do not decode
+numbers just to classify them. Fixed signatures need no matching program scratch. Ambiguous signatures use bounded
+suffix reachability, with stack scratch for small calls and heap scratch only for wide
+ones. Retained argument slots use the stack through three values, then spill.
+
+Only tail positions descend through blocks/conditionals to a pending call. Tests,
+arguments and terminal values use the existing evaluator. Arguments finish before the
+old frame is reset; captured frames cannot reset. Partial and composed callable targets
+are unwrapped by the same loop. Signatures validate against invocation focus while the
+body/arguments retain lexical focus; native contextual tails share builtin evaluation
+with a distinct caller focus. Context-free native/scalar bodies use ordinary calls.
+Released block slots and parameter capacity can be reused across tail iterations and
+callbacks, without new state in `Value`, `Context`, non-lexical paths or execution plans.
 
 ### Conversion and composition
 
@@ -182,8 +200,9 @@ missing and holes stay distinct. Repeated partial application merges bound slots
 Invocation fills small argument lists on the stack and uses the existing lambda/builtin
 call path. Closures keep their original focus/frame; there are no owning arena back-edges.
 Composed functions normalize the intermediate result, then invoke the second function.
-Native partials support typed calls; JavaScript signature-bypass coercions and native
-partials with default parameters remain explicit limitations in CONFORMANCE.
+Lambda partials bypass their original signature, matching the reference. Native
+count/zip partials retain their own length/array rules; other JavaScript coercions and
+native default-parameter partials remain explicit boundaries in CONFORMANCE.
 
 Analysis rewrites an unshadowed `lhs ~> $builtin(args)` to its ordinary builtin call
 with `lhs` first. This preserves streaming folds, constant folding and existing plan
@@ -532,8 +551,14 @@ mutable-document overlay, universal ancestry tracking or second evaluator.
     evaluation-stable clocks, and explicit compatibility/resource boundaries.
     All 333 previously blocked cases in these families now assert results/errors.
 
-Next semantic work: function signatures/tail calls. The complete inventory makes
-outstanding dependencies explicit; remaining picture boundaries are in CONFORMANCE.
+21. **Complete: function-runtime closure.** Compiled user signatures, lambda signature
+    bypass for partials, stack-safe direct/mutual/composed tail calls, and recycled
+    uncaptured parameter/block slots. Non-tail recursion and infinite execution have
+    separate explicit guards; no function lowering or JIT is introduced.
+
+Next semantic work: dynamic `$eval` and randomness need deliberate lifetime/resource
+contracts; the 16 corpus blockers are confined to those areas. Remaining picture and
+native host-coercion boundaries stay in CONFORMANCE.
 Full mutable transform aliasing needs a deliberate transient-document model; do not
 broaden immutable copy/update by approximating those effects. Host invocation still
 needs a lifetime/resource contract.

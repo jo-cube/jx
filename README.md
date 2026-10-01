@@ -3,7 +3,7 @@
 A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
 result sequences, scalar operators, filters, aggregates, constructors, lexical
-variables, conditionals, closures, wildcard navigation, grouping, ordering, indexed/joined paths,
+variables, conditionals, closures, compiled function signatures and tail recursion, wildcard navigation, grouping, ordering, indexed/joined paths,
 common string/collection/higher-order functions (including round, pad, sort/zip/single and encoding), conversions, function pipelines, regex/matcher text processing, parent navigation, structural transforms, and numeric/integer/date pictures**.
 Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).

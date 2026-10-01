@@ -1,0 +1,66 @@
+[
+  {
+    "filter": "ascii/validate",
+    "bytes": 100
+  },
+  {
+    "filter": "ascii/shallow",
+    "bytes": 500
+  },
+  {
+    "filter": "scalar/arithmetic",
+    "bytes": 500
+  },
+  {
+    "filter": "lexical/closure_call",
+    "bytes": 500
+  },
+  {
+    "filter": "lexical/escaped_closure",
+    "bytes": 500
+  },
+  {
+    "filter": "builtin/map_builtin",
+    "bytes": 100
+  },
+  {
+    "filter": "builtin/map_closure",
+    "bytes": 500
+  },
+  {
+    "filter": "conversion/partial",
+    "bytes": 500
+  },
+  {
+    "filter": "format/number_static",
+    "bytes": 500
+  },
+  {
+    "filter": "format/mixed",
+    "bytes": 500
+  },
+  {
+    "filter": "plan/",
+    "bytes": 500
+  },
+  {
+    "filter": "lexical/mapped_calls",
+    "bytes": 14260
+  },
+  {
+    "filter": "filter/predicate",
+    "bytes": 500
+  },
+  {
+    "filter": "aggregate/filtered_sum",
+    "bytes": 500
+  },
+  {
+    "filter": "compiler/lookup_4096_hit",
+    "bytes": 501
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 500
+  }
+]

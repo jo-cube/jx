@@ -1528,3 +1528,86 @@ fast path is added. Native signature/dispatch remains a measured future concern.
 comparisons pass. All **333** picture/date/base blockers are promoted. No new dependency,
 IR/JIT, input index or per-record cache is introduced. Requested bytes are cumulative;
 peak retained memory and latency percentiles remain unmeasured.
+
+## Milestone 21 — signatures and tail execution
+
+M20 `7f5b61c` is the baseline, on the same machine/compiler/profile. **1,395
+workloads** cover 26 compilations and 1,369 evaluations, including **575 allocation-free**
+evaluations. All 560 previous allocation-free cases remain so. Of 1,249 existing
+evaluations, 1,031 preserve allocation calls/bytes, 105 use fewer calls and 113 keep
+calls with fewer requested bytes; none gain allocation calls.
+
+Fixtures cover direct/signed/named calls, context and array signatures, optional/variadic
+arguments, closures, partials, callbacks and mixed constructors at 100 B–1 MiB.
+Tail depths are labeled separately, from 8 through 100,000; blocks, borrowing and
+escaping captures are separate cases. Full runs use seven 50 ms samples; both-order
+comparisons use 300 ms. Timing includes validation and consumption, excluding I/O.
+
+Selected final full-run medians:
+
+| Workload | Bytes | Records/s | Allocations / requested bytes |
+| --- | ---: | ---: | ---: |
+| Direct scalar lambda | 500 | 1,217,230 | 6 / 584 |
+| Signed scalar lambda | 500 | 1,165,756 | 6 / 584 |
+| Signed numeric array | 500 | 1,132,502 | 6 / 584 |
+| Partial lambda | 500 | 776,878 | 9 / 856 |
+| Three-item callback | 500 | 962,694 | 8 / 728 |
+| Signed callback | 500 | 861,852 | 8 / 728 |
+| Callback, aggregate and constructor | 500 | 469,185 | 12 / 1,312 |
+| Tail counter, 100,000 iterations | 39 | 80 | 7 / 744 |
+| Signed tail counter, same depth | 39 | 61 | 7 / 744 |
+
+Definitions borrow compiled parameters/body/signatures, reducing function storage by
+16 bytes. Up to three retained arguments use stack slots; fixed signatures need no
+matcher scratch. Type checks inspect borrowed tags instead of cloning values or
+parsing numbers. Both-order type-check pairs improve the variadic fixture **3.1% /
+3.7%**, with unchanged allocations. Static signatures are never reparsed per record.
+
+One vacant terminal frame preserves uncaptured parameter capacity. The 1,024-item
+mapped-call fixture drops **2,064 → 17 allocations**, **238,120 → 49,848 requested
+bytes**; final pairs improve **4.9% / 8.8%**. Ordinary closure map drops **11 → 9
+calls**, **1,224 → 888 B**, improving about **2%** in both orders. The 1,024-row callback
+sort drops **15,397 → 10,278 calls**, **1,990,904 → 1,171,848 B**. Its variable-rooted
+projections/comparisons still allocate. Native map keeps three calls but shrinks
+**224 → 208 B**; final throughput is within 1% of M20, without a speedup claim.
+
+Bare/signed/borrowed tail counters keep **7 / 744 B** from depth 8 through 100,000.
+A local block uses **8 / 904 B**; a single escaping capture uses **10 / 1,032 B**.
+The scalar Rust control reaches **3.04M/s**, while its tail counter reaches
+**16,429/s** at 100,000 iterations. Both validate/select the record, then perform
+primitive arithmetic; they omit JSONata calls, bindings and scope semantics. Tail
+execution reaches about **8.0M / 6.1M iterations/s** unsigned/signed. Symbol lookup,
+argument retention and tree dispatch remain substantial costs after scanning is amortized.
+
+Captured frames stay until the record ends. Creating a capture every iteration grows
+**26 / 3,752 B** at depth 8 to **2,065 / 426,408 B** at 1,024. Separate CLI memory
+checks keep uncaptured tails at **2.28 MiB RSS** for 1,000 and 100,000 iterations;
+100 independent 100,000-iteration records peak at **2.39 MiB**. Capture-every-step
+peaks at **4.97 / 30 MiB** for 10,000 / 100,000 iterations; 100 independent 10,000-step
+records peak at **5.16 MiB**. These include process/buffers/allocator high water,
+not live frame bytes. Captured-frame retention is a remaining architectural cost.
+
+Final ordinary path, scalar, plan, filter, fold and static-lookup pairs stay within
+about 1%; mixed formatting loses **0.5–1.6%**. Native substring partial fixtures lose
+**0.5–2.1%**, despite fewer allocations. They use shared argument assembly, without
+user-signature checks or tail execution; no dispatch special case is added for these
+small losses. Large full-snapshot formatting losses (including validation-only constants),
+and helper/matcher/wide-filter losses, disappear in isolated both-order repeats:
+formatting stays within 1%, the other controls within 2%. Those unrelated repeats
+precede the final token classifier. Full-run timing alone is not regression evidence.
+
+[Full comparison](benchmarks/m21/comparison.csv),
+[final pairs](benchmarks/m21/paired-comparison.csv),
+[reverse pairs](benchmarks/m21/reverse-comparison.csv),
+[type-check pairs](benchmarks/m21/type-comparison.csv),
+[reverse type pairs](benchmarks/m21/type-reverse-comparison.csv),
+[isolated regressions](benchmarks/m21/regression-comparison.csv),
+[reverse regressions](benchmarks/m21/regression-reverse-comparison.csv),
+[memory checks](benchmarks/m21/memory.json) and
+[environment/commands](benchmarks/m21/environment.json) retain the evidence.
+[Source hashes](benchmarks/m21/source.json), [checks](benchmarks/m21/checks.log) and
+[differentials](benchmarks/m21/differential.txt) identify verification. `just all`,
+`just build`, the full benchmark, all **1,679** classified cases and **50,067** differential
+comparisons pass. Tail calls use a loop with a separate million-iteration budget;
+non-tail stack guards remain explicit. No dependency, value/context variant, input
+cache, function lowering or JIT is added. Latency percentiles remain unmeasured.
