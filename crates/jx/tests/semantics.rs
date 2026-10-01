@@ -51,6 +51,8 @@ fn object_paths_missing_and_raw_values() {
 fn field_names_compare_decoded_escapes() {
     let cases = [
         ("a", r#"{"\u0061":1}"#),
+        ("a /* comment */", r#"{"a":1}"#),
+        ("é", r#"{"é":1}"#),
         ("`a.b`", r#"{"a.b":1}"#),
         ("``", r#"{"":1}"#),
         ("`é😀`", r#"{"\u00e9\ud83d\ude00":1}"#),
@@ -75,16 +77,7 @@ fn field_names_compare_decoded_escapes() {
 
 #[test]
 fn unsupported_semantics_fail_explicitly() {
-    for source in [
-        "",
-        ".",
-        "a.",
-        "a..b",
-        "a /* comment */",
-        "a b",
-        "`unclosed",
-        "é",
-    ] {
+    for source in ["", ".", "a.", "a..b", "a /* unclosed", "a b", "`unclosed"] {
         assert_eq!(
             compile(source).unwrap_err().kind,
             ErrorKind::UnsupportedExpression,

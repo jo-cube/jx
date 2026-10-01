@@ -324,3 +324,28 @@ fn parent_navigation_and_transforms_preserve_record_boundaries() {
     assert!(output.stdout.is_empty());
     assert!(String::from_utf8_lossy(&output.stderr).contains("(TypeError)"));
 }
+
+#[test]
+fn everyday_helpers_and_user_errors_stream_records() {
+    let output = run(
+        &["{'n':$round(n,2),'id':$pad(id,-3,'0')}"],
+        br#"{"n":4.525,"id":"a"}
+{"n":2.345,"id":"b"}
+"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"n\":4.52,\"id\":\"00a\"}\n{\"n\":2.34,\"id\":\"00b\"}\n"
+    );
+    let output = run(
+        &["($assert(n>0,'positive required');n)"],
+        b"{\"n\":1}\n{\"n\":0}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 2"));
+    assert!(error.contains("positive required"));
+    assert!(error.contains("(AssertionFailed)"));
+}

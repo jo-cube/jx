@@ -1,0 +1,10 @@
+{
+  "expr": "$encodeUrl('\\ud800')",
+  "dataset": "dataset5",
+  "bindings": {},
+  "error": {
+    "code": "D3140",
+    "functionName": "encodeUrl",
+    "value": "\\ud800"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "expr": "$encodeUrlComponent('\\ud800')",
+  "dataset": "dataset5",
+  "bindings": {},
+  "error": {
+    "code": "D3140",
+    "functionName": "encodeUrlComponent",
+    "value": "\\ud800"
+  }
+}

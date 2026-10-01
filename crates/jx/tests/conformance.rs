@@ -10,7 +10,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance");
     let manifest = read(&root.join("manifest.json"));
     let mut seen = BTreeSet::new();
-    let mut counts = [0; 5];
+    let mut counts = [0; 4];
     for row in manifest["cases"].as_array().unwrap() {
         let file = row["file"].as_str().unwrap();
         let index = row["index"].as_u64().unwrap() as usize;
@@ -35,6 +35,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
             .unwrap();
             &expression_file
         };
+        let syntax_source = source;
         // Upstream host-provided JSON bindings become lexical declarations. This
         // exercises the same values without introducing an embedding API.
         let adapted;
@@ -64,7 +65,11 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         } else {
             source
         };
-        let compiled = jx::compile(source);
+        let compiled = jx::compile(if row["phase"] == "compile" {
+            syntax_source
+        } else {
+            source
+        });
         match row["status"].as_str().unwrap() {
             "supported" => {
                 counts[0] += 1;
@@ -80,7 +85,7 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                         values.push(serde_json::from_slice(&bytes).unwrap());
                     })
                     .unwrap_or_else(|error| panic!("{id}: {source}: {error}"));
-                if case.get("undefinedResult").is_some() {
+                if case["undefinedResult"] == true {
                     assert!(values.is_empty(), "{id}");
                 } else {
                     assert!(
@@ -110,11 +115,11 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                     );
                 }
             }
-            status @ ("error" | "deferred" | "limit") => {
+            status @ ("error" | "limit" | "blocked") => {
                 counts[match status {
-                    "error" => 2,
-                    "deferred" => 3,
-                    _ => 4,
+                    "error" => 1,
+                    "limit" => 2,
+                    _ => 3,
                 }] += 1;
                 let error = match row["phase"].as_str().unwrap() {
                     "compile" => compiled.unwrap_err(),
@@ -126,23 +131,22 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
                         .unwrap_or_else(|| panic!("expected error: {id}: {source}")),
                     phase => panic!("unknown error phase: {phase}"),
                 };
+                if let Some(message) = row["message"].as_str() {
+                    assert_eq!(error.message, message, "{id}");
+                }
                 assert_eq!(
                     format!("{:?}", error.kind),
                     row["kind"].as_str().unwrap(),
                     "{id}: {source}"
                 );
             }
-            "syntax" => {
-                counts[1] += 1;
-                assert_eq!(
-                    compiled.unwrap_err().kind,
-                    jx::ErrorKind::UnsupportedExpression,
-                    "{id}"
-                );
-            }
             status => panic!("unrecognized status {status}: {id}"),
         }
     }
+    assert_eq!(
+        seen.len(),
+        manifest["corpus_cases"].as_u64().unwrap() as usize
+    );
     let mut disk = BTreeSet::new();
     for group in fs::read_dir(root.join("groups")).unwrap() {
         for file in fs::read_dir(group.unwrap().path()).unwrap() {
@@ -168,13 +172,12 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         "every imported case must be classified and executed"
     );
     println!(
-        "JSONata {}: {} supported results, {} deferred syntax, {} supported errors, {} deferred builtin calls, {} recursion limits; no skipped cases",
+        "JSONata {}: {} supported results, {} supported errors, {} recursion limits, {} blocked compatibility cases; no skipped cases",
         manifest["revision"].as_str().unwrap(),
         counts[0],
         counts[1],
         counts[2],
-        counts[3],
-        counts[4]
+        counts[3]
     );
 }
 

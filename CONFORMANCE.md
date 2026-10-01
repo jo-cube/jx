@@ -8,7 +8,7 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Area | Current behavior / status |
 | --- | --- |
 | Context | `$` is current context; `$$` initially references the root record |
-| Field paths | `a`, `a.b`, `$.a.b`; ASCII names `[A-Za-z_][A-Za-z0-9_]*` |
+| Field paths | `a`, `a.b`, `$.a.b`; Unicode/unquoted names delimited by JSONata operators or whitespace |
 | Quoted fields | Backtick-delimited UTF-8 names, including empty names; no escape interpretation in the expression |
 | Missing | Zero results; different from JSON null |
 | Null/scalar context | Further field lookup yields missing |
@@ -33,8 +33,8 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
 | Deferred runtime/language | Signatures, tail-call elimination, untyped native partials |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
-| Comments, general unquoted Unicode names | Deferred syntax; compile error |
-| Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null`, `function` require backticks when used as fields |
+| Comments / names | Non-nesting `/* … */` comments; Unicode field/variable names supported |
+| Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null` require backticks; bare `function` / `λ` are names outside lambda syntax |
 
 ## Array and sequence boundaries
 
@@ -85,7 +85,8 @@ missing propagates. Width is limited to 10 million, matching upstream. Endpoints
 ±(2^53−1) raise `NumericRange`, avoiding non-progressing binary64 increments.
 
 Postfix grouping groups the whole unparenthesized path, including later steps/filters;
-use `(items{key:value}).field` to navigate the constructed object. Equal keys from one
+use `(items{key:value}).field` to navigate the constructed object. Predicates after
+a non-path grouping require parentheses; empty `[]` retention remains allowed. Equal keys from one
 member group contexts; different members still raise `DuplicateKey`. Integer group
 keys also precede other keys when evaluating values and choosing error precedence. Undefined group
 contexts are ignored by append, without turning an all-undefined group into an empty array.
@@ -377,7 +378,7 @@ Out-of-range numeric literals fail compilation. Comparisons preserve IEEE NaN
 behavior. Computed finite numbers use Rust's shortest round-trip formatting, which
 can differ textually from JavaScript; negative zero serializes as `0`.
 
-`TypeError`/`NumericRange` report the operator's expression byte offset. Expression whitespace is space, tab, LF, CR or vertical tab; form feed is rejected.
+`TypeError`/`NumericRange` report the operator's expression byte offset. Expression whitespace is space, tab, LF, CR or vertical tab; form feed is not whitespace.
 Parser nesting and expression-tree depth are capped at 128 (`DepthLimit`). Upstream error
 codes/text are not a stable API. [100 readable scalar cases](tests/semantics/scalars.json)
 and separate regression tests freeze these rules, validation order, depth limits,
@@ -462,12 +463,13 @@ Limits and explicit policies:
 
 | Area | Implemented functions |
 | --- | --- |
-| Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join`, `$match`, `$replace` |
-| Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$sqrt`, `$power`; aggregates above |
-| Collections | `$append`, `$reverse`, `$distinct` |
+| Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$pad`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join`, `$match`, `$replace` |
+| Encoding | `$encodeUrl`, `$encodeUrlComponent`, `$decodeUrl`, `$decodeUrlComponent`, `$base64encode`, `$base64decode`; host boundary below |
+| Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$round`, `$sqrt`, `$power`; aggregates above |
+| Collections | `$append`, `$reverse`, `$distinct`, `$sort`, variadic `$zip`, `$single` |
 | Objects / types | `$keys`, `$spread`, `$merge`, `$type`, `$lookup`, `$clone` |
 | Higher-order | `$map`, `$filter`, `$reduce`, `$each`, `$sift` |
-| Boolean | `$boolean`, `$not`, `$exists` |
+| Boolean / diagnostics | `$boolean`, `$not`, `$exists`, `$error`, `$assert` |
 
 Fixed signatures follow the pinned reference: context substitution is distinct from
 an explicit missing argument; null does not stand in for missing. Array parameters
@@ -500,10 +502,48 @@ without a callback. These raise local `TypeError`. The readable
 CLI tests freeze supported boundaries. [Official function documentation](https://docs.jsonata.org/string-functions)
 and complete imported groups remain the authority.
 
-Still deferred: rounding/formatting, padding,
-zip/sort/shuffle/single, error/assert, encoding/decoding, date/time, eval,
+Still deferred: picture/base formatting and parsing, shuffle/randomness, date/time, eval,
 untyped native partial coercions and user-defined signatures. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
+
+## Everyday helpers
+
+`$round` uses decimal exponent shifting followed by half-even rounding; all
+precisions allocate nothing. Shifting uses a stack buffer, avoiding
+binary multiplication that changes decimal ties. Missing stays missing; null and
+wrong types fail. Fractional precision follows the pinned implementation's NaN
+behavior. `$pad` truncates width, counts codepoints, repeats/truncates its pattern,
+and returns borrowed input when no padding is needed. Padding beyond one million
+additional codepoints raises local `NumericRange` (a resource guard).
+
+`$sort` is stable, uses the existing fallible top-down merge order, and keeps borrowed
+leaves. Default sorting requires only numbers or only strings for two or more items;
+singleton/empty inputs retain their shape. Strings compare UTF-16 units, matching the
+reference. Comparator results use native truth, including truthy empty containers;
+`$single` predicates use effective boolean conversion. Single accepts an optional
+callback receiving value/index/original array and errors for zero or multiple matches.
+An explicitly missing callback is a type error for sort/single; omitting it uses the
+default. Typed native partials may omit it. `$zip` accepts one or more arguments,
+promotes scalars, stops at the shortest array, and preserves nested values. Variadic
+native partial application remains explicitly deferred.
+
+URI encode/decode functions follow the reserved-character and strict UTF-8 rules of
+`encodeURI` / `encodeURIComponent` and their inverses; malformed percent encodings
+and unpaired surrogates during encoding raise `EncodingError`. ASCII-safe encoding
+and decoding without percent escapes keep borrowing. Base64 uses the pinned Node binary-string convention, not UTF-8: encode
+uses each UTF-16 unit's low byte and decode returns Latin1 characters. Decode accepts
+URL alphabet, ignored characters, omitted padding and trailing bits. **Non-Latin1
+base64 decoding is deferred**: Node Buffer results can change with V8 string storage
+(e.g. literal versus concatenated `ＡYQ`); it raises `UnsupportedExpression` here.
+The `base64` crate supplies the codec; no custom base64 machinery is introduced.
+
+`$error` always raises `UserError`; `$assert` requires a boolean and returns missing
+when true, otherwise `AssertionFailed`. Empty/missing messages use the reference
+defaults. Dynamic messages are owned; static errors remain borrowed. Rust diagnostic
+text replaces isolated UTF-16 units with U+FFFD; JSON string values still preserve
+those units. Full JSON validation and argument evaluation precede helper failures.
+The [helper corpus](tests/semantics/helpers.json) freezes these boundaries separately
+from locally documented guards/deferred host behavior.
 
 ## Regex and matcher text processing
 
@@ -564,42 +604,40 @@ remain unevaluated. [Compiler regressions](crates/jx/tests/compiler.rs) freeze t
 
 ## Executable coverage
 
-`just conformance` executes all **1036** imported cases from complete `fields`,
-`missing-paths`, `quoted-selectors`, `flattening`, `numeric-operators`,
-`comparison-operators`, `boolean-expresssions`, `literals`, `null`, `parentheses`,
-`predicates`, `simple-array-selectors`, `multiple-array-selectors`,
-`function-count`, `function-sum`, `function-max` (also containing min cases),
-`array-constructor`, `object-constructor`, `variables`, `blocks`, `conditionals`,
-`closures`, `lambdas`, `higher-order-functions`, `function-boolean`, `function-exists`,
-`wildcards`, `descendent-operator`, `range-operator`, `sorting`, `inclusion-operator`,
-`coalescing-operator`, `default-operator`, `function-lookup` and `joins`, plus complete groups for the implemented library functions
-(including `hof-map`, `hof-filter`, `hof-reduce`, `function-each`, `function-sift`
-`function-typeOf`, `function-string`, `function-number`, `string-concat`,
-`function-applications`, `partial-application`, `regex`, `matchers`, `function-replace`, `parent-operator` and `transforms`)
-groups of JSONata **2.2.0**, revision
-`8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`:
+`just conformance` executes the complete pinned **1,679-case, 102-group** JSONata
+**2.2.0** language corpus, revision `8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`.
+There are **no unclassified or skipped language cases**. Separate upstream JavaScript
+embedding, asynchronous API and parser-recovery tests are outside this inventory.
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 886 | Semantic JSON result or missing matches upstream |
-| Supported errors | 145 | Asserted compile/evaluate phase and mapped local error kind |
-| Deferred syntax | 0 | Compile-time `UnsupportedExpression` |
-| Deferred builtin calls | 2 | Runtime `UnsupportedExpression` |
-| Recursion guard | 3 | Runtime `DepthLimit`; upstream uses tail calls |
+| Supported results | 1040 | JSON result / missing agrees with upstream |
+| Mapped expected errors | 241 | Compile/evaluate phase and local kind; user messages where applicable |
+| Blocked compatibility | 395 | Specific dependency and current local failure asserted |
+| Recursion guard | 3 | Existing bounded calls; tail-call elimination deferred |
 
-These are selected groups, not a percentage of the full suite. No imported case
-is skipped. `tests/conformance/manifest.json` lists every case and reason; the
-runner fails on unclassified files or changed behavior. Promote status alongside
-implementation. Unimported language families remain deferred as listed above.
+The remaining blockers are picture formatting/parsing (**171**), date/time (**153**),
+function signatures (**43**, including two tail-recursion cases), `$eval` (**12**),
+base formatting (**9**), randomness (**4**) and tail-call elimination (**3**).
+The legacy singular `transform` group is now entirely supported: its 104 cases
+exercise ordinary queries/constructors; structural updates live in `transforms`.
+M19 promoted **142** cases that the baseline already handled (73 results, 69 mapped errors),
+then added helper coverage, corrected two parser gaps and fixed a syntax-adapter gap. A blocker is not
+counted as a passing upstream case simply because it rejects the expression.
 
-Upstream separates reusable `datasets/` from `groups/<topic>/caseNNN.json`, with
-`expr`, `data`/`dataset`, bindings, and expected result/undefined/error fields.
-The general suite also has expression files and multi-case files; the current
-adapter handles inline/named data, multi-case files and expression files. JSON host
-bindings are explicitly adapted to lexical declarations. Absent host input uses an
-undefined predicate context, distinct from explicit JSON null; `unordered` assertions
-compare multisets. Host functions remain deferred.
-Original files and MIT notice are preserved under `tests/conformance/`.
+`tests/conformance/manifest.json` is the reviewed inventory and importer source of
+truth. Every row has an asserted outcome; changing implementation requires promoting
+or updating its classification. The importer checks the complete pinned inventory.
+`scripts/probe-conformance.py` records observations through the CLI for review; it
+never labels cases automatically. Expected diagnostics are mapped coarsely: exact
+upstream codes, token payloads and positions remain deferred.
+
+Fixtures retain their MIT provenance. Host JSON bindings become lexical declarations;
+absent input uses an undefined context; unordered results compare multisets. Syntax
+errors compile the original expression so these adapters cannot conceal malformed
+syntax. Two URI fixtures spell lone-surrogate expression characters as equivalent
+JSONata escapes; their unused error-value metadata uses escaped text because Rust
+strings cannot hold isolated UTF-16 units. All other fixture bytes are preserved.
 
 Reimport from a checkout at the pinned revision:
 
@@ -633,6 +671,7 @@ node scripts/check-builtins.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-composition.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-matchers.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-structure.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-helpers.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -656,7 +695,7 @@ and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
 Scoped-path checks add **947** comparisons across root/array shapes, local/global
 positions, joins, closures, sorting, grouping, and the imported supported join cases.
-Builtin checks add **1,440** comparisons covering fixed signatures, missing/null,
+Builtin checks add **1,535** comparisons covering fixed signatures, missing/null,
 Unicode, callback arity/context, closure effects, nested sequences and mixed pipelines.
 Conversion/composition checks add **2,635** comparisons across numeric/escaping
 boundaries, partials, closures, sequence shapes and mixed pipelines. The known upstream
@@ -675,3 +714,8 @@ Parent/clone/transform checks add **624** comparisons, including **135** readabl
 cases, nested/root-array shape matrices, tuple boundaries, closure captures, sorting,
 sequential/overlapping updates and original-input isolation. The conformance adapter
 preserves dataset and inline object-key order, which `$keys` makes observable.
+
+Everyday-helper checks add **1,884** comparisons, including **132** readable cases
+(with three explicit local guards/host boundaries), seeded decimal rounding, typed
+partials, stable callbacks, URI/base64 boundaries and mixed lexical/grouped pipelines.
+All 16 differential suites total **46,824** comparisons.
