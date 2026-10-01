@@ -349,3 +349,29 @@ fn everyday_helpers_and_user_errors_stream_records() {
     assert!(error.contains("positive required"));
     assert!(error.contains("(AssertionFailed)"));
 }
+
+#[test]
+fn formatting_is_compiled_once_and_streams_records() {
+    let output = run(
+        &["{'n':$formatNumber(n,'0.00'),'date':$fromMillis(t,'[Y0001]-[M01]-[D01]')}"],
+        br#"{"n":4.525,"t":0}
+{"n":2.345,"t":1526947200000}
+"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"n\":\"4.52\",\"date\":\"1970-01-01\"}\n{\"n\":\"2.34\",\"date\":\"2018-05-22\"}\n"
+    );
+    let output = run(
+        &["$toMillis(date)"],
+        b"{\"date\":\"2018-05-22\"}\n{\"date\":\"bad\"}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1526947200000\n");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("(DateTimeError)")
+    );
+}

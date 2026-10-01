@@ -2937,1910 +2937,1324 @@
     {
       "file": "groups/function-formatBase/case000.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatBase/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatBase/case002.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatBase/case003.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatBase/case004.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatBase/case005.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatBase/case006.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3100: formatting/parsing error mapped to NumericRange",
+      "kind": "NumericRange",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatBase/case007.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3100: formatting/parsing error mapped to NumericRange",
+      "kind": "NumericRange",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatBase/case008.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-base",
-      "reason": "Non-decimal numeric formatting deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 1,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 2,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 3,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 4,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 5,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 6,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 7,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 8,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 9,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 10,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 11,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 12,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 13,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 14,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 15,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3131: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 16,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 17,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 18,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 19,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 20,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 21,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 22,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 23,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 24,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 25,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 26,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 27,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 28,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 29,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 30,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 31,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 32,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 33,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 34,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 35,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 36,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 37,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 38,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 39,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 40,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 41,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 42,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 43,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 44,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 45,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 46,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 47,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 48,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 49,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 50,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 51,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 52,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 53,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 54,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 55,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 56,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 57,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 58,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 59,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 60,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 61,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 62,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 63,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatInteger/formatInteger.json",
       "index": 64,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3130: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case000.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case002.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case003.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case004.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case005.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case006.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case007.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case008.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case009.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case010.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case011.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case012.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case013.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case014.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case015.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case016.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case017.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case018.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case019.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3080: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case020.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3081: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case021.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3082: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case022.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3083: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case023.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3084: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case024.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3085: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case025.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3086: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case026.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3087: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case027.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3088: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case028.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3089: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case029.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3090: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case030.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3091: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case031.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3092: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case032.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3093: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/case033.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case034.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case035.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/case036.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/issue785.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/issue785.json",
       "index": 1,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/issue785.json",
       "index": 2,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/issue785.json",
       "index": 3,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-formatNumber/issue786.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3086: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/issue786.json",
       "index": 1,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3086: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/issue786.json",
       "index": 2,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3086: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-formatNumber/issue786.json",
       "index": 3,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3086: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-fromMillis/case000.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/case002.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 1,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 2,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 3,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 4,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 5,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 6,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 7,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 8,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 9,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 10,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 11,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 12,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 13,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 14,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 15,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 16,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 17,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 18,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 19,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 20,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 21,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 22,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 23,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 24,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 25,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 26,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3134: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 27,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 28,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 29,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 30,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 31,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 32,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 33,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 34,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 35,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 36,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 37,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 38,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 39,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 40,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 41,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 42,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 43,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 44,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 45,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 46,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 47,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 48,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 49,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 50,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 51,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 52,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 53,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 54,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 55,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 56,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 57,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 58,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 59,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 60,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 61,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 62,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 63,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 64,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 65,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 66,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 67,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 68,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 69,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3133: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-fromMillis/formatDateTime.json",
       "index": 70,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3135: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 1,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 2,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 3,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 4,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 5,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 6,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 7,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 8,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 9,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 10,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 11,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 12,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 13,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 14,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 15,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 16,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 17,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-fromMillis/isoWeekDate.json",
       "index": 18,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-join/case000.json",
@@ -5649,550 +5063,369 @@
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 0,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 1,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 2,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 3,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 4,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 5,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 6,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 7,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 8,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 9,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 10,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 11,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 12,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 13,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 14,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 15,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 16,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 17,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 18,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 19,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 20,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 21,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 22,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 23,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 24,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 25,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 26,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 27,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 28,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 29,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 30,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 31,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 32,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 33,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 34,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 35,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 36,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 37,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 38,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 39,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 40,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 41,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 42,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 43,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 44,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 45,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 46,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 47,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 48,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 49,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 50,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 51,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 52,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 53,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 54,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 55,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 56,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 57,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 58,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 59,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-parseInteger/parseInteger.json",
       "index": 60,
-      "status": "blocked",
-      "category": "numeric-pictures",
-      "reason": "Numeric picture formatting/parsing deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3130: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
@@ -7555,542 +6788,380 @@
     {
       "file": "groups/function-tomillis/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case002.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case003.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case004.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case005.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case006.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case007.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3110: formatting/parsing error mapped to DateTimeError",
+      "kind": "DateTimeError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/case008.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3110: formatting/parsing error mapped to DateTimeError",
+      "kind": "DateTimeError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/case009.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3110: formatting/parsing error mapped to DateTimeError",
+      "kind": "DateTimeError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/case010.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case011.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case012.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/case013.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 0,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 1,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 2,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 3,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 4,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 5,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 6,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 7,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 8,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 9,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 10,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 11,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 12,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 13,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 14,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 15,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 16,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 17,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 18,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 19,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 20,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 21,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 22,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 23,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 24,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 25,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 26,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 27,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 28,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 29,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 30,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 31,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 32,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 33,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 34,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 35,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3132: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 36,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3133: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 37,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3136: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 38,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3136: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 39,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3136: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 40,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
+      "status": "error",
+      "reason": "D3136: formatting/parsing error mapped to PictureError",
+      "kind": "PictureError",
       "phase": "evaluate"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 41,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 42,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 43,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 44,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 45,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-tomillis/parseDateTime.json",
       "index": 46,
-      "status": "blocked",
-      "category": "date-time",
-      "reason": "Date/time library deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Numeric/integer/date picture formatting and parsing"
     },
     {
       "file": "groups/function-trim/case000.json",

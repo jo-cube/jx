@@ -1,0 +1,1213 @@
+[
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 4.525,
+      "p": "0.00"
+    },
+    "items": [
+      "4.52"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"0.00\")",
+    "data": {
+      "n": 4.525
+    },
+    "items": [
+      "4.52"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 4.515,
+      "p": "0.00"
+    },
+    "items": [
+      "4.52"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"0.00\")",
+    "data": {
+      "n": 4.515
+    },
+    "items": [
+      "4.52"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": -0.005,
+      "p": "0.00"
+    },
+    "items": [
+      "-0.00"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"0.00\")",
+    "data": {
+      "n": -0.005
+    },
+    "items": [
+      "-0.00"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 0,
+      "p": "#.##"
+    },
+    "items": [
+      ".0"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"#.##\")",
+    "data": {
+      "n": 0
+    },
+    "items": [
+      ".0"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 0.14,
+      "p": "01%"
+    },
+    "items": [
+      "14%"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"01%\")",
+    "data": {
+      "n": 0.14
+    },
+    "items": [
+      "14%"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 0.4857,
+      "p": "###.###‰"
+    },
+    "items": [
+      "485.7‰"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"###.###‰\")",
+    "data": {
+      "n": 0.4857
+    },
+    "items": [
+      "485.7‰"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 1234.5678,
+      "p": "00.000e000"
+    },
+    "items": [
+      "12.346e002"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"00.000e000\")",
+    "data": {
+      "n": 1234.5678
+    },
+    "items": [
+      "12.346e002"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 0.234,
+      "p": "0.0e0"
+    },
+    "items": [
+      "2.3e-1"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"0.0e0\")",
+    "data": {
+      "n": 0.234
+    },
+    "items": [
+      "2.3e-1"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 12345678.9,
+      "p": "9,999.99"
+    },
+    "items": [
+      "12,345,678.90"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"9,999.99\")",
+    "data": {
+      "n": 12345678.9
+    },
+    "items": [
+      "12,345,678.90"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 123412345678.9,
+      "p": "9,9,99.99"
+    },
+    "items": [
+      "123412345,6,78.90"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"9,9,99.99\")",
+    "data": {
+      "n": 123412345678.9
+    },
+    "items": [
+      "123412345,6,78.90"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": -12.3,
+      "p": "0.00;(0.00)"
+    },
+    "items": [
+      "(12.30)"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"0.00;(0.00)\")",
+    "data": {
+      "n": -12.3
+    },
+    "items": [
+      "(12.30)"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 0.0,
+      "p": "0.0e0"
+    },
+    "items": [
+      "0.0e0"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"0.0e0\")",
+    "data": {
+      "n": 0.0
+    },
+    "items": [
+      "0.0e0"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 0,
+      "p": "A"
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 27,
+      "p": "a"
+    },
+    "items": [
+      "aa"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 944,
+      "p": "I"
+    },
+    "items": [
+      "CMXLIV"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 21,
+      "p": "1;o"
+    },
+    "items": [
+      "21st"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 11,
+      "p": "1;o"
+    },
+    "items": [
+      "11th"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": -1.2,
+      "p": "000"
+    },
+    "items": [
+      "-002"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 555,
+      "p": "Ww;o"
+    },
+    "items": [
+      "Five Hundred and Fifty-Fifth"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 1234,
+      "p": "٠٠٠٠"
+    },
+    "items": [
+      "١٢٣٤"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 12345678,
+      "p": "1,00,000"
+    },
+    "items": [
+      "123,45,678"
+    ]
+  },
+  {
+    "expr": "$formatInteger(n,p)",
+    "data": {
+      "n": 1e+46,
+      "p": "w"
+    },
+    "items": [
+      "ten billion trillion trillion trillion"
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "FIVE HUNDRED AND FIFTY-FIFTH",
+      "p": "W;o"
+    },
+    "items": [
+      555
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "",
+      "p": "I"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "xxx",
+      "p": "i"
+    },
+    "items": [
+      30
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "AA",
+      "p": "A"
+    },
+    "items": [
+      27
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "١٢٣٤",
+      "p": "٠٠٠٠"
+    },
+    "items": [
+      1234
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "1,234th",
+      "p": "#,##0;o"
+    },
+    "items": [
+      1234
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "  -123tail",
+      "p": "1"
+    },
+    "items": [
+      -123
+    ]
+  },
+  {
+    "expr": "$parseInteger(text,p)",
+    "data": {
+      "text": "bad",
+      "p": "1"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$formatBase(255,16)",
+    "data": null,
+    "items": [
+      "ff"
+    ]
+  },
+  {
+    "expr": "$formatBase(-0.4,2)",
+    "data": null,
+    "items": [
+      "0"
+    ]
+  },
+  {
+    "expr": "$formatBase(2.5,2)",
+    "data": null,
+    "items": [
+      "10"
+    ]
+  },
+  {
+    "expr": "$formatBase(3.5,2)",
+    "data": null,
+    "items": [
+      "100"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "#;#;#"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "#.0.0"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "#0%%"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "#0‰‰"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "#0%‰"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": ".e0"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0+.e0"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0,.e0"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0,"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0,,0"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0#"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0.#0"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0.0e0%"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 2,
+      "p": "0.0e0,0"
+    },
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatInteger(1,'0０')",
+    "data": null,
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatInteger(1,'α')",
+    "data": null,
+    "error": "PictureError"
+  },
+  {
+    "expr": "$formatNumber(missing,'0+.0')",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$fromMillis(missing,'[Y')",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$toMillis(missing,'[q]')",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$formatNumber(null,'0')",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$formatInteger('1','0')",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$parseInteger(1,'0')",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$fromMillis(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$toMillis(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$formatNumber(missing,'0',null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$formatInteger('000')",
+    "data": 42,
+    "items": [
+      "042"
+    ]
+  },
+  {
+    "expr": "$fromMillis('[Y]')",
+    "data": 1526947200000,
+    "items": [
+      "2018"
+    ]
+  },
+  {
+    "expr": "$fromMillis('[Y]','+0000')",
+    "data": 1526947200000,
+    "items": [
+      "2018"
+    ]
+  },
+  {
+    "expr": "$formatNumber('#0.00',{'decimal-separator':'.'})",
+    "data": 4.2,
+    "items": [
+      "4.20"
+    ]
+  },
+  {
+    "expr": "n ~> $formatInteger('000')",
+    "data": {
+      "n": 42
+    },
+    "items": [
+      "042"
+    ]
+  },
+  {
+    "expr": "($f:=$formatInteger(?,'000');$f(n))",
+    "data": {
+      "n": 42
+    },
+    "items": [
+      "042"
+    ]
+  },
+  {
+    "expr": "$fromMillis(0)",
+    "data": null,
+    "items": [
+      "1970-01-01T00:00:00.000Z"
+    ]
+  },
+  {
+    "expr": "$fromMillis(-1)",
+    "data": null,
+    "items": [
+      "1969-12-31T23:59:59.999Z"
+    ]
+  },
+  {
+    "expr": "$fromMillis(0.9)",
+    "data": null,
+    "items": [
+      "1970-01-01T00:00:00.000Z"
+    ]
+  },
+  {
+    "expr": "$fromMillis(0,'[[[Y]]]')",
+    "data": null,
+    "items": [
+      "[1970]"
+    ]
+  },
+  {
+    "expr": "$fromMillis(1230757500000,'[H01]:[m01][Z01:01]','+0530')",
+    "data": null,
+    "items": [
+      "02:35+05:30"
+    ]
+  },
+  {
+    "expr": "$fromMillis(1419940800000,'[D1o] [MNn] [Y] [FNn]')",
+    "data": null,
+    "items": [
+      "30th December 2014 Tuesday"
+    ]
+  },
+  {
+    "expr": "$fromMillis(1419940800000,'[d1] [X]-[W01]-[F1]')",
+    "data": null,
+    "items": [
+      "364 2015-01-2"
+    ]
+  },
+  {
+    "expr": "$fromMillis(1419940800000,'[Y0001,2-2]')",
+    "data": null,
+    "items": [
+      "14"
+    ]
+  },
+  {
+    "expr": "$toMillis(text,p)",
+    "data": {
+      "text": "2018-05-22",
+      "p": "[Y0001]-[M01]-[D01]"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,\"[Y0001]-[M01]-[D01]\")",
+    "data": {
+      "text": "2018-05-22"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,p)",
+    "data": {
+      "text": "20180522",
+      "p": "[Y0001][M01][D01]"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,\"[Y0001][M01][D01]\")",
+    "data": {
+      "text": "20180522"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,p)",
+    "data": {
+      "text": "22nd May 2018",
+      "p": "[D1o] [MNn] [Y]"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,\"[D1o] [MNn] [Y]\")",
+    "data": {
+      "text": "22nd May 2018"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,p)",
+    "data": {
+      "text": "2018-142",
+      "p": "[Y]-[d001]"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,\"[Y]-[d001]\")",
+    "data": {
+      "text": "2018-142"
+    },
+    "items": [
+      1526947200000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,p)",
+    "data": {
+      "text": "2018-05-22 11:23 PM",
+      "p": "[Y]-[M]-[D] [h]:[m] [PN]"
+    },
+    "items": [
+      1527031380000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,\"[Y]-[M]-[D] [h]:[m] [PN]\")",
+    "data": {
+      "text": "2018-05-22 11:23 PM"
+    },
+    "items": [
+      1527031380000
+    ]
+  },
+  {
+    "expr": "$toMillis(text,p)",
+    "data": {
+      "text": "2018-05-22T12:00:00.19+05:30",
+      "p": "[Y]-[M]-[D]T[H]:[m]:[s].[f][Z01:01]"
+    },
+    "items": [
+      1526970600190
+    ]
+  },
+  {
+    "expr": "$toMillis(text,\"[Y]-[M]-[D]T[H]:[m]:[s].[f][Z01:01]\")",
+    "data": {
+      "text": "2018-05-22T12:00:00.19+05:30"
+    },
+    "items": [
+      1526970600190
+    ]
+  },
+  {
+    "expr": "$toMillis(\"2018\")",
+    "data": null,
+    "items": [
+      1514764800000
+    ]
+  },
+  {
+    "expr": "$toMillis(\"2018-05\")",
+    "data": null,
+    "items": [
+      1525132800000
+    ]
+  },
+  {
+    "expr": "$toMillis(\"2018-05-22T12:00:00.123456-05:30\")",
+    "data": null,
+    "items": [
+      1527010200123
+    ]
+  },
+  {
+    "expr": "$toMillis(\"2018-05-22\",\"[Y]/[M]/[D]\")",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$toMillis('not a date')",
+    "data": null,
+    "error": "DateTimeError"
+  },
+  {
+    "expr": "$fromMillis(0,'[Y')",
+    "data": null,
+    "error": "PictureError"
+  },
+  {
+    "expr": "$toMillis('2018-22','[Y]-[D]')",
+    "data": null,
+    "error": "PictureError"
+  },
+  {
+    "expr": "$fromMillis(0,'[YN]')",
+    "data": null,
+    "error": "PictureError"
+  },
+  {
+    "expr": "$toMillis('2018-03-1','[X]-[W]-[F1]')",
+    "data": null,
+    "error": "PictureError"
+  },
+  {
+    "expr": "($t:=$millis();[$t=$millis(),$now()=$fromMillis($t)])",
+    "data": null,
+    "items": [
+      [
+        true,
+        true
+      ]
+    ]
+  },
+  {
+    "expr": "$fromMillis($toMillis('13:45','[H]:[m]'),'[H01]:[m01]:[s01][Z01:01t]')",
+    "data": null,
+    "items": [
+      "13:45:00Z"
+    ]
+  },
+  {
+    "expr": "($f:=function($n){$formatNumber($n,'0.00')};$map(rows[n>0].n,$f))",
+    "data": {
+      "rows": [
+        {
+          "n": -1
+        },
+        {
+          "n": 2.345
+        },
+        {
+          "n": 4.525
+        }
+      ]
+    },
+    "items": [
+      "2.34",
+      "4.52"
+    ]
+  },
+  {
+    "expr": "rows{kind:$formatNumber($sum(n),'0.00')}",
+    "data": {
+      "rows": [
+        {
+          "kind": "a",
+          "n": 1.25
+        },
+        {
+          "kind": "a",
+          "n": 2
+        },
+        {
+          "kind": "b",
+          "n": 4.525
+        }
+      ]
+    },
+    "items": [
+      {
+        "a": "3.25",
+        "b": "4.52"
+      }
+    ]
+  },
+  {
+    "expr": "$lookup({'2018':'year'},$fromMillis(t,'[Y]'))",
+    "data": {
+      "t": 1526947200000
+    },
+    "items": [
+      "year"
+    ]
+  },
+  {
+    "expr": "($formatNumber:=function($n,$p){$n};$formatNumber(n,'invalid'))",
+    "data": {
+      "n": 4
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "false ? $fromMillis(1,'[q]') : 7",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "$toMillis('2018-05-22T12:00:00')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$formatNumber(1e21,'0.00')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$formatInteger(1e21,'1')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$formatBase(1e21,2)",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$formatNumber(1,'0',{'decimal-separator':'..'})",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$toMillis('2018-Maſ-22','[Y]-[MNn]-[D]')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$fromMillis(n,p)",
+    "data": {
+      "n": 0,
+      "p": "quote \" slash \\ newline \n [Y]"
+    },
+    "items": [
+      "quote \" slash \\ newline \n 1970"
+    ]
+  },
+  {
+    "expr": "$fromMillis(n,\"quote \\\" slash \\\\ newline \\n [Y]\")",
+    "data": {
+      "n": 0
+    },
+    "items": [
+      "quote \" slash \\ newline \n 1970"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,p)",
+    "data": {
+      "n": 3,
+      "p": "quote \" slash \\ newline \n 0"
+    },
+    "items": [
+      "quote \" slash \\ newline \n 3"
+    ]
+  },
+  {
+    "expr": "$formatNumber(n,\"quote \\\" slash \\\\ newline \\n 0\")",
+    "data": {
+      "n": 3
+    },
+    "items": [
+      "quote \" slash \\ newline \n 3"
+    ]
+  },
+  {
+    "expr": "$parseInteger($formatInteger(n,'A'),'A')",
+    "data": {
+      "n": 1000000000000000100
+    },
+    "items": [
+      1000000000000000100
+    ]
+  },
+  {
+    "expr": "$fromMillis(0,'[H01]:[m01][Z01:01]','-0530')",
+    "data": null,
+    "items": [
+      "17:30-06:30"
+    ]
+  },
+  {
+    "expr": "$toMillis('1970-01-01T00:00-05:30','[Y]-[M]-[D]T[H]:[m][Z01:01]')",
+    "data": null,
+    "items": [
+      16200000
+    ]
+  },
+  {
+    "expr": "$toMillis('1970-01-01T00:00:00-05:30')",
+    "data": null,
+    "items": [
+      19800000
+    ]
+  },
+  {
+    "expr": "$fromMillis($millis(),'[Y]')=$fromMillis($toMillis('13:45','[H]:[m]'),'[Y]')",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "$sum(rows[$toMillis(date,'[Y]-[M]-[D]')>0].n)",
+    "data": {
+      "rows": [
+        {
+          "date": "1970-01-01",
+          "n": 1
+        },
+        {
+          "date": "2018-05-22",
+          "n": 2
+        },
+        {
+          "date": "2019-05-22",
+          "n": 3
+        }
+      ]
+    },
+    "items": [
+      5
+    ]
+  },
+  {
+    "expr": "$formatNumber(1e308,'0.00')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$formatNumber(1,'0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0')",
+    "data": null,
+    "error": "NumericRange",
+    "localOnly": true
+  },
+  {
+    "expr": "$formatNumber(0/0,'0.00')",
+    "data": null,
+    "items": [
+      "-NaN.00"
+    ]
+  },
+  {
+    "expr": "$formatNumber(1/0,'0.00')",
+    "data": null,
+    "items": [
+      "NaN.00"
+    ]
+  },
+  {
+    "expr": "$formatNumber(1/0,'0')",
+    "data": null,
+    "items": [
+      "Infinity"
+    ]
+  },
+  {
+    "expr": "$formatBase(0/0,16)",
+    "data": null,
+    "items": [
+      "NaN"
+    ]
+  },
+  {
+    "expr": "$formatInteger(0/0,'1')",
+    "data": null,
+    "items": [
+      "NaN"
+    ]
+  },
+  {
+    "expr": "$toMillis('and','[Yw]')",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$toMillis('and-22','[Yw]-[D]')",
+    "data": null,
+    "error": "PictureError"
+  },
+  {
+    "expr": "($first:=$now();$now:=function(){'shadowed'};$type($first) & ':' & $now())",
+    "data": null,
+    "items": [
+      "string:shadowed"
+    ]
+  },
+  {
+    "expr": "$toMillis('2018-05-22+0100')",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$toMillis('2018-05-22T12:00:00+2900junk')",
+    "data": null,
+    "error": "DateTimeError"
+  },
+  {
+    "expr": "$fromMillis(-62167219200000,'[d]')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": true
+  },
+  {
+    "expr": "$fromMillis(-62167219200000,'[Y0001]-[M01]-[D01]')",
+    "data": null,
+    "items": [
+      "0000-01-01"
+    ]
+  },
+  {
+    "expr": "n.$formatNumber('0,00',{'decimal-separator':','})",
+    "data": {
+      "n": 1.25
+    },
+    "items": [
+      "1,25"
+    ]
+  },
+  {
+    "expr": "t.$fromMillis('[Y] [H01]','+0530')",
+    "data": {
+      "t": 0
+    },
+    "items": [
+      "1970 05"
+    ]
+  },
+  {
+    "expr": "t.$fromMillis('[Y')",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "t.$fromMillis('[Y')",
+    "data": {
+      "t": 0
+    },
+    "error": "PictureError"
+  }
+]
