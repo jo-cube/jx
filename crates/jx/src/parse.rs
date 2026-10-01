@@ -52,37 +52,11 @@ impl<'a> Parser<'a> {
                 continue;
             }
             if matches!(self.token, Token::Bind) && minimum < 10 {
-                let name = match lhs.kind {
-                    Kind::Variable(name) => name,
-                    Kind::Path(path) if path.rooted && path.fields.is_empty() => "".into(),
-                    _ => return Err(error(lhs.offset)),
-                };
-                let offset = self.offset;
-                self.advance()?;
-                let rhs = self.expression(9, nesting + 1)?;
-                let depth = rhs.depth + 1;
-                lhs = node(Kind::Bind(name, Box::new(rhs)), offset, depth)?;
+                lhs = self.binding(lhs, nesting)?;
                 continue;
             }
             if matches!(self.token, Token::Question) && minimum < 20 {
-                let offset = self.offset;
-                self.advance()?;
-                let yes = self.expression(0, nesting + 1)?;
-                let no = if matches!(self.token, Token::Colon) {
-                    self.advance()?;
-                    Some(Box::new(self.expression(0, nesting + 1)?))
-                } else {
-                    None
-                };
-                let depth = 1 + lhs
-                    .depth
-                    .max(yes.depth)
-                    .max(no.as_ref().map_or(0, |n| n.depth));
-                lhs = node(
-                    Kind::Conditional(Box::new(lhs), Box::new(yes), no),
-                    offset,
-                    depth,
-                )?;
+                lhs = self.conditional(lhs, nesting)?;
                 continue;
             }
             let op = match self.token {
@@ -132,7 +106,9 @@ impl<'a> Parser<'a> {
             Token::Descendants => Kind::Descendants,
             Token::Operator(Op::Remainder) => Kind::Parent(Box::default()),
             Token::Pipe => self.transform(nesting)?,
-            Token::Name("function") => self.lambda(nesting)?,
+            Token::Name("function" | "λ") if matches!(self.token, Token::Open) => {
+                self.lambda(nesting)?
+            }
             Token::Name(name) | Token::Quoted(name) => {
                 lookup = true;
                 Kind::Path(Path {

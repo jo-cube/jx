@@ -8,6 +8,19 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Library {
+    Round,
+    Pad,
+    Sort,
+    Zip,
+    Single,
+    EncodeUrl,
+    EncodeComponent,
+    DecodeUrl,
+    DecodeComponent,
+    Base64Encode,
+    Base64Decode,
+    Error,
+    Assert,
     String,
     Number,
     Clone,
@@ -82,6 +95,19 @@ impl Param {
 impl Library {
     pub fn named(name: &str) -> Option<Self> {
         Some(match name {
+            "round" => Self::Round,
+            "pad" => Self::Pad,
+            "sort" => Self::Sort,
+            "zip" => Self::Zip,
+            "single" => Self::Single,
+            "encodeUrl" => Self::EncodeUrl,
+            "encodeUrlComponent" => Self::EncodeComponent,
+            "decodeUrl" => Self::DecodeUrl,
+            "decodeUrlComponent" => Self::DecodeComponent,
+            "base64encode" => Self::Base64Encode,
+            "base64decode" => Self::Base64Decode,
+            "error" => Self::Error,
+            "assert" => Self::Assert,
             "string" => Self::String,
             "number" => Self::Number,
             "clone" => Self::Clone,
@@ -122,6 +148,18 @@ impl Library {
     fn signature(self) -> (&'static [Param], usize, bool) {
         use Param::*;
         match self {
+            Self::Round => (&[Number, Number], 1, true),
+            Self::Pad => (&[String, Number, String], 2, true),
+            Self::Sort | Self::Single => (&[Array, Function], 1, false),
+            Self::Zip => (&[Array], 1, false),
+            Self::Error => (&[String], 0, false),
+            Self::Assert => (&[Boolean, String], 1, false),
+            Self::EncodeUrl
+            | Self::EncodeComponent
+            | Self::DecodeUrl
+            | Self::DecodeComponent
+            | Self::Base64Encode
+            | Self::Base64Decode => (&[String], 1, true),
             Self::String => (&[Any, Boolean], 1, true),
             Self::Number => (&[Numeric], 1, true),
             Self::Clone => (&[Container], 1, true),
@@ -152,6 +190,14 @@ impl Library {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        // Native partials bypass signatures: an omitted optional comparator is
+        // still its default. Direct calls with an explicit missing callback fail.
+        let args =
+            if matches!(self, Self::Sort | Self::Single) && args.len() == 2 && args[1].is_none() {
+                &args[..1]
+            } else {
+                args
+            };
         if self == Self::Number {
             return crate::convert::number(args.first().cloned().flatten(), offset)
                 .map(|value| value.map_or(Operand::Missing, Operand::One));
@@ -180,11 +226,24 @@ impl Library {
         }
     }
     pub fn constant(self, args: &[Node]) -> bool {
+        if matches!(self, Self::Sort | Self::Single) {
+            return args.len() == 1;
+        }
+        if self == Self::Round && args.len() == 1 {
+            return true;
+        }
         let (params, _, context) = self.signature();
         // Optional context matching can depend on argument types, not only count.
         !matches!(
             self,
-            Self::Clone | Self::Map | Self::Filter | Self::Reduce | Self::Each | Self::Sift
+            Self::Clone
+                | Self::Map
+                | Self::Filter
+                | Self::Reduce
+                | Self::Each
+                | Self::Sift
+                | Self::Error
+                | Self::Assert
         ) && (!context || args.len() == params.len() || self == Self::String && args.len() == 1)
     }
     pub fn evaluate<'e, 'i>(
@@ -193,6 +252,13 @@ impl Library {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if self == Self::Zip {
+            let values = args
+                .iter()
+                .map(|arg| crate::retain::materialize(arg, context))
+                .collect::<Result<Vec<_>, _>>()?;
+            return self.values(&values, context, offset);
+        }
         if self == Self::Replace {
             let mut values = [None, None, None, None];
             for (i, arg) in args.iter().enumerate() {
@@ -224,6 +290,12 @@ impl Library {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if self == Self::Zip {
+            if args.is_empty() {
+                return Err(type_error(offset));
+            }
+            return Ok(Operand::One(super::arrays::zip(args)));
+        }
         if self == Self::Replace {
             self.validated::<4>(args, context, offset)
         } else {
@@ -284,6 +356,20 @@ impl Library {
             }
         }
         let result = match self {
+            Self::Round => super::numeric::round_value(&values),
+            Self::Pad => super::padding::pad(values[..3].try_into().unwrap(), offset)?,
+            Self::Sort | Self::Single => {
+                super::arrays::call(self, values[..3].try_into().unwrap(), context, offset)?
+            }
+            Self::EncodeUrl
+            | Self::EncodeComponent
+            | Self::DecodeUrl
+            | Self::DecodeComponent
+            | Self::Base64Encode
+            | Self::Base64Decode => super::encoding::call(self, values[0].clone(), offset)?,
+            Self::Error | Self::Assert => {
+                super::diagnostics::call(self, values[..3].try_into().unwrap(), offset)?
+            }
             Self::Clone => crate::transform::clone(values[0].clone(), offset)?,
             Self::String => crate::convert::string(
                 values[0].clone(),

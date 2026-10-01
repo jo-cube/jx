@@ -5,6 +5,19 @@ use crate::{Error, ErrorKind};
 /// Maximum simultaneously nested JSON objects/arrays, bounding native stack use.
 pub const MAX_DEPTH: usize = 128;
 
+// Scanner diagnostics are static; user-message ownership belongs at the API boundary.
+#[derive(Clone, Copy, Debug)]
+struct ScanError {
+    kind: ErrorKind,
+    offset: usize,
+    message: &'static str,
+}
+impl From<ScanError> for Error {
+    fn from(error: ScanError) -> Self {
+        Self::new(error.kind, error.offset, error.message)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum Selection<'a, 'path> {
     Missing,
@@ -24,7 +37,7 @@ pub(crate) fn select<'a, 'path>(
     let selected = scanner.value(0, Some(fields))?;
     scanner.space();
     if scanner.at != text.len() {
-        return Err(scanner.error("trailing content after JSON value"));
+        return Err(scanner.error("trailing content after JSON value").into());
     }
     Ok(selected)
 }
@@ -43,7 +56,7 @@ pub(crate) fn capture<'a>(
     let raw = scanner.capture_value(0, demand, output)?;
     scanner.space();
     if scanner.at != text.len() {
-        return Err(scanner.error("trailing content after JSON value"));
+        return Err(scanner.error("trailing content after JSON value").into());
     }
     Ok(raw)
 }
@@ -58,7 +71,7 @@ impl<'a> Scanner<'a> {
         &mut self,
         depth: usize,
         path: Option<&'path [Box<str>]>,
-    ) -> Result<Selection<'a, 'path>, Error> {
+    ) -> Result<Selection<'a, 'path>, ScanError> {
         let start = self.at;
         let remaining = path.filter(|fields| !fields.is_empty());
         let selection = match self.byte() {
@@ -108,7 +121,7 @@ impl<'a> Scanner<'a> {
         &mut self,
         depth: usize,
         path: Option<&'path [Box<str>]>,
-    ) -> Result<Selection<'a, 'path>, Error> {
+    ) -> Result<Selection<'a, 'path>, ScanError> {
         let mut selected = Selection::Missing;
         self.object_members(|scanner, key| {
             let tail =
@@ -125,8 +138,8 @@ impl<'a> Scanner<'a> {
 
     fn object_members(
         &mut self,
-        mut member: impl FnMut(&mut Self, &'a str) -> Result<(), Error>,
-    ) -> Result<(), Error> {
+        mut member: impl FnMut(&mut Self, &'a str) -> Result<(), ScanError>,
+    ) -> Result<(), ScanError> {
         self.space();
         if self.take(b'}') {
             return Ok(());
@@ -156,7 +169,7 @@ impl<'a> Scanner<'a> {
         depth: usize,
         demand: &Demand,
         output: &mut Captures<'a>,
-    ) -> Result<RawJson<'a>, Error> {
+    ) -> Result<RawJson<'a>, ScanError> {
         let start = self.at;
         // A duplicate parent replaces every descendant, including absent fields.
         output.fill(demand.subtree & !demand.slots, Captured::Missing);
@@ -186,7 +199,7 @@ impl<'a> Scanner<'a> {
         Ok(raw)
     }
 
-    fn array(&mut self, depth: usize) -> Result<(), Error> {
+    fn array(&mut self, depth: usize) -> Result<(), ScanError> {
         self.space();
         if self.take(b']') {
             return Ok(());
@@ -202,19 +215,19 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn open(&mut self, depth: usize) -> Result<(), Error> {
+    fn open(&mut self, depth: usize) -> Result<(), ScanError> {
         if depth >= MAX_DEPTH {
-            return Err(Error::new(
-                ErrorKind::DepthLimit,
-                self.at,
-                "JSON container depth exceeds 128",
-            ));
+            return Err(ScanError {
+                kind: ErrorKind::DepthLimit,
+                offset: self.at,
+                message: "JSON container depth exceeds 128",
+            });
         }
         self.at += 1;
         Ok(())
     }
 
-    fn string(&mut self) -> Result<(), Error> {
+    fn string(&mut self) -> Result<(), ScanError> {
         self.at += 1;
         loop {
             match self.byte() {
@@ -249,7 +262,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn number(&mut self) -> Result<(), Error> {
+    fn number(&mut self) -> Result<(), ScanError> {
         self.take(b'-');
         if !self.take(b'0') {
             self.digits()?;
@@ -266,7 +279,7 @@ impl<'a> Scanner<'a> {
         Ok(())
     }
 
-    fn digits(&mut self) -> Result<(), Error> {
+    fn digits(&mut self) -> Result<(), ScanError> {
         let start = self.at;
         while self.byte().is_some_and(|b| b.is_ascii_digit()) {
             self.at += 1;
@@ -277,7 +290,7 @@ impl<'a> Scanner<'a> {
         Ok(())
     }
 
-    fn literal(&mut self, literal: &[u8]) -> Result<(), Error> {
+    fn literal(&mut self, literal: &[u8]) -> Result<(), ScanError> {
         if !self.text.as_bytes()[self.at..].starts_with(literal) {
             return Err(self.error("invalid JSON literal"));
         }
@@ -298,7 +311,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn require(&mut self, byte: u8, message: &'static str) -> Result<(), Error> {
+    fn require(&mut self, byte: u8, message: &'static str) -> Result<(), ScanError> {
         if self.take(byte) {
             Ok(())
         } else {
@@ -312,8 +325,12 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn error(&self, message: &'static str) -> Error {
-        Error::new(ErrorKind::InvalidJson, self.at, message)
+    fn error(&self, message: &'static str) -> ScanError {
+        ScanError {
+            kind: ErrorKind::InvalidJson,
+            offset: self.at,
+            message,
+        }
     }
 }
 

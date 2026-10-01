@@ -38,33 +38,34 @@ pub(super) struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn next(&mut self) -> Result<(Token<'a>, usize), Error> {
-        while self
-            .byte()
-            .is_some_and(|b| matches!(b, b' ' | b'\t' | b'\n' | b'\r' | 0x0b))
-        {
-            self.at += 1;
+        loop {
+            while self
+                .byte()
+                .is_some_and(|b| matches!(b, b' ' | b'\t' | b'\n' | b'\r' | 0x0b))
+            {
+                self.at += 1;
+            }
+            if !self.source[self.at..].starts_with("/*") {
+                break;
+            }
+            let comment = self.at;
+            let Some(end) = self.source[self.at + 2..].find("*/") else {
+                return Err(error(comment));
+            };
+            self.at += end + 4;
         }
         let start = self.at;
         let Some(byte) = self.byte() else {
             return Ok((Token::End, start));
         };
-        if self.source[start..].starts_with('λ') {
-            self.at += 'λ'.len_utf8();
-            return Ok((Token::Name("function"), start));
-        }
         self.at += 1;
         let token = match byte {
             b'$' => {
                 let name = self.at;
-                while self
-                    .byte()
-                    .is_some_and(|b| b.is_ascii_alphanumeric() || b == b'_')
-                {
+                while self.byte().is_some_and(|b| !delimiter(b)) {
                     self.at += 1;
                 }
-                if name == self.at && self.take(b'$') {
-                    Token::Variable("$")
-                } else if name == self.at {
+                if name == self.at {
                     Token::Root
                 } else {
                     Token::Variable(&self.source[name..self.at])
@@ -156,11 +157,8 @@ impl<'a> Lexer<'a> {
                 }
                 Token::Number(number)
             }
-            b if b.is_ascii_alphabetic() || b == b'_' => {
-                while self
-                    .byte()
-                    .is_some_and(|b| b.is_ascii_alphanumeric() || b == b'_')
-                {
+            b if !delimiter(b) => {
+                while self.byte().is_some_and(|b| !delimiter(b)) {
                     self.at += 1;
                 }
                 Token::Name(&self.source[start..self.at])
@@ -264,5 +262,41 @@ pub(super) fn error(offset: usize) -> Error {
         ErrorKind::UnsupportedExpression,
         offset,
         "invalid or unsupported expression; see CONFORMANCE.md",
+    )
+}
+
+fn delimiter(b: u8) -> bool {
+    matches!(
+        b,
+        b' ' | b'\t'
+            | b'\n'
+            | b'\r'
+            | 0x0b
+            | b'.'
+            | b'['
+            | b']'
+            | b'{'
+            | b'}'
+            | b'('
+            | b')'
+            | b','
+            | b'@'
+            | b'#'
+            | b';'
+            | b':'
+            | b'?'
+            | b'+'
+            | b'-'
+            | b'*'
+            | b'/'
+            | b'%'
+            | b'|'
+            | b'='
+            | b'<'
+            | b'>'
+            | b'^'
+            | b'&'
+            | b'!'
+            | b'~'
     )
 }

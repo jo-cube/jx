@@ -1,3 +1,4 @@
+mod operators;
 use crate::{
     Error, RawJson, Value,
     expression::{Kind, Node, Op},
@@ -404,44 +405,7 @@ impl Node {
                 };
             }
             Kind::Binary(op, lhs, rhs) => {
-                let left = lhs.run(input)?;
-                if matches!(op, Op::And | Op::Or) {
-                    let truth = left.truth(self.offset)?;
-                    let value = match op {
-                        Op::And => truth && rhs.run(input)?.truth(self.offset)?,
-                        Op::Or => truth || rhs.run(input)?.truth(self.offset)?,
-                        _ => unreachable!(),
-                    };
-                    return Ok(Operand::One(Value::Boolean(value)));
-                }
-                let right = rhs.run(input)?;
-                match op {
-                    Op::In => Value::Boolean(crate::compare::includes(left, right)?),
-                    Op::Equal | Op::NotEqual => Value::Boolean(crate::compare::equal(
-                        left,
-                        right,
-                        matches!(op, Op::NotEqual),
-                    )?),
-                    Op::Less | Op::LessEqual | Op::Greater | Op::GreaterEqual => {
-                        return crate::compare::order(left, right, *op, self.offset);
-                    }
-                    _ => {
-                        // Type-check both operands before propagating missing.
-                        let left = left.number(self.offset)?;
-                        let right = right.number(self.offset)?;
-                        let (Some(left), Some(right)) = (left, right) else {
-                            return Ok(Operand::Missing);
-                        };
-                        Value::Number(match op {
-                            Op::Add => left + right,
-                            Op::Subtract => left - right,
-                            Op::Multiply => left * right,
-                            Op::Divide => left / right,
-                            Op::Remainder => left % right,
-                            _ => unreachable!(),
-                        })
-                    }
-                }
+                return operators::binary(op, lhs, rhs, input, self.offset);
             }
         };
         Ok(Operand::One(value))

@@ -1,6 +1,40 @@
 use super::*;
 
 impl Parser<'_> {
+    pub(super) fn binding(&mut self, lhs: Node, nesting: usize) -> Result<Node, Error> {
+        let name = match lhs.kind {
+            Kind::Variable(name) => name,
+            Kind::Path(path) if path.rooted && path.fields.is_empty() => "".into(),
+            _ => return Err(error(lhs.offset)),
+        };
+        let offset = self.offset;
+        self.advance()?;
+        let rhs = self.expression(9, nesting + 1)?;
+        let depth = rhs.depth + 1;
+        node(Kind::Bind(name, Box::new(rhs)), offset, depth)
+    }
+
+    pub(super) fn conditional(&mut self, lhs: Node, nesting: usize) -> Result<Node, Error> {
+        let offset = self.offset;
+        self.advance()?;
+        let yes = self.expression(0, nesting + 1)?;
+        let no = if matches!(self.token, Token::Colon) {
+            self.advance()?;
+            Some(Box::new(self.expression(0, nesting + 1)?))
+        } else {
+            None
+        };
+        let depth = 1 + lhs
+            .depth
+            .max(yes.depth)
+            .max(no.as_ref().map_or(0, |n| n.depth));
+        node(
+            Kind::Conditional(Box::new(lhs), Box::new(yes), no),
+            offset,
+            depth,
+        )
+    }
+
     pub(super) fn block(&mut self, nesting: usize, offset: usize) -> Result<Kind, Error> {
         let mut items = Vec::new();
         while !matches!(self.token, Token::Close) {

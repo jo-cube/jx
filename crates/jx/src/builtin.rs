@@ -1,6 +1,11 @@
+mod arrays;
 mod collections;
+mod diagnostics;
+mod encoding;
 mod higher;
 pub(crate) mod library;
+mod numeric;
+mod padding;
 mod strings;
 
 use crate::{
@@ -165,7 +170,7 @@ impl Builtin {
     pub fn partial_arity(self, offset: usize) -> Result<usize, Error> {
         if matches!(
             self,
-            Self::Library(library::Library::String) | Self::Deferred(_)
+            Self::Library(library::Library::String | library::Library::Zip) | Self::Deferred(_)
         ) {
             return Err(crate::Error::new(
                 crate::ErrorKind::UnsupportedExpression,

@@ -32,8 +32,26 @@ impl Parser<'_> {
         }
         self.advance()?;
         let pairs = self.object(nesting)?;
+        if !grouped_path(&lhs) {
+            // Empty brackets retain cardinality; predicates cannot follow a
+            // non-path grouping without a parenthesized boundary.
+            let mut lookahead = Lexer {
+                source: self.lexer.source,
+                at: self.lexer.at,
+            };
+            let mut filter = matches!(self.token, Token::FilterOpen);
+            let mut offset = self.offset;
+            while filter {
+                if !matches!(lookahead.next()?.0, Token::FilterClose) {
+                    return Err(error(offset));
+                }
+                let (token, at) = lookahead.next()?;
+                filter = matches!(token, Token::FilterOpen);
+                offset = at;
+            }
+        }
         // Grouping belongs to the complete unparenthesized path, including any
-        // following navigation and predicates. Parentheses establish a boundary.
+        // following navigation and stage predicates. Parentheses establish a boundary.
         let lookup = matches!(&lhs.kind, Kind::Path(path) if !path.rooted);
         let call = matches!(self.token, Token::Open);
         let base = if call {
@@ -107,5 +125,14 @@ impl Parser<'_> {
             sorted = node(Kind::Keep(Box::new(sorted), true), offset, depth + 1)?;
         }
         self.navigation(sorted, false, nesting)
+    }
+}
+
+fn grouped_path(node: &Node) -> bool {
+    match &node.kind {
+        Kind::Path(path) => !path.fields.is_empty(),
+        Kind::Route(..) | Kind::Tuples(..) | Kind::Sort(..) => true,
+        Kind::Keep(child, _) => grouped_path(child),
+        _ => false,
     }
 }

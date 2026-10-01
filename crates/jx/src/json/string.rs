@@ -19,6 +19,13 @@ pub(crate) struct Units<'a> {
 impl Iterator for Units<'_> {
     type Item = u16;
 
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let bytes = self.chars.as_str().len();
+        let pending = usize::from(self.pending.is_some());
+        // A validated escape uses at most six bytes for one UTF-16 unit.
+        (bytes.div_ceil(6) + pending, Some(bytes + pending))
+    }
+
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(unit) = self.pending.take() {
             return Some(unit);
@@ -54,5 +61,33 @@ pub(crate) fn units(body: &str) -> Units<'_> {
     Units {
         chars: body.chars(),
         pending: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::units;
+
+    #[test]
+    fn size_hints_bound_remaining_units() {
+        for (body, mut remaining) in [
+            ("", 0),
+            ("abc", 3),
+            ("é😀", 3),
+            (r"\ud800", 1),
+            (r"\ud83d\ude00", 2),
+            (r"a\n\u0000", 3),
+        ] {
+            let mut units = units(body);
+            loop {
+                let (lower, upper) = units.size_hint();
+                assert!(lower <= remaining && upper.unwrap() >= remaining, "{body}");
+                if units.next().is_none() {
+                    assert_eq!(remaining, 0);
+                    break;
+                }
+                remaining -= 1;
+            }
+        }
     }
 }

@@ -10,6 +10,10 @@ pub enum ErrorKind {
     DuplicateKey,
     NumericRange,
     RegexError,
+    UserError,
+    AssertionFailed,
+    CardinalityError,
+    EncodingError,
 }
 
 /// Offsets are zero-based bytes in the expression or input record.
@@ -17,7 +21,7 @@ pub enum ErrorKind {
 pub struct Error {
     pub kind: ErrorKind,
     pub offset: usize,
-    pub message: &'static str,
+    pub message: std::borrow::Cow<'static, str>,
 }
 
 impl Error {
@@ -25,7 +29,14 @@ impl Error {
         Self {
             kind,
             offset,
-            message,
+            message: message.into(),
+        }
+    }
+    pub(crate) fn custom(kind: ErrorKind, offset: usize, message: String) -> Self {
+        Self {
+            kind,
+            offset,
+            message: message.into(),
         }
     }
 }

@@ -153,7 +153,15 @@ pub struct OwnedString {
 impl OwnedString {
     pub(crate) fn units(units: impl IntoIterator<Item = u16>) -> Self {
         use std::fmt::Write;
-        let mut json = String::from("\"");
+        let units = units.into_iter();
+        let minimum = units.size_hint().0;
+        let mut json = if minimum == 0 {
+            String::from("\"")
+        } else {
+            let mut json = String::with_capacity(minimum.saturating_add(2));
+            json.push('"');
+            json
+        };
         for ch in char::decode_utf16(units) {
             match ch {
                 Ok('"') => json.push_str("\\\""),
