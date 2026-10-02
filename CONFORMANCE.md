@@ -889,3 +889,14 @@ injected randomness verifies unchanged draw order. Collision and string encoding
 tests preserve exact key equality, encoding and shared string identity. The optional
 `check-acquisition.cjs` adds **1,253** upstream comparisons. All 22 differential suites
 now cover **54,049** comparisons; resource and embedding boundaries are unchanged.
+
+## Native-plan parity
+
+M26 changes execution only; the 1,679 upstream classifications are unchanged.
+Feature-enabled conformance tests enable eligible native kernels before evaluating
+all cases. A 2,700-case exact-bit/error matrix compares native and interpreted scalar, branch,
+callback and fold regions over missing/null, booleans, numbers, arrays and objects.
+Validation and CLI tests preserve error offsets/order and complete-record output.
+Executable-boundary tests check rejected programs, guards, shared code lifetime and
+final ownership release. `JX_DIFFERENTIAL_JIT=1` selects `--jit` in the optional
+upstream differential runner; it requires a CLI built with `--features jit`.

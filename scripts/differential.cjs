@@ -28,7 +28,7 @@ async function check(test) {
     }
     if ('items' in test) assert.deepEqual(expected, {items:test.items}, JSON.stringify(test));
     if ('error' in test) assert.deepEqual(expected, {error:test.error}, JSON.stringify(test));
-    const child = spawnSync(cli, ['--', test.expr], {input, encoding:'utf8', maxBuffer:4*1024*1024});
+    const child = spawnSync(cli, [...(process.env.JX_DIFFERENTIAL_JIT ? ['--jit'] : []), '--', test.expr], {input, encoding:'utf8', maxBuffer:4*1024*1024});
     const context = JSON.stringify(test);
     if (expected.error) {
         assert.equal(child.status, compileError ? 2 : 1, context + child.stderr);

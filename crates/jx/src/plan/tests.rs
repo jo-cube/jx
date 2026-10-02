@@ -423,3 +423,77 @@ fn shared_computations_keep_wide_constructors_in_one_region() {
         );
     }
 }
+
+#[cfg(feature = "jit")]
+#[test]
+fn native_regions_match_interpreter_and_error_fallback() {
+    let atoms = [
+        "null", "false", "true", "0", "-0", "2", "-3.5", "1e308", "1e999", "1e-320", "[]", "[1]",
+        "[1,2]", "{}", "\"x\"",
+    ];
+    for source in [
+        "((x+y)*(x-y)+(x*x+y*y))/(x+1)-y*3",
+        "x>y ? (x+y)*(x-y) : (x*x+y*y)",
+        "x>y ? (x>10 ? (x*x+y*y)/(x+1) : (x+y)*(x-y)) : ((x-y)*(y+1)+x*x)",
+        "x and (x+x>y or y*y>4)",
+        "-(x*x+x)-y",
+        "(x+x+x)/y",
+        "(x-x+x-x)/0<y",
+        "missing+missing+missing+x",
+        "(x-x+x-x)/0",
+        "$sum(rows[x>0 and y<20].((x+y)*(x-y)+x*x+y*y))",
+        "$sum($map($filter(rows,function($r){$r.x>0 and $r.y<20}),function($r){($r.x+$r.y)*($r.x-$r.y)+$r.x*$r.x+$r.y*$r.y}))",
+        "function($a,$b){($a+$b)*($a-$b)+$a*$a+$b*$b}(x,y)",
+    ] {
+        let interpreted = crate::compile(source).unwrap();
+        let mut native = interpreted.clone();
+        let stats = native.enable_native();
+        assert!(stats.kernels > 0, "{source}: {stats:?}");
+        assert_eq!(stats.failures, 0, "{source}");
+        assert_eq!(
+            native.enable_native().kernels,
+            0,
+            "native installation is idempotent"
+        );
+        for x in atoms {
+            for y in atoms {
+                let row = format!(r#"{{"x":{x},"y":{y}}}"#);
+                let input = format!(r#"{{"x":{x},"y":{y},"rows":[{row},{{"x":2,"y":3}}]}}"#);
+                assert_eq!(
+                    result(&native.root, input.as_bytes()),
+                    result(&interpreted.root, input.as_bytes()),
+                    "{source}: {input}"
+                );
+            }
+        }
+        for input in [
+            br#"{}"#.as_slice(),
+            br#"[{"x":2,"y":3}]"#,
+            br#"{"x":2,"y":3,"x":4}"#,
+            br#"{"x":2,"y":3} garbage"#,
+            br#"{"x":2,"broken":[}"#,
+        ] {
+            let evaluate = |expr: &crate::Expression| {
+                expr.evaluate(input).and_then(|e| {
+                    let mut values = Vec::new();
+                    e.for_each(|v| values.push(snapshot(v)))?;
+                    Ok(values)
+                })
+            };
+            assert_eq!(
+                evaluate(&native),
+                evaluate(&interpreted),
+                "{source}: {input:?}"
+            );
+        }
+        let cloned = native.clone();
+        drop(native);
+        assert_eq!(
+            result(&cloned.root, br#"{"x":2,"y":3,"rows":[{"x":2,"y":3}]}"#),
+            result(
+                &interpreted.root,
+                br#"{"x":2,"y":3,"rows":[{"x":2,"y":3}]}"#
+            )
+        );
+    }
+}

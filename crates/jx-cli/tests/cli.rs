@@ -425,3 +425,31 @@ fn dynamic_eval_streams_records_and_wraps_errors() {
     assert!(output.status.success());
     assert_eq!(output.stdout, b"[1,2]\n[3]\n");
 }
+
+#[cfg(feature = "jit")]
+#[test]
+fn native_plans_preserve_record_framing_and_failure_output() {
+    for source in [
+        "(x+y)*(x-y)+x*x+y*y",
+        "$sum(rows[x>0].(x*x+x+1))",
+        "$map(rows,function($r){$r.x*$r.x+$r.x+1})",
+        "($f:=function($a){function($b){$a+$b}};$f(x)(y))",
+    ] {
+        let input = br#"{"x":7,"y":3,"rows":[{"x":1},{"x":2}]}
+{"x":null,"y":3,"rows":[{"x":null}]}
+{"x":4,"y":2}
+"#;
+        let normal = run(&["--", source], input);
+        let native = run(&["--jit", "--", source], input);
+        assert_eq!(native.status.code(), normal.status.code(), "{source}");
+        assert_eq!(native.stdout, normal.stdout, "{source}");
+        assert_eq!(native.stderr, normal.stderr, "{source}");
+    }
+    let output = run(
+        &["--jit", "x*x+x+1"],
+        br#"{"x":2,"bad":[0,]}
+"#,
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+}

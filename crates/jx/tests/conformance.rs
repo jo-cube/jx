@@ -70,6 +70,12 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         } else {
             source
         });
+        #[cfg(feature = "jit")]
+        let compiled = compiled.map(|mut expression| {
+            let stats = expression.enable_native();
+            assert_eq!(stats.failures, 0, "native compilation: {id}");
+            expression
+        });
         match row["status"].as_str().unwrap() {
             "supported" => {
                 counts[0] += 1;
