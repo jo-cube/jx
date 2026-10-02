@@ -378,6 +378,35 @@ impl<'a> RawJson<'a> {
         }
     }
 
+    // Array delimiters need no subtree boundary scan. Non-array leaves still use
+    // the validating grammar; this cursor only accepts already validated slices.
+    pub(crate) fn try_for_each_flattened<E>(
+        self,
+        mut output: impl FnMut(Self) -> Result<(), E>,
+    ) -> Result<(), E> {
+        let mut scanner = Scanner {
+            text: self.0,
+            at: 0,
+        };
+        loop {
+            scanner.space();
+            match scanner.byte() {
+                Some(b'[' | b']' | b',') => scanner.at += 1,
+                None => return Ok(()),
+                _ => output(scanner.raw_value())?,
+            }
+        }
+    }
+
+    pub(crate) fn select<'path>(self, fields: &'path [Box<str>]) -> Selection<'a, 'path> {
+        Scanner {
+            text: self.0,
+            at: 0,
+        }
+        .value(0, Some(fields))
+        .expect("validated subtree")
+    }
+
     pub(crate) fn field(self, name: &str) -> Option<Self> {
         if self.as_bytes()[0] != b'{' {
             return None;

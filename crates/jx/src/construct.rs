@@ -1,8 +1,7 @@
+mod groups;
 use crate::retain::{materialize, visit};
-use crate::{
-    Error, ErrorKind, Value, evaluate::Operand, expression::Node, json::string, sequence::Context,
-    value::type_error,
-};
+use crate::{Error, Value, expression::Node, sequence::Context};
+pub(crate) use groups::Groups;
 
 pub(crate) fn array<'e, 'i>(
     items: &'e [Node],
@@ -148,73 +147,4 @@ fn grouped<'e, 'i>(
             },
         )
     })
-}
-
-struct Group<'e, 'i, T> {
-    key: Value<'e, 'i>,
-    pair: usize,
-    first: Option<T>,
-    rest: Vec<T>,
-}
-pub(crate) struct Groups<'e, 'i, T>(Vec<Group<'e, 'i, T>>);
-impl<'e, 'i, T: Clone> Groups<'e, 'i, T> {
-    pub fn new(capacity: usize) -> Self {
-        Self(Vec::with_capacity(capacity))
-    }
-    pub fn add(
-        &mut self,
-        pairs: &'e [(Node, Node)],
-        context: &Context<'e, 'i>,
-        item: Option<T>,
-        offset: usize,
-    ) -> Result<(), Error> {
-        for (pair, (key, _)) in pairs.iter().enumerate() {
-            let key = match key.run(context)? {
-                Operand::Missing => continue,
-                Operand::One(key) if key.string_body().is_some() => key,
-                _ => return Err(type_error(offset)),
-            };
-            if let Some(group) = self.0.iter_mut().find(|g| {
-                string::units(g.key.string_body().unwrap())
-                    .eq(string::units(key.string_body().unwrap()))
-            }) {
-                if group.pair != pair {
-                    return Err(Error::new(
-                        ErrorKind::DuplicateKey,
-                        offset,
-                        "duplicate object key from different members",
-                    ));
-                }
-                if group.first.is_none() {
-                    group.first = item.clone();
-                } else if let Some(item) = &item {
-                    group.rest.push(item.clone());
-                }
-            } else {
-                self.0.push(Group {
-                    key,
-                    pair,
-                    first: item.clone(),
-                    rest: Vec::new(),
-                });
-            }
-        }
-        Ok(())
-    }
-    pub fn finish(
-        mut self,
-        pairs: &'e [(Node, Node)],
-        mut evaluate: impl FnMut((Option<T>, Vec<T>), &'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
-    ) -> Result<Value<'e, 'i>, Error> {
-        self.0.sort_by_key(|g| {
-            crate::members::index(g.key.string_body().unwrap()).unwrap_or(u32::MAX)
-        });
-        let mut members = Vec::with_capacity(self.0.len());
-        for group in self.0 {
-            if let Some(value) = evaluate((group.first, group.rest), &pairs[group.pair].1)? {
-                members.push((group.key, value));
-            }
-        }
-        Ok(Value::object(members))
-    }
 }

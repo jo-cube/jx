@@ -199,6 +199,9 @@ pub(crate) fn lookup<'e, 'i, E>(
     output: &mut dyn FnMut(Value<'e, 'i>) -> Result<(), E>,
 ) -> Result<(), E> {
     if input.is_array() {
+        if let Value::Raw(raw) = input {
+            return raw.try_for_each_flattened(|item| lookup(&Value::Raw(item), field, output));
+        }
         for item in input.elements() {
             lookup(&item, field, output)?;
         }
@@ -231,20 +234,40 @@ impl Path {
         &'e self,
         context: &Context<'e, 'i>,
     ) -> PathEvaluation<'e, 'i> {
-        let mut input = context.value.clone();
-        let mut fields = self.fields.as_ref();
-        let selection = loop {
-            if fields.is_empty() {
-                break Selection::Value(input);
+        let selection = match self.fields.as_ref() {
+            [] => Selection::Value(context.value.clone()),
+            [field] => {
+                if context.value.is_array() {
+                    Selection::Array(context.value.clone(), &self.fields)
+                } else {
+                    context
+                        .value
+                        .field(field)
+                        .map_or(Selection::Missing, Selection::Value)
+                }
             }
-            if input.is_array() {
-                break Selection::Array(input, fields);
+            fields => {
+                if let Value::Raw(raw) = context.value
+                    && raw.as_bytes()[0] == b'{'
+                {
+                    return raw_context(raw, fields);
+                }
+                let mut input = context.value.clone();
+                let mut fields = fields;
+                loop {
+                    if fields.is_empty() {
+                        break Selection::Value(input);
+                    }
+                    if input.is_array() {
+                        break Selection::Array(input, fields);
+                    }
+                    match input.field(&fields[0]) {
+                        Some(value) => input = value,
+                        None => break Selection::Missing,
+                    }
+                    fields = &fields[1..];
+                }
             }
-            match input.field(&fields[0]) {
-                Some(value) => input = value,
-                None => break Selection::Missing,
-            }
-            fields = &fields[1..];
         };
         let mut selected = self.selection(selection);
         selected.root_lookup &= context.wrapped;
@@ -259,5 +282,19 @@ impl Path {
             selection,
             root_lookup,
         }
+    }
+}
+
+// Keep selective scanner scratch out of ordinary context-path walks.
+#[inline(never)]
+fn raw_context<'e, 'i>(raw: json::RawJson<'i>, fields: &'e [Box<str>]) -> PathEvaluation<'e, 'i> {
+    PathEvaluation {
+        selection: match raw.select(fields) {
+            json::Selection::Missing => Selection::Missing,
+            json::Selection::Value(raw) => Selection::Value(Value::Raw(raw)),
+            json::Selection::Array(raw, rest) => Selection::Array(Value::Raw(raw), rest),
+        },
+        // Object focus consumes a field before any deferred array is reached.
+        root_lookup: false,
     }
 }

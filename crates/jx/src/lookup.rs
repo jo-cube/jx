@@ -43,6 +43,14 @@ pub(crate) fn values<'e, 'i>(
     }
     fn walk<'e, 'i>(object: &Value<'e, 'i>, key: &str, emit: &mut dyn FnMut(Value<'e, 'i>)) {
         if object.is_array() {
+            if let Value::Raw(raw) = object {
+                raw.try_for_each_flattened(|item| {
+                    walk(&Value::Raw(item), key, emit);
+                    Ok::<_, std::convert::Infallible>(())
+                })
+                .unwrap();
+                return;
+            }
             for item in object.elements() {
                 walk(&item, key, emit);
             }

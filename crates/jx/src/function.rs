@@ -4,7 +4,11 @@ mod signature;
 mod tail;
 use crate::builtin::Builtin;
 use crate::{
-    Error, Value, evaluate::Operand, expression::Node, sequence::Context, value::type_error,
+    Error, Value,
+    evaluate::Operand,
+    expression::{Kind, Node},
+    sequence::Context,
+    value::type_error,
 };
 pub(crate) use arguments::Arguments;
 pub(crate) use composition::{chain, partial};
@@ -71,6 +75,20 @@ pub(crate) fn call<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
+    if let Kind::Lambda(definition) = &target.kind {
+        // The literal callee lives through this call. Escaping body closures mark
+        // their own ancestry; the ephemeral callee need not pin its caller frame.
+        let function = Function {
+            kind: FunctionKind::Lambda {
+                definition,
+                focus: context.value.clone(),
+                wrapped: context.wrapped,
+                frame: context.scope.as_ref().expect("lexical runtime").frame,
+            },
+        };
+        let arguments = arguments::Arguments::evaluate(args, context)?;
+        return invoke(&function, arguments.as_slice(), context, offset);
+    }
     let target = crate::retain::materialize(target, context)?;
     let arguments = arguments::Arguments::evaluate(args, context)?;
     let Some(Value::Function(function)) = target else {

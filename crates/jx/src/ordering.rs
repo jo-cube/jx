@@ -1,7 +1,9 @@
+mod keys;
 use crate::{
     Error, Value, evaluate::Operand, expression::Node, json::string, sequence::Context,
     value::type_error,
 };
+pub(crate) use keys::Keys;
 use std::cmp::Ordering;
 
 pub(crate) fn evaluate<'e, 'i>(
@@ -28,21 +30,18 @@ pub(crate) fn evaluate<'e, 'i>(
         }
         _ => {}
     }
+    let mut keys = Keys::new(items.len(), terms);
     let indices = indices(items.len(), |a, b| {
-        contexts(
-            &Context {
-                value: items[a].clone(),
-                wrapped: false,
-                scope: context.scope.clone(),
-            },
-            &Context {
-                value: items[b].clone(),
-                wrapped: false,
-                scope: context.scope.clone(),
-            },
-            terms,
-            offset,
-        )
+        keys.compare(a, b, terms, offset, |index, term| {
+            crate::retain::materialize(
+                term,
+                &Context {
+                    value: items[index].clone(),
+                    wrapped: false,
+                    scope: context.scope.clone(),
+                },
+            )
+        })
     })?;
     Ok(Operand::One(Value::array(
         indices
@@ -53,43 +52,34 @@ pub(crate) fn evaluate<'e, 'i>(
     )))
 }
 
-pub(crate) fn contexts<'e, 'i>(
-    left: &Context<'e, 'i>,
-    right: &Context<'e, 'i>,
-    terms: &'e [(Node, bool)],
+fn values(
+    a: Option<Value<'_, '_>>,
+    b: Option<Value<'_, '_>>,
     offset: usize,
 ) -> Result<Ordering, Error> {
-    for (term, descending) in terms {
-        let a = crate::retain::materialize(term, left)?;
-        let b = crate::retain::materialize(term, right)?;
-        let order = match (a, b) {
-            (None, None) => continue,
-            (None, _) => return Ok(Ordering::Greater),
-            (_, None) => return Ok(Ordering::Less),
-            (Some(a), Some(b)) => match (a.atomic(), b.atomic()) {
-                (Value::Number(a), Value::Number(b)) => {
-                    // NaN is unequal and not less in the reference comparator.
-                    if a == b {
-                        Ordering::Equal
-                    } else if a < b {
-                        Ordering::Less
-                    } else {
-                        Ordering::Greater
-                    }
+    Ok(match (a, b) {
+        (None, None) => Ordering::Equal,
+        (None, _) => Ordering::Greater,
+        (_, None) => Ordering::Less,
+        (Some(a), Some(b)) => match (a.atomic(), b.atomic()) {
+            (Value::Number(a), Value::Number(b)) => {
+                // NaN is unequal and not less in the reference comparator.
+                if a == b {
+                    Ordering::Equal
+                } else if a < b {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
                 }
-                (a, b) => {
-                    let (Some(a), Some(b)) = (a.string_body(), b.string_body()) else {
-                        return Err(type_error(offset));
-                    };
-                    string::units(a).cmp(string::units(b))
-                }
-            },
-        };
-        if order != Ordering::Equal {
-            return Ok(if *descending { order.reverse() } else { order });
-        }
-    }
-    Ok(Ordering::Equal)
+            }
+            (a, b) => {
+                let (Some(a), Some(b)) = (a.string_body(), b.string_body()) else {
+                    return Err(type_error(offset));
+                };
+                string::units(a).cmp(string::units(b))
+            }
+        },
+    })
 }
 
 // Stable, fallible top-down merge order also fixes the observable order of

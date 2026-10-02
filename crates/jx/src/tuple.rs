@@ -277,10 +277,13 @@ fn ordered<'e, 'i>(
         rows.push(row);
         Ok(())
     })?;
+    let mut keys = crate::ordering::Keys::new(rows.len(), terms);
     let indices = crate::ordering::indices(rows.len(), |a, b| {
         rows[a].scoped(context, |left| {
             rows[b].scoped(context, |right| {
-                crate::ordering::contexts(left, right, terms, offset)
+                keys.compare(a, b, terms, offset, |index, term| {
+                    crate::retain::materialize(term, if index == a { left } else { right })
+                })
             })
         })
     })?;

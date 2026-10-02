@@ -9,6 +9,9 @@ use crate::{
 pub(crate) fn wildcard<'e, 'i>(value: &Value<'e, 'i>, output: &mut Output<'_, 'e, 'i>) -> Walk {
     fn flatten<'e, 'i>(value: Value<'e, 'i>, output: &mut Output<'_, 'e, 'i>) -> Walk {
         if value.is_array() {
+            if let Value::Raw(raw) = value {
+                return raw.try_for_each_flattened(|item| output(Value::Raw(item)));
+            }
             for item in value.elements() {
                 flatten(item, output)?;
             }
@@ -51,6 +54,9 @@ pub(crate) fn wildcard<'e, 'i>(value: &Value<'e, 'i>, output: &mut Output<'_, 'e
 
 pub(crate) fn descendants<'e, 'i>(value: Value<'e, 'i>, output: &mut Output<'_, 'e, 'i>) -> Walk {
     if value.is_array() {
+        if let Value::Raw(raw) = value {
+            return raw.try_for_each_flattened(|item| descendants(Value::Raw(item), output));
+        }
         for item in value.elements() {
             descendants(item, output)?;
         }
