@@ -121,6 +121,8 @@ impl Lower {
             paths: self.paths.into_boxed_slice(),
             lookups: self.lookups.into_boxed_slice(),
             result,
+            #[cfg(feature = "jit")]
+            native: None,
         }
     }
     // The mask names reusable primitive results within the existing 32-slot bound.

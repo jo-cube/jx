@@ -66,6 +66,24 @@ pub fn compile(source: &str) -> Result<Expression, Error> {
     parse::expression(source)
 }
 
+/// Newly installed native kernels and failures; unsupported plans are left unchanged.
+#[cfg(feature = "jit")]
+#[derive(Default, Debug)]
+pub struct NativeStats {
+    pub kernels: usize,
+    pub code_bytes: usize,
+    pub failures: usize,
+}
+#[cfg(feature = "jit")]
+impl Expression {
+    /// Compile eligible primitive plan regions with the host's native backend.
+    /// Unsupported regions and compilation failures keep their existing interpreter.
+    /// Call once before sharing/cloning; cloned expressions share immutable code.
+    pub fn enable_native(&mut self) -> NativeStats {
+        plan::native_prepare(&mut self.root)
+    }
+}
+
 impl Expression {
     /// Evaluate with a shared random source. Seed it for reproducible evaluation;
     /// successive records consume the same stream. Pure expressions ignore it.

@@ -9,7 +9,11 @@ license.workspace = true
 [lints]
 workspace = true
 
+[features]
+jit = ["dep:jx-native"]
+
 [dependencies]
+jx-native = { path = "../jx-native", optional = true }
 base64 = "0.22.1"
 regress = { version = "0.12.0", default-features = false, features = ["std", "utf16"] }
 
@@ -19,3 +23,8 @@ serde_json = { version = "1.0", features = ["raw_value"] }
 [[bench]]
 name = "throughput"
 harness = false
+
+[[bench]]
+name = "native_memory"
+harness = false
+required-features = ["jit"]

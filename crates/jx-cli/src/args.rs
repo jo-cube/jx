@@ -9,6 +9,8 @@ pub struct Args {
     pub expression: String,
     pub files: Vec<PathBuf>,
     pub max_record_bytes: usize,
+    #[cfg(feature = "jit")]
+    pub jit: bool,
 }
 
 impl Args {
@@ -16,6 +18,8 @@ impl Args {
         let mut args = std::env::args_os().skip(1);
         let mut max_record_bytes = 1024 * 1024;
         let mut options = true;
+        #[cfg(feature = "jit")]
+        let mut jit = false;
         let expression = loop {
             let arg = args.next().ok_or_else(|| HELP.to_owned())?;
             if options && (arg == "--help" || arg == "-h") {
@@ -23,6 +27,11 @@ impl Args {
             }
             if options && arg == "--" {
                 options = false;
+                continue;
+            }
+            #[cfg(feature = "jit")]
+            if options && arg == "--jit" {
+                jit = true;
                 continue;
             }
             if options && arg == "--max-record-bytes" {
@@ -45,6 +54,8 @@ impl Args {
             expression,
             files: args.map(PathBuf::from).collect(),
             max_record_bytes,
+            #[cfg(feature = "jit")]
+            jit,
         }))
     }
 }

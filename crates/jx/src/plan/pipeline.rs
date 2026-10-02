@@ -7,7 +7,7 @@ pub(super) use callbacks::lower as lower_callbacks;
 pub(super) struct Pipeline {
     source: Box<[Box<str>]>,
     pub(super) demand: Demand,
-    program: Program,
+    pub(super) program: Program,
     aggregate: crate::expression::Aggregate,
     offset: usize,
 }

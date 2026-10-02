@@ -1,0 +1,16 @@
+[package]
+name = "jx-native"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+cranelift-codegen = { version = "=0.136.1", default-features = false, features = ["std", "host-arch"] }
+cranelift-frontend = "=0.136.1"
+cranelift-jit = "=0.136.1"
+cranelift-module = "=0.136.1"

@@ -9,6 +9,8 @@ use crate::{
 mod callback;
 pub(crate) use callback::Callback;
 mod lower;
+#[cfg(feature = "jit")]
+mod native;
 mod object;
 mod pipeline;
 use lower::Lower;
@@ -35,6 +37,8 @@ struct Program {
     capture: Demand,
     inputs: Box<[Option<u8>]>,
     argument_demands: Box<[(Option<u8>, Demand)]>,
+    #[cfg(feature = "jit")]
+    native: Option<native::Compiled>,
 }
 #[derive(Clone, Debug)]
 enum Instruction {
@@ -121,6 +125,14 @@ impl Program {
         mut load: impl FnMut(usize, &'e Path) -> Option<Operand<'e, 'i>>,
         finish: impl FnOnce(&[Cell; SLOTS]) -> T,
     ) -> Option<T> {
+        #[cfg(feature = "jit")]
+        if let Some(native) = &self.native
+            && let Some(value) = native.run(self, &mut load)
+        {
+            let mut slots = [Cell::Missing; SLOTS];
+            slots[usize::from(self.result)] = value;
+            return Some(finish(&slots));
+        }
         let mut slots = [Cell::Missing; SLOTS];
         let mut at = 0;
         while at < self.instructions.len() {
@@ -310,3 +322,10 @@ pub(crate) fn prepare(node: &mut Node) {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "jit")]
+pub(crate) fn native_prepare(node: &mut Node) -> crate::NativeStats {
+    let mut stats = crate::NativeStats::default();
+    native::prepare(node, &mut stats);
+    stats
+}

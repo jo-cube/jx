@@ -11,6 +11,9 @@ publish = false
 name = "jx"
 path = "src/main.rs"
 
+[features]
+jit = ["jx/jit"]
+
 [dependencies]
 jx = { path = "../jx" }
 

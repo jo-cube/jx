@@ -1,8 +1,8 @@
 use super::*;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Callback {
-    execution: Execution,
+    pub(super) execution: Execution,
 }
 impl Callback {
     pub(crate) fn run<'e, 'i>(
