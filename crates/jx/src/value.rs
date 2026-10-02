@@ -214,3 +214,21 @@ impl OwnedString {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn concatenation_preserves_encoding_and_shared_identity() {
+        for len in [0, 1, 20, 60, 61, 62, 63, 64, 128] {
+            for tail in ["abc", "é😀", r"\ud800\udc00", r"\n\\"] {
+                let left = "x".repeat(len);
+                let value = OwnedString::concat(&left, tail);
+                let expected = format!("\"{left}{tail}\"");
+                assert_eq!(value.json.as_ref(), expected);
+                crate::validate(value.json.as_bytes()).unwrap();
+                assert_eq!(value.body_pointer(), value.clone().body_pointer());
+            }
+        }
+    }
+}

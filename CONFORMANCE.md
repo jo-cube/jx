@@ -877,3 +877,15 @@ composition. Library tests compare planned versus original trees using exact num
 bits and complete errors, including branches, arrays, missing, overflow and wide
 constructors. Integration tests retain full-validation and random draw-order guarantees.
 All 21 differential suites now cover **52,796** comparisons.
+
+## M25 acquisition and lookup regression coverage
+
+All **1,679** language classifications remain unchanged. The 38 readable cases in
+`tests/semantics/acquisition.json` cover path arguments, duplicate decoded keys and
+parents, intermediate/root arrays, missing/null, signatures, closures, borrowed output,
+argument/body errors and canonical escaped/Unicode/surrogate keys. Capture/tree tests
+add **5,880** exact outcome comparisons, including numeric bits and complete errors;
+injected randomness verifies unchanged draw order. Collision and string encoding/identity boundary
+tests preserve exact key equality, encoding and shared string identity. The optional
+`check-acquisition.cjs` adds **1,253** upstream comparisons. All 22 differential suites
+now cover **54,049** comparisons; resource and embedding boundaries are unchanged.

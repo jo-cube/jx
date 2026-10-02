@@ -1,0 +1,331 @@
+[
+  {
+    "expr": "function($a,$b,$c){$a*$b+$c}(a,b,c)",
+    "data": {
+      "a": 2,
+      "b": 3,
+      "c": 4
+    },
+    "items": [
+      10
+    ]
+  },
+  {
+    "expr": "function($a,$b){$a+$b}(nested.x,nested.y)",
+    "input": "{\"nested\":{\"x\":1,\"y\":2},\"nested\":{\"x\":7}}",
+    "items": []
+  },
+  {
+    "expr": "function($a,$b){[$a,$b]}(missing,x)",
+    "data": {
+      "x": null
+    },
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "expr": "function($x){$x}(x)",
+    "data": {
+      "x": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "function($x){$x}(x.y)",
+    "data": {
+      "x": [
+        {
+          "y": 1
+        },
+        {
+          "y": 2
+        }
+      ]
+    },
+    "items": [
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "function($x,$y){[$x,$y]}(x.y,x.y)",
+    "data": {
+      "x": [
+        [
+          {
+            "y": [
+              1,
+              2
+            ]
+          }
+        ],
+        {
+          "y": [
+            3
+          ]
+        }
+      ]
+    },
+    "items": [
+      [
+        1,
+        2,
+        3,
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "function($x,$y)<nn:n>{$x+$y}(a,b)",
+    "data": {
+      "a": null,
+      "b": 3
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "function($x)<a<n>:n>{$sum($x)}(a)",
+    "data": {
+      "a": 2
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "function($x){a+$x+$$.b}(a)",
+    "data": {
+      "a": 2,
+      "b": 3
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "function($x){$x}(\"literal\")",
+    "data": {},
+    "items": [
+      "literal"
+    ]
+  },
+  {
+    "expr": "function($a,$b){$b}(a,$error(\"argument\"))",
+    "data": {
+      "a": null
+    },
+    "error": "UserError"
+  },
+  {
+    "expr": "function($a,$b){$error(\"body\")}(a,$assert(false,\"argument\"))",
+    "data": {},
+    "error": "AssertionFailed"
+  },
+  {
+    "expr": "function($x){$x.x}(x)",
+    "data": {
+      "x": {
+        "x": "borrowed"
+      }
+    },
+    "items": [
+      "borrowed"
+    ]
+  },
+  {
+    "expr": "function($x){$x}(a)",
+    "input": "{\"a\":\"\\u00e9\\ud83d\\ude00\"}",
+    "items": [
+      "é😀"
+    ]
+  },
+  {
+    "expr": "function($x){$x}(a)",
+    "input": "[{\"a\":1},{\"a\":2}]",
+    "items": [
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "function($a,$b){$a+$b}(a,b)",
+    "input": "{\"a\":1,\"\\u0061\":7,\"b\":2}",
+    "items": [
+      9
+    ]
+  },
+  {
+    "expr": "function($x){$x}(a)",
+    "data": {
+      "a": []
+    },
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "function($x)<n-:n>{$x+1}(missing)",
+    "data": 4,
+    "items": []
+  },
+  {
+    "expr": "function($x){$map($x,function($v){$v&\"!\"})}(a)",
+    "data": {
+      "a": [
+        "é",
+        "😀"
+      ]
+    },
+    "items": [
+      "é!",
+      "😀!"
+    ]
+  },
+  {
+    "expr": "(function($x){function(){$x}}(a))()",
+    "data": {
+      "a": {
+        "x": "retained"
+      }
+    },
+    "items": [
+      {
+        "x": "retained"
+      }
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"a\"}",
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"\\u0061\"}",
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"é\"}",
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"\\u00e9\"}",
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"😀\"}",
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"\\ud83d\\ude00\"}",
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"\\ud800\"}",
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"\\udc00\"}",
+    "items": [
+      5
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"a\\nb\"}",
+    "items": [
+      6
+    ]
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":\"missing\"}",
+    "items": []
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":null}",
+    "error": "TypeError"
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":[]}",
+    "error": "TypeError"
+  },
+  {
+    "expr": "$lookup({\"a\":1,\"é\":2,\"😀\":3,\"\\ud800\":4,\"\\udc00\":5,\"a\\nb\":6,\"undefined\":7},key)",
+    "input": "{\"key\":[\"a\"]}",
+    "error": "TypeError"
+  },
+  {
+    "expr": "$lookup({\"undefined\":7},key)",
+    "data": {},
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "{\"😀\":3,\"é\":2}.\"😀\"",
+    "data": {},
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "(a&b)=\"é😀\"",
+    "data": {
+      "a": "é",
+      "b": "😀"
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "(a&b)=\"\\ud800\\udc00\"",
+    "input": "{\"a\":\"\\ud800\",\"b\":\"\\udc00\"}",
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "a=b",
+    "input": "{\"a\":\"\\ud800\",\"b\":\"\\uD800\"}",
+    "items": [
+      true
+    ]
+  }
+]
