@@ -92,6 +92,8 @@ fn branches_and_folds_match_the_tree() {
         "(x>0 ? (y>0 ? x+y : x-y) : x*y)+y",
         "x>y ? (x+x+x) : (y+y+y)",
         "x+x+x != y",
+        "((x and y) or x) and x",
+        "((x or y) and x) or y",
     ];
     for source in expressions {
         let expression = crate::compile(source).unwrap();
@@ -258,5 +260,166 @@ fn nested_demands_preserve_replacement_and_array_fallback() {
                 "{source}: {input}"
             );
         }
+    }
+}
+
+#[test]
+fn parameter_regions_lower_and_match_original_calls() {
+    let atoms = [
+        "null", "false", "true", "0", "-0", "2", "-3.5", "1e308", "1e999", "1e-320", "[]", "[1]",
+        "[1,2]", "{}", "\"x\"",
+    ];
+    for source in [
+        "function($r){$r.x+$r.y+$r.x}($)",
+        "function($r){$r.x+1}($)",
+        "function($r){$r*2}(x)",
+        "function($r,$v){$r.x*$v+$r.y+$v}($,y)",
+        "function($r){$r.x>0 ? $r.x*$r.x : $r.y+$r.y}($)",
+        "function($r){$r.x>0 and $r.y>0}($)",
+        r#"function($r){ {"v":$r.x+$r.y,"s":$r.x*$r.y} }($)"#,
+        "function($r)<o:n>{$r.x+$r.y+$r.x}($)",
+        "function($r){x+x+$r.y}($)",
+        "function($r,$r){$r.x+$r.y+$r.x}(null,$)",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        let Kind::Call(target, _) = &expression.root.kind else {
+            panic!("{source}")
+        };
+        let Kind::Lambda(d) = &target.kind else {
+            panic!()
+        };
+        assert!(d.plan.is_some(), "not lowered: {source}: {d:?}");
+        let mut tree = expression.root.clone();
+        let Kind::Call(target, _) = &mut tree.kind else {
+            panic!()
+        };
+        let Kind::Lambda(d) = &mut target.kind else {
+            panic!()
+        };
+        d.plan = None;
+        for x in atoms {
+            for y in atoms {
+                let object = format!(r#"{{"x":{x},"y":{y}}}"#);
+                for input in [
+                    object.clone(),
+                    format!("[{object}]"),
+                    format!("[{object},{object}]"),
+                    format!(r#"{{"y":{y}}}"#),
+                ] {
+                    assert_eq!(
+                        result(&expression.root, input.as_bytes()),
+                        result(&tree, input.as_bytes()),
+                        "{source}: {input}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn pure_callback_folds_match_staged_tree_errors() {
+    let atoms = [
+        "null", "false", "true", "0", "2", "1e999", "[]", "[1]", "{}", "\"x\"",
+    ];
+    for source in [
+        "$sum($map(rows,function($r){$r.x*$r.y+$r.x}))",
+        "$sum($map($filter(rows,function($v){$v.x>0 and $v.y>0}),function($r){$r.x*$r.y+$r.x}))",
+        "$count($map($filter(rows,function($r){$r.x>0}),function($v){$v.x+$v.y}))",
+        "$average($map(rows,function($r){$r.x*$r.x+$r.y}))",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        let Kind::Plan(plan) = &expression.root.kind else {
+            panic!("not lowered: {source}")
+        };
+        for x in atoms {
+            for y in atoms {
+                let row = format!(r#"{{"x":{x},"y":{y}}}"#);
+                for rows in [
+                    row.clone(),
+                    format!("[{row}]"),
+                    format!("[{row},{{\"x\":1,\"y\":null}}]"),
+                    format!("[[{row}],{row}]"),
+                    "[]".into(),
+                    "null".into(),
+                ] {
+                    let input = format!(r#"{{"rows":{rows}}}"#);
+                    assert_eq!(
+                        result(&expression.root, input.as_bytes()),
+                        result(&plan.source, input.as_bytes()),
+                        "{source}: {input}"
+                    );
+                }
+            }
+        }
+        for input in [
+            br#"{"rows":[{"x":1,"y":null},{"x":"bad","y":2}]}"#.as_slice(),
+            br#"{}"#,
+            br#"[{"rows":[{"x":1,"y":2}]}]"#,
+        ] {
+            assert_eq!(
+                result(&expression.root, input),
+                result(&plan.source, input),
+                "{source}: {input:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn dynamic_effects_and_retained_results_do_not_lower_as_callbacks() {
+    for body in [
+        "$random()+$r.x+$r.x",
+        "$eval('$r.x')+$r.x+$r.x",
+        "$error('stop')+$r.x+$r.x",
+        "($assert($r.x>0);$r.x+$r.x+$r.x)",
+        "$f($r)+$r.x+$r.x",
+        "$r.x",
+        "$r.x>0 ? $r.x : $r.y",
+        "$$.x+$r.x+$r.x",
+        "function(){$r.x}",
+    ] {
+        let expression = crate::compile(&format!("function($r){{{body}}}($)")).unwrap();
+        let Kind::Call(target, _) = &expression.root.kind else {
+            panic!()
+        };
+        let Kind::Lambda(d) = &target.kind else {
+            panic!()
+        };
+        assert!(d.plan.is_none(), "unexpected parameter plan: {body}");
+    }
+    for source in [
+        "$sum($map(rows,function($r){$random()+$r.x+$r.x}))",
+        "$sum($map($filter(rows,function($r){$eval('$r.x')>0}),function($r){$r.x+$r.x+$r.x}))",
+        "$sum($map(rows,function($r,$i){$r.x+$r.x+$i}))",
+        "$sum($map(rows,function($r)<o:n>{$r.x+$r.x+$r.x}))",
+    ] {
+        assert!(
+            !matches!(crate::compile(source).unwrap().root.kind, Kind::Plan(_)),
+            "unexpected fused region: {source}"
+        );
+    }
+}
+
+#[test]
+fn shared_computations_keep_wide_constructors_in_one_region() {
+    let source = format!(
+        "{{{}}}",
+        (0..8)
+            .map(|i| format!("\"v{i}\":(x+y)*(x+y)+{i}"))
+            .collect::<Vec<_>>()
+            .join(",")
+    );
+    let expression = crate::compile(&source).unwrap();
+    let Kind::Plan(plan) = &expression.root.kind else {
+        panic!("wide region did not lower")
+    };
+    for x in ["2", "null", "[1]", "{}", "1e308", "1e999"] {
+        let input = format!(r#"{{"x":{x},"y":3}}"#);
+        assert_eq!(
+            result(&expression.root, input.as_bytes()),
+            result(&plan.source, input.as_bytes()),
+            "{input}"
+        );
     }
 }

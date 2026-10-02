@@ -795,6 +795,7 @@ node scripts/check-formatting.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-functions.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-effects.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-consolidation.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-regions.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -864,3 +865,15 @@ consolidation differential adds 503 comparisons, including dynamic eval, effectf
 keys and closures. Optimizations retain only replay-safe sort results; no callback or
 runtime effect is memoized. Existing resource/embedding boundaries remain explicit. All
 20 differential suites now total 50,839 comparisons.
+
+## M24 pure-region regression coverage
+
+Language classifications remain **1,390 supported /288 expected errors /1 resource
+limit /0 blockers**, covering all **1,679** upstream cases. Lowering adds no language
+surface. `tests/semantics/regions.json` freezes 21 readable cases; the optional
+`check-regions.cjs` adds **1,957** upstream comparisons around parameter/focus loads,
+signatures, closures/partials, typed fallback, staged filter/map errors and sort/group
+composition. Library tests compare planned versus original trees using exact numeric
+bits and complete errors, including branches, arrays, missing, overflow and wide
+constructors. Integration tests retain full-validation and random draw-order guarantees.
+All 21 differential suites now cover **52,796** comparisons.
