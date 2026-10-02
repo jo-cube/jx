@@ -1,4 +1,5 @@
 mod bridge;
+mod region;
 use crate::{Error, ErrorKind, Value, expression::Node, sequence::Context};
 use std::{
     cell::{Cell, RefCell},
@@ -80,6 +81,7 @@ pub(crate) struct Runtime<'e, 'i> {
     frames: RefCell<Vec<Frame<'e, 'i>>>,
     depth: Cell<usize>,
     tree_depth: Cell<usize>,
+    writes: Cell<usize>,
     timestamp: Cell<i64>,
     random: RefCell<Option<crate::Random>>,
 }
@@ -100,6 +102,7 @@ impl<'e, 'i> Scope<'e, 'i> {
                 }]),
                 depth: Cell::new(0),
                 tree_depth: Cell::new(0),
+                writes: Cell::new(usize::MAX),
                 timestamp: Cell::new(if clock { timestamp() } else { i64::MIN }),
                 random: RefCell::new(random.cloned()),
             }),
@@ -136,6 +139,9 @@ impl<'e, 'i> Scope<'e, 'i> {
     pub fn bind(&self, name: &'e str, value: Value<'e, 'i>) {
         let mut frames = self.runtime.frames.borrow_mut();
         frames[self.frame].bindings.bind(name, value);
+        self.runtime
+            .writes
+            .set(self.runtime.writes.get().min(self.frame));
     }
     pub fn at(&self, frame: usize) -> Self {
         Self {
@@ -205,6 +211,9 @@ impl<'e, 'i> Scope<'e, 'i> {
     pub fn bind_arguments(&self, params: &'e [Box<str>], arguments: &[Option<Value<'e, 'i>>]) {
         let mut frames = self.runtime.frames.borrow_mut();
         let bindings = &mut frames[self.frame].bindings;
+        self.runtime
+            .writes
+            .set(self.runtime.writes.get().min(self.frame));
         for (index, param) in params.iter().enumerate() {
             bindings.bind(
                 param,
@@ -216,7 +225,8 @@ impl<'e, 'i> Scope<'e, 'i> {
             );
         }
     }
-    // Released scopes must no longer be used. Captured scopes are never recycled.
+    // Released scopes must no longer be used. Individual releases keep captures;
+    // retained regions can later retire them when their values cannot escape.
     // Keep at most one vacant terminal slot, including its parameter capacity.
     pub fn release(&self) {
         let mut frames = self.runtime.frames.borrow_mut();
@@ -272,20 +282,22 @@ pub(crate) fn block<'e, 'i>(
         }
         return Ok(result);
     };
-    let child = scope.child(scope.frame);
-    let context = Context {
-        scope: Some(child.clone()),
-        ..context.clone()
-    };
-    let result = (|| {
-        let mut result = None;
-        for node in nodes {
-            result = crate::retain::materialize(node, &context)?;
-        }
-        Ok(result)
-    })();
-    child.release();
-    result
+    scope.retained(|| {
+        let child = scope.child(scope.frame);
+        let context = Context {
+            scope: Some(child.clone()),
+            ..context.clone()
+        };
+        let result = (|| {
+            let mut result = None;
+            for node in nodes {
+                result = crate::retain::materialize(node, &context)?;
+            }
+            Ok(result)
+        })();
+        child.release();
+        result
+    })
 }
 
 fn timestamp() -> i64 {
@@ -296,3 +308,6 @@ fn timestamp() -> i64 {
             |d| d.as_millis() as i64,
         )
 }
+
+#[cfg(test)]
+mod tests;

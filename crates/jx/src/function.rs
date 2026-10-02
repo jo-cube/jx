@@ -166,7 +166,11 @@ pub(crate) fn invoke_checked<'e, 'i>(
             frame,
         } => {
             if definition.tail {
-                return tail::invoke(function, arguments, context, offset, validate);
+                return context
+                    .scope
+                    .as_ref()
+                    .expect("lexical runtime")
+                    .evaluated(|| tail::invoke(function, arguments, context, offset, validate));
             }
             let scope = context.scope.as_ref().expect("lexical runtime");
             let validated;
@@ -184,16 +188,20 @@ pub(crate) fn invoke_checked<'e, 'i>(
                 {
                     return Ok(result);
                 }
-                let child = scope.child(*frame);
-                child.bind_arguments(params, arguments);
-                let context = Context {
-                    value: focus.clone(),
-                    wrapped: *wrapped,
-                    scope: Some(child.clone()),
-                };
-                let result = crate::retain::materialize(body, &context);
-                child.release();
-                result.map(|value| value.map_or(Operand::Missing, Operand::One))
+                scope
+                    .retained(|| {
+                        let child = scope.child(*frame);
+                        child.bind_arguments(params, arguments);
+                        let context = Context {
+                            value: focus.clone(),
+                            wrapped: *wrapped,
+                            scope: Some(child.clone()),
+                        };
+                        let result = crate::retain::materialize(body, &context);
+                        child.release();
+                        result
+                    })
+                    .map(|value| value.map_or(Operand::Missing, Operand::One))
             })
         }
     }

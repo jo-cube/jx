@@ -5,6 +5,23 @@ pub(crate) struct Callback {
     pub(super) execution: Execution,
 }
 impl Callback {
+    pub(crate) fn is_scalar(&self) -> bool {
+        matches!(self.execution, Execution::Scalar(_))
+    }
+    pub(crate) fn primitive<'e, 'i>(
+        &self,
+        arguments: &[Option<Value<'e, 'i>>],
+        focus: &Value<'e, 'i>,
+        wrapped: bool,
+    ) -> Option<Operand<'e, 'i>> {
+        match self.run(arguments, focus, wrapped)? {
+            Operand::Missing => Some(Operand::Missing),
+            Operand::One(Value::Number(n)) => Some(Operand::One(Value::Number(n))),
+            Operand::One(Value::Boolean(b)) => Some(Operand::One(Value::Boolean(b))),
+            _ => None,
+        }
+    }
+
     pub(crate) fn run<'e, 'i>(
         &'e self,
         arguments: &[Option<Value<'e, 'i>>],

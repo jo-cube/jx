@@ -304,6 +304,27 @@ impl<'e, 'i> Callable<'e, 'i> {
         validate: bool,
     ) -> Result<Operand<'e, 'i>, Error> {
         let scope = context.scope.as_ref().expect("dynamic closure runtime");
+        if let Definition::Lambda(definition) = self.definition.as_ref()
+            && !definition.tail
+            && let Some(plan) = &definition.plan
+            && plan.is_scalar()
+        {
+            let validated;
+            let arguments = if validate && let Some(signature) = &definition.signature {
+                validated = signature.validate(args, &context.value, offset)?;
+                validated.as_slice()
+            } else {
+                args
+            };
+            // Primitive plan results borrow no dynamic program data. Keep all
+            // other outputs on the existing lifetime/ownership bridge.
+            let result = scope.call(offset, definition.body.depth, || {
+                Ok(plan.primitive(arguments, &self.focus, self.wrapped))
+            })?;
+            if let Some(result) = result {
+                return Ok(result);
+            }
+        }
         let mut definitions = scope.dynamic_definitions();
         if !definitions.iter().any(|d| Rc::ptr_eq(d, &self.definition)) {
             definitions.push(self.definition.clone());

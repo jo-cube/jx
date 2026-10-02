@@ -107,7 +107,7 @@ impl Signature {
             fixed,
         })
     }
-    pub(super) fn validate<'e, 'i>(
+    pub(crate) fn validate<'e, 'i>(
         &self,
         args: &[Option<Value<'e, 'i>>],
         focus: &Value<'e, 'i>,

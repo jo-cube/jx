@@ -55,6 +55,7 @@ impl<'e, 'i> Scope<'e, 'i> {
                 frames: RefCell::new(frames),
                 depth: Cell::new(self.runtime.depth.get()),
                 tree_depth: Cell::new(self.runtime.tree_depth.get()),
+                writes: Cell::new(self.runtime.writes.get()),
                 timestamp: Cell::new(self.runtime.timestamp.get()),
                 random: RefCell::new(self.runtime.random.borrow().clone()),
             }),
@@ -67,6 +68,9 @@ impl<'e, 'i> Scope<'e, 'i> {
         });
         self.runtime.timestamp.set(fork.runtime.timestamp.get());
         *self.runtime.random.borrow_mut() = fork.runtime.random.borrow().clone();
+        self.runtime
+            .writes
+            .set(self.runtime.writes.get().min(fork.runtime.writes.get()));
         let mut original = self.runtime.frames.borrow_mut();
         let mut retain = crate::dynamic::Retention::default();
         for frame in original.iter() {
@@ -89,6 +93,11 @@ impl<'e, 'i> Scope<'e, 'i> {
                     }
                 }
             });
+            if !unchanged && index < original.len() {
+                self.runtime
+                    .writes
+                    .set(self.runtime.writes.get().min(index));
+            }
             let bindings = if unchanged {
                 std::mem::replace(&mut original[index].bindings, Bindings::Owned(Vec::new()))
             } else {
