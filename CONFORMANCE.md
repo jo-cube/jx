@@ -794,6 +794,7 @@ node scripts/check-helpers.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-formatting.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-functions.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-effects.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-consolidation.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -852,3 +853,14 @@ Dynamic/effect checks add **253** comparisons, including **87** readable cases,
 lexical/focus shape matrices, escaped callable recursion and randomized permutation
 invariants. Eight Rust tests separately assert wrapped diagnostics, compatibility boundaries, deterministic draws, borrowing, skipped
 effects and validation/error ordering. All **19** suites total **50,336** comparisons.
+
+## M23 consolidation regressions
+
+Language coverage and all 1,679 upstream classifications are unchanged. Five focused
+Rust tests and 18 small reference examples freeze nested flattening, duplicate decoded
+keys, complete validation before cancellation, immediate-call captures, missing-last
+sorting, secondary-key/error timing, tuple scopes and wide UTF-16 grouping. The optional
+consolidation differential adds 503 comparisons, including dynamic eval, effectful sort
+keys and closures. Optimizations retain only replay-safe sort results; no callback or
+runtime effect is memoized. Existing resource/embedding boundaries remain explicit. All
+20 differential suites now total 50,839 comparisons.

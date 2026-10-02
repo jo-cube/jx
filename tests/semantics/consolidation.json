@@ -1,0 +1,616 @@
+[
+  {
+    "expr": "rows^(rank).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      0,
+      3,
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "rows^(rank,1/0).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      0,
+      3,
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "rows^(tie,>rank).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      2,
+      0,
+      1,
+      3
+    ]
+  },
+  {
+    "expr": "rows^(label,rank).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      1,
+      0,
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "rows^(missing,rank).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      0,
+      3,
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "rows^(tie,$error(\"secondary\")).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "error": "UserError"
+  },
+  {
+    "expr": "rows^($error(\"primary\"),1/0).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "error": "UserError"
+  },
+  {
+    "expr": "($n:=0;rows^($n:=$n+1).id;$n)",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      8
+    ]
+  },
+  {
+    "expr": "($n:=0;rows^(tie,$n:=$n+1).id;$n)",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "rows#$i^($x:=rank,$x).$i",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      0,
+      3,
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "rows#$i^(rank).{\"id\":id,\"index\":$i}",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      {
+        "id": 0,
+        "index": 0
+      },
+      {
+        "id": 3,
+        "index": 3
+      },
+      {
+        "id": 1,
+        "index": 1
+      },
+      {
+        "id": 2,
+        "index": 2
+      }
+    ]
+  },
+  {
+    "expr": "rows^(rank).id[-1]",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      0,
+      3,
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "rows^(rank){label:id}",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      {
+        "z": 0,
+        "😀": 3,
+        "a": 1,
+        "é": 2
+      }
+    ]
+  },
+  {
+    "expr": "rows^($eval(\"rank\")).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "rank": 0,
+          "tie": 0,
+          "label": "z"
+        },
+        {
+          "id": 1,
+          "rank": 3,
+          "tie": 1,
+          "label": "a"
+        },
+        {
+          "id": 2,
+          "rank": 6,
+          "tie": 0,
+          "label": "é"
+        },
+        {
+          "id": 3,
+          "rank": 1,
+          "tie": 1,
+          "label": "😀"
+        }
+      ]
+    },
+    "items": [
+      0,
+      3,
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "rows^(k).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0
+        },
+        {
+          "id": 1,
+          "k": {}
+        },
+        {
+          "id": 2
+        },
+        {
+          "id": 3
+        }
+      ]
+    },
+    "items": [
+      1,
+      0,
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "rows^(k).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "k": null
+        },
+        {
+          "id": 1
+        },
+        {
+          "id": 2
+        },
+        {
+          "id": 3
+        }
+      ]
+    },
+    "items": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "rows^(k).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "k": []
+        },
+        {
+          "id": 1
+        },
+        {
+          "id": 2
+        },
+        {
+          "id": 3
+        }
+      ]
+    },
+    "items": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "rows^(k).id",
+    "data": {
+      "rows": [
+        {
+          "id": 0,
+          "k": 1
+        },
+        {
+          "id": 1,
+          "k": "1"
+        },
+        {
+          "id": 2,
+          "k": 2
+        }
+      ]
+    },
+    "error": "TypeError"
+  }
+]
