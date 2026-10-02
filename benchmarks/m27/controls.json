@@ -1,0 +1,50 @@
+[
+  {
+    "filter": "ascii/shallow",
+    "bytes": 500
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 100
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/call_three",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/lookup_8192_short_raw",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 100
+  },
+  {
+    "filter": "regions/groups",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/nested_map",
+    "bytes": 41828
+  },
+  {
+    "filter": "function/direct",
+    "bytes": 500
+  },
+  {
+    "filter": "function/partial_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "lexical/closure",
+    "bytes": 500
+  },
+  {
+    "filter": "eval/dynamic_closure_map",
+    "bytes": 4055
+  }
+]

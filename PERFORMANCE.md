@@ -2033,3 +2033,93 @@ retain evidence. `just all`, `just build`, all **1,679** upstream classification
 [benchmark sweep](benchmarks/m26/after.csv) passes **1,690 groups /11,830 samples**,
 including allocation assertions. [Source hashes](benchmarks/m26/source.json) pin the
 measured workspace against M25. Other hosts and latency distributions remain unmeasured.
+
+## M27: callback and frame boundaries
+
+M26 commit `69da3f8` is the baseline, with identical final benchmark fixtures overlaid.
+Apple M4 / Rust 1.98.1 / default-feature release builds; validation and complete result
+consumption are timed, serialization excluded. Both process orders use seven warmed
+300 ms samples per workload, sequentially without concurrent checks/builds. New
+workloads cover 8–16,384 rows, 455 B–846 KiB, temporary and escaping closures,
+map/filter/reduce/comparator sort, repeated string projections and dynamic callbacks.
+
+Completed calls/blocks retire newly captured frames when their retained output cannot
+reach them and no write enters an older frame. One terminal slot keeps its parameter
+capacity. Lazy streams and genuine escapes retain their frames. This needs no tracing
+collector, per-value ownership metadata or callback memoization. Owned dynamic lambdas
+reuse existing scalar callback plans for missing/numeric/boolean results, bypassing
+scope cloning and loan/export. Signatures and call guards still run first; other
+results and typed misses keep the original bridge. Plan/native coverage is unchanged.
+
+Selected forward medians at 1,024 rows; gains survive reverse order:
+
+| Workload | Input | M26 records/s | M27 records/s | Allocation requests, before → after |
+| --- | ---: | ---: | ---: | ---: |
+| Temporary closure map | 50,102 B | 1,469 | 1,488 | 5,145 → 4,112 |
+| Temporary closure, tail call | 50,102 B | 1,448 | 1,501 | 5,145 → 4,112 |
+| Closure comparator sort | 50,102 B | 330 | 339 | 17,422 → 11,620 |
+| Dynamic numeric map | 50,102 B | 1,733 | 2,979 | 7,262 → 94 |
+| Dynamic numeric reduce | 4,091 B | 3,066 | 10,464 | 7,217 → 49 |
+| Dynamic numeric sort | 4,091 B | 642 | 2,496 | 35,902 → 62 |
+
+At 16,384 rows, dynamic numeric map gains **71–72%**, reduce **3.2–3.3×**, sort
+**3.7–3.9×**. The existing 1,024-item dynamic closure-map control gains **3.46–3.48×**.
+Temporary-capture throughput improves modestly: about **1%** on wide map, **3.7–4.6%**
+on its 1,024-row tail-call variant, **2.4–2.7%** on comparator sort. Filter throughput
+is essentially unchanged despite allocation reduction. Retention, rather than
+interpreter dispatch, is the main benefit of regional retirement.
+
+Separate live-heap counters measure complete evaluation at 16,384 rows /283,854 B:
+
+| Workload | Allocation requests, before → after | Peak live heap, before → after |
+| --- | ---: | ---: |
+| Temporary closure map, including tail variant | 81,953 → 65,556 | 10,354,976 → 394,120 B |
+| Local recursive closure map | 81,954 → 81,940 | 10,355,136 → 394,280 B |
+| Temporary closure reduce | 81,939 → 65,542 | 9,961,760 → 904 B |
+| Mixed escaping/temporary closures | 147,521 → 131,136 | 14,811,840 → 6,685,384 B |
+| Genuinely escaping closures | 65,585 → 65,585 | 6,292,112 → 6,292,120 B |
+
+Input and compiled-expression storage are excluded; counters include evaluation outputs,
+not allocator caches, executable mappings or RSS. The map output itself retains
+393,264 B. All five repetitions return to baseline after result drop. Temporary map
+requested bytes fall **17.56 → 7.60 MB**; reduce **16.78 → 6.82 MB**. Recursive local
+closures still allocate during each active tail loop, but release their arena suffix
+before the next callback. Escaping environments remain live as required.
+
+Ordinary path, arithmetic, static lookup, direct/partial calls and lexical closure
+controls stay within about **1%**, preserving allocation counts and zero-allocation
+fast paths. Nested planned map improves **7.8–8.0%** despite no plan/traversal change;
+this is a build/code-generation observation. Repeated string projections and dynamic
+object callbacks do not materially improve. Their allocations are unchanged; the
+lexical arena gains one **8 B** watermark cell, also copied by each dynamic bridge
+(**8,208 extra requested B** for the 1,024-row object callback fixture). No Value,
+context or frame grows. Small losses on escaping/planned/string workloads remain
+roughly within **1.5%** across both orders; no new scans or plan dispatch are introduced.
+
+Five-second warmed profiles confirm dynamic numeric map shifts from about **46%**
+scanner /**22%** allocation-drop-clone self samples to **79% /2.5%** after bridge
+removal. Repeated string projections remain about **34%** scanner and **47–51%**
+function/helper-boundary samples. These disjoint categories include inlined plan and
+runtime helpers; they do not isolate instruction dispatch or exact cycle costs.
+
+Repeated string projections, tuple scopes, captures during active tail loops, older
+unreachable captures and nonprimitive dynamic bridges remain boundaries. Reclaiming
+older arbitrary frames or caching callback projections would require more machinery
+and stronger effect/lifetime evidence; neither is introduced. The bounded JIT stays
+isolated and opt-in.
+
+Reproduce focused runs with `just bench-runtime` and `just bench-runtime-memory`.
+[Paired samples](benchmarks/m27/paired-comparison.csv) /
+[reverse](benchmarks/m27/reverse-comparison.csv),
+[controls](benchmarks/m27/controls-comparison.csv) /
+[reverse controls](benchmarks/m27/controls-reverse-comparison.csv),
+[live heap before](benchmarks/m27/memory-before.csv) /
+[after](benchmarks/m27/memory-after.csv),
+[profiles](benchmarks/m27/profiles.json),
+[environment/commands](benchmarks/m27/environment.json),
+[source hashes](benchmarks/m27/source.json),
+[checks](benchmarks/m27/checks.log) and [differentials](benchmarks/m27/differential.txt)
+retain evidence. The complete default-feature [benchmark sweep](benchmarks/m27/after.csv)
+passes **1,746 groups /12,222 samples**, including allocation assertions. `just all`,
+`just build`, all **1,679** upstream classifications and **54,222** differential
+comparisons through `--jit` pass. Latency distributions and other hosts remain unmeasured.

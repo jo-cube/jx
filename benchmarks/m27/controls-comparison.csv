@@ -1,0 +1,13 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+ascii/shallow,500,3120139,3140454,0.65,0.0,0.0,0.0,0.0
+execution/arithmetic,100,6326102,6341384,0.24,0.0,0.0,0.0,0.0
+execution/arithmetic,500,2695316,2692710,-0.1,0.0,0.0,0.0,0.0
+acquisition/call_three,500,1992899,2025696,1.65,3.0,3.0,184.0,192.0
+acquisition/lookup_8192_short_raw,500,2912705,2924110,0.39,0.0,0.0,0.0,0.0
+acquisition/string_callback,100,1301977,1347977,3.53,14.0,14.0,945.0,953.0
+regions/groups,41828,1658,1684,1.57,4017.0,4017.0,154528.0,154528.0
+regions/nested_map,41828,3381,3644,7.78,14.0,14.0,49352.0,49360.0
+function/direct,500,2304212,2325404,0.92,3.0,3.0,184.0,192.0
+function/partial_callback,500,665963,672749,1.02,8.0,8.0,504.0,512.0
+lexical/closure_call,500,798970,793023,-0.74,7.0,7.0,792.0,800.0
+eval/dynamic_closure_map,4055,3255,11273,246.33,7221.0,53.0,645947.0,52043.0

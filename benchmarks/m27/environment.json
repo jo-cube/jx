@@ -1,0 +1,94 @@
+{
+  "baseline_commit": "69da3f89c29ffa5fa981090b668de4ad50627a2e",
+  "rust": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "host": "Darwin MacBook.local 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132 arm64",
+  "cpu": "Apple M4",
+  "benchmark": "default features; identical fixture sources; validation and full consumption; seven 300 ms samples; sequential both orders; counter enabled",
+  "before_binary": "/private/tmp/jx-m26-baseline/target/release/deps/throughput-1b5b3923bf796647",
+  "after_binary": "target/release/deps/throughput-1b5b3923bf796647",
+  "binary_hashes": {
+    "m26_throughput": "1981863345ed5a3fc568f7211ff4398af9c28ffd16bb74a6d6781dbde0f84d97",
+    "m27_throughput": "50a9d9a5bfc17fe427d6193d9c1db632aa03230d3baa4b4184842a42d186ebd0",
+    "m26_memory": "a341a71875d03f2131286bbfdfa5b69cc0015519f9277da08220cd0fa35cf4d0",
+    "m27_memory": "426d9453a0d84f01993139d70cb10c2f954d70f03278f99c6d2af150324fd4c9",
+    "m27_native_cli": "44ef80465b610342b8a3a969cc55bbf36b76b684bbc2cb547691e08ea6749657"
+  },
+  "baseline_fixtures": "Cargo bench declaration, throughput.rs, runtime_memory.rs and workloads/runtime.rs overlaid identically on M26; no engine files changed. Build with default features and --locked.",
+  "commands": [
+    "just all",
+    "just build",
+    "cargo build -p jx-cli --release --features jit --locked",
+    "JX_DIFFERENTIAL_JIT=1 node scripts/check-*.cjs /private/tmp/jx-jsonata-reference target/release/jx (all 23 separately; differential.txt has exact commands)",
+    "cargo bench -p jx --bench throughput --bench runtime_memory --no-run --locked (M26 and M27)",
+    "python3 benchmarks/m27/measure.py M26_BINARY M27_BINARY benchmarks/m27/paired --ms 300",
+    "python3 benchmarks/m27/measure.py M26_BINARY M27_BINARY benchmarks/m27/reverse --reverse --ms 300",
+    "python3 benchmarks/m24/measure.py M26_BINARY M27_BINARY benchmarks/m27/controls.json benchmarks/m27/controls",
+    "python3 benchmarks/m24/measure.py M26_BINARY M27_BINARY benchmarks/m27/controls.json benchmarks/m27/controls-reverse --reverse",
+    "M26_MEMORY_BINARY > benchmarks/m27/memory-before.csv; M27_MEMORY_BINARY > benchmarks/m27/memory-after.csv (sequential)",
+    "JX_BENCH_SAMPLE_MS=25 just bench > benchmarks/m27/after.csv 2> benchmarks/m27/bench.log",
+    "python3 benchmarks/m27/profile.py M26_BINARY M27_BINARY benchmarks/m27",
+    "python3 benchmarks/m27/summarize-profiles.py"
+  ],
+  "upstream": {
+    "version": "2.2.0",
+    "revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+    "cases": 1679,
+    "supported": 1390,
+    "expected_errors": 288,
+    "resource_guards": 1,
+    "blockers": 0,
+    "differential_comparisons": 54222,
+    "suites": 23
+  },
+  "full_final": {
+    "groups": 1746,
+    "samples": 12222,
+    "samples_per_group": 7,
+    "sample_ms": 25,
+    "timed_seconds": 437.588,
+    "exit_code": 0
+  },
+  "runtime_pairs": {
+    "groups": 56,
+    "samples_per_group": 7,
+    "sample_ms": 300,
+    "orders": [
+      "M26/M27",
+      "M27/M26"
+    ],
+    "features": "default; JIT disabled"
+  },
+  "memory": {
+    "method": "Five warmed iterations per width/workload; full evaluation and consumption. System allocator counter measures requested, current and peak live Rust heap bytes above pre-evaluation baseline; excludes input/expression storage. No RSS/allocator-cache claim. All after-drop deltas zero.",
+    "widths": [
+      8,
+      128,
+      1024,
+      16384
+    ],
+    "rows_per_engine": 160
+  },
+  "artifacts": {
+    "paired-* / reverse-*": "Final identical fixtures and final engine binaries in both orders.",
+    "controls-*": "Final existing-workload controls in both orders.",
+    "memory-before.csv / memory-after.csv": "Final live-heap measurements, including temporary tail calls and real escapes.",
+    "profile-* / profiles.json": "Final warmed five-second macOS sample traces, disjoint approximate self attribution; categories include inlined helpers and cannot isolate instruction dispatch.",
+    "after.csv / bench.log / bench-exit.txt": "Complete final default-feature benchmark sweep and allocation assertions.",
+    "checks.log": "Final all/build, JIT CLI build and benchmark binary builds.",
+    "differential.txt": "All 23 final differential suites with --jit enabled."
+  },
+  "limitations": [
+    "Only Apple M4/aarch64 measured; no latency distribution or RSS measurement.",
+    "Region retirement is conservative for lazy streams, older-frame writes, tuple scopes and genuinely escaping captures. Captures can still accumulate within one active tail loop; arbitrary older dead frames are not collected.",
+    "Dynamic primitive plans bypass the bridge; nonprimitive outputs and typed/shape failures retain original bridging. Pure failed probes may repeat acquisition.",
+    "One usize watermark adds eight bytes to each optional lexical arena and copied bridge on this target. Value, Context, Frame and native coverage are unchanged.",
+    "Control differences without an executed algorithm change are build/code-generation observations, not traversal-removal claims."
+  ],
+  "recorded_at_utc": "2026-10-02T20:04:28.447855+00:00",
+  "completed_at_utc": "2026-10-02T20:06:11.493511+00:00",
+  "profiles": {
+    "samples": "five seconds at one-millisecond intervals after first timed sample",
+    "fixture": "1024 rows / 50102 B; default features; final M26/M27 binaries; four workloads, both engines, sequential",
+    "attribution": "Approximate disjoint self samples from full macOS sample call trees. Function/callback categories include inlined plan/runtime helpers; not dispatch-only costs."
+  }
+}

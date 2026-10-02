@@ -40,3 +40,10 @@ bench-plan:
 
 bench-jit-memory:
     cargo bench -p jx --features jit --bench native_memory --locked
+
+# Callback throughput and live heap are measured separately.
+bench-runtime:
+    JX_BENCH_RUNTIME_ONLY=1 cargo bench -p jx --bench throughput --locked
+
+bench-runtime-memory:
+    cargo bench -p jx --bench runtime_memory --locked

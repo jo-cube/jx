@@ -111,8 +111,13 @@ Frames own values, but closures do not own the arena: recursion creates no `Rc` 
 An uncaptured terminal slot and its binding capacity are recycled. Immediately invoked
 literal callees borrow their definition and caller frame without allocating a function
 value or marking that frame captured; escaped body closures still capture their own
-ancestry. Captured frames and their ancestors live until that record's evaluation ends;
-creating many escaping closures can retain many frames per record.
+ancestry. Retained calls/blocks checkpoint the arena and retire their new suffix when
+its output cannot reach those frames and no write entered an older frame. They preserve
+one vacant slot's binding capacity. Closure focus, partials/chains and nested constructed
+values are escape roots; raw/compiled JSON needs no inspection. A record-local minimum
+write index propagates through nested regions and dynamic bridges. No per-value lifetime
+metadata or whole-arena collector is added. Truly escaping frames, captures during an active tail loop,
+tuple scopes and earlier dead captures outside a retiring region remain conservative.
 
 `Context` carries an optional scope alongside current value and wrapping. `$$` is
 initialized in the root frame; mapped items change `$` while preserving that scope.
@@ -214,7 +219,7 @@ borrowed definitions do not change. Captures remain frame indices without arena 
 `dynamic/borrow.rs` loans owned callable definitions for an entire invocation region,
 so recursive references enter the existing tail loop. `dynamic/retention.rs` memoizes
 aliases only while exporting that region. No per-record input cache or replayable
-sequence becomes a stored value. Dynamic closure callbacks currently copy scope slots
+sequence becomes a stored value. Nonprimitive dynamic closure callbacks copy scope slots
 per invocation; that containment has a measurable allocation cost.
 
 `random.rs` is a shared single-threaded draw stream, seeded lazily on first use.
@@ -727,3 +732,23 @@ is released on compilation failure or final owner drop. Engine/CLI remain safe R
 Numeric folds show useful end-to-end gains; larger padded records still spend almost
 all time validating/scanning. Keep this subset opt-in and use PERFORMANCE evidence
 before expanding coverage. No traversal/string/closure JIT is justified here.
+
+## Callback and frame boundaries
+
+M27 retires completed lexical regions only when their output is retained; lazy stream
+results keep their frames. Stable indices and the existing capture marks continue to protect escaping
+closures and their ancestors. An older-frame binding/export write conservatively keeps
+the suffix, including on errors. New frames cannot otherwise enter older immutable
+values. Reclamation never evaluates a value or revisits input JSON; it checks only runtime
+constructed values/callables. Noncapturing terminal slots still recycle in `Scope::release`.
+
+Owned dynamic lambdas can use an existing scalar callback plan without opening a
+scope bridge when its result is missing, numeric or boolean. Signatures and call/depth
+guards remain first. Borrowed strings/containers, type/shape misses, lexical effects and
+tail execution still use the established loan/export path. Plans/ASTs are not expanded,
+and Cranelift is not involved in the general runtime. Value/context/frame representations
+are unchanged; the optional lexical arena gains one `usize` write-watermark cell.
+
+Repeated unplanned string projections, per-comparison effectful callbacks, tuple scopes,
+active tail-loop captures and nonprimitive dynamic bridging remain costs. Collection of older unreachable
+captures or shared callback environments needs separate evidence; M27 adds neither.

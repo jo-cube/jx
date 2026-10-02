@@ -28,3 +28,7 @@ harness = false
 name = "native_memory"
 harness = false
 required-features = ["jit"]
+
+[[bench]]
+name = "runtime_memory"
+harness = false

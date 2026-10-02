@@ -42,6 +42,8 @@ mod navigation;
 mod plans;
 #[path = "workloads/regions.rs"]
 mod regions;
+#[path = "workloads/runtime.rs"]
+mod runtime;
 #[path = "workloads/scalars.rs"]
 mod scalars;
 #[path = "workloads/string_storage.rs"]
@@ -292,6 +294,10 @@ fn main() {
         native::run(smoke);
         return;
     }
+    if std::env::var_os("JX_BENCH_RUNTIME_ONLY").is_some() {
+        runtime::run(smoke);
+        return;
+    }
     measure_allocations("compile", 0, smoke, None, || {
         black_box(jx::compile(black_box("customer.id")).unwrap());
     });
@@ -343,4 +349,5 @@ fn main() {
     regions::run(smoke);
     acquisition::run(smoke);
     string_storage::run(smoke);
+    runtime::run(smoke);
 }
