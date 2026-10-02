@@ -1,0 +1,764 @@
+{
+  "method": "Five-second /one-millisecond samples after the first timed sample; seven 1500 ms benchmark samples. Full call-tree self counts, disjoint approximate attribution: inlining/mangling obscure some names. Percentages describe sampled execution, not exact cycles or throughput gains.",
+  "scope": "Initial candidate with stack-buffer strings and generic raw equality, before their removal and singleton lookup cleanup.",
+  "profiles": {
+    "candidate-profile-calls-after": {
+      "samples": 4216,
+      "percent": {
+        "scanner": 75.64,
+        "plan": 5.34,
+        "other": 11.05,
+        "allocation/drop/clone": 7.97
+      },
+      "scanner_phases_percent": {
+        "validation": 75.64
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x101030348,0x101030334,...]",
+          "samples": 1027,
+          "percent": 24.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x101030334,0x101030348,...]",
+          "samples": 700,
+          "percent": 16.6
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88  [0x101030348,0x101030334]",
+          "samples": 147,
+          "percent": 3.49
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108  [0x101030334,0x101030348]",
+          "samples": 66,
+          "percent": 1.57
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 592  [0x101051500]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 64,16,...  [0x1010512f0,0x1010512c0,...]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 80,120  [0x100fa8ebc,0x100fa8ee4]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 0  [0x100fc6148]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 80  [0x100fa8ebc]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 536  [0x10102fabc]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 52,64,...  [0x1010512e4,0x1010512f0,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 24  [0x100fc6160]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x184142144]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x18432f144]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in jx-m25-final) + 924,900,...  [0x10102f628,0x10102f610,...]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in jx-m25-final) + 88,712,...  [0x10102f2e4,0x10102f554,...]",
+          "samples": 15,
+          "percent": 0.36
+        }
+      ]
+    },
+    "candidate-profile-calls-before": {
+      "samples": 4200,
+      "percent": {
+        "scanner": 80.43,
+        "other": 13.21,
+        "plan": 2.57,
+        "allocation/drop/clone": 3.79
+      },
+      "scanner_phases_percent": {
+        "argument acquisition": 58.48,
+        "validation": 21.95
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,88,...  [0x100a0d840,0x100a0d82c,...]",
+          "samples": 749,
+          "percent": 17.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,108,...  [0x100a0d82c,0x100a0d840,...]",
+          "samples": 732,
+          "percent": 17.43
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100,...  [0x100a0d82c,0x100a0d838,...]",
+          "samples": 285,
+          "percent": 6.79
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,100,...  [0x100a0d840,0x100a0d838,...]",
+          "samples": 178,
+          "percent": 4.24
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,76,...  [0x100a0d840,0x100a0d820,...]",
+          "samples": 145,
+          "percent": 3.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x100a0d820,0x100a0d82c,...]",
+          "samples": 121,
+          "percent": 2.88
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,108,...  [0x100a0d838,0x100a0d840,...]",
+          "samples": 104,
+          "percent": 2.48
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,88,...  [0x100a0d838,0x100a0d82c,...]",
+          "samples": 97,
+          "percent": 2.31
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,76,...  [0x100a0d82c,0x100a0d820,...]",
+          "samples": 93,
+          "percent": 2.21
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,108,...  [0x100a0d820,0x100a0d840,...]",
+          "samples": 51,
+          "percent": 1.21
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100,...  [0x100a0d820,0x100a0d838,...]",
+          "samples": 36,
+          "percent": 0.86
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in jx-m25-baseline-final) + 332  [0x100a2e76c]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76,...  [0x100a0d838,0x100a0d820,...]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvMs1_NtCsds78668uu60_2jx9containerNtNtB7_5value5Value5field  (in jx-m25-baseline-final) + 584,620,...  [0x1009f5278,0x1009f529c,...]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-baseline-final) + 536  [0x100a0cfb4]",
+          "samples": 17,
+          "percent": 0.4
+        }
+      ]
+    },
+    "candidate-profile-escaped-after": {
+      "samples": 4225,
+      "percent": {
+        "scanner": 67.74,
+        "utf16/string decoding": 13.85,
+        "other": 4.78,
+        "fingerprint": 11.83,
+        "lookup/search": 1.63,
+        "allocation/drop/clone": 0.17
+      },
+      "scanner_phases_percent": {
+        "validation": 67.74
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100,...  [0x102578328,0x102578340,...]",
+          "samples": 655,
+          "percent": 15.5
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,76,...  [0x102578340,0x102578328,...]",
+          "samples": 548,
+          "percent": 12.97
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x102578328,0x102578334,...]",
+          "samples": 311,
+          "percent": 7.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,108,...  [0x102578328,0x102578348,...]",
+          "samples": 240,
+          "percent": 5.68
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,76,...  [0x102578334,0x102578328,...]",
+          "samples": 227,
+          "percent": 5.37
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,108,...  [0x102578340,0x102578348,...]",
+          "samples": 144,
+          "percent": 3.41
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 388,624,...  [0x1025ac570,0x1025ac65c,...]",
+          "samples": 138,
+          "percent": 3.27
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 624,388,...  [0x1025ac65c,0x1025ac570,...]",
+          "samples": 126,
+          "percent": 2.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,100,...  [0x102578348,0x102578340,...]",
+          "samples": 82,
+          "percent": 1.94
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,100,...  [0x102578334,0x102578340,...]",
+          "samples": 82,
+          "percent": 1.94
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,76,...  [0x102578348,0x102578328,...]",
+          "samples": 80,
+          "percent": 1.89
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,88,...  [0x102578340,0x102578334,...]",
+          "samples": 62,
+          "percent": 1.47
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 28,36,...  [0x1025ac408,0x1025ac410,...]",
+          "samples": 59,
+          "percent": 1.4
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 96,128  [0x1024f0ecc,0x1024f0eec]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 388,428,...  [0x1025ac570,0x1025ac598,...]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 388,28,...  [0x1025ac570,0x1025ac408,...]",
+          "samples": 32,
+          "percent": 0.76
+        }
+      ]
+    },
+    "candidate-profile-escaped-before": {
+      "samples": 4227,
+      "percent": {
+        "utf16/string decoding": 59.74,
+        "lookup/search": 11.76,
+        "scanner": 27.56,
+        "other": 0.85,
+        "allocation/drop/clone": 0.09
+      },
+      "scanner_phases_percent": {
+        "validation": 27.56
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 656,640,...  [0x104529a4c,0x104529a3c,...]",
+          "samples": 370,
+          "percent": 8.75
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,644,...  [0x104549170,0x1045493e4,...]",
+          "samples": 319,
+          "percent": 7.55
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76,...  [0x104515838,0x104515820,...]",
+          "samples": 248,
+          "percent": 5.87
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100,...  [0x104515820,0x104515838,...]",
+          "samples": 241,
+          "percent": 5.7
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,28,...  [0x104549170,0x10454917c,...]",
+          "samples": 234,
+          "percent": 5.54
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,404,...  [0x104549170,0x1045492f4,...]",
+          "samples": 155,
+          "percent": 3.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x104515820,0x10451582c,...]",
+          "samples": 140,
+          "percent": 3.31
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,624,...  [0x104549170,0x1045493d0,...]",
+          "samples": 127,
+          "percent": 3.0
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,172,...  [0x104549170,0x10454920c,...]",
+          "samples": 126,
+          "percent": 2.98
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,56,...  [0x104549170,0x104549198,...]",
+          "samples": 118,
+          "percent": 2.79
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 56,16,...  [0x104549198,0x104549170,...]",
+          "samples": 101,
+          "percent": 2.39
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 388,624,...  [0x1045492e4,0x1045493d0,...]",
+          "samples": 98,
+          "percent": 2.32
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,100,...  [0x104515840,0x104515838,...]",
+          "samples": 92,
+          "percent": 2.18
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,88,...  [0x104515838,0x10451582c,...]",
+          "samples": 69,
+          "percent": 1.63
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 404,644,...  [0x1045492f4,0x1045493e4,...]",
+          "samples": 68,
+          "percent": 1.61
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,76,...  [0x10451582c,0x104515820,...]",
+          "samples": 67,
+          "percent": 1.59
+        }
+      ]
+    },
+    "candidate-profile-lookup-after": {
+      "samples": 4220,
+      "percent": {
+        "scanner": 87.18,
+        "fingerprint": 6.64,
+        "other": 4.22,
+        "lookup/search": 1.71,
+        "allocation/drop/clone": 0.26
+      },
+      "scanner_phases_percent": {
+        "validation": 87.18
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x1008a4348,0x1008a4334,...]",
+          "samples": 1200,
+          "percent": 28.44
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x1008a4334,0x1008a4348,...]",
+          "samples": 741,
+          "percent": 17.56
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,76,...  [0x1008a4334,0x1008a4328,...]",
+          "samples": 282,
+          "percent": 6.68
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,76,...  [0x1008a4348,0x1008a4328,...]",
+          "samples": 195,
+          "percent": 4.62
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,88,...  [0x1008a4340,0x1008a4334,...]",
+          "samples": 165,
+          "percent": 3.91
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,100,...  [0x1008a4348,0x1008a4340,...]",
+          "samples": 107,
+          "percent": 2.54
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,108,...  [0x1008a4340,0x1008a4348,...]",
+          "samples": 105,
+          "percent": 2.49
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x1008a4328,0x1008a4334,...]",
+          "samples": 104,
+          "percent": 2.46
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,108,...  [0x1008a4328,0x1008a4348,...]",
+          "samples": 89,
+          "percent": 2.11
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,100,...  [0x1008a4334,0x1008a4340,...]",
+          "samples": 86,
+          "percent": 2.04
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 96,80  [0x10081cecc,0x10081cebc]",
+          "samples": 56,
+          "percent": 1.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 36,12,...  [0x1008a38c8,0x1008a38b0,...]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "_RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCsds78668uu60_2jx  (in jx-m25-final) + 12,68,...  [0x1008e3274,0x1008e32ac,...]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCsds78668uu60_2jx  (in jx-m25-final) + 12,124,...  [0x1008e3274,0x1008e32e4,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 52,68,...  [0x1008a38d8,0x1008a38e8,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 16,28,...  [0x1008d83fc,0x1008d8408,...]",
+          "samples": 19,
+          "percent": 0.45
+        }
+      ]
+    },
+    "candidate-profile-lookup-before": {
+      "samples": 4221,
+      "percent": {
+        "lookup/search": 14.59,
+        "utf16/string decoding": 30.14,
+        "scanner": 53.35,
+        "other": 1.66,
+        "allocation/drop/clone": 0.26
+      },
+      "scanner_phases_percent": {
+        "validation": 53.35
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,108,...  [0x100bbd82c,0x100bbd840,...]",
+          "samples": 811,
+          "percent": 19.21
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,88,...  [0x100bbd840,0x100bbd82c,...]",
+          "samples": 688,
+          "percent": 16.3
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 612,636,...  [0x100bd1a20,0x100bd1a38,...]",
+          "samples": 419,
+          "percent": 9.93
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100,...  [0x100bbd82c,0x100bbd838,...]",
+          "samples": 296,
+          "percent": 7.01
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,36,...  [0x100bf1170,0x100bf1184,...]",
+          "samples": 244,
+          "percent": 5.78
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,28,...  [0x100bf1170,0x100bf117c,...]",
+          "samples": 203,
+          "percent": 4.81
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,172,...  [0x100bf1170,0x100bf120c,...]",
+          "samples": 164,
+          "percent": 3.89
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,520,...  [0x100bf1170,0x100bf1368,...]",
+          "samples": 126,
+          "percent": 2.99
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,76,...  [0x100bbd82c,0x100bbd820,...]",
+          "samples": 105,
+          "percent": 2.49
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 28,16,...  [0x100bf117c,0x100bf1170,...]",
+          "samples": 85,
+          "percent": 2.01
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 520,16,...  [0x100bf1368,0x100bf1170,...]",
+          "samples": 75,
+          "percent": 1.78
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 28,36,...  [0x100bf117c,0x100bf1184,...]",
+          "samples": 72,
+          "percent": 1.71
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 636,612,...  [0x100bd1a38,0x100bd1a20,...]",
+          "samples": 69,
+          "percent": 1.63
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,108,...  [0x100bbd820,0x100bbd840,...]",
+          "samples": 53,
+          "percent": 1.26
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 36,16,...  [0x100bf1184,0x100bf1170,...]",
+          "samples": 51,
+          "percent": 1.21
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 636,644,...  [0x100bd1a38,0x100bd1a40,...]",
+          "samples": 37,
+          "percent": 0.88
+        }
+      ]
+    },
+    "candidate-profile-strings-after": {
+      "samples": 4200,
+      "percent": {
+        "scanner": 36.38,
+        "other": 50.5,
+        "allocation/drop/clone": 12.38,
+        "utf16/string decoding": 0.74
+      },
+      "scanner_phases_percent": {
+        "validation": 36.38
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x1008fc334,0x1008fc348,...]",
+          "samples": 148,
+          "percent": 3.52
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 109,
+          "percent": 2.6
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x1008fc348,0x1008fc334,...]",
+          "samples": 75,
+          "percent": 1.79
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,8,...  [0x1008fc334,0x1008fc2e4,...]",
+          "samples": 56,
+          "percent": 1.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,76,...  [0x1008fc340,0x1008fc328,...]",
+          "samples": 52,
+          "percent": 1.24
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100,...  [0x1008fc328,0x1008fc340,...]",
+          "samples": 50,
+          "percent": 1.19
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 120,128  [0x100874ee4,0x100874eec]",
+          "samples": 49,
+          "percent": 1.17
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 120  [0x100874ee4]",
+          "samples": 48,
+          "percent": 1.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 8,76,...  [0x1008fc2e4,0x1008fc328,...]",
+          "samples": 46,
+          "percent": 1.1
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100  [0x1008fc328,0x1008fc340]",
+          "samples": 43,
+          "percent": 1.02
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x1008fc328,0x1008fc334,...]",
+          "samples": 42,
+          "percent": 1.0
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 592  [0x10091d500]",
+          "samples": 36,
+          "percent": 0.86
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in jx-m25-final) + 6772  [0x1008e6f44]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 120,128,...  [0x100874ee4,0x100874eec,...]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 0  [0x100892148]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 8,88,...  [0x1008fc2e4,0x1008fc334,...]",
+          "samples": 31,
+          "percent": 0.74
+        }
+      ]
+    },
+    "candidate-profile-strings-before": {
+      "samples": 4209,
+      "percent": {
+        "scanner": 37.02,
+        "other": 42.53,
+        "allocation/drop/clone": 19.89,
+        "utf16/string decoding": 0.57
+      },
+      "scanner_phases_percent": {
+        "validation": 37.02
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,108,...  [0x1049a982c,0x1049a9840,...]",
+          "samples": 117,
+          "percent": 2.78
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 98,
+          "percent": 2.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x1049a9820,0x1049a982c,...]",
+          "samples": 94,
+          "percent": 2.23
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,88,...  [0x1049a9840,0x1049a982c,...]",
+          "samples": 71,
+          "percent": 1.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100,...  [0x1049a982c,0x1049a9838,...]",
+          "samples": 62,
+          "percent": 1.47
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100,...  [0x1049a9820,0x1049a9838,...]",
+          "samples": 44,
+          "percent": 1.05
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-baseline-final) + 592  [0x1049caa20]",
+          "samples": 41,
+          "percent": 0.97
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76,...  [0x1049a9838,0x1049a9820,...]",
+          "samples": 41,
+          "percent": 0.97
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,76,...  [0x1049a982c,0x1049a9820,...]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100  [0x1049a9820,0x1049a9838]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 28  [0x184143088]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76  [0x1049a9838,0x1049a9820]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-baseline-final) + 0  [0x10493e084]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 8,88,...  [0x1049a97dc,0x1049a982c,...]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-baseline-final) + 64  [0x1049ca810]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,8,...  [0x1049a9838,0x1049a97dc,...]",
+          "samples": 31,
+          "percent": 0.74
+        }
+      ]
+    }
+  }
+}

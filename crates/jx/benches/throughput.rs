@@ -1,5 +1,7 @@
 // The benchmark's counting allocator is the only unsafe code in this workspace.
 #![allow(unsafe_code)]
+#[path = "workloads/acquisition.rs"]
+mod acquisition;
 #[path = "workloads/aggregates.rs"]
 mod aggregates;
 #[path = "workloads/builtins.rs"]
@@ -38,6 +40,8 @@ mod plans;
 mod regions;
 #[path = "workloads/scalars.rs"]
 mod scalars;
+#[path = "workloads/string_storage.rs"]
+mod string_storage;
 #[path = "workloads/structure.rs"]
 mod structure;
 #[path = "workloads/tuples.rs"]
@@ -326,4 +330,6 @@ fn main() {
     structure::run(smoke);
     consolidation::run(smoke);
     regions::run(smoke);
+    acquisition::run(smoke);
+    string_storage::run(smoke);
 }

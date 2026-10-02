@@ -1,0 +1,1138 @@
+{
+  "method": "Five-second /one-millisecond samples after the first timed sample; seven 1500 ms benchmark samples. Full call-tree self counts, disjoint approximate attribution: inlining/mangling obscure some names. Percentages describe sampled execution, not exact cycles or throughput gains.",
+  "scope": "Retained M25 code versus committed M24 with identical benchmark definitions.",
+  "profiles": {
+    "profile-callback-after": {
+      "samples": 4212,
+      "percent": {
+        "allocation/drop/clone": 33.48,
+        "other": 43.83,
+        "scanner": 22.7
+      },
+      "scanner_phases_percent": {
+        "validation": 22.7
+      },
+      "top_self": [
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 197,
+          "percent": 4.68
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x100c70198,0x100c701ac,...]",
+          "samples": 111,
+          "percent": 2.64
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 28  [0x184143088]",
+          "samples": 76,
+          "percent": 1.8
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100,...  [0x100c7018c,0x100c701a4,...]",
+          "samples": 51,
+          "percent": 1.21
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,8,...  [0x100c701ac,0x100c70148,...]",
+          "samples": 45,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 0  [0x100c06148]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0,28,...  [0x18414306c,0x184143088,...]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x100c701ac,0x100c70198,...]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x184142144]",
+          "samples": 36,
+          "percent": 0.85
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in jx-m25-final) + 332  [0x100c90f30]",
+          "samples": 36,
+          "percent": 0.85
+        },
+        {
+          "symbol": "_RNvXs0_NtCsds78668uu60_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 660  [0x100ca5ffc]",
+          "samples": 30,
+          "percent": 0.71
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,100,...  [0x100c70198,0x100c701a4,...]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x18432f144]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x100c7018c,0x100c70198,...]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 180  [0x100c061fc]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 24  [0x100c06160]",
+          "samples": 24,
+          "percent": 0.57
+        }
+      ]
+    },
+    "profile-callback-before": {
+      "samples": 4213,
+      "percent": {
+        "allocation/drop/clone": 31.71,
+        "other": 44.65,
+        "scanner": 23.64
+      },
+      "scanner_phases_percent": {
+        "validation": 23.64
+      },
+      "top_self": [
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 205,
+          "percent": 4.87
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,108,...  [0x10300182c,0x103001840,...]",
+          "samples": 144,
+          "percent": 3.42
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 28  [0x184143088]",
+          "samples": 83,
+          "percent": 1.97
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,88,...  [0x103001840,0x10300182c,...]",
+          "samples": 80,
+          "percent": 1.9
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-baseline-final) + 180  [0x102f96138]",
+          "samples": 49,
+          "percent": 1.16
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100,...  [0x103001820,0x103001838,...]",
+          "samples": 48,
+          "percent": 1.14
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0,28,...  [0x18414306c,0x184143088,...]",
+          "samples": 47,
+          "percent": 1.12
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,8,...  [0x10300182c,0x1030017dc,...]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76,...  [0x103001838,0x103001820,...]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x184142144]",
+          "samples": 36,
+          "percent": 0.85
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-baseline-final) + 0  [0x102f96084]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in jx-m25-baseline-final) + 332  [0x10302276c]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100,...  [0x10300182c,0x103001838,...]",
+          "samples": 28,
+          "percent": 0.66
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x103001820,0x10300182c,...]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x18432f144]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_malloc_zone_malloc  (in libsystem_malloc.dylib) + 12  [0x184152044]",
+          "samples": 25,
+          "percent": 0.59
+        }
+      ]
+    },
+    "profile-calls-after": {
+      "samples": 4222,
+      "percent": {
+        "scanner": 72.71,
+        "other": 13.48,
+        "plan": 5.14,
+        "allocation/drop/clone": 8.67
+      },
+      "scanner_phases_percent": {
+        "validation": 72.71
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x10095c1ac,0x10095c198,...]",
+          "samples": 943,
+          "percent": 22.34
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x10095c198,0x10095c1ac,...]",
+          "samples": 827,
+          "percent": 19.59
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 89,
+          "percent": 2.11
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,76,...  [0x10095c198,0x10095c18c,...]",
+          "samples": 49,
+          "percent": 1.16
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 592  [0x10097d718]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 536  [0x10095b920]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 16,52,...  [0x10097d4d8,0x10097d4fc,...]",
+          "samples": 22,
+          "percent": 0.52
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 28  [0x184143088]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 80  [0x1008d4ebc]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 64,16,...  [0x10097d508,0x10097d4d8,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 48,136,...  [0x10095b738,0x10095b790,...]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 64,52,...  [0x10097d508,0x10097d4fc,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88  [0x10095c1ac,0x10095c198]",
+          "samples": 13,
+          "percent": 0.31
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x184142144]",
+          "samples": 13,
+          "percent": 0.31
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x10095c18c,0x10095c198,...]",
+          "samples": 13,
+          "percent": 0.31
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in jx-m25-final) + 852,1068,...  [0x10095b444,0x10095b51c,...]",
+          "samples": 13,
+          "percent": 0.31
+        }
+      ]
+    },
+    "profile-calls-before": {
+      "samples": 4210,
+      "percent": {
+        "scanner": 82.3,
+        "other": 12.4,
+        "plan": 2.11,
+        "allocation/drop/clone": 3.18
+      },
+      "scanner_phases_percent": {
+        "argument acquisition": 60.4,
+        "validation": 21.9
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,108,...  [0x10272982c,0x102729840,...]",
+          "samples": 1326,
+          "percent": 31.5
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,88,...  [0x102729840,0x10272982c,...]",
+          "samples": 799,
+          "percent": 18.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100,...  [0x10272982c,0x102729838,...]",
+          "samples": 268,
+          "percent": 6.37
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,108,...  [0x102729838,0x102729840,...]",
+          "samples": 70,
+          "percent": 1.66
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,108,...  [0x102729820,0x102729840,...]",
+          "samples": 55,
+          "percent": 1.31
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,76,...  [0x102729840,0x102729820,...]",
+          "samples": 43,
+          "percent": 1.02
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x102729820,0x10272982c,...]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in jx-m25-baseline-final) + 332  [0x10274a76c]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,88,...  [0x102729838,0x10272982c,...]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,76,...  [0x10272982c,0x102729820,...]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100  [0x102729820,0x102729838]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_platform_memcmp  (in libsystem_platform.dylib) + 280  [0x18432d028]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-baseline-final) + 536,1156,...  [0x102728fb4,0x102729220,...]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 8,76,...  [0x1027297dc,0x102729820,...]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-baseline-final) + 532,536  [0x102728fb0,0x102728fb4]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 14,
+          "percent": 0.33
+        }
+      ]
+    },
+    "profile-escaped-after": {
+      "samples": 4228,
+      "percent": {
+        "scanner": 62.32,
+        "utf16/string decoding": 16.49,
+        "other": 6.84,
+        "fingerprint": 11.45,
+        "lookup/search": 2.46,
+        "allocation/drop/clone": 0.45
+      },
+      "scanner_phases_percent": {
+        "validation": 62.32
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,108,...  [0x100fec18c,0x100fec1ac,...]",
+          "samples": 364,
+          "percent": 8.61
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100,...  [0x100fec18c,0x100fec1a4,...]",
+          "samples": 350,
+          "percent": 8.28
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x100fec1ac,0x100fec198,...]",
+          "samples": 325,
+          "percent": 7.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,108,...  [0x100fec1a4,0x100fec1ac,...]",
+          "samples": 215,
+          "percent": 5.09
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,88,...  [0x100fec1a4,0x100fec198,...]",
+          "samples": 215,
+          "percent": 5.09
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,100,...  [0x100fec1ac,0x100fec1a4,...]",
+          "samples": 157,
+          "percent": 3.71
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x100fec198,0x100fec1ac,...]",
+          "samples": 149,
+          "percent": 3.52
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,76,...  [0x100fec1a4,0x100fec18c,...]",
+          "samples": 125,
+          "percent": 2.96
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x100fec18c,0x100fec198,...]",
+          "samples": 120,
+          "percent": 2.84
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,76,...  [0x100fec198,0x100fec18c,...]",
+          "samples": 81,
+          "percent": 1.92
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,100,...  [0x100fec198,0x100fec1a4,...]",
+          "samples": 71,
+          "percent": 1.68
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,76,...  [0x100fec1ac,0x100fec18c,...]",
+          "samples": 61,
+          "percent": 1.44
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 16,196,...  [0x1010205f4,0x1010206a8,...]",
+          "samples": 54,
+          "percent": 1.28
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 16,936,...  [0x1010205f4,0x10102098c,...]",
+          "samples": 44,
+          "percent": 1.04
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 28,36,...  [0x101020600,0x101020608,...]",
+          "samples": 42,
+          "percent": 0.99
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 172,428,...  [0x101020690,0x101020790,...]",
+          "samples": 38,
+          "percent": 0.9
+        }
+      ]
+    },
+    "profile-escaped-before": {
+      "samples": 4226,
+      "percent": {
+        "utf16/string decoding": 60.27,
+        "lookup/search": 12.14,
+        "allocation/drop/clone": 0.12,
+        "scanner": 26.55,
+        "other": 0.92
+      },
+      "scanner_phases_percent": {
+        "validation": 26.55
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 656,640,...  [0x102ff9a4c,0x102ff9a3c,...]",
+          "samples": 355,
+          "percent": 8.4
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,28,...  [0x103019170,0x10301917c,...]",
+          "samples": 302,
+          "percent": 7.15
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76,...  [0x102fe5838,0x102fe5820,...]",
+          "samples": 183,
+          "percent": 4.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x102fe5820,0x102fe582c,...]",
+          "samples": 178,
+          "percent": 4.21
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,196,...  [0x103019170,0x103019224,...]",
+          "samples": 156,
+          "percent": 3.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100,...  [0x102fe5820,0x102fe5838,...]",
+          "samples": 144,
+          "percent": 3.41
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,172,...  [0x103019170,0x10301920c,...]",
+          "samples": 130,
+          "percent": 3.08
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,36,...  [0x103019170,0x103019184,...]",
+          "samples": 108,
+          "percent": 2.56
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 640,656,...  [0x102ff9a3c,0x102ff9a4c,...]",
+          "samples": 87,
+          "percent": 2.06
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,76,...  [0x102fe582c,0x102fe5820,...]",
+          "samples": 81,
+          "percent": 1.92
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,56,...  [0x103019170,0x103019198,...]",
+          "samples": 80,
+          "percent": 1.89
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,956,...  [0x103019170,0x10301951c,...]",
+          "samples": 74,
+          "percent": 1.75
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,388,...  [0x103019170,0x1030192e4,...]",
+          "samples": 70,
+          "percent": 1.66
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,100,...  [0x102fe5840,0x102fe5838,...]",
+          "samples": 69,
+          "percent": 1.63
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 644,956,...  [0x1030193e4,0x10301951c,...]",
+          "samples": 68,
+          "percent": 1.61
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,108,...  [0x102fe5838,0x102fe5840,...]",
+          "samples": 66,
+          "percent": 1.56
+        }
+      ]
+    },
+    "profile-groups-after": {
+      "samples": 4189,
+      "percent": {
+        "scanner": 47.7,
+        "other": 37.98,
+        "allocation/drop/clone": 12.51,
+        "utf16/string decoding": 1.81
+      },
+      "scanner_phases_percent": {
+        "validation": 47.7
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 536  [0x10041b920]",
+          "samples": 52,
+          "percent": 1.24
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100  [0x10041c1a4]",
+          "samples": 51,
+          "percent": 1.22
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88  [0x10041c198]",
+          "samples": 49,
+          "percent": 1.17
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 0  [0x1003b2148]",
+          "samples": 41,
+          "percent": 0.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76  [0x10041c18c]",
+          "samples": 39,
+          "percent": 0.93
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x10041c18c,0x10041c198,...]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 728  [0x10041b9e0]",
+          "samples": 30,
+          "percent": 0.72
+        },
+        {
+          "symbol": "_RNvMNtCsds78668uu60_2jx5valueNtB2_5Value6atomic  (in jx-m25-final) + 40  [0x1003e4d3c]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 592  [0x10043d718]",
+          "samples": 28,
+          "percent": 0.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108  [0x10041c1ac]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100  [0x10041c18c,0x10041c1a4]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 532  [0x10041b91c]",
+          "samples": 25,
+          "percent": 0.6
+        },
+        {
+          "symbol": "_RNvMs1_NtNtCsds78668uu60_2jx9construct6groupsINtB5_6GroupsNtNtB9_5value5ValueE3addB9_  (in jx-m25-final) + 756,612,...  [0x100404b70,0x100404ae0,...]",
+          "samples": 25,
+          "percent": 0.6
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx8evaluate7OperandEBF_  (in jx-m25-final) + 0  [0x1003b2a74]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-final) + 24  [0x1003b2160]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in jx-m25-final) + 64  [0x100405638]",
+          "samples": 23,
+          "percent": 0.55
+        }
+      ]
+    },
+    "profile-groups-before": {
+      "samples": 4169,
+      "percent": {
+        "scanner": 47.35,
+        "other": 37.49,
+        "allocation/drop/clone": 13.38,
+        "utf16/string decoding": 1.78
+      },
+      "scanner_phases_percent": {
+        "validation": 47.35
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100  [0x104e39838]",
+          "samples": 55,
+          "percent": 1.32
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88  [0x104e3982c]",
+          "samples": 54,
+          "percent": 1.3
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-baseline-final) + 536  [0x104e38fb4]",
+          "samples": 47,
+          "percent": 1.13
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-baseline-final) + 592  [0x104e5aa20]",
+          "samples": 33,
+          "percent": 0.79
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-baseline-final) + 0  [0x104dce084]",
+          "samples": 32,
+          "percent": 0.77
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100  [0x104e3982c,0x104e39838]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 28,
+          "percent": 0.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108  [0x104e39840]",
+          "samples": 24,
+          "percent": 0.58
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-baseline-final) + 24  [0x104dce09c]",
+          "samples": 24,
+          "percent": 0.58
+        },
+        {
+          "symbol": "_RNvMs0_NtNtCsds78668uu60_2jx4json4scanNtB5_7Scanner9raw_value  (in jx-m25-baseline-final) + 132  [0x104e1fc2c]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100  [0x104e39820,0x104e39838]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 8  [0x104e397dc]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in jx-m25-baseline-final) + 64  [0x104e22cc8]",
+          "samples": 22,
+          "percent": 0.53
+        },
+        {
+          "symbol": "_RNvMNtCsds78668uu60_2jx5valueNtB2_5Value6atomic  (in jx-m25-baseline-final) + 40  [0x104e02700]",
+          "samples": 22,
+          "percent": 0.53
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 436  [0x104e39988]",
+          "samples": 22,
+          "percent": 0.53
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-baseline-final) + 12,48,...  [0x104e38da8,0x104e38dcc,...]",
+          "samples": 21,
+          "percent": 0.5
+        }
+      ]
+    },
+    "profile-lookup-after": {
+      "samples": 4225,
+      "percent": {
+        "scanner": 87.27,
+        "fingerprint": 6.41,
+        "other": 3.81,
+        "lookup/search": 2.18,
+        "allocation/drop/clone": 0.33
+      },
+      "scanner_phases_percent": {
+        "validation": 87.27
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x1004b8198,0x1004b81ac,...]",
+          "samples": 1520,
+          "percent": 35.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x1004b81ac,0x1004b8198,...]",
+          "samples": 1432,
+          "percent": 33.89
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100,...  [0x1004b818c,0x1004b81a4,...]",
+          "samples": 99,
+          "percent": 2.34
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 96,80,...  [0x100430ecc,0x100430ebc,...]",
+          "samples": 42,
+          "percent": 0.99
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 68,52,...  [0x1004b774c,0x1004b773c,...]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 52  [0x1004d94fc]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 28,16,...  [0x1004ec600,0x1004ec5f4,...]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108  [0x1004b8198,0x1004b81ac]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-final) + 16,28,...  [0x1004ec5f4,0x1004ec600,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 68,48,...  [0x1004b774c,0x1004b7738,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in jx-m25-final) + 96,80  [0x100430ecc,0x100430ebc]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 68,28,...  [0x1004b774c,0x1004b7724,...]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCsds78668uu60_2jx  (in jx-m25-final) + 12,124,...  [0x1004f746c,0x1004f74dc,...]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 68,36,...  [0x1004b774c,0x1004b772c,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x1842e210c]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in jx-m25-final) + 68,24,...  [0x1004b774c,0x1004b7720,...]",
+          "samples": 13,
+          "percent": 0.31
+        }
+      ]
+    },
+    "profile-lookup-before": {
+      "samples": 4234,
+      "percent": {
+        "scanner": 54.42,
+        "utf16/string decoding": 30.89,
+        "lookup/search": 13.39,
+        "other": 1.06,
+        "allocation/drop/clone": 0.24
+      },
+      "scanner_phases_percent": {
+        "validation": 54.42
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76,...  [0x10434d838,0x10434d820,...]",
+          "samples": 370,
+          "percent": 8.74
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,28,...  [0x104381170,0x10438117c,...]",
+          "samples": 346,
+          "percent": 8.17
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,100,...  [0x10434d840,0x10434d838,...]",
+          "samples": 341,
+          "percent": 8.05
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100,...  [0x10434d82c,0x10434d838,...]",
+          "samples": 192,
+          "percent": 4.53
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,108,...  [0x10434d820,0x10434d840,...]",
+          "samples": 189,
+          "percent": 4.46
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100,...  [0x10434d820,0x10434d838,...]",
+          "samples": 165,
+          "percent": 3.9
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,520,...  [0x104381170,0x104381368,...]",
+          "samples": 161,
+          "percent": 3.8
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,36,...  [0x104381170,0x104381184,...]",
+          "samples": 141,
+          "percent": 3.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x10434d820,0x10434d82c,...]",
+          "samples": 133,
+          "percent": 3.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,88,...  [0x10434d840,0x10434d82c,...]",
+          "samples": 131,
+          "percent": 3.09
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,76,...  [0x10434d840,0x10434d820,...]",
+          "samples": 128,
+          "percent": 3.02
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 636,612,...  [0x104361a38,0x104361a20,...]",
+          "samples": 127,
+          "percent": 3.0
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,108,...  [0x10434d838,0x10434d840,...]",
+          "samples": 123,
+          "percent": 2.91
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 28,16,...  [0x10438117c,0x104381170,...]",
+          "samples": 122,
+          "percent": 2.88
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in jx-m25-baseline-final) + 16,172,...  [0x104381170,0x10438120c,...]",
+          "samples": 93,
+          "percent": 2.2
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx6lookup13constant_data  (in jx-m25-baseline-final) + 644,612,...  [0x104361a40,0x104361a20,...]",
+          "samples": 90,
+          "percent": 2.13
+        }
+      ]
+    },
+    "profile-strings-after": {
+      "samples": 4213,
+      "percent": {
+        "scanner": 37.53,
+        "other": 41.28,
+        "allocation/drop/clone": 20.56,
+        "utf16/string decoding": 0.64
+      },
+      "scanner_phases_percent": {
+        "validation": 37.53
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,108,...  [0x102ec4198,0x102ec41ac,...]",
+          "samples": 200,
+          "percent": 4.75
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x18432f030]",
+          "samples": 123,
+          "percent": 2.92
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100,...  [0x102ec418c,0x102ec41a4,...]",
+          "samples": 74,
+          "percent": 1.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 108,88,...  [0x102ec41ac,0x102ec4198,...]",
+          "samples": 69,
+          "percent": 1.64
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0  [0x18414306c]",
+          "samples": 62,
+          "percent": 1.47
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,100,...  [0x102ec4198,0x102ec41a4,...]",
+          "samples": 47,
+          "percent": 1.12
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,76,...  [0x102ec4198,0x102ec418c,...]",
+          "samples": 46,
+          "percent": 1.09
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,100  [0x102ec418c,0x102ec41a4]",
+          "samples": 44,
+          "percent": 1.04
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 100,76  [0x102ec41a4,0x102ec418c]",
+          "samples": 44,
+          "percent": 1.04
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 64  [0x102ee5508]",
+          "samples": 42,
+          "percent": 1.0
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 88,8,...  [0x102ec4198,0x102ec4148,...]",
+          "samples": 42,
+          "percent": 1.0
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-final) + 592  [0x102ee5718]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,88,...  [0x102ec418c,0x102ec4198,...]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-final) + 76,8,...  [0x102ec418c,0x102ec4148,...]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x184142144]",
+          "samples": 28,
+          "percent": 0.66
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0,28,...  [0x18414306c,0x184143088,...]",
+          "samples": 25,
+          "percent": 0.59
+        }
+      ]
+    },
+    "profile-strings-before": {
+      "samples": 4213,
+      "percent": {
+        "scanner": 38.62,
+        "other": 43.22,
+        "allocation/drop/clone": 17.54,
+        "utf16/string decoding": 0.62
+      },
+      "scanner_phases_percent": {
+        "validation": 38.62
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,108,...  [0x1027e182c,0x1027e1840,...]",
+          "samples": 176,
+          "percent": 4.18
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,88,...  [0x1027e1840,0x1027e182c,...]",
+          "samples": 83,
+          "percent": 1.97
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76,...  [0x1027e1838,0x1027e1820,...]",
+          "samples": 57,
+          "percent": 1.35
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,8,...  [0x1027e182c,0x1027e17dc,...]",
+          "samples": 54,
+          "percent": 1.28
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100,...  [0x1027e1820,0x1027e1838,...]",
+          "samples": 52,
+          "percent": 1.23
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,100  [0x1027e1820,0x1027e1838]",
+          "samples": 52,
+          "percent": 1.23
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 76,88,...  [0x1027e1820,0x1027e182c,...]",
+          "samples": 48,
+          "percent": 1.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 100,76  [0x1027e1838,0x1027e1820]",
+          "samples": 48,
+          "percent": 1.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,76,...  [0x1027e182c,0x1027e1820,...]",
+          "samples": 47,
+          "percent": 1.12
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,108  [0x1027e182c,0x1027e1840]",
+          "samples": 43,
+          "percent": 1.02
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 8,76,...  [0x1027e17dc,0x1027e1820,...]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-baseline-final) + 592  [0x102802a20]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 88,100,...  [0x1027e182c,0x1027e1838,...]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m25-baseline-final) + 108,76,...  [0x1027e1840,0x1027e1820,...]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m25-baseline-final) + 0  [0x102776084]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in jx-m25-baseline-final) + 64  [0x102802810]",
+          "samples": 31,
+          "percent": 0.74
+        }
+      ]
+    }
+  }
+}

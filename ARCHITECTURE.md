@@ -323,8 +323,12 @@ preserves observable identity under `in`, repeated calls and retained bindings w
 rebuilding members. Dynamic constructors use the same container access operations and
 can contain compiled subtrees. Compiled expressions remain `Send + Sync`.
 
-Static objects preserve member order and add a sorted index over encoded keys. Lookup
-binary-searches decoded UTF-16 units without allocating decoded keys. `$lookup` uses
+Static objects preserve member order and add a sorted `(fingerprint, member index)`
+array. A key's decoded UTF-16 units are hashed once with `DefaultHasher`; binary
+search compares integers, and exact string equality checks matching fingerprints.
+Escapes, surrogate units and collisions remain semantically exact; no key is copied.
+Unescaped lookup keys use byte equality. Empty/singleton objects need no fingerprint
+or search. `$lookup` uses
 this index for compiled objects and the ordinary member traversal for dynamic/raw
 objects. A direct call with a static object lowers to a small `StaticLookup` tree node:
 primitive results need no temporary object identity. At the expression root, a plain
@@ -665,3 +669,29 @@ reduces dispatch and keeps larger constructors within 32 registers.
 The interpreter remains one primitive loop with monomorphized loaders, not a parallel
 function evaluator. Generic callbacks, captured lexical projections, string/borrowed
 constructor leaves, tuple keys and general grouping retain their tree boundaries.
+
+## Demand acquisition and static lookup
+
+M25 extends validation capture to root-level literal calls whose arguments are plain
+paths or compiled constants, with at most 32 arguments and at least one field demand.
+`Expression` owns optional compiled demand metadata; no `Value`, context or frame
+metadata is added. One validating scan fills borrowed argument spans, sharing prefixes
+and repeated demands. Intermediate arrays defer only those arguments to the existing
+path/retention rules. Arguments are assembled in source order; the ordinary literal
+invocation still applies signatures, budgets, lexical capture, body effects and result
+normalization. Dynamic callees, computed/effectful arguments, nested calls and calls
+using only `$` keep tree acquisition. There is no speculative body evaluation or memo.
+
+Static lookup stores one 64-bit fingerprint beside each original member index rather
+than repeatedly decoding the search keys. The compiled index grows by eight bytes per
+member on this target; input objects acquire no index. Original member order and
+container identity are unchanged. Each lookup computes one runtime fingerprint;
+an escaped hit decodes units again for exact verification. Repeated keys are not
+cached across calls or records.
+
+Computed strings retain shared encoded storage and stable identity. A short stack
+buffer removed temporary allocations but did not improve realistic throughput in
+both-order repeats, so it is removed. Inline-storage controls stay benchmark-only;
+their construction gains do not justify widening the runtime's 24-byte `Value` or
+changing dynamic closure retention. No string representation or function/plan
+representation changes are retained.

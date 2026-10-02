@@ -1,0 +1,10 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+acquisition/string_concat,100,3254007,3225877,-0.86,1.0,2.0,32.0,45.0
+acquisition/string_concat,500,1059175,1061283,0.2,1.0,2.0,32.0,45.0
+acquisition/string_construct,500,559445,565434,1.07,6.0,9.0,384.0,417.0
+acquisition/string_callback,100,1312642,1349618,2.82,12.0,14.0,928.0,945.0
+conversion/concat,500,699318,695584,-0.53,11.0,14.0,212.0,254.0
+regions/groups,41828,1590,1584,-0.38,4017.0,4017.0,154528.0,154528.0
+regions/nested_map,41828,3653,3637,-0.44,14.0,14.0,49352.0,49352.0
+execution/arithmetic,100,6343533,6323058,-0.32,0.0,0.0,0.0,0.0
+acquisition/call_three,500,1997927,2013392,0.77,3.0,3.0,184.0,184.0

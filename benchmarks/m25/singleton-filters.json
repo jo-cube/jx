@@ -1,0 +1,18 @@
+[
+  {
+    "filter": "acquisition/lookup_1_short_raw",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/lookup_4_short_raw",
+    "bytes": 500
+  },
+  {
+    "filter": "execution/lookup_8192",
+    "bytes": 501
+  },
+  {
+    "filter": "regions/groups",
+    "bytes": 41828
+  }
+]

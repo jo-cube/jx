@@ -1,0 +1,5 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+acquisition/lookup_1_short_raw,500,3089386,3325261,7.64,0.0,0.0,0.0,0.0
+acquisition/lookup_4_short_raw,500,3083385,3059152,-0.79,0.0,0.0,0.0,0.0
+execution/lookup_8192,501,2945754,2881327,-2.19,0.0,0.0,0.0,0.0
+regions/groups,41828,1584,1575,-0.57,4017.0,4017.0,154528.0,154528.0

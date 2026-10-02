@@ -1,0 +1,89 @@
+{
+  "baseline_commit": "3fd6aceef76ed28d87211a943a8a0a3ebe9c04c5",
+  "measured_at_utc": "2026-10-02T16:47:47.557275+00:00",
+  "rust": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "machine": "Apple M4",
+  "binary_hashes": {
+    "before_initial": "ea3e06cc9302b584a7fd45489f7ba1f69c1daebdbe8b2bff1b8572f0275ea5b2",
+    "before_final": "075cfe7fc9270d6f7c1a1aa561cb2d8801d40dc7e5d6f8013d15e6ca00e92aec",
+    "hash": "585e07e868b6955d9619f28f478695f1b2bbe4431c8a1fdfcd0054911d8db108",
+    "stack_initial": "9c934077a337f9911d012083bbc94828b154cdc48557d678a1bcdcc1c4118720",
+    "candidate_stack": "3fee13e17f8f09849eaa622fb5a39c25f96dbd9ec5e13586606889ea1d5ed7dc",
+    "no_stack": "5454d8d9b2295779f0fc23d41fa7932384ca64d56ff428d2e6e897cb352da924",
+    "singleton": "b48ecad9021dedf29518b3ef65bead345c3a98ddb638d4da7290fccb55483bcd",
+    "final": "8c90ca95187d61115e995a17d3cdbdceadce5d400860bba0bec55f8abb9261de",
+    "cli": "c14b3e03c3721bef8b69c0be2de635564f5c00593079ea631bff71cf51358e92",
+    "workspace_benchmark": "8c90ca95187d61115e995a17d3cdbdceadce5d400860bba0bec55f8abb9261de"
+  },
+  "profile": "Workspace release/bench profile, counting allocator enabled. Full validation and result consumption timed; serialization only in existing named write controls.",
+  "method": "Committed M24 engine with final benchmark definitions overlaid. Exact executable copies; final pairs seven 300 ms samples in both orders. No timing/profiling overlaps with builds/tests/differentials or other timing runs. Full sweep uses seven 25 ms samples; the original 50 ms sweep was interrupted without exit status.",
+  "reproduce_baseline": "Archive/checkout 3fd6ace; overlay crates/jx/benches from M25. cargo bench -p jx --bench throughput --locked --offline --no-run, using a separate CARGO_TARGET_DIR. Copy the executable Cargo reports; workload inputs, checks, budgets and counting allocator are identical.",
+  "commands": [
+    "cargo bench -p jx --bench throughput --locked --no-run",
+    "python3 benchmarks/m24/measure.py BEFORE FINAL benchmarks/m25/filters.json benchmarks/m25/final-paired",
+    "python3 benchmarks/m24/measure.py BEFORE FINAL benchmarks/m25/filters.json benchmarks/m25/final-reverse --reverse",
+    "JX_BENCH_SAMPLE_MS=25 just bench (stdout after.csv, stderr bench.log, exit bench-exit.txt)",
+    "just all; just build (sequential, checks.log)",
+    "All 22 node scripts/check-*.cjs /private/tmp/jx-jsonata-reference target/release/jx commands in differential.txt",
+    "python3 benchmarks/m25/profile.py BEFORE FINAL benchmarks/m25",
+    "python3 benchmarks/m25/summarize-profiles.py",
+    "python3 benchmarks/m24/measure.py BEFORE FINAL benchmarks/m25/regression-filters.json benchmarks/m25/regression (repeat --reverse)",
+    "sample PID 5 1 -file TRACE (after first timed sample, groups/41828 B and short callback/100 B, JX_BENCH_SAMPLE_MS=1500)"
+  ],
+  "upstream": {
+    "version": "2.2.0",
+    "revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+    "cases": 1679,
+    "supported": 1390,
+    "expected_errors": 288,
+    "resource_guards": 1,
+    "blockers": 0,
+    "comparisons": 54049,
+    "suites": 22
+  },
+  "paired_final": {
+    "selectors": 48,
+    "workload_groups": 48,
+    "samples_per_binary_per_order": 7,
+    "sample_ms": 300,
+    "orders": [
+      "before/after",
+      "after/before"
+    ]
+  },
+  "artifacts": {
+    "before.csv, before-smoke.csv": "Initial M24 baseline: 84 newly added call/lookup/string workloads, before short-key, singleton and storage controls.",
+    "hash.csv": "Initial capture + fingerprint index + generic raw equality; seven 100 ms samples.",
+    "stack.csv": "Same initial definitions plus short temporary stack-buffer strings; later removed.",
+    "storage.csv": "Construction-only shared/stack/inline Rust controls, seven 300 ms samples. No JSON validation, traversal, escaping or general Value/retention model.",
+    "paired-*, reverse-*": "Initial final-workload definitions: candidate still has stack-buffer strings, generic raw equality and hashes singleton keys.",
+    "stack-isolation-*": "Removing temporary production string buffers in both orders; allocations drop with buffers, realistic speed gains fail to repeat.",
+    "singleton-*": "Isolated lazy hashing for empty/singleton maps. Small-map regression recovered without a general small-map index.",
+    "equality-*": "Isolated removal of generic raw equality; helper retained only in lookup. Some grouping recovery did not retain final baseline parity.",
+    "candidate-profile-* /candidate-profiles.json": "Initial stack/generic-equality candidate; qualitative attribution only, not final code.",
+    "profile-* /profiles.json": "Retained production code versus baseline, full sampled call-tree traces and disjoint approximate self attribution. Regression groups/callback traces included.",
+    "dispatch.json": "Native main tree/scalar/evaluation prologues; tree stack storage unchanged.",
+    "final-paired-*, final-reverse-*": "Final production and benchmark definitions versus M24; primary gain/regression claims.",
+    "regression-*": "Additional both-order isolated repeats for grouping, tiny arithmetic, short callbacks and gain controls.",
+    "interrupted-after.csv /interrupted-bench.log": "Incomplete first full sweep, no successful exit recorded. Excluded from completion claims.",
+    "after.csv /bench.log /bench-exit.txt": "Final full seven 25 ms sweep, allocation assertions and exit code.",
+    "checks.log /differential.txt": "Final formatting/strict Clippy/tests/build, all classifications and 22 differential suites."
+  },
+  "limitations": [
+    "Allocation calls and requested bytes measured; no live retention, RSS or latency-distribution claim.",
+    "Static compiled object index adds eight bytes/member; no decoded key copies or per-input index.",
+    "Argument capture is root literal-call-only, <=32 plain-path/constant arguments, at least one field demand. Intermediate arrays individually defer.",
+    "Repeated static lookup still hashes/verifies each key; only existing input demands are shared. Varying-key fixture alternates three hits and one miss.",
+    "Main Value/context/frame layouts unchanged. Short owned-string storage/buffer experiments removed from production.",
+    "Grouping loses roughly six percent in isolated repeats. No new scans/frames/allocations; similar sampled category proportions and unchanged Node::run stack. Exact code-generation/layout cause not isolated."
+  ],
+  "full_final": {
+    "workload_groups": 1690,
+    "samples": 11830,
+    "timed_seconds": 384.643,
+    "sample_ms": 25,
+    "exit": 0
+  },
+  "completed_at_utc": "2026-10-02T16:51:40.752626+00:00"
+}

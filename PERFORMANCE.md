@@ -1850,3 +1850,100 @@ numeric-decoding costs remain important; broader native compilation is not intro
 [checks](benchmarks/m24/checks.log) and [differentials](benchmarks/m24/differential.txt)
 retain evidence. `just all`, `just build`, all **1,679** upstream classifications and
 **52,796** differential comparisons pass. Latency distributions remain unmeasured.
+
+
+## Milestone 25 — demand acquisition and static lookup
+
+M24 commit `3fd6ace` is the baseline, with identical final benchmark definitions
+and allocation budgets overlaid. Apple M4 / Rust 1.98.1 / release profile, full
+validation and result consumption timed; serialization excluded. The 126 new
+workloads cover 100 B–1 MiB calls, 1–32,768-key maps, raw/escaped/Unicode keys,
+varying hits/misses, repeated lookups, mixed constructors and short strings.
+The full suite has **1,690 workloads /11,830 samples**. Paired comparisons use seven
+300 ms samples in both process orders; full `just bench` uses seven 25 ms samples. Timing never overlaps with builds, checks or other timing.
+
+Eligible root literal calls acquire plain-path arguments during validation using
+existing demand capture, sharing repeated paths and prefixes. Intermediate arrays
+defer to original traversal. Static objects retain a sorted `(fingerprint, member)`
+index; one runtime UTF-16 fingerprint replaces repeated string comparisons during
+binary search. Exact equality checks collisions. Empty/singleton maps bypass hashing;
+unescaped lookup equality uses bytes. There is no per-record index, key cache,
+function-result memo, new plan instruction or JIT.
+
+Selected final forward medians; reverse-order runs retain the gains:
+
+| Workload | Input | M24 records/s | M25 records/s | Ratio |
+| --- | ---: | ---: | ---: | ---: |
+| Three field arguments | 500 B | 699,661 | 2,004,600 | 2.87× |
+| Six field arguments | 500 B | 388,595 | 1,564,472 | 4.03× |
+| Three nested field arguments | 500 B | 680,799 | 2,036,982 | 2.99× |
+| Three field arguments | 1 MiB | 475 | 1,854 | 3.90× |
+| 8,192 short keys | 500 B | 1,837,419 | 2,932,110 | 1.60× |
+| 32,768 shared-prefix ASCII keys | 500 B | 655,863 | 2,316,505 | 3.53× |
+| 8,192 Unicode keys, escaped input | 500 B | 1,064,378 | 2,414,597 | 2.27× |
+| Repeated 4,096-key lookup | 500 B | 315,361 | 1,474,698 | 4.68× |
+| Lookup + arithmetic + construction | 500 B | 439,655 | 1,535,566 | 3.49× |
+
+Tiny three-argument calls gain **2.09–2.12×**; 10 KiB calls **3.80×**. Singleton
+lookups gain **4.7–5.4%**, four-key maps **9.8–11.3%**, 32-key maps **29.7–31.0%**.
+Varying 4,096-key ASCII hits/misses gain **3.20×**; raw Unicode keys **1.97–1.98×**.
+Repeated lookup and mixed constructor gains do not rely on memoization: existing
+plans share input demands, while each lookup still verifies its key.
+
+Five-second sampling profiles confirm acquisition removal: three-argument calls
+previously spend about **60%** of sampled self time scanning arguments after validation;
+that phase disappears. Validation/capture then accounts for about **73%** of the much
+shorter execution. At 8,192 short keys, decoder/search attribution falls from about
+**44%** to **9%** including fingerprinting; scanning becomes **87%**. At 32,768 escaped
+Unicode keys, decoding/search is about **72%** before versus **30%** including hashing
+after. These are approximate sampled proportions, affected by inlining, not exact
+cycle counts. Escaped hits decode once for hashing and again for exact verification.
+
+Call allocations are unchanged: three arguments **3 calls /184 requested B**, six
+arguments **4 /328 B**. Lookups remain **0**; mixed constructors **2 /136 B**. The
+compiled index adds **8 B/member** on this target, with no decoded key copies.
+`Value` remains **24 B**; runtime contexts/frames gain no fields. Counters measure
+allocation requests, not live retention or RSS.
+
+Owned strings remain shared encoded `Rc<str>` storage. Construction-only Rust
+controls show an inline 12-byte string can avoid both allocations and run roughly
+3.5× faster, but widen string storage **16 → 24 B** and risk widening the universal
+value while complicating identity/retention. A localized temporary stack buffer was tested in
+the real engine: concatenation **2 → 1** allocation, mixed string construction
+**9 → 6 /417 → 384 B**, but realistic paired throughput gains did not repeat (about
+±1%). Both changes are rejected; benchmark controls remain for future investigation.
+Borrowed strings still allocate **0**, ordinary concatenation **2 /45 B**, and the
+mixed string constructor **9 /417 B**. Borrowed/Unicode comparison, concatenation,
+construction and conversion controls are effectively unchanged.
+
+Ordinary paths, 500 B arithmetic/conditionals, sorts, dynamic eval and named calls
+remain within roughly **2.6%** in final pairs. Nested map improves **15.7–16.2%** despite
+not using acquisition; this is a build/code-generation observation, not a removed
+scan claim. Tiny arithmetic loses **1.9–2.4%**, short-string callbacks **3.1–4.5%**,
+and mixed grouping **5.9–7.7%**; allocations are unchanged. A generic raw-equality
+rewrite was removed: isolated repeats recover grouping about **5.5%**, but later
+baseline comparisons still show a loss. Raw equality is confined to lookup.
+Separate final repeats retain about **6.1%** grouping loss, while callback/tiny arithmetic
+losses narrow to **1.8–2.6% /1.1–1.8%**. Grouping profiles retain almost identical
+scanner (**47%**) and allocation/drop/clone (**13%**) proportions. These controls
+execute neither acquisition nor fingerprint lookup; source and native prologue review
+find no new scans/frames and unchanged main tree-dispatch stack storage. The residual
+code-generation/layout cause is not isolated; no unrelated grouping special case is
+introduced. The interrupted first full sweep is labelled separately.
+
+Demand acquisition deliberately remains root-literal-only: computed arguments,
+variable/dynamic callees and nested calls keep tree traversal. Scanner costs dominate
+successful large lookups and large calls; dynamic groups still construct keys and
+retain rows. Broader argument regions and escaped-key decoding reuse remain possible
+future work, not new indexing/ownership machinery in this milestone.
+
+[Full samples](benchmarks/m25/after.csv),
+[paired](benchmarks/m25/final-paired-comparison.csv) /
+[reverse](benchmarks/m25/final-reverse-comparison.csv),
+[environment/commands](benchmarks/m25/environment.json),
+[source hashes](benchmarks/m25/source.json), [profiles](benchmarks/m25/profiles.json),
+[string-storage controls](benchmarks/m25/storage.csv),
+[checks](benchmarks/m25/checks.log) and [differentials](benchmarks/m25/differential.txt)
+retain final and labelled experimental evidence. `just all`, `just build`, all **1,679**
+upstream classifications and **54,049** differential comparisons pass. Latency
+distributions remain unmeasured.

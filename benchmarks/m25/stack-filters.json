@@ -1,0 +1,38 @@
+[
+  {
+    "filter": "acquisition/string_concat",
+    "bytes": 100
+  },
+  {
+    "filter": "acquisition/string_concat",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/string_construct",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 100
+  },
+  {
+    "filter": "conversion/concat",
+    "bytes": 500
+  },
+  {
+    "filter": "regions/groups",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/nested_map",
+    "bytes": 41828
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 100
+  },
+  {
+    "filter": "acquisition/call_three",
+    "bytes": 500
+  }
+]
