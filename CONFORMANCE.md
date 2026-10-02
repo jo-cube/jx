@@ -900,3 +900,13 @@ Validation and CLI tests preserve error offsets/order and complete-record output
 Executable-boundary tests check rejected programs, guards, shared code lifetime and
 final ownership release. `JX_DIFFERENTIAL_JIT=1` selects `--jit` in the optional
 upstream differential runner; it requires a CLI built with `--features jit`.
+
+## M27 runtime-boundary regression coverage
+
+M27 changes lifetime/dispatch boundaries, with no classification changes. The
+[readable runtime corpus](tests/semantics/runtime.json) and `tests/runtime.rs` cover
+transient/escaping captures, nested containers, partials/chains, transforms, rebinding,
+borrowed leaves, signatures, guard fallback, validation and effect order. Internal
+regressions exercise older-frame writes and closure focus as escape roots. Optional
+`check-runtime.cjs` adds **173** pinned-upstream comparisons of these and width/shape
+variants. All 23 differential suites now cover **54,222** comparisons.

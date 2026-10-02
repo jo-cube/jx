@@ -1,0 +1,291 @@
+[
+  {
+    "rule": "temporary callback closures",
+    "expr": "$map(a,function($x){($f:=function(){$x};$f()+1)})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "rule": "tail-calling temporary closure",
+    "expr": "$map(a,function($x){($f:=function(){$x};$f())})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "rule": "recursive local closure",
+    "expr": "$map(a,function($x){($f:=function($n){$n=0?$x:$f($n-1)};$f(4)+1)})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "rule": "escaped array members",
+    "expr": "($fns:=$map(a,function($x){[function(){$x}]});$map($fns,function($fs){$fs[0]()}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "rule": "escaped object members",
+    "expr": "($saved:=$map(a,function($x){{\"f\":function(){$x}}});$map($saved,function($o){$o.f()}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "rule": "escaped partial application",
+    "expr": "($fns:=$map(a,function($x){function($a,$b){$a+$b}(?,$x)});$map($fns,function($f){$f(10)}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      11,
+      12,
+      13
+    ]
+  },
+  {
+    "rule": "escaped chain",
+    "expr": "($fns:=$map(a,function($x){function($v){$v+$x} ~> function($v){$v*2}});$map($fns,function($f){$f(10)}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      22,
+      24,
+      26
+    ]
+  },
+  {
+    "rule": "captured rebinding",
+    "expr": "($make:=function($x){($f:=function(){$x};$x:=$x+1;$f)};$fns:=$map(a,$make);$map($fns,function($f){$f()}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "rule": "root and current focus",
+    "expr": "($make:=function($x){function(){[$x,$.n,$$.n]}};nested.$make(2)())",
+    "data": {
+      "n": 7,
+      "nested": {
+        "n": 9
+      }
+    },
+    "items": [
+      [
+        2,
+        7,
+        7
+      ]
+    ]
+  },
+  {
+    "rule": "transient reduce closures",
+    "expr": "$reduce(a,function($acc,$x){($f:=function(){$x};$acc+$f())},0)",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      6
+    ]
+  },
+  {
+    "rule": "transient comparator closures",
+    "expr": "$sort(a,function($a,$b){($f:=function($x){$x};$f($a)>$f($b))})",
+    "data": {
+      "a": [
+        3,
+        1,
+        2
+      ]
+    },
+    "items": [
+      [
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "rule": "dynamic primitive closure",
+    "expr": "($f:=$eval(code);$map(a,$f))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ],
+      "code": "function($x){$x*2}"
+    },
+    "items": [
+      2,
+      4,
+      6
+    ]
+  },
+  {
+    "rule": "dynamic signature closure",
+    "expr": "($f:=$eval(code);$map(a,$f))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ],
+      "code": "function($x)<n:n>{$x*2}"
+    },
+    "items": [
+      2,
+      4,
+      6
+    ]
+  },
+  {
+    "rule": "dynamic context closure",
+    "expr": "($f:=$eval(code,obj);$f(4))",
+    "data": {
+      "obj": {
+        "n": 3
+      },
+      "code": "function($x){$x+n}"
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "rule": "dynamic object fallback",
+    "expr": "($f:=$eval(code);$map(a,$f))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ],
+      "code": "function($x){{\"n\":$x+1,\"s\":\"literal\"}}"
+    },
+    "items": [
+      {
+        "n": 2,
+        "s": "literal"
+      },
+      {
+        "n": 3,
+        "s": "literal"
+      },
+      {
+        "n": 4,
+        "s": "literal"
+      }
+    ]
+  },
+  {
+    "rule": "dynamic escaped closure",
+    "expr": "($f:=$eval(code);$fns:=$map(a,$f);$map($fns,function($g){$g()}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ],
+      "code": "function($x){function(){$x*2}}"
+    },
+    "items": [
+      2,
+      4,
+      6
+    ]
+  },
+  {
+    "rule": "escaped transform",
+    "expr": "($ts:=$map(a,function($x){|$|{\"n\":$x}|});$map($ts,function($t){$t({})}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      {
+        "n": 1
+      },
+      {
+        "n": 2
+      },
+      {
+        "n": 3
+      }
+    ]
+  }
+]
