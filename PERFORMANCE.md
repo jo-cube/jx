@@ -1763,3 +1763,90 @@ IR or JIT is justified by these scanner/retention improvements.
 [checks](benchmarks/m23/checks.log) and [differentials](benchmarks/m23/differential.txt)
 retain the evidence. All **1,679** classifications and **50,839** differential comparisons
 pass. Latency distributions remain unmeasured.
+
+
+## Milestone 24 — broader pure-region lowering
+
+M23 commit `e345b37` is the baseline, built with the same final workload definitions
+and counting allocator. Apple M4 / Rust 1.98.1 / release profile, validation and full
+consumption timed; serialization excluded. Forty-seven new cases bring the suite to
+**1,564 workloads**, including 1/8/128/1,024-row callbacks and 100 B–1 MiB sparse
+records. Final comparisons use seven 300 ms samples in both orders; the complete
+`just bench` uses seven 50 ms samples. Timing processes never overlap. Baseline
+allocation budgets are looser; final budgets additionally assert the retained gains.
+
+Baseline sampling locates callback work in repeated field scans, route/sequence
+normalization, lexical lookup and value/frame retention. M24 reuses the primitive
+interpreter for parameter/focus loads, skipping parameter frames on successful pure
+body plans. Resolved literal filter/map callbacks can fuse into numeric folds, sharing
+candidate demands during boundary scanning. Dominating numeric/comparison results
+share registers, allowing wider constructors to fit the existing 32-instruction bound.
+No instruction, value/context variant, dependency, input cache or JIT is added.
+
+Selected final forward medians; reverse runs retain these gains:
+
+| Workload | Input | M23 records/s | M24 records/s | Ratio |
+| --- | ---: | ---: | ---: | ---: |
+| Nested-field map, 1,024 rows | 41,828 B | 1,208 | 3,636 | 3.01× |
+| Numeric reduce, 1,024 rows | 41,828 B | 1,872 | 3,555 | 1.90× |
+| Filter → map → sum, 1,024 rows | 41,828 B | 1,258 | 5,833 | 4.64× |
+| Computed-object map, 1,024 rows | 41,828 B | 563 | 3,059 | 5.43× |
+| Callback comparator sort, 1,024 rows | 21,428 B | 617 | 1,498 | 2.43× |
+| Filter → callback sort → construction | 21,428 B | 909 | 1,474 | 1.62× |
+| Eight reusable computed members | 500 B | 265,640 | 2,207,131 | 8.31× |
+| Sparse nested-field callback | 1 MiB | 477 | 946 | 1.98× |
+
+The one-row /47 B map gains **1.89–1.97×**; direct 500 B calls gain **8.0–8.4%**.
+Single-operation, signed and partial callbacks gain roughly **2–7%** while removing
+two allocations /384 requested B. The isolated reuse experiment improves existing
+small constructors modestly; its main benefit is keeping an eight-member constructor
+in one plan rather than repeatedly scanning through separate tree members.
+
+At 1,024 rows, map allocations fall **3,088 → 14**, with **344,648 → 49,352 requested B**;
+reduce falls **2,054 → 4**, **197,240 → 248 B**; the fused filtered aggregate falls
+**3,387 → 0**, **421,464 → 0 B**. Object callbacks still own their results:
+**11,133 → 2,062 calls**, **1,256,232 → 237,768 B**. Comparator sorting falls
+**10,278 → 36 calls**, **1,171,896 → 188,472 B**. The eight-member constructor uses
+**2 calls /424 B**, down from **3 /1,064 B**. These are allocation requests, including
+counter overhead in throughput, not live retained-memory or RSS measurements.
+
+Ordinary path/scalar/branch/captured-demand controls remain within about **1.2%**;
+tiny predicate is +1.4% /−1.0% and computed-last −0.2% /+0.8%. Older two-row filtered
+sum loses **2.1–2.3%**, wide scalar sorting **2.0–3.0%**, tuple sorting **4.2–4.8%**,
+and the new mixed grouping control **4.0–5.2%**. Their allocations are unchanged. Source and native stack review
+find no extra scans, frames or value/context storage; common tree-dispatch stack
+storage is unchanged. The residual dispatch/code-layout cost is not isolated.
+Earlier builds lost about **9.4%** on nested sum and **7%** on distinct groups;
+final outlined/lazy fallback boundaries recover these to within **1%** in both orders.
+Those controls do not execute the fallback helper, so this is not evidence of a
+removed per-record fallback call. Pre-final samples remain labelled as experiments.
+
+Dynamic code retains its compilation cost. Removing unused source vectors and using
+an instruction-slot bitmask keeps the dynamic scalar fixture at M23's **21 calls
+/892 B**, with throughput −0.5–2.2%. Immutable callback plans are shared on dynamic
+export rather than deep-cloned: an isolated comparison removes **5 calls /286 B**.
+The eight-item escaping-closure fixture uses **99 → 102 calls**, but fewer requested
+bytes (**9,116 → 7,899 B**) and essentially unchanged throughput (−0.1% /+0.5%).
+At 1,024 items it falls **8,234 → 7,221 calls**, **866,620 → 645,947 B**, with **8.9–9.1%**
+more throughput. Ordinary calls borrow the plan without refcount operations.
+
+Whole-body plans reject free lexical reads, ancestry, dynamic calls, eval, clock,
+randomness and diagnostics. Signatures and call guards run before callback plans;
+typed misses retry the original body. Fused callbacks additionally exclude signatures
+and non-item parameters. Failed regions publish no partial output. Strings, directly
+borrowed returns, general grouping and tuple keys keep tree execution. Sorting still
+retains keys/results; unfused consumers and complex lexical callbacks can rescan or
+retain frames, and dynamic closures still use the ownership bridge. Scanner and
+numeric-decoding costs remain important; broader native compilation is not introduced.
+
+[Full samples](benchmarks/m24/after.csv),
+[paired](benchmarks/m24/final-paired-comparison.csv) /
+[reverse](benchmarks/m24/final-reverse-comparison.csv),
+[reuse experiment](benchmarks/m24/cse-comparison.csv),
+[plan-sharing experiment](benchmarks/m24/sharing-comparison.csv) /
+[reverse](benchmarks/m24/sharing-reverse-comparison.csv),
+[environment/commands](benchmarks/m24/environment.json),
+[source hashes](benchmarks/m24/source.json), [profiles](benchmarks/m24/profiles.json),
+[checks](benchmarks/m24/checks.log) and [differentials](benchmarks/m24/differential.txt)
+retain evidence. `just all`, `just build`, all **1,679** upstream classifications and
+**52,796** differential comparisons pass. Latency distributions remain unmeasured.

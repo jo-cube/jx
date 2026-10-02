@@ -34,6 +34,8 @@ mod matchers;
 mod navigation;
 #[path = "workloads/plans.rs"]
 mod plans;
+#[path = "workloads/regions.rs"]
+mod regions;
 #[path = "workloads/scalars.rs"]
 mod scalars;
 #[path = "workloads/structure.rs"]
@@ -323,4 +325,5 @@ fn main() {
     matchers::run(smoke);
     structure::run(smoke);
     consolidation::run(smoke);
+    regions::run(smoke);
 }

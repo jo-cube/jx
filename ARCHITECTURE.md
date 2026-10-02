@@ -171,10 +171,13 @@ invocation API. Escaped JSON values keep their ordinary borrowing lifetimes.
 Non-tail calls remain bounded by 64 active invocations and 512 accumulated body-tree
 levels, alongside the parser's 128-level limit. A tail chain has a separate deterministic
 one-million-iteration budget (`EvaluationLimit`), so infinite calls do not run forever.
-Scope and function control flow stay in tree execution; numeric lowering is unchanged.
+Call resolution, signatures and tail control stay in tree execution. Pure parameter-driven
+bodies can use bounded plans before allocating a parameter frame.
 
-Function definitions hold formal parameters, body, optional compiled signature and a
-tail-control flag. Closures borrow that definition and retain only focus/frame metadata.
+Function definitions hold formal parameters, body, optional compiled signature, optional
+pure body plan and a tail-control flag. The immutable body plan uses `Arc`, so exporting
+a dynamic definition shares its compiled metadata. Calls borrow it without refcount
+operations. Closures borrow the definition and retain only focus/frame metadata.
 `function/signature.rs` validates masks, optional/variadic matching and shallow array
 subtypes once per invocation; pictures and signatures are never parsed per record.
 Type checks borrow value tags, including validated input tokens; they do not decode
@@ -345,13 +348,15 @@ for these specializations.
 operands and forward branch targets use byte indexes. Instructions load paths or
 indexed static lookups, create primitive constants, negate, perform numeric binary
 operations, test effective boolean values, copy/merge results and jump. Scalar
-regions need at least three operations. Calls, lexical effects, general sequences,
-string operations and unsupported/oversized regions retain tree evaluation; their
+regions need at least three operations; eligible pure callback bodies need one.
+Call resolution, lexical effects, general sequences, string operations and
+unsupported/oversized regions retain tree evaluation; their
 eligible children can still lower. There is no general IR or JIT.
 
 Numbers, booleans and missing stay in stack registers. Repeated path loads share a
-slot only when that load dominates its use. Conditional joins restore the preceding
-load set; skipped branches neither evaluate arithmetic nor trigger guards.
+slot only when that load dominates its use. Dominating primitive computations can
+share slots too. Conditional joins restore the preceding load/result sets; skipped
+branches neither evaluate arithmetic nor trigger guards.
 
 `json/demand.rs` stores a small tree of compiled path prefixes, with bit masks naming
 at most 32 load destinations. A root plan captures borrowed spans while validating
@@ -383,8 +388,10 @@ Two enclosing operations reuse this same primitive program:
   output, without the generic constructor's temporary key groups. Dynamic keys,
   grouped array contexts and directly borrowed member values keep tree construction.
 
-Each plan retains its original pure tree. A type/shape miss retries that entire region
-before publishing output, preserving exact errors and upstream-stage precedence.
+Each region retains its original tree; callable fusion has a narrower syntactic purity
+proof even though global analysis conservatively marks lambda creation as effectful.
+A type/shape miss retries that entire region before publishing output, preserving exact
+errors and upstream-stage precedence.
 No lexical effects can replay. Outputs that directly select input tokens stay on the
 tree, preserving borrowing and large numeric tokens. Consumer cancellation between
 mapped outputs continues through the existing stream. Whole-record validation precedes
@@ -628,3 +635,33 @@ uncached. Group indexing changes lookup only, not key/value evaluation order. Li
 callee borrowing applies to ordinary calls; pending tail callees still retain their frame.
 Dynamic closure bridges and genuinely captured frames keep their established ownership
 rules. See PERFORMANCE for measured gains, added sort/group storage and remaining costs.
+
+## Broader pure regions
+
+M24 adds parameter sources to the existing primitive plan, without new instructions,
+value variants or context fields. Literal arithmetic/boolean/conditional bodies and
+fixed objects with computed numeric/boolean members can share parameter/focus field
+demands. Argument sources are compact compiled indices; raw arguments capture demands
+into stack scratch, while constructed arguments use existing navigation. Signatures
+and call budgets run first. Successful plans skip parameter frames; failed speculation
+enters the original call body with its ordinary frame and exact diagnostic offsets.
+Free lexical names, ancestry, dynamic calls, eval, clocks, randomness and diagnostic
+builtins remain outside whole body plans. Borrowed input returned directly stays on
+the tree; scalar registers only represent values consumed by an operation.
+
+Direct numeric aggregates over resolved `$map`, optionally preceded by `$filter`,
+can use the existing candidate cursor and fold. Fusion requires literal callbacks
+without signatures, one item parameter, boolean predicates and only item-derived
+primitive loads/operations. Candidates capture shared demands during boundary scanning;
+no intermediate callback sequence or lexical arena is needed on successful root plans.
+Any unsupported shape or failed operation retries the staged source before exposing
+output, preserving filter-before-map errors. Fallback uses the enclosing scope when
+present, otherwise creates its scope lazily. Effects are never speculated or cached.
+
+Compile-time reuse covers dominating arithmetic/comparison and negation results.
+Branch joins discard non-dominating loads/results; a compile-only slot mask tracks
+availability without allocating. Mutable truth/merge slots are never reused. This
+reduces dispatch and keeps larger constructors within 32 registers.
+The interpreter remains one primitive loop with monomorphized loaders, not a parallel
+function evaluator. Generic callbacks, captured lexical projections, string/borrowed
+constructor leaves, tuple keys and general grouping retain their tree boundaries.

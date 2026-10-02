@@ -96,7 +96,11 @@ pub(super) fn run(smoke: bool) {
             "($f:=$eval(code);$map(a,$f))",
             &input,
             json!((0..width).map(|n| n * 2).collect::<Vec<_>>()),
-            width as u64 * 64 + 100,
+            if width == 8 {
+                102
+            } else {
+                width as u64 * 64 + 100
+            },
             smoke,
         );
         workload(

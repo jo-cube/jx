@@ -1,0 +1,26 @@
+[
+  {
+    "filter": "regions/object",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/object",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/object",
+    "bytes": 5042
+  },
+  {
+    "filter": "regions/object",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/reusable_members",
+    "bytes": 100
+  },
+  {
+    "filter": "regions/reusable_members",
+    "bytes": 500
+  }
+]

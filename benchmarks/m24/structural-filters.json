@@ -1,0 +1,30 @@
+[
+  {
+    "filter": "consolidation/nested_sum",
+    "bytes": 983
+  },
+  {
+    "filter": "consolidation/nested_path",
+    "bytes": 983
+  },
+  {
+    "filter": "consolidation/distinct_groups",
+    "bytes": 61112
+  },
+  {
+    "filter": "regions/wide_members",
+    "bytes": 100
+  },
+  {
+    "filter": "regions/wide_members",
+    "bytes": 500
+  },
+  {
+    "filter": "regions/wide_members",
+    "bytes": 10240
+  },
+  {
+    "filter": "regions/reusable_members",
+    "bytes": 100
+  }
+]

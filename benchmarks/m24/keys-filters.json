@@ -1,0 +1,30 @@
+[
+  {
+    "filter": "helper/sort_callback",
+    "bytes": 162
+  },
+  {
+    "filter": "helper/sort_callback",
+    "bytes": 2588
+  },
+  {
+    "filter": "helper/sort_callback",
+    "bytes": 21428
+  },
+  {
+    "filter": "helper/filtered_sorted",
+    "bytes": 21428
+  },
+  {
+    "filter": "regions/groups",
+    "bytes": 41828
+  },
+  {
+    "filter": "consolidation/sort_tuple",
+    "bytes": 61112
+  },
+  {
+    "filter": "aggregate/filtered_sum",
+    "bytes": 500
+  }
+]

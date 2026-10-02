@@ -1,0 +1,214 @@
+[
+  {
+    "filter": "regions/map",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/nested_map",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/indexed",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/reduce",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/filtered_sum",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/object",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/sort",
+    "bytes": 47
+  },
+  {
+    "filter": "regions/map",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/nested_map",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/indexed",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/reduce",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/filtered_sum",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/object",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/sort",
+    "bytes": 306
+  },
+  {
+    "filter": "regions/map",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/nested_map",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/indexed",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/reduce",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/filtered_sum",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/object",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/sort",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/sparse_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "regions/reusable_members",
+    "bytes": 500
+  },
+  {
+    "filter": "regions/sparse_callback",
+    "bytes": 10240
+  },
+  {
+    "filter": "regions/reusable_members",
+    "bytes": 10240
+  },
+  {
+    "filter": "regions/sparse_callback",
+    "bytes": 1048576
+  },
+  {
+    "filter": "regions/reusable_members",
+    "bytes": 1048576
+  },
+  {
+    "filter": "scalar/arithmetic",
+    "bytes": 500
+  },
+  {
+    "filter": "ascii/shallow",
+    "bytes": 100
+  },
+  {
+    "filter": "ascii/shallow",
+    "bytes": 500
+  },
+  {
+    "filter": "ascii/nested",
+    "bytes": 500
+  },
+  {
+    "filter": "filter/predicate",
+    "bytes": 100
+  },
+  {
+    "filter": "filter/computed_last",
+    "bytes": 100
+  },
+  {
+    "filter": "aggregate/filtered_sum",
+    "bytes": 500
+  },
+  {
+    "filter": "compiler/repeated_fields",
+    "bytes": 500
+  },
+  {
+    "filter": "plan/branch",
+    "bytes": 500
+  },
+  {
+    "filter": "demand/repeated",
+    "bytes": 10240
+  },
+  {
+    "filter": "function/direct",
+    "bytes": 500
+  },
+  {
+    "filter": "function/callback",
+    "bytes": 500
+  },
+  {
+    "filter": "eval/static_scalar",
+    "bytes": 500
+  },
+  {
+    "filter": "navigation/ordering",
+    "bytes": 500
+  },
+  {
+    "filter": "navigation/grouping",
+    "bytes": 500
+  },
+  {
+    "filter": "tuple/ordered",
+    "bytes": 500
+  },
+  {
+    "filter": "consolidation/nested_sum",
+    "bytes": 983
+  },
+  {
+    "filter": "consolidation/sort_scalar",
+    "bytes": 61112
+  },
+  {
+    "filter": "consolidation/sort_tuple",
+    "bytes": 61112
+  },
+  {
+    "filter": "consolidation/callback_projection",
+    "bytes": 61112
+  },
+  {
+    "filter": "consolidation/distinct_groups",
+    "bytes": 61112
+  },
+  {
+    "filter": "regions/wide_members",
+    "bytes": 100
+  },
+  {
+    "filter": "regions/wide_members",
+    "bytes": 500
+  },
+  {
+    "filter": "regions/wide_members",
+    "bytes": 10240
+  },
+  {
+    "filter": "function/signed_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "function/partial_callback",
+    "bytes": 500
+  }
+]

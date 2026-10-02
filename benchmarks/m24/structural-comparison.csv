@@ -1,0 +1,8 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+consolidation/nested_sum,983,230862,231106,0.11,0.0,0.0,0.0,0.0
+consolidation/nested_path,983,240632,239156,-0.61,0.0,0.0,0.0,0.0
+consolidation/distinct_groups,61112,2239,2222,-0.76,19.0,19.0,427816.0,427816.0
+regions/wide_members,100,541332,4158602,668.22,3.0,2.0,1064.0,424.0
+regions/wide_members,500,268351,2208974,723.17,3.0,2.0,1064.0,424.0
+regions/wide_members,10240,21098,183150,768.09,3.0,2.0,1064.0,424.0
+regions/reusable_members,100,5194827,5387449,3.71,2.0,2.0,136.0,136.0
