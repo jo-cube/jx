@@ -8,6 +8,8 @@ mod builtins;
 mod compiler;
 #[path = "workloads/composition.rs"]
 mod composition;
+#[path = "workloads/consolidation.rs"]
+mod consolidation;
 #[path = "workloads/constructors.rs"]
 mod constructors;
 #[path = "workloads/demands.rs"]
@@ -320,4 +322,5 @@ fn main() {
     composition::run(smoke);
     matchers::run(smoke);
     structure::run(smoke);
+    consolidation::run(smoke);
 }

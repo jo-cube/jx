@@ -48,8 +48,9 @@
   Objects finish evaluating keys before values, compare decoded UTF-16 keys, omit
   missing members and reject duplicate keys from different member expressions.
   Local array contexts group matching keys before evaluating each group's value.
-  Key groups use a linear search, suitable for small constructors; wide dynamic
-  grouping has quadratic key-comparison cost and is not yet specialized.
+  Key groups stay linear below 32 distinct keys, then build a construction-local
+  hash index comparing decoded UTF-16 units. First-seen groups and reference integer-key
+  ordering are preserved; the index is dropped before group values are evaluated.
 - `navigate.rs` adds wildcard/descendant traversal, range emission and singleton
   retention. Kept sequences are recognized before scalar normalization; they emit
   as one array but flatten as sequences during mapping. Parser annotations preserve
@@ -63,7 +64,9 @@
 - Postfix grouping feeds the existing constructor groups directly, without a second
   candidate collection. `ordering.rs` retains candidates and stable merge-sort indices;
   comparator expressions use the normal context/evaluator and may fail or have lexical
-  effects. Comparison order matches the reference; keys are not speculatively cached.
+  effects. For more than two candidates, replay-safe keys are retained lazily on their
+  first comparison, including primitive numeric decoding. Secondary terms remain
+  short-circuited; effectful terms and tuple comparison scopes preserve reference order.
 - `container.rs` owns immutable array/object member lists behind `Rc`. Leaves are
   existing `Value` items: raw input, compiled strings, primitives or nested containers.
   Cloning containers shares structure rather than copying leaves or serializing them.
@@ -105,8 +108,11 @@ Blocks and calls create frames; assignment replaces a binding in the current fra
 Closures hold their body, captured current value/wrapping, and frame index. Captures
 observe subsequent rebinding in that frame, supporting forward and recursive references.
 Frames own values, but closures do not own the arena: recursion creates no `Rc` cycle.
-An uncaptured terminal slot and its binding capacity are recycled; captured frames and their ancestors live until
-that record's evaluation ends. Creating many closures can retain many frames per record.
+An uncaptured terminal slot and its binding capacity are recycled. Immediately invoked
+literal callees borrow their definition and caller frame without allocating a function
+value or marking that frame captured; escaped body closures still capture their own
+ancestry. Captured frames and their ancestors live until that record's evaluation ends;
+creating many escaping closures can retain many frames per record.
 
 `Context` carries an optional scope alongside current value and wrapping. `$$` is
 initialized in the root frame; mapped items change `$` while preserving that scope.
@@ -450,9 +456,14 @@ error precedence. Successful forward traversal needs no preflight evaluation pas
 Raw arrays, explicit stage sequences and normalized operands are separate states;
 collapsing them would break chained positions and last-step array preservation.
 
-Array traversal can rescan a subtree at each nesting/path level: worst-case
-O(bytes × input depth). Unplanned scalar operands also rescan demanded paths separately
-after validation. The benchmarks retain deep arrays, tiny records, multi-field scalars
+Nested raw-array lookup, wildcard flattening and descendant traversal now skip array
+delimiters in one pass, scanning non-array leaves with the existing grammar. They do
+not acquire a universal array index or flatten object-valued members recursively.
+Multi-step paths starting on a raw object share a selective scan outside plan regions.
+Identity and single-field context loads stay direct; multi-field scanner scratch stays
+in an outlined helper. Constructed/copied values keep their existing field walks.
+Different unplanned operands still scan their demanded paths separately after validation.
+The benchmarks retain deep arrays, tiny records, multi-field scalars
 and structural equality so these costs remain visible. Region-local demand capture
 removes repeated object-prefix scans; general sequence traversal still uses cursors.
 Further traversal machinery needs a measured benefit and a simple design.
@@ -472,8 +483,10 @@ an IR. Milestone 11 earns bounded numeric lowering through repeated-load sharing
 scalar overhead inside streams. Milestone 12 broadens this to primitive branches,
 fixed objects and numeric folds. Milestone 13 fuses root validation with nested-demand
 capture and fuses numeric-fold candidate capture with element scanning. These reuse
-the existing grammar and preserve the fallback tree. General nested-array rescanning,
-negative-position replays and constructor grouping remain explicit costs.
+the existing grammar and preserve the fallback tree. Milestone 23 removes depth-multiplied
+scans from recursive raw-array lookup, retains pure sort keys only when first requested, indexes wide groups locally, and avoids
+pinning frames for immediate literal callees. Object/array transitions, negative-position
+replays and distinct unplanned consumers remain explicit traversal costs.
 
 Milestone 9 profiles and repeated runs find no lexical frame creation or variable
 lookup on ordinary filters/folds. M8's larger context/operand layouts remain; the
@@ -600,3 +613,18 @@ needs a lifetime/resource contract.
 
 Each milestone updates conformance, tests and representative benchmarks. Full
 language support does not require every expression to use the same execution path.
+
+## Traversal and retention consolidation
+
+M23 keeps the tree and bounded plan unchanged. Full validation still precedes traversal,
+effects and output. The flattened raw cursor trusts only validated slices and delegates
+leaf boundaries to the same scanner; constructed/copied arrays retain their prior paths.
+No result, ancestry, input-location or callback memo is shared across evaluations.
+
+Sort-key retention uses existing replay-safety analysis, never speculative eager evaluation.
+A column is allocated on its first comparison; failures occur at that original comparison,
+missing keys stay last in both directions, and bindings/calls/eval/randomness remain
+uncached. Group indexing changes lookup only, not key/value evaluation order. Literal
+callee borrowing applies to ordinary calls; pending tail callees still retain their frame.
+Dynamic closure bridges and genuinely captured frames keep their established ownership
+rules. See PERFORMANCE for measured gains, added sort/group storage and remaining costs.

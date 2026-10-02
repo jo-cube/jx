@@ -1685,3 +1685,81 @@ for the whole region and uses the existing loop; ownership does not open a bridg
 retain evidence. `just all`, `just build`, all **1,679** classified cases and **50,336**
 differential comparisons pass. All 16 prior blockers are promoted; only the existing
 non-tail recursion limit remains. No dependencies, plan instructions or JIT are added.
+
+## Milestone 23 — traversal and retention consolidation
+
+Same Apple M4 / Rust 1.98.1 / release profile. M22 commit `62a4120` is the baseline;
+its engine is built with identical final benchmark sources. Forty new workloads bring
+the suite to **1,517**, covering unplanned/callback prefixes at 100 B–1 MiB, 8/32/64-level
+arrays, 8/128/1,024-row sorts/groups/projections and transient closure calls. Validation
+and full consumption are timed. Paired runs use seven 300 ms samples in both orders;
+the complete suite uses seven 50 ms samples. No timing processes overlap.
+
+The baseline profiles locate nested lookup in scanning, wide grouping in UTF-16 key
+comparison, and scalar sorting in repeated scans/projections. M23 retains these changes:
+raw-array flattening consumes delimiters once; unplanned raw-object prefixes use one
+selective scan per path; pure sort keys are retained on their first comparison; and
+wide groups acquire a construction-local index at 32 distinct keys. Immediate literal
+callees additionally borrow their definition/frame, avoiding a temporary callable and
+an irreversible capture mark. No input index, context field, dependency or plan
+instruction is added. Effects and error precedence remain unchanged.
+
+Final paired medians (records/s, counter enabled):
+
+| Workload | Input | M22 | M23 | Change |
+| --- | ---: | ---: | ---: | ---: |
+| Unplanned object prefixes | 500 B | 479,390 | 792,545 | +65% |
+| 64-level array path, one leaf | 155 B | 67,343 | 1,449,655 | 21.5× |
+| 64-level array path, 32 leaves | 983 B | 12,021 | 239,010 | 19.9× |
+| Nested path sort, 1,024 rows | 61,112 B | 720 | 2,066 | 2.87× |
+| Scalar sort, 1,024 rows | 61,112 B | 280 | 1,600 | 5.71× |
+| Distinct groups, 1,024 rows | 61,112 B | 219 | 2,238 | 10.2× |
+| Transient literal calls, 1,024 rows | 61,112 B | 1,965 | 2,109 | +7.3% |
+
+Reverse-order repeats retain the prefix, nested-path and transient-call gains; a separate
+both-order scalar-sort repeat gives 5.64–5.77×. Tuple sorts improve 2.46× in the final
+forward pair. Ordinary paths, scalar arithmetic, plans, captured demands and filtered
+fold controls remain within about 1.1%; the tiny predicate gains 10.6–10.9%.
+Callback prefixes still repeat variable-derived field loads: the final 100/500 B forward
+pairs lose 3.2%/2.2%, while a separate 500 B both-order repeat loses 1.3–1.4%.
+The wide callback projection is effectively unchanged (+1.3%); ordinary callbacks
+lose 1.0–1.3%. All those callback allocation counts are unchanged.
+
+Scanner fusion initially widened ordinary context-walk stack storage **176 → 272 B**.
+Outlining alone reduced it to 192 B, but an isolated throughput gain did not reproduce
+in the repository build. The final selector separates identity, one field and multi-field
+paths, and outlines only multi-field raw-object scanning: its frame is **160 B**, below
+M22. Common `Node::run` stack storage is unchanged; call machinery remains outlined.
+Tiny computed-last still loses **2.8–3.9%** (about 13–18 ns/record), with no extra
+scan, runtime frame or allocation. Its residual dispatch/layout cost is not isolated;
+no positional special case is introduced. Earlier experiments are labelled separately.
+
+Allocations are explicit: pure nested lookup/folds remain **0**. At 1,024 rows /61,112 B,
+the transient-call fixture drops **3,097 → 1,040 calls**, **835,560 → 148,040 requested B**.
+A single retained sort column adds **2 calls /24,600 B** there; 1,024 distinct groups
+add **6 calls /133,104 B**. Two-row sorts and small groups retain their allocation counts.
+Indexing does not decode/copy key strings; sort strings/input leaves remain borrowed.
+These are allocation requests, not live retained memory.
+
+Separate CLI processes with 16,384 rows peak at **9.53 → 3.12 MiB** for transient calls,
+**8.08 → 8.06 MiB** for truly escaping closures, **7.08 → 7.09 MiB** for captured tails,
+and **3.48 → 4.02 MiB** for sorting. Repeating 20 independent records gives similar
+high-water results; the arena still ends at each record. RSS includes process, buffers
+and allocator high water rather than exact live frame storage.
+
+Remaining structural costs: distinct unplanned consumers still scan separately;
+object/array transitions and negative positions can replay; variable-based callback
+projections retain arguments/frames and repeat their field loads. Captured closures
+and their ancestors still pin frames until record completion; dynamic closures still
+copy/loan/export bridge slots per invocation. Runtime-wide garbage collection or
+callback caching would introduce lifetime/effect complexity beyond these changes.
+`$distinct`/`$merge` equality searches and transform reconstruction are unchanged. No broader
+IR or JIT is justified by these scanner/retention improvements.
+
+[Full samples](benchmarks/m23/after.csv),
+[paired](benchmarks/m23/paired-comparison.csv) / [reverse](benchmarks/m23/reverse-comparison.csv),
+[environment/commands](benchmarks/m23/environment.json), [source hashes](benchmarks/m23/source.json),
+[profiles](benchmarks/m23/profiles.json), [memory](benchmarks/m23/memory.json),
+[checks](benchmarks/m23/checks.log) and [differentials](benchmarks/m23/differential.txt)
+retain the evidence. All **1,679** classifications and **50,839** differential comparisons
+pass. Latency distributions remain unmeasured.

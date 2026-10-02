@@ -1,0 +1,71 @@
+{
+  "baseline_commit": "62a4120b2ad4b8b3f36f5453cc4a61e32022bd74",
+  "rust": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "machine": "Apple M4",
+  "binary_hashes": {
+    "baseline_initial": "39bc08f0b4eecf7d49691a1e2298a92be1f2ff9ba841f6f0094896169347545e",
+    "prototype": "75a9cf611aad1ea290396ec21c223ea302b56a30c19ff0633f2c77194de93d41",
+    "before": "4f24092eae78fb0be684bc26555eb1a0c0fd13725d8807f0edcf18d7dda5c326",
+    "after": "ef02665e02513ebde9c0ecbf5b1a6de2a8f6503053b88928688838f7d68730e9",
+    "outline_experiment": "8edb4ecda4d65fbe46d53763e2762541fb4575ab155566875ca282ec6a54f891",
+    "repository_outline": "9acfe3b60f40fbbff04e7772161b7a31f342b54479828d69ebcaca95172b5268",
+    "early_boundary": "2e68203f8ae6f4efb24ca8e12b14e28a3a79af4bde2a790d281cc764c72fc015",
+    "final": "b484a157be227669ef149e24f28ae70888e3dc0fe880773e4559fb4f48dbc4ca",
+    "final_cli": "ba77d4dd75a74a9922d84dd6c1c153bdba12306b0c9b64c7d8dbe1059fc914e9"
+  },
+  "profile": "Workspace release/bench profile, global counting allocator enabled. Validation + full consumption, no serialization except named write benchmarks.",
+  "method": "Initial M22 baseline before production edits, then both-order 7x300ms paired samples. Final baseline is committed M22 with identical final benchmark sources overlaid; copied binaries avoid Cargo rebuilds during timing. No throughput processes overlap.",
+  "profiles": "Saved baseline sample(1ms, 6s), top-of-stack summaries + gzip raw reports. Two-second delay before sampling can include setup/warmup; profiles guide structural attribution, not timing claims.",
+  "commands": [
+    "cargo bench -p jx --bench throughput --locked --no-run",
+    "python3 benchmarks/m23/measure.py BEFORE FINAL benchmarks/m23/verification-filters.json benchmarks/m23/paired",
+    "python3 benchmarks/m23/measure.py BEFORE FINAL benchmarks/m23/verification-reverse-filters.json benchmarks/m23/reverse --reverse",
+    "just bench > benchmarks/m23/after.csv",
+    "python3 benchmarks/m23/memory.py BEFORE_CLI target/release/jx",
+    "just all",
+    "just build",
+    "node scripts/check-consolidation.cjs /tmp/jsonata-reference target/release/jx",
+    "sample BENCHMARK_PID 6 1 -file PROFILE.txt (after two-second startup delay; filters select one workload)",
+    "python3 benchmarks/m23/measure.py BEFORE FINAL benchmarks/m23/outline-filters.json benchmarks/m23/shapes",
+    "python3 benchmarks/m23/measure.py BEFORE FINAL benchmarks/m23/outline-filters.json benchmarks/m23/shapes-reverse --reverse"
+  ],
+  "memory": "Peak process RSS includes process and buffers/allocator high water; not exact per-frame live memory. Allocator rows report calls/requested bytes, not retained size.",
+  "limitations": [
+    "No latency distributions or exact live frame byte accounting measured; RSS includes allocator high water and process/buffers.",
+    "Prototype and pre-outline data are explicitly non-final; final gains use paired medians from the retained selector.",
+    "Final forward/reverse subsets contain 30/21 selectors; matching filter prefixes can select more than one workload. Six additional final selectors run both orders; full final samples cover all 1517 workloads.",
+    "Earlier full and experimental CSVs preserve investigation provenance; they are not interchangeable with final source.",
+    "The residual tiny computed-position regression remains unexplained at instruction/layout level despite removing scanner stack overhead."
+  ],
+  "experiment": "Scanner fusion first widened Path::select_context stack storage from 176 to 272 B. Outlining reduced it to 192 B, but the isolated computed-position gain did not reproduce in repository builds. An early raw-object boundary restored 176 B with negligible throughput change. The retained zero/one/multi-field selector uses 160 B and reduces the tiny computed-position loss to 2.8\u20133.9%; no extra scan, allocation or runtime frame was found. Native Node::run storage remains unchanged. No positional fast path is added.",
+  "full_before_outline": {
+    "workloads": 1517,
+    "samples": 10619,
+    "measured_seconds": 611.0
+  },
+  "reproduce_baseline": "Create a separate checkout/archive of 62a4120, overlay crates/jx/benches from this milestone, then cargo bench -p jx --bench throughput --locked --no-run. Copy the exact executable Cargo reports before changing source. baseline-path.txt is local working provenance, not a required path.",
+  "artifacts": {
+    "final": "after.csv, paired-*, reverse-*, shapes-*, checks.log, differential.txt, memory.json; final retained selector and identical workload sources",
+    "outlined-*": "Repository outlined-scanner experiment before final selector; full and paired runs. Computed-position loss remained 5.6\u20136.7%.",
+    "outline-*": "Isolated checkout outlining experiment; its 5.3\u20136.0% gain relative to pre-outline M23 did not reproduce in repository builds.",
+    "early-*": "Early raw-object boundary experiment relative to repository outlined build; negligible throughput gain, 176 B stack.",
+    "pre-outline-*": "All production changes except outlined scanner/shape selector. 56 forward/reverse selectors and complete suite.",
+    "prototype-*": "Initial nested traversal, sort/group retention and literal call prototype, before raw-object prefix fusion and missing-last fix.",
+    "profile-*": "Baseline qualitative sample profiles; use paired non-profiled runs for throughput.",
+    "baseline-smoke.csv": "Committed M22 with identical final benchmark workload definitions; allocations and outcomes, short smoke timings are not performance claims.",
+    "target-before.csv": "Initial M22 target measurements, before adding object-prefix fixtures."
+  },
+  "upstream": {
+    "revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+    "version": "2.2.0",
+    "comparisons": 50839,
+    "suites": 20,
+    "corpus_cases": 1679
+  },
+  "full_final": {
+    "workloads": 1517,
+    "samples": 10619,
+    "measured_seconds": 614.214
+  }
+}

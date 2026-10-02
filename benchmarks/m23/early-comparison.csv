@@ -1,0 +1,7 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+filter/computed_last,100,2181286,2199428,0.83,0.0,0.0,0.0,0.0
+function/callback,500,927278,929133,0.2,8.0,8.0,776.0,776.0
+consolidation/callback_prefix,500,445123,444680,-0.1,13.0,13.0,1136.0,1136.0
+consolidation/unplanned_prefix,500,754920,761628,0.89,4.0,4.0,192.0,192.0
+consolidation/nested_path,155,1386062,1383956,-0.15,0.0,0.0,0.0,0.0
+consolidation/sort_scalar,61112,1563,1561,-0.13,16.0,16.0,114760.0,114760.0
