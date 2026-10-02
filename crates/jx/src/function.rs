@@ -28,6 +28,7 @@ pub(crate) struct Definition {
     pub body: Node,
     pub signature: Option<Signature>,
     pub tail: bool,
+    pub plan: Option<std::sync::Arc<crate::plan::Callback>>,
 }
 #[derive(Debug)]
 pub(crate) enum FunctionKind<'e, 'i> {
@@ -168,6 +169,11 @@ pub(crate) fn invoke_checked<'e, 'i>(
             let params = &definition.params;
             let body = &definition.body;
             scope.call(offset, body.depth, || {
+                if let Some(plan) = &definition.plan
+                    && let Some(result) = plan.run(arguments, focus, *wrapped)
+                {
+                    return Ok(result);
+                }
                 let child = scope.child(*frame);
                 child.bind_arguments(params, arguments);
                 let context = Context {

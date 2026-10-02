@@ -59,7 +59,7 @@ pub(crate) enum Kind {
     Binary(Op, Box<Node>, Box<Node>),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Op {
     Add,
     Subtract,

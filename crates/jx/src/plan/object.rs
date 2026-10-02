@@ -28,26 +28,31 @@ impl Object {
             wrapped: false,
             scope: None,
         };
-        self.program.execute(&context, captured, |slots| {
-            let mut members = Vec::with_capacity(self.members.len());
-            for (key, member) in &self.members {
-                let value = match member {
-                    Member::Slot(slot) => match slots[usize::from(*slot)].operand() {
-                        Operand::Missing => continue,
-                        Operand::One(value) => value,
-                        Operand::Many(_) => unreachable!(),
-                    },
-                    Member::Constant(data) => data.value(),
-                };
-                if !matches!(value, Value::Undefined) {
-                    members.push((Value::StringLiteral(RawJson(key)), value));
-                }
+        self.program
+            .execute(&context, captured, |slots| self.construct(slots))
+    }
+    pub(super) fn construct<'e, 'i>(&'e self, slots: &[Cell; SLOTS]) -> Operand<'e, 'i> {
+        let mut members = Vec::with_capacity(self.members.len());
+        for (key, member) in &self.members {
+            let value = match member {
+                Member::Slot(slot) => match slots[usize::from(*slot)].operand() {
+                    Operand::Missing => continue,
+                    Operand::One(value) => value,
+                    Operand::Many(_) => unreachable!(),
+                },
+                Member::Constant(data) => data.value(),
+            };
+            if !matches!(value, Value::Undefined) {
+                members.push((Value::StringLiteral(RawJson(key)), value));
             }
-            Operand::One(Value::object(members))
-        })
+        }
+        Operand::One(Value::object(members))
     }
 }
 pub(super) fn lower(node: &Node) -> Option<Object> {
+    lower_parameters(node, &[])
+}
+pub(super) fn lower_parameters(node: &Node, parameters: &[Box<str>]) -> Option<Object> {
     let Kind::Object(pairs) = &node.kind else {
         return None;
     };
@@ -74,7 +79,7 @@ pub(super) fn lower(node: &Node) -> Option<Object> {
         }
     }
     pairs.sort_by_key(|(key, _)| crate::members::index(&key[1..key.len() - 1]).unwrap_or(u32::MAX));
-    let mut lower = Lower::default();
+    let mut lower = Lower::parameters(parameters);
     let mut members = Vec::with_capacity(pairs.len());
     for (key, value) in pairs {
         let member = match &value.kind {

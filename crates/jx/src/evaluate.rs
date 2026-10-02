@@ -250,7 +250,7 @@ impl<'e, 'i> Operand<'e, 'i> {
 impl Node {
     pub(crate) fn run<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
         let value = match &self.kind {
-            Kind::Plan(plan) => return plan.run(input).map_or_else(|| plan.source.run(input), Ok),
+            Kind::Plan(plan) => return plan.run(input).map_or_else(|| plan.fallback(input), Ok),
             Kind::StaticLookup(data, key) => {
                 let key = crate::retain::materialize(key, input)?;
                 return crate::lookup::constant(data, key, self.offset)

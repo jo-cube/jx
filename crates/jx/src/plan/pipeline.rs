@@ -1,5 +1,7 @@
+mod callbacks;
 use super::*;
 use crate::{aggregate::Fold, builtin::Builtin};
+pub(super) use callbacks::lower as lower_callbacks;
 
 #[derive(Clone, Debug)]
 pub(super) struct Pipeline {
@@ -114,25 +116,7 @@ pub(super) fn lower(node: &Node) -> Option<Pipeline> {
         branches.push(lower.emit(Instruction::Branch(test, false, 0))?);
     }
     let value = lower.node(&mapped.node)?;
-    let result = if branches.is_empty() {
-        value
-    } else {
-        let result = lower.emit(Instruction::Copy(value))?;
-        let jump = lower.emit(Instruction::Jump(0))?;
-        let skip = lower.instructions.len() as u8;
-        let missing = lower.emit(Instruction::Missing)?;
-        lower.emit(Instruction::Merge(missing, result))?;
-        let end = lower.instructions.len() as u8;
-        lower.instructions[usize::from(jump)] = Instruction::Jump(end);
-        for branch in branches {
-            let Instruction::Branch(test, false, _) = lower.instructions[usize::from(branch)]
-            else {
-                unreachable!()
-            };
-            lower.instructions[usize::from(branch)] = Instruction::Branch(test, false, skip);
-        }
-        result
-    };
+    let result = masked(&mut lower, value, branches)?;
     let mut demand = Demand::default();
     demand.insert(&fields, 0);
     Some(Pipeline {
@@ -161,4 +145,27 @@ fn boolean(node: &Node) -> bool {
         ) => true,
         _ => false,
     }
+}
+
+fn masked(lower: &mut Lower, value: u8, branches: Vec<u8>) -> Option<u8> {
+    let result = if branches.is_empty() {
+        value
+    } else {
+        let result = lower.emit(Instruction::Copy(value))?;
+        let jump = lower.emit(Instruction::Jump(0))?;
+        let skip = lower.instructions.len() as u8;
+        let missing = lower.emit(Instruction::Missing)?;
+        lower.emit(Instruction::Merge(missing, result))?;
+        let end = lower.instructions.len() as u8;
+        lower.instructions[usize::from(jump)] = Instruction::Jump(end);
+        for branch in branches {
+            let Instruction::Branch(test, false, _) = lower.instructions[usize::from(branch)]
+            else {
+                unreachable!()
+            };
+            lower.instructions[usize::from(branch)] = Instruction::Branch(test, false, skip);
+        }
+        result
+    };
+    Some(result)
 }

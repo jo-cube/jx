@@ -6,6 +6,8 @@ use crate::{
     json::{Captured, Captures, Demand},
     sequence::Context,
 };
+mod callback;
+pub(crate) use callback::Callback;
 mod lower;
 mod object;
 mod pipeline;
@@ -31,6 +33,8 @@ struct Program {
     lookups: Box<[(Box<Data>, Path)]>,
     result: u8,
     capture: Demand,
+    inputs: Box<[Option<u8>]>,
+    argument_demands: Box<[(Option<u8>, Demand)]>,
 }
 #[derive(Clone, Debug)]
 enum Instruction {
@@ -89,7 +93,6 @@ impl Program {
         captured: Option<&Captures<'i>>,
         finish: impl FnOnce(&[Cell; SLOTS]) -> T,
     ) -> Option<T> {
-        let mut slots = [Cell::Missing; SLOTS];
         let mut local;
         let captured = if captured.is_some() {
             captured
@@ -102,25 +105,30 @@ impl Program {
         } else {
             None
         };
+        self.dispatch(
+            |at, path| {
+                if let Some(captured) = captured {
+                    return captured_operand(captured.get(at));
+                }
+                path.select_context(context).operand().ok()
+            },
+            finish,
+        )
+    }
+    #[inline(never)]
+    fn dispatch<'e, 'i, T>(
+        &'e self,
+        mut load: impl FnMut(usize, &'e Path) -> Option<Operand<'e, 'i>>,
+        finish: impl FnOnce(&[Cell; SLOTS]) -> T,
+    ) -> Option<T> {
+        let mut slots = [Cell::Missing; SLOTS];
         let mut at = 0;
         while at < self.instructions.len() {
             slots[at] = match self.instructions[at] {
-                Instruction::Load(_) if captured.is_some() => {
-                    cell(captured_operand(captured?.get(at))?)?
-                }
-                Instruction::Load(path) => cell(
-                    self.paths[usize::from(path)]
-                        .select_context(context)
-                        .operand()
-                        .ok()?,
-                )?,
+                Instruction::Load(index) => cell(load(at, &self.paths[usize::from(index)])?)?,
                 Instruction::Lookup(index) => {
                     let (data, path) = &self.lookups[usize::from(index)];
-                    let operand = match captured {
-                        Some(values) => captured_operand(values.get(at))?,
-                        None => path.select_context(context).operand().ok()?,
-                    };
-                    let key = match operand {
+                    let key = match load(at, path)? {
                         Operand::Missing => None,
                         Operand::One(value) => Some(value),
                         Operand::Many(_) => return None,
@@ -164,7 +172,7 @@ impl Program {
         Some(finish(&slots))
     }
 }
-fn captured_operand(value: Captured<'_>) -> Option<Operand<'_, '_>> {
+fn captured_operand<'e, 'i>(value: Captured<'i>) -> Option<Operand<'e, 'i>> {
     match value {
         Captured::Missing => Some(Operand::Missing),
         Captured::Raw(raw) => Some(Operand::One(Value::Raw(raw))),
@@ -232,7 +240,26 @@ impl Plan {
             Execution::Object(_) => None,
             Execution::Fold(p) => p.run_captured(captured.get(0)),
         };
-        result.map_or_else(|| self.source.run(&context), Ok)
+        result.map_or_else(|| self.fallback(&context), Ok)
+    }
+    #[inline(never)]
+    pub(crate) fn fallback<'e, 'i>(
+        &'e self,
+        context: &Context<'e, 'i>,
+    ) -> Result<Operand<'e, 'i>, crate::Error> {
+        if context.scope.is_some() || !self.source.effects {
+            return self.source.run(context);
+        }
+        let context = Context {
+            value: context.value.clone(),
+            wrapped: context.wrapped,
+            scope: Some(crate::runtime::Scope::with_random(
+                context.value.clone(),
+                self.source.clock,
+                None,
+            )),
+        };
+        self.source.run(&context)
     }
     // Only pure regions may retry: fallback preserves offsets and error precedence.
     pub fn run<'e, 'i>(&'e self, context: &Context<'e, 'i>) -> Option<Operand<'e, 'i>> {
@@ -245,6 +272,17 @@ impl Plan {
 }
 
 pub(crate) fn prepare(node: &mut Node) {
+    if let Some(pipeline) = pipeline::lower_callbacks(node) {
+        let source = Box::new(node.clone());
+        node.kind = Kind::Plan(Box::new(Plan {
+            source,
+            execution: Execution::Fold(pipeline),
+        }));
+        return;
+    }
+    if let Kind::Lambda(definition) = &mut node.kind {
+        definition.plan = callback::lower(definition).map(std::sync::Arc::new);
+    }
     if !node.effects && !node.clock {
         let execution = pipeline::lower(node)
             .map(Execution::Fold)
