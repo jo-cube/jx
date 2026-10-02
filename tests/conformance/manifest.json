@@ -2651,110 +2651,78 @@
     {
       "file": "groups/function-eval/case000.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case002.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case003.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case004.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case005.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case006.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "error",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness",
+      "phase": "evaluate",
+      "kind": "EvalError"
     },
     {
       "file": "groups/function-eval/case007.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "error",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness",
+      "phase": "evaluate",
+      "kind": "EvalSyntax"
     },
     {
       "file": "groups/function-eval/case008.json",
       "index": 0,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case008.json",
       "index": 1,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case008.json",
       "index": 2,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-eval/case008.json",
       "index": 3,
-      "status": "blocked",
-      "category": "dynamic-eval",
-      "reason": "Dynamic compilation/evaluation deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-exists/case000.json",
@@ -5695,38 +5663,26 @@
     {
       "file": "groups/function-shuffle/case000.json",
       "index": 0,
-      "status": "blocked",
-      "category": "randomness",
-      "reason": "Random source/lifetime contract deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-shuffle/case001.json",
       "index": 0,
-      "status": "blocked",
-      "category": "randomness",
-      "reason": "Random source/lifetime contract deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-shuffle/case002.json",
       "index": 0,
-      "status": "blocked",
-      "category": "randomness",
-      "reason": "Random source/lifetime contract deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-shuffle/case003.json",
       "index": 0,
-      "status": "blocked",
-      "category": "randomness",
-      "reason": "Random source/lifetime contract deferred",
-      "kind": "UnsupportedExpression",
-      "phase": "evaluate"
+      "status": "supported",
+      "reason": "Dynamic evaluation with inherited scope and focus, or runtime randomness"
     },
     {
       "file": "groups/function-sift/case000.json",

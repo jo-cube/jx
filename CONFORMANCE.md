@@ -2,7 +2,8 @@
 
 Semantic authority: [official language documentation](https://docs.jsonata.org/overview.html)
 and the [upstream suite](https://github.com/jsonata-js/jsonata/tree/v2.2.0/test/test-suite).
-This is an early subset, not a full JSONata implementation. Errors use local
+The large majority of the pinned language corpus passes; compatibility boundaries
+beyond that inventory remain explicit. Errors use local
 `ErrorKind` values and byte offsets; upstream diagnostic codes are deferred.
 
 | Area | Current behavior / status |
@@ -31,7 +32,8 @@ This is an early subset, not a full JSONata implementation. Errors use local
 | Singleton retention | `expr[]` preserves sequence shape; missing stays missing |
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures, compiled signatures and tail execution |
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
-| Deferred runtime/language | `$eval`, randomness, native host coercions and embedding |
+| Dynamic evaluation / effects | `$eval` with inherited environment and optional focus; lazy `$random` / `$shuffle` with deterministic injection |
+| Deferred runtime/integration | Native host coercions, embedding and non-tail recursion beyond resource guards |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments / names | Non-nesting `/* … */` comments; Unicode field/variable names supported |
 | Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null` require backticks; bare `function` / `λ` are names outside lambda syntax |
@@ -495,7 +497,7 @@ Arguments use lexical focus; tail signature/context defaults use the original ca
 focus, including contextual builtins. A pipeline expression or postfix result processing
 is not a tail position in the pinned parser. Non-tail recursion retains its stack guard.
 [Readable cases](tests/semantics/functions.json) and borrowing/frame/limit regressions
-cover these boundaries. No public host invocation, `$eval` or JIT is added.
+cover these boundaries. No public host invocation or JIT is added.
 
 ## Standard library
 
@@ -503,9 +505,9 @@ cover these boundaries. No public host invocation, `$eval` or JIT is added.
 | --- | --- |
 | Strings | `$string`, `$length`, `$uppercase`, `$lowercase`, `$trim`, `$pad`, `$substring`, `$substringBefore`, `$substringAfter`, `$contains`, `$split`, `$join`, `$match`, `$replace` |
 | Encoding | `$encodeUrl`, `$encodeUrlComponent`, `$decodeUrl`, `$decodeUrlComponent`, `$base64encode`, `$base64decode`; host boundary below |
-| Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$round`, `$sqrt`, `$power`, `$formatNumber`, `$formatInteger`, `$parseInteger`, `$formatBase`; aggregates above |
+| Numbers | `$number`, `$abs`, `$floor`, `$ceil`, `$round`, `$sqrt`, `$power`, `$formatNumber`, `$formatInteger`, `$parseInteger`, `$formatBase`, `$random`; aggregates above |
 | Date/time | `$fromMillis`, `$toMillis`, `$now`, `$millis`; pictures and boundaries below |
-| Collections | `$append`, `$reverse`, `$distinct`, `$sort`, variadic `$zip`, `$single` |
+| Collections | `$append`, `$reverse`, `$distinct`, `$sort`, variadic `$zip`, `$single`, `$shuffle` |
 | Objects / types | `$keys`, `$spread`, `$merge`, `$type`, `$lookup`, `$clone` |
 | Higher-order | `$map`, `$filter`, `$reduce`, `$each`, `$sift` |
 | Boolean / diagnostics | `$boolean`, `$not`, `$exists`, `$error`, `$assert` |
@@ -541,9 +543,40 @@ without a callback. These raise local `TypeError`. The readable
 CLI tests freeze supported boundaries. [Official function documentation](https://docs.jsonata.org/string-functions)
 and complete imported groups remain the authority.
 
-Still deferred: shuffle/randomness, eval,
-untyped native partial coercions and host-function embedding. Known deferred calls raise
+Still deferred: untyped native partial coercions and host-function embedding. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
+
+## Dynamic evaluation and randomness
+
+[`$eval`](https://docs.jsonata.org/string-functions#eval) takes a string and optional
+focus. Missing source returns missing; other source types are errors. It inherits
+lexical bindings, sees rebinding/shadowing and exports assignments to that environment.
+Explicit missing focus retains current context; null replaces it. Explicit arrays
+use ordinary root-array wrapping. `$$` continues to refer to the enclosing root.
+Syntax failures wrap as `EvalSyntax` (D3120); execution failures as `EvalError` (D3121),
+retaining the nested diagnostic. Full input validation precedes compilation/effects.
+
+Returned literals, nested containers, closures, partials, transforms and matcher
+continuations survive the dynamic compilation region. Bound sequences retain values
+once. Escaped recursive closures use the existing bounded tail loop. Upstream native
+tail `$eval` uses the invocation environment/focus, while non-tail evaluation uses the
+lexical body environment/focus; function parameters therefore need not be visible to
+a native tail eval. Its own result normalizes before an outer `[]` postfix.
+
+[`$random`](https://docs.jsonata.org/numeric-functions#random) returns `[0,1)` draws;
+[`$shuffle`](https://docs.jsonata.org/array-functions#shuffle) returns a permuted explicit
+array. Missing stays missing, scalar/null inputs become singleton arrays, and empty/
+singleton arrays preserve their shape without drawing. Draws are not folded, memoized
+or replayed. `Random::seeded` plus `evaluate_with_random` shares deterministic draws
+across records, nested eval and closures; default seeding is lazy and noncryptographic.
+Random values need not match another engine's PRNG, but permutation and draw order do.
+
+Boundaries outside the corpus: isolated UTF-16 surrogates in dynamic source return
+`EvalSyntax` because Rust source is UTF-8; surrogate string values remain supported.
+Untyped native shuffle partials with non-array inputs remain `UnsupportedExpression`.
+Host invocation, asynchronous evaluation and non-tail stack expansion stay deferred.
+[Readable cases](tests/semantics/effects.json) and deterministic Rust tests freeze
+context, ownership, error wrapping, borrowed output and effect ordering.
 
 ## Everyday helpers
 
@@ -692,12 +725,13 @@ embedding, asynchronous API and parser-recovery tests are outside this inventory
 
 | Classification | Cases | Assertion |
 | --- | ---: | --- |
-| Supported results | 1376 | JSON result / missing agrees with upstream |
-| Mapped expected errors | 286 | Compile/evaluate phase and local kind; user messages where applicable |
-| Blocked compatibility | 16 | Specific dependency and current local failure asserted |
+| Supported results | 1390 | JSON result / missing agrees with upstream |
+| Mapped expected errors | 288 | Compile/evaluate phase and local kind; user messages where applicable |
+| Blocked compatibility | 0 | All prior blockers promoted |
 | Recursion guard | 1 | Non-tail factorial exceeds the bounded stack |
 
-The remaining blockers are `$eval` (**12**) and randomness (**4**).
+M22 promotes all **16** remaining `$eval`/randomness cases: **14** results and **2**
+mapped errors. The sole local limit is non-tail factorial; no language case is blocked.
 M21 promotes **48** signature/tail/guard cases: **38** results and **10** mapped errors.
 All signature cases and finite tail-recursive cases pass; one non-tail factorial
 remains an explicit local limit. Infinite tail recursion asserts an execution-budget
@@ -759,6 +793,7 @@ node scripts/check-structure.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-helpers.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-formatting.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-functions.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-effects.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -782,7 +817,7 @@ and borrowed numeric tokens. Milestones 11–13 change execution only; upstream
 classifications are unchanged.
 Scoped-path checks add **947** comparisons across root/array shapes, local/global
 positions, joins, closures, sorting, grouping, and the imported supported join cases.
-Builtin checks add **1,907** comparisons covering fixed signatures, missing/null,
+Builtin checks add **1,923** comparisons covering fixed signatures, missing/null,
 Unicode, callback arity/context, closure effects, nested sequences and mixed pipelines.
 Conversion/composition checks add **2,635** comparisons across numeric/escaping
 boundaries, partials, closures, sequence shapes and mixed pipelines. The known upstream
@@ -807,8 +842,13 @@ Everyday-helper checks add **1,884** comparisons, including **132** readable cas
 partials, stable callbacks, URI/base64 boundaries and mixed lexical/grouped pipelines.
 Formatting checks add **2,313** comparisons across static/dynamic pictures, symbols,
 rounding, integer/word/base forms, calendar/week boundaries, timezones, missing/errors
-and mixed pipelines. All 18 differential suites total **50,067** comparisons.
+and mixed pipelines. The original 18 differential suites now total **50,083** comparisons.
 
 Function-runtime checks add **558** comparisons across signatures, optional/variadic
 matching, context defaults, partials and deep direct/mutual/composed calls. Primitive
 `u` is locally tested against its documented meaning; the pinned parser omits it.
+
+Dynamic/effect checks add **253** comparisons, including **87** readable cases,
+lexical/focus shape matrices, escaped callable recursion and randomized permutation
+invariants. Eight Rust tests separately assert wrapped diagnostics, compatibility boundaries, deterministic draws, borrowing, skipped
+effects and validation/error ordering. All **19** suites total **50,336** comparisons.

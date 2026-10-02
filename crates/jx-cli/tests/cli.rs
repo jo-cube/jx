@@ -398,3 +398,30 @@ fn signed_tail_functions_stream_and_report_record_errors() {
             .contains("(SignatureError)")
     );
 }
+
+#[test]
+fn dynamic_eval_streams_records_and_wraps_errors() {
+    let output = run(
+        &["$eval(code)"],
+        br#"{"code":"[1,2].$"}
+{"code":"missing"}
+{"code":"null"}
+{"code":"{\"n\":3}"}
+"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"1\n2\nnull\n{\"n\":3}\n");
+    for (source, input, kind) in [
+        ("$eval(code)", &br##"{"code":"#"}"##[..], "EvalSyntax"),
+        ("$eval(code)", &br#"{"code":"1+null"}"#[..], "EvalError"),
+        ("$eval(\"#\")", &b"{\"bad\":[0,]}"[..], "InvalidJson"),
+    ] {
+        let output = run(&[source], input);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(output.stdout.is_empty());
+        assert!(String::from_utf8(output.stderr).unwrap().contains(kind));
+    }
+    let output = run(&["$sort($shuffle(a))"], b"{\"a\":[2,1]}\n{\"a\":[3]}\n{}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"[1,2]\n[3]\n");
+}

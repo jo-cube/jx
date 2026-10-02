@@ -82,16 +82,6 @@ fn deferred_features_and_constructor_binding_races_are_explicit() {
             "{source}"
         );
     }
-    for source in ["($f:=$random;$f())", "$shuffle([2,1])"] {
-        assert_eq!(
-            jx::compile(source)
-                .unwrap()
-                .evaluate(b"null")
-                .unwrap_err()
-                .kind,
-            jx::ErrorKind::UnsupportedExpression
-        );
-    }
     for source in ["$unknown()", "$sum(1)()", "($sum:=missing;$sum(1))"] {
         assert_eq!(
             jx::compile(source)

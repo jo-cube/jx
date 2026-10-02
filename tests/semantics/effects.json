@@ -1,0 +1,845 @@
+[
+  {
+    "name": "missing source",
+    "expr": "$eval(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "null source is a signature error",
+    "expr": "$eval(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "number source is a signature error",
+    "expr": "$eval(1)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "invalid source is wrapped at evaluation",
+    "expr": "$eval(\"[1,#]\")",
+    "data": null,
+    "error": "EvalSyntax"
+  },
+  {
+    "name": "dynamic invalid source is wrapped",
+    "expr": "$eval(code)",
+    "data": {
+      "code": "[1,#]"
+    },
+    "error": "EvalSyntax"
+  },
+  {
+    "name": "unselected invalid source remains unevaluated",
+    "expr": "false ? $eval(\"#\") : 7",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "evaluation failure is wrapped",
+    "expr": "$eval(\"1+null\")",
+    "data": null,
+    "error": "EvalError"
+  },
+  {
+    "name": "dynamic evaluation failure is wrapped",
+    "expr": "$eval(code)",
+    "data": {
+      "code": "1+null"
+    },
+    "error": "EvalError"
+  },
+  {
+    "name": "user failure is wrapped",
+    "expr": "$eval(\"$error(\\\"inner\\\")\")",
+    "data": null,
+    "error": "EvalError"
+  },
+  {
+    "name": "current focus",
+    "expr": "$eval(\"$.n\")",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "root survives replacement",
+    "expr": "$eval(\"$$.n\", {\"n\":2})",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "replacement focus",
+    "expr": "$eval(\"$.n\", {\"n\":2})",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "replacement null",
+    "expr": "$eval(\"$\", null)",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "missing replacement keeps caller",
+    "expr": "$eval(\"$\", missing)",
+    "data": 7,
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "array replacement is one focus",
+    "expr": "$eval(\"{\\\"count\\\": $count($)}\", [1,2])",
+    "data": null,
+    "items": [
+      {
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "empty replacement retains constructor",
+    "expr": "$eval(\"{\\\"test\\\": 1}\", [])",
+    "data": null,
+    "items": [
+      {
+        "test": 1
+      }
+    ]
+  },
+  {
+    "name": "path maps replacement array",
+    "expr": "$eval(\"n\", [{\"n\":1},{\"n\":2}])",
+    "data": null,
+    "items": [
+      1,
+      2
+    ]
+  },
+  {
+    "name": "inherited lexical variable",
+    "expr": "($x:=4;$eval(\"$x+3\"))",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "inherited missing shadows builtin",
+    "expr": "($sum:=missing;$eval(\"$sum([1,2])\"))",
+    "data": null,
+    "error": "EvalError"
+  },
+  {
+    "name": "inherited function shadows builtin",
+    "expr": "($sum:=function($a){99};$eval(\"$sum([1,2])\"))",
+    "data": null,
+    "items": [
+      99
+    ]
+  },
+  {
+    "name": "inherited builtin alias",
+    "expr": "($f:=$sum;$eval(\"$f([1,2])\"))",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "dynamic builtin shadow",
+    "expr": "($sum:=function($a){99};$eval(code))",
+    "data": {
+      "code": "$sum([1,2])"
+    },
+    "items": [
+      99
+    ]
+  },
+  {
+    "name": "binding writes current environment",
+    "expr": "($eval(\"$x:=4\");$x)",
+    "data": null,
+    "items": [
+      4
+    ]
+  },
+  {
+    "name": "dynamic binding writes current environment",
+    "expr": "($eval(code);$x)",
+    "data": {
+      "code": "$x:=4"
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "name": "binding replaces existing environment",
+    "expr": "($x:=2;$eval(code);$x)",
+    "data": {
+      "code": "$x:=4"
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "name": "eval block isolates bindings",
+    "expr": "($x:=2;$eval(\"($x:=4;$x)\");$x)",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "builtin rebinding affects following calls",
+    "expr": "($eval(\"$sum:=function($x){9}\");$sum([1,2]))",
+    "data": null,
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "eval itself can be rebound",
+    "expr": "($eval(\"$eval:=function($s){9}\");$eval(\"1\"))",
+    "data": null,
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "eval rebinding through dynamic source",
+    "expr": "($eval(code);$eval(\"1\"))",
+    "data": {
+      "code": "$eval:=function($s){9}"
+    },
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "static escaped lambda",
+    "expr": "($f:=$eval(\"function($x){$x+1}\");$f(4))",
+    "data": null,
+    "items": [
+      5
+    ]
+  },
+  {
+    "name": "dynamic escaped lambda",
+    "expr": "($f:=$eval(code);$f(4))",
+    "data": {
+      "code": "function($x){$x+1}"
+    },
+    "items": [
+      5
+    ]
+  },
+  {
+    "name": "dynamic closure captures local environment",
+    "expr": "($f:=$eval(code);$f(4))",
+    "data": {
+      "code": "($base:=3;function($x){$base+$x})"
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "dynamic closure observes later rebinding",
+    "expr": "($x:=2;$f:=$eval(code);$x:=8;$f())",
+    "data": {
+      "code": "function(){$x}"
+    },
+    "items": [
+      8
+    ]
+  },
+  {
+    "name": "dynamic forward reference",
+    "expr": "($f:=$eval(code);$g:=function(){7};$f())",
+    "data": {
+      "code": "function(){$g()}"
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "nested dynamic closure ownership",
+    "expr": "($f:=$eval(code);$g:=$f(3);$g(4))",
+    "data": {
+      "code": "function($a){function($b){$a+$b}}"
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "dynamic lambda arguments retain caller values",
+    "expr": "($f:=$eval(code);$f(obj))",
+    "data": {
+      "code": "function($x){$x}",
+      "obj": {
+        "raw": 7
+      }
+    },
+    "items": [
+      {
+        "raw": 7
+      }
+    ]
+  },
+  {
+    "name": "dynamic literals retain encoding",
+    "expr": "$eval(code)",
+    "data": {
+      "code": "{\"text\":\"a\\n\\ud800\\udc00\",\"a\":[1,[2],null]}"
+    },
+    "items": [
+      {
+        "text": "a\n\ud800\udc00",
+        "a": [
+          1,
+          [
+            2
+          ],
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "name": "nested eval shares inherited scope",
+    "expr": "($x:=7;$eval(\"$eval(\\\"$x\\\")\"))",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "nested dynamic eval",
+    "expr": "($x:=7;$eval(code))",
+    "data": {
+      "code": "$eval(\"$x\")"
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "nested replacement preserves root",
+    "expr": "$eval(\"$eval(\\\"[$.n, $$.n]\\\", {\\\"n\\\":2})\", {\"n\":3})",
+    "data": {
+      "n": 7
+    },
+    "items": [
+      [
+        2,
+        7
+      ]
+    ]
+  },
+  {
+    "name": "dynamic escaped partial",
+    "expr": "($f:=$eval(code);$f(4))",
+    "data": {
+      "code": "function($a,$b){$a+$b}(3,?)"
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "dynamic escaped composition",
+    "expr": "($f:=$eval(code);$f(4))",
+    "data": {
+      "code": "function($a){$a+1} ~> function($b){$b*2}"
+    },
+    "items": [
+      10
+    ]
+  },
+  {
+    "name": "dynamic escaped regex",
+    "expr": "($r:=$eval(code);$match(\"abcabc\",$r).match)",
+    "data": {
+      "code": "/a(b)c/"
+    },
+    "items": [
+      "abc",
+      "abc"
+    ]
+  },
+  {
+    "name": "dynamic matcher continuation",
+    "expr": "($m:=$eval(code);[$m.match,$m.next().match])",
+    "data": {
+      "code": "/a/(\"aba\")"
+    },
+    "items": [
+      [
+        "a",
+        "a"
+      ]
+    ]
+  },
+  {
+    "name": "dynamic transform escape",
+    "expr": "($f:=$eval(code);obj~>$f)",
+    "data": {
+      "code": "|$|{\"n\":2}|",
+      "obj": {
+        "n": 1,
+        "keep": 3
+      }
+    },
+    "items": [
+      {
+        "n": 2,
+        "keep": 3
+      }
+    ]
+  },
+  {
+    "name": "eval partial",
+    "expr": "($p:=$eval(?);$p(\"1+2\"))",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "eval through pipeline",
+    "expr": "\"1+2\"~>$eval()",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "dynamic callback",
+    "expr": "($f:=$eval(code);$map([1,2,3],$f))",
+    "data": {
+      "code": "function($x){$x*2}"
+    },
+    "items": [
+      2,
+      4,
+      6
+    ]
+  },
+  {
+    "name": "dynamic grouping callback",
+    "expr": "($f:=$eval(code);[1,2,3]{\"total\":$sum($map($,$f))})",
+    "data": {
+      "code": "function($x){$x*2}"
+    },
+    "items": [
+      {
+        "total": 12
+      }
+    ]
+  },
+  {
+    "name": "dynamic retained sequence repeated use",
+    "expr": "($v:=$eval(code);[$sum($v),$count($v)])",
+    "data": {
+      "code": "[1..3]"
+    },
+    "items": [
+      [
+        6,
+        3
+      ]
+    ]
+  },
+  {
+    "name": "eval constructor output",
+    "expr": "$eval(\"{\\\"sum\\\": $sum(a),\\\"label\\\":s}\")",
+    "data": {
+      "a": [
+        1,
+        2
+      ],
+      "s": "ok"
+    },
+    "items": [
+      {
+        "sum": 3,
+        "label": "ok"
+      }
+    ]
+  },
+  {
+    "name": "shuffle missing",
+    "expr": "$shuffle(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "shuffle empty",
+    "expr": "$shuffle([])",
+    "data": null,
+    "items": [
+      []
+    ]
+  },
+  {
+    "name": "shuffle singleton",
+    "expr": "$shuffle([1])",
+    "data": null,
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "shuffle scalar promotes",
+    "expr": "$shuffle(1)",
+    "data": null,
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "shuffle null promotes",
+    "expr": "$shuffle(null)",
+    "data": null,
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "name": "shuffle permutation invariant",
+    "expr": "$sort($shuffle([1..10]))",
+    "data": null,
+    "items": [
+      [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    ]
+  },
+  {
+    "name": "shuffle sequence count",
+    "expr": "$count($shuffle([1..10].$))",
+    "data": null,
+    "items": [
+      10
+    ]
+  },
+  {
+    "name": "shuffle callback pipeline",
+    "expr": "$shuffle([1..5])~>$sort()~>$map(function($x){$x*2})",
+    "data": null,
+    "items": [
+      2,
+      4,
+      6,
+      8,
+      10
+    ]
+  },
+  {
+    "name": "random interval",
+    "expr": "$random() >= 0 and $random() < 1",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "random rejects arguments",
+    "expr": "$random(1)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "random builtin reference",
+    "expr": "($r:=$random;$r()>=0 and $r()<1)",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "random partial ignores bound slots",
+    "expr": "($r:=$random(?);$r(123)>=0 and $r()<1)",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "random filter effective boolean",
+    "expr": "$count([1..5][$random()>=0])",
+    "data": null,
+    "items": [
+      5
+    ]
+  },
+  {
+    "name": "escaped dynamic tail recursion stays stack bounded",
+    "expr": "($f:=$eval(code);$f(100000,0))",
+    "data": {
+      "code": "($f:=function($n,$a){$n=0?$a:$f($n-1,$a+1)};$f)"
+    },
+    "items": [
+      100000
+    ]
+  },
+  {
+    "name": "escaped dynamic mutual tail recursion",
+    "expr": "($f:=$eval(code);$f(10000))",
+    "data": {
+      "code": "($f:=function($n){$n=0?true:$g($n-1)};$g:=function($n){$n=0?false:$f($n-1)};$f)"
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "dynamic eval calls inherited recursive closure",
+    "expr": "($f:=$eval(code);$eval(\"$f(10000,0)\"))",
+    "data": {
+      "code": "($f:=function($n,$a){$n=0?$a:$f($n-1,$a+1)};$f)"
+    },
+    "items": [
+      10000
+    ]
+  },
+  {
+    "name": "eval alias can mutate builtin bindings",
+    "expr": "($eval:=$eval;$eval(\"$sum:=function($x){9}\");$sum([1,2]))",
+    "data": null,
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "bound eval builtin still uses prepared program",
+    "expr": "($eval:=$eval;$eval(\"1+2\"))",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "callee resolves before argument effects",
+    "expr": "($f:=function($s){7};$eval:=$f;$eval(($eval:=function($s){8};\"1\")))",
+    "data": null,
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "bound dynamic value does not replay",
+    "expr": "($x:=0;$v:=$eval(code);[$v,$v,$x])",
+    "data": {
+      "code": "$x:=$x+1"
+    },
+    "items": [
+      [
+        1,
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "dynamic closure captures replacement focus",
+    "expr": "($f:=$eval(code,obj);other.$f())",
+    "data": {
+      "code": "function(){$.n}",
+      "obj": {
+        "n": 2
+      },
+      "other": {
+        "n": 9
+      }
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "dynamic signature defaults use caller context",
+    "expr": "($f:=$eval(code);n.$f())",
+    "data": {
+      "code": "function($v)<n-:a>{[$v,$.n]}",
+      "n": 7
+    },
+    "items": [
+      [
+        7,
+        7
+      ]
+    ]
+  },
+  {
+    "name": "static eval normalizes before singleton postfix",
+    "expr": "$eval(\"a.x\")[]",
+    "data": {
+      "a": [
+        {
+          "x": 7
+        }
+      ]
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "dynamic eval normalizes before singleton postfix",
+    "expr": "$eval(code)[]",
+    "data": {
+      "code": "a.x",
+      "a": [
+        {
+          "x": 7
+        }
+      ]
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "name": "missing eval retention follows sequence rules",
+    "expr": "$eval(\"missing\")[]",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "partial eval bypasses string signature",
+    "expr": "($p:=$eval(?);$p(1))",
+    "data": null,
+    "error": "EvalSyntax"
+  },
+  {
+    "name": "imported matcher cursor remains shared",
+    "expr": "($r:=/a/;$m:=$eval(code);$r(\"xa\");$m.next().match)",
+    "data": {
+      "code": "$r(\"ababa\")"
+    },
+    "items": [
+      "a"
+    ]
+  },
+  {
+    "name": "escaped dynamic matcher cursor remains shared",
+    "expr": "($o:=$eval(code);$o.r(\"xa\");$o.m.next().match)",
+    "data": {
+      "code": "($r:=/a/;{\"r\":$r,\"m\":$r(\"ababa\")})"
+    },
+    "items": [
+      "a"
+    ]
+  },
+  {
+    "name": "clock shared across dynamic evaluation",
+    "expr": "[$millis(),$eval(\"$millis()\"),$eval(code)]~>$distinct()~>$count()",
+    "data": {
+      "code": "$millis()"
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "tail eval uses caller environment",
+    "expr": "function($x){$eval(\"$x\")}(7)",
+    "data": {
+      "n": 9
+    },
+    "items": []
+  },
+  {
+    "name": "tail eval alias uses caller environment",
+    "expr": "($e:=$eval;function($x){$e(\"$x\")}(7))",
+    "data": {
+      "n": 9
+    },
+    "items": []
+  },
+  {
+    "name": "tail eval partial uses caller environment",
+    "expr": "($e:=$eval(?);function($x){$e(\"$x\")}(7))",
+    "data": {
+      "n": 9
+    },
+    "items": []
+  },
+  {
+    "name": "tail eval uses caller focus",
+    "expr": "($f:=function(){$eval(\"$\")};n.$f())",
+    "data": {
+      "n": 9
+    },
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "non-tail eval uses captured focus",
+    "expr": "($f:=function(){$eval(\"$\")&\"\"};n.$f())",
+    "data": {
+      "n": 9
+    },
+    "items": [
+      "{\"n\":9}"
+    ]
+  },
+  {
+    "name": "shadowed eval preserves tail calls",
+    "expr": "($eval:=function($n){$n=0?0:$eval($n-1)};$eval(100000))",
+    "data": {
+      "n": 9
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "shadowed eval evaluates arguments before invocation error",
+    "expr": "($eval:=1;$eval($error(\"argument\")))",
+    "data": null,
+    "error": "UserError"
+  }
+]
