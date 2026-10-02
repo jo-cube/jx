@@ -44,8 +44,22 @@ impl Pattern {
     }
 }
 #[derive(Debug)]
+enum PatternRef<'e> {
+    Borrowed(&'e Pattern),
+    Owned(Rc<Pattern>),
+}
+impl std::ops::Deref for PatternRef<'_> {
+    type Target = Pattern;
+    fn deref(&self) -> &Pattern {
+        match self {
+            Self::Borrowed(v) => v,
+            Self::Owned(v) => v,
+        }
+    }
+}
+#[derive(Debug)]
 pub(crate) struct State<'e> {
-    pattern: &'e Pattern,
+    pattern: PatternRef<'e>,
     position: Cell<usize>,
 }
 #[derive(Debug)]
@@ -56,12 +70,22 @@ pub(crate) struct Continuation<'e, 'i> {
 pub(crate) fn literal<'e, 'i>(pattern: &'e Pattern) -> Value<'e, 'i> {
     Value::Function(Rc::new(Function {
         kind: FunctionKind::Matcher(Rc::new(State {
-            pattern,
+            pattern: PatternRef::Borrowed(pattern),
             position: Cell::new(0),
         })),
     }))
 }
 impl State<'_> {
+    pub(crate) fn retained<'e>(&self) -> State<'e> {
+        let pattern = match &self.pattern {
+            PatternRef::Borrowed(v) => Rc::new((*v).clone()),
+            PatternRef::Owned(v) => v.clone(),
+        };
+        State {
+            pattern: PatternRef::Owned(pattern),
+            position: Cell::new(self.position.get()),
+        }
+    }
     fn search(&self, input: &Text<'_, '_>, start: usize) -> Option<regress::Match> {
         let found = input.search(&self.pattern.regex, start);
         self.position.set(found.as_ref().map_or(0, |m| m.end()));
@@ -105,6 +129,22 @@ pub(crate) fn invoke<'e, 'i>(
         }))
 }
 impl<'e, 'i> Continuation<'e, 'i> {
+    pub(crate) fn state(&self) -> &Rc<State<'e>> {
+        &self.state
+    }
+    pub(crate) fn value(&self) -> &Value<'e, 'i> {
+        &self.input.value
+    }
+    pub(crate) fn retained<'d>(
+        &self,
+        state: Rc<State<'d>>,
+        value: Value<'d, 'i>,
+    ) -> Continuation<'d, 'i> {
+        Continuation {
+            state,
+            input: self.input.retained(value),
+        }
+    }
     pub fn invoke(&self, offset: usize) -> Result<Operand<'e, 'i>, Error> {
         if self.state.position.get() >= self.input.len() {
             return Ok(Operand::Missing);

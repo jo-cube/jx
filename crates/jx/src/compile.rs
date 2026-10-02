@@ -107,6 +107,20 @@ fn eligible(node: &Node) -> bool {
 }
 
 fn specialize(node: &mut Node) {
+    let eval = match &node.kind {
+        Kind::Builtin(Builtin::Runtime(crate::dynamic::Builtin::Eval), _) => true,
+        Kind::Call(target, _) => {
+            matches!(&target.kind, Kind::Variable(name) if name.as_ref() == "eval")
+        }
+        _ => false,
+    };
+    if eval {
+        let args = match &mut node.kind {
+            Kind::Builtin(_, args) | Kind::Call(_, args) => std::mem::take(args),
+            _ => unreachable!(),
+        };
+        node.kind = Kind::Eval(Box::new(crate::dynamic::Call::prepare(args)));
+    }
     if let Kind::Builtin(Builtin::Library(function), args) = &mut node.kind
         && let Some(call) = crate::format::Call::prepare(*function, args, node.offset)
     {

@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 // Resolve only builtins that cannot be rebound anywhere in this expression.
 // Conservative across scopes: compile cost is cheap, observable rebinding is not.
-pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
+pub(crate) fn prepare(root: &mut Node, dynamic: bool) -> Result<(), crate::Error> {
     let mut invalid = None;
     let mut transform_binding = None;
     visit(root, &mut |node| {
@@ -56,11 +56,20 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         }
         _ => {}
     });
+    let mut eval = dynamic;
+    visit(root, &mut |node| {
+        eval |= matches!(&node.kind, Kind::Variable(name) if name.as_ref() == "eval");
+    });
     visit(root, &mut |node| {
         if let Kind::Call(target, args) = &mut node.kind {
             let builtin = match &target.kind {
                 Kind::BuiltinReference(builtin) => Some(*builtin),
-                Kind::Variable(name) if !bound.contains(name.as_ref()) => Builtin::named(name),
+                Kind::Variable(name)
+                    if !bound.contains(name.as_ref())
+                        && (!eval || (!dynamic && name.as_ref() == "eval")) =>
+                {
+                    Builtin::named(name)
+                }
                 _ => None,
             };
             if let Some(builtin) = builtin {
@@ -87,6 +96,7 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
         }
         if let Kind::Variable(name) = &node.kind
             && !bound.contains(name.as_ref())
+            && (!eval || (!dynamic && name.as_ref() == "eval"))
             && let Some(builtin) = Builtin::named(name)
         {
             node.kind = Kind::BuiltinReference(builtin);
@@ -101,6 +111,10 @@ pub(crate) fn prepare(root: &mut Node) -> Result<(), crate::Error> {
                 | Kind::Call(..)
                 | Kind::Partial(..)
                 | Kind::Binary(Op::Chain, ..)
+        );
+        node.effects |= matches!(
+            node.kind,
+            Kind::Builtin(Builtin::Runtime(_), _) | Kind::BuiltinReference(Builtin::Runtime(_))
         );
         if let Kind::Route(steps, _) | Kind::Tuples(steps, _) = &mut node.kind {
             for step in steps {
@@ -195,6 +209,11 @@ pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
             f(yes);
             if let Some(no) = no {
                 f(no);
+            }
+        }
+        Kind::Eval(call) => {
+            for arg in &mut call.args {
+                f(arg);
             }
         }
         Kind::Formatted(call) => {
@@ -310,12 +329,46 @@ pub(crate) fn check_composition(root: &mut Node) -> Result<(), crate::Error> {
 
 pub(crate) fn own_clock(kind: &Kind) -> bool {
     match kind {
+        Kind::Eval(call) => call.needs_clock(),
+        Kind::Builtin(Builtin::Runtime(crate::dynamic::Builtin::Eval), _)
+        | Kind::BuiltinReference(Builtin::Runtime(crate::dynamic::Builtin::Eval)) => true,
         Kind::Formatted(call) => call.needs_clock(),
         Kind::Builtin(Builtin::Library(function), args) => function.clock_call(args),
         Kind::BuiltinReference(Builtin::Library(function)) => function.uses_clock(),
         Kind::Variable(name) => {
-            matches!(Builtin::named(name),Some(Builtin::Library(f)) if f.uses_clock())
+            name.as_ref() == "eval"
+                || matches!(Builtin::named(name),Some(Builtin::Library(f)) if f.uses_clock())
         }
         _ => false,
     }
+}
+
+// Effects control replay; runtime storage is a separate requirement. A prepared
+// eval with no lexical reads/writes, calls or clock can execute without an arena.
+pub(crate) fn requires_runtime(root: &mut Node) -> bool {
+    let mut runtime = false;
+    visit(root, &mut |node| {
+        runtime |= node.clock
+            || matches!(
+                node.kind,
+                Kind::Variable(_)
+                    | Kind::Parent(_)
+                    | Kind::Bind(..)
+                    | Kind::Lambda(_)
+                    | Kind::Transform(_)
+                    | Kind::Call(..)
+                    | Kind::Partial(..)
+                    | Kind::Tuples(..)
+                    | Kind::Binary(Op::Chain, ..)
+                    | Kind::Builtin(Builtin::Runtime(_), _)
+                    | Kind::BuiltinReference(Builtin::Runtime(_))
+            );
+        if let Kind::Eval(call) = &node.kind {
+            runtime |= call.needs_runtime();
+        }
+        if let Kind::Route(steps, _) = &node.kind {
+            runtime |= steps.iter().any(|s| s.bindings.is_some());
+        }
+    });
+    runtime
 }

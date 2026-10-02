@@ -10,6 +10,12 @@ use lex::{Lexer, Token, error};
 pub(crate) const MAX_DEPTH: usize = 128;
 
 pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
+    parse(source, false)
+}
+pub(crate) fn dynamic(source: &str) -> Result<Expression, Error> {
+    parse(source, true)
+}
+fn parse(source: &str, dynamic: bool) -> Result<Expression, Error> {
     let mut lexer = Lexer { source, at: 0 };
     let (token, offset) = lexer.next()?;
     let mut parser = Parser {
@@ -22,11 +28,12 @@ pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
         return Err(error(parser.offset));
     }
     crate::provenance::prepare(&mut root)?;
-    crate::analysis::prepare(&mut root)?;
+    crate::analysis::prepare(&mut root, dynamic)?;
     crate::compile::prepare(&mut root);
     crate::analysis::check_composition(&mut root)?;
     crate::plan::prepare(&mut root);
-    Ok(Expression { root })
+    let runtime = crate::analysis::requires_runtime(&mut root);
+    Ok(Expression { root, runtime })
 }
 struct Parser<'a> {
     lexer: Lexer<'a>,

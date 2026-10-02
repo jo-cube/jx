@@ -1,10 +1,11 @@
+mod bridge;
 use crate::{Error, ErrorKind, Value, expression::Node, sequence::Context};
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Frame<'e, 'i> {
     parent: Option<usize>,
     bindings: Bindings<'e, 'i>,
@@ -13,23 +14,62 @@ struct Frame<'e, 'i> {
 }
 
 pub(crate) type BindingValues<'e, 'i> = Vec<(&'e str, Value<'e, 'i>)>;
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum Bindings<'e, 'i> {
     Owned(BindingValues<'e, 'i>),
     Shared(Rc<BindingValues<'e, 'i>>),
+    Dynamic(Vec<(Box<str>, Value<'e, 'i>)>),
 }
 impl<'e, 'i> Bindings<'e, 'i> {
-    fn values(&self) -> &BindingValues<'e, 'i> {
+    fn lookup(&self, name: &str) -> Option<&Value<'e, 'i>> {
         match self {
-            Self::Owned(values) => values,
-            Self::Shared(values) => values,
+            Self::Owned(v) => v.iter().rev().find(|(n, _)| *n == name).map(|(_, v)| v),
+            Self::Shared(v) => v.iter().rev().find(|(n, _)| *n == name).map(|(_, v)| v),
+            Self::Dynamic(v) => v
+                .iter()
+                .rev()
+                .find(|(n, _)| n.as_ref() == name)
+                .map(|(_, v)| v),
         }
     }
-    fn mutable(&mut self) -> &mut BindingValues<'e, 'i> {
-        match self {
-            Self::Owned(values) => values,
-            Self::Shared(values) => Rc::make_mut(values),
+    fn bind(&mut self, name: &'e str, value: Value<'e, 'i>) {
+        let values = match self {
+            Self::Owned(v) => v,
+            Self::Shared(v) => Rc::make_mut(v),
+            Self::Dynamic(v) => {
+                if let Some((_, previous)) = v.iter_mut().find(|(n, _)| n.as_ref() == name) {
+                    *previous = value;
+                } else {
+                    v.push((name.into(), value));
+                }
+                return;
+            }
+        };
+        if let Some((_, previous)) = values.iter_mut().find(|(n, _)| *n == name) {
+            *previous = value;
+        } else {
+            values.push((name, value));
         }
+    }
+    fn clear(&mut self) {
+        match self {
+            Self::Owned(v) => v.clear(),
+            Self::Shared(_) => *self = Self::Owned(Vec::new()),
+            Self::Dynamic(v) => v.clear(),
+        }
+    }
+    fn entries(&self) -> impl Iterator<Item = (&str, &Value<'e, 'i>)> {
+        type Borrowed<'a, 'e, 'i> = &'a [(&'e str, Value<'e, 'i>)];
+        type Owned<'a, 'e, 'i> = &'a [(Box<str>, Value<'e, 'i>)];
+        let (borrowed, owned): (Borrowed<'_, '_, '_>, Owned<'_, '_, '_>) = match self {
+            Self::Owned(v) => (v, &[]),
+            Self::Shared(v) => (v, &[]),
+            Self::Dynamic(v) => (&[], v),
+        };
+        borrowed
+            .iter()
+            .map(|(k, v)| (*k, v))
+            .chain(owned.iter().map(|(k, v)| (k.as_ref(), v)))
     }
 }
 
@@ -40,7 +80,8 @@ pub(crate) struct Runtime<'e, 'i> {
     frames: RefCell<Vec<Frame<'e, 'i>>>,
     depth: Cell<usize>,
     tree_depth: Cell<usize>,
-    timestamp: Option<i64>,
+    timestamp: Cell<i64>,
+    random: RefCell<Option<crate::Random>>,
 }
 #[derive(Clone, Debug)]
 pub(crate) struct Scope<'e, 'i> {
@@ -48,7 +89,7 @@ pub(crate) struct Scope<'e, 'i> {
     pub frame: usize,
 }
 impl<'e, 'i> Scope<'e, 'i> {
-    pub fn new(root: Value<'e, 'i>, clock: bool) -> Self {
+    pub fn with_random(root: Value<'e, 'i>, clock: bool, random: Option<&crate::Random>) -> Self {
         Self {
             runtime: Rc::new(Runtime {
                 frames: RefCell::new(vec![Frame {
@@ -59,26 +100,33 @@ impl<'e, 'i> Scope<'e, 'i> {
                 }]),
                 depth: Cell::new(0),
                 tree_depth: Cell::new(0),
-                timestamp: clock.then(timestamp),
+                timestamp: Cell::new(if clock { timestamp() } else { i64::MIN }),
+                random: RefCell::new(random.cloned()),
             }),
             frame: 0,
         }
     }
     pub fn timestamp(&self) -> i64 {
-        self.runtime.timestamp.expect("clock analysis")
+        let mut value = self.runtime.timestamp.get();
+        if value == i64::MIN {
+            value = timestamp();
+            self.runtime.timestamp.set(value);
+        }
+        value
+    }
+    pub fn random(&self) -> crate::Random {
+        self.runtime
+            .random
+            .borrow_mut()
+            .get_or_insert_with(crate::Random::default)
+            .clone()
     }
     pub fn lookup(&self, name: &str) -> Option<Value<'e, 'i>> {
         let frames = self.runtime.frames.borrow();
         let mut at = Some(self.frame);
         while let Some(index) = at {
             let frame = &frames[index];
-            if let Some((_, value)) = frame
-                .bindings
-                .values()
-                .iter()
-                .rev()
-                .find(|(key, _)| *key == name)
-            {
+            if let Some(value) = frame.bindings.lookup(name) {
                 return Some(value.clone());
             }
             at = frame.parent;
@@ -87,12 +135,7 @@ impl<'e, 'i> Scope<'e, 'i> {
     }
     pub fn bind(&self, name: &'e str, value: Value<'e, 'i>) {
         let mut frames = self.runtime.frames.borrow_mut();
-        let bindings = frames[self.frame].bindings.mutable();
-        if let Some((_, previous)) = bindings.iter_mut().find(|(key, _)| *key == name) {
-            *previous = value;
-        } else {
-            bindings.push((name, value));
-        }
+        frames[self.frame].bindings.bind(name, value);
     }
     pub fn at(&self, frame: usize) -> Self {
         Self {
@@ -156,24 +199,21 @@ impl<'e, 'i> Scope<'e, 'i> {
         }
         let frame = &mut frames[self.frame];
         frame.parent = Some(parent);
-        frame.bindings.mutable().clear();
+        frame.bindings.clear();
         true
     }
     pub fn bind_arguments(&self, params: &'e [Box<str>], arguments: &[Option<Value<'e, 'i>>]) {
         let mut frames = self.runtime.frames.borrow_mut();
-        let bindings = frames[self.frame].bindings.mutable();
+        let bindings = &mut frames[self.frame].bindings;
         for (index, param) in params.iter().enumerate() {
-            let value = arguments
-                .get(index)
-                .cloned()
-                .flatten()
-                .unwrap_or(Value::Undefined);
-            if let Some((_, previous)) = bindings.iter_mut().find(|(key, _)| *key == param.as_ref())
-            {
-                *previous = value;
-            } else {
-                bindings.push((param, value));
-            }
+            bindings.bind(
+                param,
+                arguments
+                    .get(index)
+                    .cloned()
+                    .flatten()
+                    .unwrap_or(Value::Undefined),
+            );
         }
     }
     // Released scopes must no longer be used. Captured scopes are never recycled.
@@ -186,10 +226,7 @@ impl<'e, 'i> Scope<'e, 'i> {
         trim_vacant(&mut frames, self.frame);
         if self.frame + 1 == frames.len() {
             let frame = &mut frames[self.frame];
-            match &mut frame.bindings {
-                Bindings::Owned(values) => values.clear(),
-                Bindings::Shared(_) => frame.bindings = Bindings::Owned(Vec::new()),
-            }
+            frame.bindings.clear();
             frame.parent = None;
             frame.vacant = true;
         }

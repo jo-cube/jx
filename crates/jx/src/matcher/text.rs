@@ -9,6 +9,12 @@ pub(super) struct Text<'e, 'i> {
     units: Option<Rc<[u16]>>,
 }
 impl<'e, 'i> Text<'e, 'i> {
+    pub fn retained<'d>(&self, value: Value<'d, 'i>) -> Text<'d, 'i> {
+        Text {
+            value,
+            units: self.units.clone(),
+        }
+    }
     pub fn new(value: Value<'e, 'i>, offset: usize) -> Result<Self, Error> {
         let body = value.string_body().ok_or_else(|| type_error(offset))?;
         let units = (!(body.is_ascii() && !body.as_bytes().contains(&b'\\')))

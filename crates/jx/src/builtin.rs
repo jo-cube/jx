@@ -24,7 +24,7 @@ pub(crate) enum Builtin {
     Exists,
     Lookup,
     Library(library::Library),
-    Deferred(&'static str),
+    Runtime(crate::dynamic::Builtin),
 }
 impl Builtin {
     pub fn named(name: &str) -> Option<Self> {
@@ -41,7 +41,10 @@ impl Builtin {
             "not" => Self::Not,
             "exists" => Self::Exists,
             "lookup" => Self::Lookup,
-            _ => Self::Deferred(DEFERRED.iter().find(|&&candidate| candidate == name)?),
+            "eval" => Self::Runtime(crate::dynamic::Builtin::Eval),
+            "random" => Self::Runtime(crate::dynamic::Builtin::Random),
+            "shuffle" => Self::Runtime(crate::dynamic::Builtin::Shuffle),
+            _ => return None,
         })
     }
     pub fn evaluate<'e, 'i>(
@@ -57,6 +60,7 @@ impl Builtin {
             Self::Library(f) => f.contextual(argc),
             Self::Boolean | Self::Not => argc == 0,
             Self::Lookup => argc == 1,
+            Self::Runtime(crate::dynamic::Builtin::Eval) => true,
             _ => false,
         }
     }
@@ -73,12 +77,9 @@ impl Builtin {
         if matches!(self, Self::Lookup) {
             return crate::lookup::evaluate_in(args, context, caller, offset);
         }
-        if let Self::Deferred(name) = self {
-            return Err(crate::Error::new(
-                crate::ErrorKind::UnsupportedExpression,
-                offset,
-                name,
-            ));
+        if let Self::Runtime(function) = self {
+            let args = crate::function::Arguments::evaluate(args, context)?;
+            return function.values(args.as_slice(), caller, offset);
         }
         if let Self::Aggregate(aggregate) = self {
             return aggregate.evaluate(args, context, offset);
@@ -134,7 +135,7 @@ impl Builtin {
                 [object, key] => crate::lookup::values(object.clone(), key.clone(), offset),
                 _ => Err(type_error(offset)),
             },
-            Self::Deferred(_) => self.value(None, offset),
+            Self::Runtime(function) => function.values(args, context, offset),
             Self::Boolean | Self::Not if args.is_empty() => {
                 self.value(Some(context.value.clone()), offset)
             }
@@ -151,6 +152,9 @@ impl Builtin {
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
         if let Self::Library(function) = self {
+            return function.partial_values(args, context, offset);
+        }
+        if let Self::Runtime(function) = self {
             return function.partial_values(args, context, offset);
         }
         if matches!(self, Self::Aggregate(Aggregate::Count)) {
@@ -214,10 +218,7 @@ impl Builtin {
     }
 
     pub fn partial_arity(self, offset: usize) -> Result<usize, Error> {
-        if matches!(
-            self,
-            Self::Library(library::Library::String) | Self::Deferred(_)
-        ) {
+        if matches!(self, Self::Library(library::Library::String)) {
             return Err(crate::Error::new(
                 crate::ErrorKind::UnsupportedExpression,
                 offset,
@@ -230,6 +231,7 @@ impl Builtin {
         match self {
             Self::Library(function) => function.arity(),
             Self::Lookup => 2,
+            Self::Runtime(function) => function.arity(),
             _ => 1,
         }
     }
@@ -243,7 +245,7 @@ impl Builtin {
     pub fn constant(self, args: &[Node]) -> bool {
         match self {
             Self::Library(function) => function.constant(args),
-            Self::Deferred(_) => false,
+            Self::Runtime(_) => false,
             Self::Lookup => args.len() == 2,
             _ => !args.is_empty(),
         }
@@ -255,13 +257,6 @@ impl Builtin {
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
         let value = value.filter(|value| !matches!(value, Value::Undefined));
-        if let Self::Deferred(name) = self {
-            return Err(crate::Error::new(
-                crate::ErrorKind::UnsupportedExpression,
-                offset,
-                name,
-            ));
-        }
         if let Self::Aggregate(aggregate) = self {
             return aggregate.retained(value, offset);
         }
@@ -273,13 +268,10 @@ impl Builtin {
                 };
                 value.truth(offset)? != matches!(self, Self::Not)
             }
-            Self::Aggregate(_) | Self::Deferred(_) | Self::Lookup | Self::Library(_) => {
+            Self::Aggregate(_) | Self::Runtime(_) | Self::Lookup | Self::Library(_) => {
                 unreachable!()
             }
         };
         Ok(Operand::One(Value::Boolean(result)))
     }
 }
-
-// Known standard names must not silently behave like unbound user variables.
-const DEFERRED: &[&str] = &["random", "shuffle", "eval"];

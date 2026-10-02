@@ -151,6 +151,9 @@ pub struct OwnedString {
     json: std::rc::Rc<str>,
 }
 impl OwnedString {
+    pub(crate) fn body_pointer(&self) -> *const u8 {
+        self.json.as_ptr()
+    }
     pub(crate) fn units(units: impl IntoIterator<Item = u16>) -> Self {
         use std::fmt::Write;
         let units = units.into_iter();

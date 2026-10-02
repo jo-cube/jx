@@ -23,7 +23,7 @@ pub(super) enum Outcome<'e, 'i> {
 
 pub(crate) fn possible(node: &Node) -> bool {
     match &node.kind {
-        Kind::Call(..) => true,
+        Kind::Call(..) | Kind::Eval(..) => true,
         Kind::Builtin(builtin, args) => builtin.contextual(args.len()),
         Kind::Formatted(call) => call.function.contextual(call.args.len()),
         Kind::Group(body) => possible(body),
@@ -65,6 +65,23 @@ fn evaluate<'e, 'i>(
                 validate: true,
                 null_focus: false,
             }))
+        }
+        Kind::Eval(call) => {
+            let target = crate::dynamic::Call::target(context);
+            let arguments = Arguments::evaluate(&call.args, context)?;
+            let target = crate::dynamic::Call::resolve(target, node.offset)?;
+            if let Some(function) = target {
+                Ok(Outcome::Call(Call {
+                    function,
+                    arguments,
+                    offset: node.offset,
+                    validate: true,
+                    null_focus: false,
+                }))
+            } else {
+                super::retained(call.values(arguments.as_slice(), caller, node.offset)?)
+                    .map(Outcome::Done)
+            }
         }
         Kind::Builtin(builtin, args) => {
             super::retained(builtin.evaluate_in(args, context, caller, node.offset)?)

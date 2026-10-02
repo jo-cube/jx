@@ -2,7 +2,7 @@ use crate::{Error, Value, expression::Node, sequence::Context};
 
 // Ordinary JSONata calls are small. Retention needs owned slots, not a heap
 // allocation; wide calls spill without changing the value representation.
-pub(super) enum Arguments<'e, 'i> {
+pub(crate) enum Arguments<'e, 'i> {
     Small([Option<Value<'e, 'i>>; 3], usize),
     Large(Vec<Option<Value<'e, 'i>>>),
 }

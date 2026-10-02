@@ -40,6 +40,7 @@ pub(crate) enum Kind {
     Sort(Box<Node>, Box<[(Node, bool)]>),
     Builtin(crate::builtin::Builtin, Box<[Node]>),
     Formatted(Box<crate::format::Call>),
+    Eval(Box<crate::dynamic::Call>),
     Variable(Box<str>),
     Bind(Box<str>, Box<Node>),
     Block(Box<[Node]>),

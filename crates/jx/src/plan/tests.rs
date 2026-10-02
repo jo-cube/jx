@@ -29,7 +29,8 @@ fn snapshot(value: Value<'_, '_>) -> Snapshot {
 }
 fn result(node: &Node, input: &[u8]) -> Result<Vec<Snapshot>, crate::Error> {
     let mut items = Vec::new();
-    crate::evaluate::scalar(node, input)?.for_each(|value| items.push(snapshot(value)))?;
+    crate::evaluate::scalar(node, input, None, node.effects || node.clock)?
+        .for_each(|value| items.push(snapshot(value)))?;
     Ok(items)
 }
 

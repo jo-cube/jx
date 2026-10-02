@@ -132,7 +132,12 @@ pub(crate) fn path_conversion<'e, 'i>(
     })
 }
 
-pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
+pub(crate) fn scalar<'e, 'i>(
+    node: &'e Node,
+    input: &'i [u8],
+    random: Option<&crate::Random>,
+    runtime: bool,
+) -> Result<Evaluation<'e, 'i>, Error> {
     if let Kind::Plan(plan) = &node.kind {
         return Ok(Evaluation {
             result: results(plan.evaluate(input)?),
@@ -140,7 +145,7 @@ pub(crate) fn scalar<'e, 'i>(node: &'e Node, input: &'i [u8]) -> Result<Evaluati
     }
     let value = Value::Raw(crate::validate(input)?);
     let scope =
-        (node.effects || node.clock).then(|| crate::runtime::Scope::new(value.clone(), node.clock));
+        runtime.then(|| crate::runtime::Scope::with_random(value.clone(), node.clock, random));
     let context = Context {
         scope,
         value,
@@ -305,6 +310,15 @@ impl Node {
                     .map(|v| v.map_or(Operand::Missing, Operand::One));
             }
             Kind::Formatted(call) => return call.evaluate(input, self.offset),
+            Kind::Eval(call) => {
+                return call.evaluate(input, self.offset).map(|result| {
+                    if self.tail_call {
+                        result
+                    } else {
+                        result.normalize()
+                    }
+                });
+            }
             Kind::Builtin(builtin, args) => {
                 return builtin.evaluate(args, input, self.offset).map(|result| {
                     if self.tail_call {

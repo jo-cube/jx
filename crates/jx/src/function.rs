@@ -1,11 +1,12 @@
 mod arguments;
-mod composition;
+pub(crate) mod composition;
 mod signature;
 mod tail;
 use crate::builtin::Builtin;
 use crate::{
     Error, Value, evaluate::Operand, expression::Node, sequence::Context, value::type_error,
 };
+pub(crate) use arguments::Arguments;
 pub(crate) use composition::{chain, partial};
 pub(crate) use signature::Signature;
 use std::rc::Rc;
@@ -27,6 +28,7 @@ pub(crate) struct Definition {
 #[derive(Debug)]
 pub(crate) enum FunctionKind<'e, 'i> {
     Builtin(Builtin),
+    Dynamic(Box<crate::dynamic::Callable<'e, 'i>>),
     Matcher(Rc<crate::matcher::State<'e>>),
     MatchNext(Rc<crate::matcher::Continuation<'e, 'i>>),
     Transform {
@@ -80,6 +82,7 @@ pub(crate) fn call<'e, 'i>(
 pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
     match &function.kind {
         FunctionKind::Builtin(builtin) => builtin.arity(),
+        FunctionKind::Dynamic(callable) => callable.arity(),
         FunctionKind::Matcher(_) => 2,
         FunctionKind::MatchNext(_) => 0,
         FunctionKind::Lambda { definition, .. } => definition.params.len(),
@@ -99,7 +102,7 @@ pub(crate) fn invoke<'e, 'i>(
 ) -> Result<Operand<'e, 'i>, Error> {
     invoke_checked(function, arguments, context, offset, true)
 }
-fn invoke_checked<'e, 'i>(
+pub(crate) fn invoke_checked<'e, 'i>(
     function: &Function<'e, 'i>,
     arguments: &[Option<Value<'e, 'i>>],
     context: &Context<'e, 'i>,
@@ -107,6 +110,7 @@ fn invoke_checked<'e, 'i>(
     validate: bool,
 ) -> Result<Operand<'e, 'i>, Error> {
     match &function.kind {
+        FunctionKind::Dynamic(callable) => callable.invoke(arguments, context, offset, validate),
         FunctionKind::Builtin(builtin) => {
             if validate {
                 builtin.values(arguments, context, offset)
@@ -161,7 +165,7 @@ fn invoke_checked<'e, 'i>(
     }
 }
 
-fn retained<'e, 'i>(value: Operand<'e, 'i>) -> Result<Option<Value<'e, 'i>>, Error> {
+pub(crate) fn retained<'e, 'i>(value: Operand<'e, 'i>) -> Result<Option<Value<'e, 'i>>, Error> {
     match value {
         Operand::Missing => Ok(None),
         Operand::One(value) => Ok(Some(value)),

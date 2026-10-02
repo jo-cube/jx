@@ -18,6 +18,7 @@ mod constant;
 mod construct;
 mod container;
 mod convert;
+mod dynamic;
 mod error;
 mod evaluate;
 mod expression;
@@ -34,6 +35,7 @@ mod parse;
 mod path;
 mod plan;
 mod provenance;
+mod random;
 mod retain;
 mod route;
 mod runtime;
@@ -48,6 +50,7 @@ pub use error::{Error, ErrorKind};
 pub use evaluate::{ConsumeError, Evaluation};
 pub use function::Function;
 pub use json::{MAX_DEPTH, RawJson, validate};
+pub use random::Random;
 pub use transform::CopiedValue;
 pub use value::{OwnedString, Value};
 
@@ -55,6 +58,7 @@ pub use value::{OwnedString, Value};
 #[derive(Clone, Debug)]
 pub struct Expression {
     root: expression::Node,
+    runtime: bool,
 }
 
 pub fn compile(source: &str) -> Result<Expression, Error> {
@@ -62,6 +66,20 @@ pub fn compile(source: &str) -> Result<Expression, Error> {
 }
 
 impl Expression {
+    /// Evaluate with a shared random source. Seed it for reproducible evaluation;
+    /// successive records consume the same stream. Pure expressions ignore it.
+    pub fn evaluate_with_random<'e, 'i>(
+        &'e self,
+        input: &'i [u8],
+        random: &Random,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        if self.runtime {
+            evaluate::scalar(&self.root, input, Some(random), true)
+        } else {
+            self.evaluate(input)
+        }
+    }
+
     /// Validate the entire record before exposing results. Pure routes defer
     /// traversal; scalar operations and lexical retention finish before returning.
     #[inline]
@@ -88,7 +106,7 @@ impl Expression {
                 };
                 evaluate::path_conversion(*builtin, path, input, self.root.offset)
             }
-            _ => evaluate::scalar(&self.root, input),
+            _ => evaluate::scalar(&self.root, input, None, self.runtime),
         }
     }
 }
