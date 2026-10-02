@@ -168,7 +168,7 @@ pub(crate) fn scalar<'e, 'i>(
     Ok(Evaluation { result })
 }
 
-fn results<'e, 'i>(operand: Operand<'e, 'i>) -> Results<'e, 'i> {
+pub(crate) fn results<'e, 'i>(operand: Operand<'e, 'i>) -> Results<'e, 'i> {
     match operand {
         Operand::Missing => Results::Scalar(None),
         Operand::One(value) => Results::Scalar(Some(value)),

@@ -11,6 +11,26 @@ pub(crate) fn matches(body: &str, field: &str) -> bool {
     .eq(field.encode_utf16())
 }
 
+pub(crate) fn equal(left: &str, right: &str) -> bool {
+    if !left.as_bytes().contains(&b'\\') && !right.as_bytes().contains(&b'\\') {
+        left == right
+    } else {
+        units(left).eq(units(right))
+    }
+}
+
+pub(crate) fn fingerprint(body: &str) -> u64 {
+    fingerprint_units(units(body))
+}
+pub(crate) fn fingerprint_units(units: impl IntoIterator<Item = u16>) -> u64 {
+    use std::hash::{DefaultHasher, Hasher};
+    let mut hash = DefaultHasher::new();
+    for unit in units {
+        hash.write_u16(unit);
+    }
+    hash.finish()
+}
+
 pub(crate) struct Units<'a> {
     chars: std::str::Chars<'a>,
     pending: Option<u16>,
@@ -68,6 +88,20 @@ pub(crate) fn units(body: &str) -> Units<'_> {
 mod tests {
     use super::units;
 
+    #[test]
+    fn equal_strings_have_equal_fingerprints() {
+        for (a, b) in [
+            ("a", r"\u0061"),
+            ("é😀", r"\u00e9\ud83d\ude00"),
+            (r"\ud800", r"\uD800"),
+            ("a/b", r"a\/b"),
+            ("", ""),
+        ] {
+            assert!(super::equal(a, b));
+            assert_eq!(super::fingerprint(a), super::fingerprint(b));
+        }
+        assert!(!super::equal(r"\ud800", r"\udc00"));
+    }
     #[test]
     fn size_hints_bound_remaining_units() {
         for (body, mut remaining) in [

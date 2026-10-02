@@ -1,3 +1,4 @@
+pub(crate) mod acquire;
 mod arguments;
 pub(crate) mod composition;
 mod signature;
@@ -77,18 +78,8 @@ pub(crate) fn call<'e, 'i>(
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
     if let Kind::Lambda(definition) = &target.kind {
-        // The literal callee lives through this call. Escaping body closures mark
-        // their own ancestry; the ephemeral callee need not pin its caller frame.
-        let function = Function {
-            kind: FunctionKind::Lambda {
-                definition,
-                focus: context.value.clone(),
-                wrapped: context.wrapped,
-                frame: context.scope.as_ref().expect("lexical runtime").frame,
-            },
-        };
         let arguments = arguments::Arguments::evaluate(args, context)?;
-        return invoke(&function, arguments.as_slice(), context, offset);
+        return invoke_literal(definition, arguments.as_slice(), context, offset);
     }
     let target = crate::retain::materialize(target, context)?;
     let arguments = arguments::Arguments::evaluate(args, context)?;
@@ -96,6 +87,25 @@ pub(crate) fn call<'e, 'i>(
         return Err(type_error(offset));
     };
     invoke(&function, arguments.as_slice(), context, offset)
+}
+
+pub(super) fn invoke_literal<'e, 'i>(
+    definition: &'e Definition,
+    arguments: &[Option<Value<'e, 'i>>],
+    context: &Context<'e, 'i>,
+    offset: usize,
+) -> Result<Operand<'e, 'i>, Error> {
+    // Escaping body closures mark their own ancestry. An immediate literal
+    // callee only borrows its definition and does not pin the caller frame.
+    let function = Function {
+        kind: FunctionKind::Lambda {
+            definition,
+            focus: context.value.clone(),
+            wrapped: context.wrapped,
+            frame: context.scope.as_ref().expect("lexical runtime").frame,
+        },
+    };
+    invoke(&function, arguments, context, offset)
 }
 
 pub(crate) fn arity(function: &Function<'_, '_>) -> usize {

@@ -73,14 +73,14 @@ pub(crate) fn values<'e, 'i>(
 
 pub(crate) fn field<'e, 'i>(object: &Value<'e, 'i>, key: &str) -> Option<Value<'e, 'i>> {
     if let Value::Constant(value) = object {
-        return value.field(|name| string::units(name).cmp(string::units(key)));
+        return value.field(|| string::fingerprint(key), |name| string::equal(name, key));
     }
     if !object.is_object() {
         return None;
     }
     let mut found = None;
     for (name, value) in object.members() {
-        if string::units(name).eq(string::units(key)) {
+        if string::equal(name, key) {
             found = Some(value);
         }
     }
@@ -108,7 +108,7 @@ pub(crate) fn constant_data<'e, 'i>(
     offset: usize,
 ) -> Result<Option<&'e crate::constant::Data>, Error> {
     let key = key_body(&key, offset)?;
-    Ok(data.find(|name| string::units(name).cmp(string::units(key))))
+    Ok(data.find(|| string::fingerprint(key), |name| string::equal(name, key)))
 }
 
 pub(crate) fn select<'e, 'i>(

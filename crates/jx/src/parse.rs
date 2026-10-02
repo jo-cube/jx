@@ -33,7 +33,12 @@ fn parse(source: &str, dynamic: bool) -> Result<Expression, Error> {
     crate::analysis::check_composition(&mut root)?;
     crate::plan::prepare(&mut root);
     let runtime = crate::analysis::requires_runtime(&mut root);
-    Ok(Expression { root, runtime })
+    let acquisition = crate::function::acquire::prepare(&root);
+    Ok(Expression {
+        root,
+        runtime,
+        acquisition,
+    })
 }
 struct Parser<'a> {
     lexer: Lexer<'a>,

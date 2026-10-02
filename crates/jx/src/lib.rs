@@ -59,6 +59,7 @@ pub use value::{OwnedString, Value};
 pub struct Expression {
     root: expression::Node,
     runtime: bool,
+    acquisition: Option<json::Demand>,
 }
 
 pub fn compile(source: &str) -> Result<Expression, Error> {
@@ -73,7 +74,9 @@ impl Expression {
         input: &'i [u8],
         random: &Random,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        if self.runtime {
+        if let Some(demand) = &self.acquisition {
+            function::acquire::evaluate(&self.root, demand, input, Some(random))
+        } else if self.runtime {
             evaluate::scalar(&self.root, input, Some(random), true)
         } else {
             self.evaluate(input)
@@ -105,6 +108,14 @@ impl Expression {
                     unreachable!()
                 };
                 evaluate::path_conversion(*builtin, path, input, self.root.offset)
+            }
+            expression::Kind::Call(..) if self.acquisition.is_some() => {
+                function::acquire::evaluate(
+                    &self.root,
+                    self.acquisition.as_ref().unwrap(),
+                    input,
+                    None,
+                )
             }
             _ => evaluate::scalar(&self.root, input, None, self.runtime),
         }

@@ -158,7 +158,10 @@ impl<'e, 'i> Value<'e, 'i> {
         match self {
             Self::Raw(raw) => raw.field(field).map(Self::Raw),
             Self::Copied(copy) => copy.field(field),
-            Self::Constant(c) => c.field(|k| json::string::units(k).cmp(field.encode_utf16())),
+            Self::Constant(c) => c.field(
+                || json::string::fingerprint_units(field.encode_utf16()),
+                |k| json::string::matches(k, field),
+            ),
             Self::Object(object) => object
                 .members
                 .iter()
