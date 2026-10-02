@@ -14,11 +14,13 @@ behavior and predictable latency matter more than compile startup. APIs are unst
   Allocate when correctness needs ownership, construction or retention.
 - Small cohesive files, explicit data flow and auditable hot paths. Before a major
   abstraction, identify its concrete current or next-milestone requirement.
-- No speculative IR, JIT/Cranelift, SIMD, generic runtime frameworks, migration
+- No speculative IR, broader JIT coverage, SIMD, generic runtime frameworks, migration
   layers or compatibility scaffolding. Introduce complexity only with semantic
   need or reproducible profiling evidence. Delete superseded designs.
-- Production Rust forbids unsafe. The isolated benchmark allocation counter is
-  the documented exception. Every dependency needs a technical reason.
+- Engine and CLI Rust forbid unsafe. Executable-code invocation/release is confined
+  to `crates/jx-native/src/executable.rs`; allocation instrumentation stays benchmark-only.
+  Native kernels must keep bounded buffers, code ownership and interpreter fallback
+  auditable. Every dependency needs a technical reason.
 
 ## Semantics and evidence
 

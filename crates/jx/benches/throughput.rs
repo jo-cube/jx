@@ -1,4 +1,5 @@
-// The benchmark's counting allocator is the only unsafe code in this workspace.
+// Unsafe allocation instrumentation is confined to this benchmark; executable
+// invocation lives separately in the optional jx-native boundary.
 #![allow(unsafe_code)]
 #[path = "workloads/acquisition.rs"]
 mod acquisition;
@@ -32,6 +33,9 @@ mod helpers;
 mod lexical;
 #[path = "workloads/matchers.rs"]
 mod matchers;
+#[cfg(feature = "jit")]
+#[path = "workloads/native.rs"]
+mod native;
 #[path = "workloads/navigation.rs"]
 mod navigation;
 #[path = "workloads/plans.rs"]
@@ -283,6 +287,11 @@ fn main() {
     println!(
         "workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record"
     );
+    #[cfg(feature = "jit")]
+    if std::env::var_os("JX_BENCH_NATIVE_ONLY").is_some() {
+        native::run(smoke);
+        return;
+    }
     measure_allocations("compile", 0, smoke, None, || {
         black_box(jx::compile(black_box("customer.id")).unwrap());
     });
@@ -317,6 +326,8 @@ fn main() {
     navigation::run(smoke);
     compiler::run(smoke);
     execution::run(smoke);
+    #[cfg(feature = "jit")]
+    native::run(smoke);
     plans::run(smoke);
     demands::run(smoke);
     tuples::run(smoke);

@@ -695,3 +695,35 @@ both-order repeats, so it is removed. Inline-storage controls stay benchmark-onl
 their construction gains do not justify widening the runtime's 24-byte `Value` or
 changing dynamic closure retention. No string representation or function/plan
 representation changes are retained.
+
+## Bounded native execution
+
+M26 retains an opt-in `jit` feature for single-result primitive plans and numeric
+pipeline bodies. `Expression::enable_native` installs immutable kernels after
+ordinary compilation; clones share executable ownership. Builds without the feature have
+no native metadata or runtime check. The CLI exposes `--jit` only in feature-enabled
+builds. Compilation failures and unsupported programs remain interpreted.
+
+The adapter translates existing, at-most-32-register plans into numeric/boolean/
+missing constants and inputs, arithmetic (excluding remainder), comparisons, truth,
+branches and moves. Rust still validates, captures/parses input, traverses arrays,
+maintains aggregate state and normalizes results. Static lookup, strings, multi-member
+constructor programs, functions/effects and general ownership stay outside native
+code. No new language representation or general evaluator is introduced.
+
+Native input acquisition is pure and may inspect untaken-branch fields. Unsupported
+shapes or failed guards retry the unchanged interpreter and then its tree fallback;
+no output is exposed before success. Only consumed numeric operands require finite
+values, matching the interpreter's IEEE/missing rules. Native code does not reorder
+observable calls or apply fast-math/fused arithmetic transformations.
+
+`jx-native` owns Cranelift types. Its small `executable.rs` boundary alone invokes
+code, converts the finalized pointer to its exact C ABI and releases memory. Safe
+callers supply fixed-size stack buffers; branch/operand bounds are checked before
+code generation. One `Arc` owner pins code through calls and clones; a mutex owns the
+non-`Sync` module without evaluation locks or unsafe sharing implementations. Code
+is released on compilation failure or final owner drop. Engine/CLI remain safe Rust.
+
+Numeric folds show useful end-to-end gains; larger padded records still spend almost
+all time validating/scanning. Keep this subset opt-in and use PERFORMANCE evidence
+before expanding coverage. No traversal/string/closure JIT is justified here.

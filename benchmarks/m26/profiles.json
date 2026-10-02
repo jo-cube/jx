@@ -1,0 +1,755 @@
+{
+  "method": "Five-second, one-millisecond samples after the first timed sample; disjoint approximate self attribution. Native code may be unsymbolized; see full traces.",
+  "profiles": {
+    "profile-fold-interpreter": {
+      "samples": 4219,
+      "percent": {
+        "plan": 39.01,
+        "other": 7.44,
+        "allocation/drop/clone": 3.01,
+        "scanner": 50.53
+      },
+      "scanner_phases_percent": {
+        "body/candidate capture": 24.6,
+        "validation": 25.93
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,28,...  [0x100b86688,0x100b86614,...]",
+          "samples": 127,
+          "percent": 3.01
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 204  [0x100b866c4]",
+          "samples": 90,
+          "percent": 2.13
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2428,1132,...  [0x100b0383c,0x100b0332c,...]",
+          "samples": 88,
+          "percent": 2.09
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2428,1652,...  [0x100b0383c,0x100b03534,...]",
+          "samples": 79,
+          "percent": 1.87
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2428,1632,...  [0x100b0383c,0x100b03520,...]",
+          "samples": 74,
+          "percent": 1.75
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,4,...  [0x100b86688,0x100b865fc,...]",
+          "samples": 73,
+          "percent": 1.73
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,120,...  [0x100b86688,0x100b86670,...]",
+          "samples": 68,
+          "percent": 1.61
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 4,80,...  [0x100b865fc,0x100b86648,...]",
+          "samples": 62,
+          "percent": 1.47
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 728,16,...  [0x100b78748,0x100b78480,...]",
+          "samples": 57,
+          "percent": 1.35
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1132,1620,...  [0x100b0332c,0x100b03514,...]",
+          "samples": 57,
+          "percent": 1.35
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1000,2428,...  [0x100b032a8,0x100b0383c,...]",
+          "samples": 54,
+          "percent": 1.28
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2428,1148,...  [0x100b0383c,0x100b0333c,...]",
+          "samples": 53,
+          "percent": 1.26
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 764,728,...  [0x100b7876c,0x100b78748,...]",
+          "samples": 46,
+          "percent": 1.09
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 696,728,...  [0x100b78110,0x100b78130,...]",
+          "samples": 46,
+          "percent": 1.09
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 744,764,...  [0x100b78758,0x100b7876c,...]",
+          "samples": 45,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 764,744,...  [0x100b7876c,0x100b78758,...]",
+          "samples": 43,
+          "percent": 1.02
+        }
+      ]
+    },
+    "profile-fold-native": {
+      "samples": 4220,
+      "percent": {
+        "scanner": 54.24,
+        "other": 15.69,
+        "allocation/drop/clone": 4.74,
+        "plan": 16.18,
+        "unsymbolized executable code": 9.15
+      },
+      "scanner_phases_percent": {
+        "body/candidate capture": 41.92,
+        "validation": 12.32
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592  [0x102662628]",
+          "samples": 82,
+          "percent": 1.94
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592,588  [0x102662628,0x102662624]",
+          "samples": 51,
+          "percent": 1.21
+        },
+        {
+          "symbol": "DYLD-STUB$$memcmp  (in throughput-c4f4d8c7339efca9) + 4  [0x1027d4e3c]",
+          "samples": 42,
+          "percent": 1.0
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs2KsVCmuPpbZ_2jx5value5ValueEBF_  (in throughput-c4f4d8c7339efca9) + 24  [0x1025df1f0]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 536  [0x102640688]",
+          "samples": 36,
+          "percent": 0.85
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 48,728,...  [0x1026404a0,0x102640748,...]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_platform_memcmp  (in libsystem_platform.dylib) + 0,272,...  [0x18432cf10,0x18432d020,...]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvNtNtNtNtCs8Mbv00yxnRz_4core3num3imp7dec2flt5parse12parse_number  (in throughput-c4f4d8c7339efca9) + 0,160,...  [0x102467a08,0x102467aa8,...]",
+          "samples": 31,
+          "percent": 0.73
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 784,828,...  [0x102640168,0x102640194,...]",
+          "samples": 30,
+          "percent": 0.71
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 48,136,...  [0x1026404a0,0x1026404f8,...]",
+          "samples": 30,
+          "percent": 0.71
+        },
+        {
+          "symbol": "???  (in <unknown binary>)  [0x102a1004c]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 48,364,...  [0x1026404a0,0x1026405dc,...]",
+          "samples": 28,
+          "percent": 0.66
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 84,108,...  [0x1025caf14,0x1025caf2c,...]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "???  (in <unknown binary>)  [0x102a1010c]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 728,744,...  [0x102640748,0x102640758,...]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 108,788,...  [0x1025caf2c,0x1025cb1d4,...]",
+          "samples": 26,
+          "percent": 0.62
+        }
+      ]
+    },
+    "profile-pipeline-interpreter": {
+      "samples": 4211,
+      "percent": {
+        "plan": 42.63,
+        "other": 8.53,
+        "allocation/drop/clone": 3.28,
+        "scanner": 45.57
+      },
+      "scanner_phases_percent": {
+        "body/candidate capture": 28.24,
+        "validation": 17.34
+      },
+      "top_self": [
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1120,1148,...  [0x1026a3320,0x1026a333c,...]",
+          "samples": 245,
+          "percent": 5.82
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1120,2464,...  [0x1026a3320,0x1026a3860,...]",
+          "samples": 229,
+          "percent": 5.44
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1120,2428,...  [0x1026a3320,0x1026a383c,...]",
+          "samples": 228,
+          "percent": 5.41
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1120,1132,...  [0x1026a3320,0x1026a332c,...]",
+          "samples": 95,
+          "percent": 2.26
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 204  [0x1027266c4]",
+          "samples": 79,
+          "percent": 1.88
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2428,1120,...  [0x1026a383c,0x1026a3320,...]",
+          "samples": 74,
+          "percent": 1.76
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592  [0x10273a628]",
+          "samples": 66,
+          "percent": 1.57
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 728,764,...  [0x102718748,0x10271876c,...]",
+          "samples": 47,
+          "percent": 1.12
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,4,...  [0x102726688,0x1027265fc,...]",
+          "samples": 46,
+          "percent": 1.09
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 4,28,...  [0x1027265fc,0x102726614,...]",
+          "samples": 45,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2464,1120,...  [0x1026a3860,0x1026a3320,...]",
+          "samples": 44,
+          "percent": 1.04
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 764,20,...  [0x10271876c,0x102718484,...]",
+          "samples": 43,
+          "percent": 1.02
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 764,48,...  [0x10271876c,0x1027184a0,...]",
+          "samples": 43,
+          "percent": 1.02
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 764,728,...  [0x10271876c,0x102718748,...]",
+          "samples": 39,
+          "percent": 0.93
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 28,144,...  [0x102726614,0x102726688,...]",
+          "samples": 36,
+          "percent": 0.85
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,120,...  [0x102726688,0x102726670,...]",
+          "samples": 33,
+          "percent": 0.78
+        }
+      ]
+    },
+    "profile-pipeline-native": {
+      "samples": 4216,
+      "percent": {
+        "other": 12.69,
+        "allocation/drop/clone": 3.44,
+        "plan": 12.24,
+        "unsymbolized executable code": 14.66,
+        "scanner": 56.97
+      },
+      "scanner_phases_percent": {
+        "body/candidate capture": 34.68,
+        "validation": 22.3
+      },
+      "top_self": [
+        {
+          "symbol": "???  (in <unknown binary>)  [0x1052f02a0]",
+          "samples": 161,
+          "percent": 3.82
+        },
+        {
+          "symbol": "???  (in <unknown binary>)  [0x1052f0540]",
+          "samples": 142,
+          "percent": 3.37
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592  [0x104f42628]",
+          "samples": 82,
+          "percent": 1.94
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 48,728,...  [0x104f204a0,0x104f20748,...]",
+          "samples": 45,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592,588  [0x104f42628,0x104f42624]",
+          "samples": 42,
+          "percent": 1.0
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 8,88,...  [0x104f20eb0,0x104f20f00,...]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 536,532  [0x104f20688,0x104f20684]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 120,696,...  [0x104f1fed0,0x104f20110,...]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 728,828,...  [0x104f20130,0x104f20194,...]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 48,536,...  [0x104f204a0,0x104f20688,...]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "???  (in <unknown binary>)  [0x1052f02b4]",
+          "samples": 30,
+          "percent": 0.71
+        },
+        {
+          "symbol": "???  (in <unknown binary>)  [0x1052f00c0]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592,584,...  [0x104f42628,0x104f42620,...]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 20,136,...  [0x104f20484,0x104f204f8,...]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 764,728,...  [0x104f2076c,0x104f20748,...]",
+          "samples": 28,
+          "percent": 0.66
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 48,256,...  [0x104f204a0,0x104f20570,...]",
+          "samples": 27,
+          "percent": 0.64
+        }
+      ]
+    },
+    "profile-scalar-interpreter": {
+      "samples": 4227,
+      "percent": {
+        "scanner": 83.7,
+        "plan": 11.0,
+        "other": 4.09,
+        "allocation/drop/clone": 0.97,
+        "native ABI/input acquisition": 0.24
+      },
+      "scanner_phases_percent": {
+        "validation": 83.7
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108,...  [0x1048b8f00,0x1048b8f14,...]",
+          "samples": 1993,
+          "percent": 47.15
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,88,...  [0x1048b8f14,0x1048b8f00,...]",
+          "samples": 713,
+          "percent": 16.87
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108  [0x1048b8f00,0x1048b8f14]",
+          "samples": 95,
+          "percent": 2.25
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592  [0x1048da628]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80  [0x1046de778]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 4,28,...  [0x1048c65fc,0x1048c6614,...]",
+          "samples": 23,
+          "percent": 0.54
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,4,...  [0x1048c6688,0x1048c65fc,...]",
+          "samples": 22,
+          "percent": 0.52
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,0,...  [0x1046de778,0x1046de728,...]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 204  [0x1048c66c4]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 696,728,...  [0x1048b8110,0x1048b8130,...]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 120,144,...  [0x1048c6670,0x1048c6688,...]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,80,...  [0x1048c6688,0x1048c6648,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNvMs0_B5_NtB5_4Plan8evaluate0E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1724,992,...  [0x104844c54,0x104844978,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNvMs0_B5_NtB5_4Plan8evaluate0E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1112,1128,...  [0x1048449f0,0x104844a00,...]",
+          "samples": 15,
+          "percent": 0.35
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 28,144,...  [0x1048c6614,0x1048c6688,...]",
+          "samples": 15,
+          "percent": 0.35
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,96  [0x1046de778,0x1046de788]",
+          "samples": 14,
+          "percent": 0.33
+        }
+      ]
+    },
+    "profile-scalar-native": {
+      "samples": 4220,
+      "percent": {
+        "scanner": 90.95,
+        "other": 3.63,
+        "plan": 2.39,
+        "allocation/drop/clone": 1.04,
+        "native ABI/input acquisition": 0.52,
+        "unsymbolized executable code": 1.47
+      },
+      "scanner_phases_percent": {
+        "validation": 90.95
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108,...  [0x100bd4f00,0x100bd4f14,...]",
+          "samples": 1682,
+          "percent": 39.86
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,88,...  [0x100bd4f14,0x100bd4f00,...]",
+          "samples": 1419,
+          "percent": 33.63
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592  [0x100bf6628]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 696,712,...  [0x100bd4110,0x100bd4120,...]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,120  [0x1009fa778,0x1009fa7a0]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 696,720,...  [0x100bd4110,0x100bd4128,...]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 536  [0x100bd4688]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 696,88,...  [0x100bd4110,0x100bd3eb0,...]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80  [0x1009fa778]",
+          "samples": 14,
+          "percent": 0.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,88,...  [0x100bd4ef4,0x100bd4f00,...]",
+          "samples": 12,
+          "percent": 0.28
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,96  [0x1009fa778,0x1009fa788]",
+          "samples": 11,
+          "percent": 0.26
+        },
+        {
+          "symbol": "???  (in <unknown binary>)  [0x100fa4040]",
+          "samples": 11,
+          "percent": 0.26
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 1068,120,...  [0x100bd4284,0x100bd3ed0,...]",
+          "samples": 11,
+          "percent": 0.26
+        },
+        {
+          "symbol": "_RNCNvNtCskJMB2Oe9IJ3_10throughput6native8workloads_0B5_  (in throughput-c4f4d8c7339efca9) + 116  [0x100caa428]",
+          "samples": 10,
+          "percent": 0.24
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 1068,696,...  [0x100bd4284,0x100bd4110,...]",
+          "samples": 10,
+          "percent": 0.24
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 696,1044,...  [0x100bd4110,0x100bd426c,...]",
+          "samples": 10,
+          "percent": 0.24
+        }
+      ]
+    },
+    "profile-scan-interpreter": {
+      "samples": 4237,
+      "percent": {
+        "scanner": 100.0
+      },
+      "scanner_phases_percent": {
+        "validation": 100.0
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,100,...  [0x10442cf00,0x10442cf0c,...]",
+          "samples": 801,
+          "percent": 18.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108,...  [0x10442cf00,0x10442cf14,...]",
+          "samples": 771,
+          "percent": 18.2
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,76,...  [0x10442cf14,0x10442cef4,...]",
+          "samples": 524,
+          "percent": 12.37
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,88,...  [0x10442cf14,0x10442cf00,...]",
+          "samples": 500,
+          "percent": 11.8
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,108,...  [0x10442cf0c,0x10442cf14,...]",
+          "samples": 392,
+          "percent": 9.25
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,88,...  [0x10442cf0c,0x10442cf00,...]",
+          "samples": 374,
+          "percent": 8.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,76,...  [0x10442cf00,0x10442cef4,...]",
+          "samples": 256,
+          "percent": 6.04
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,100,...  [0x10442cef4,0x10442cf0c,...]",
+          "samples": 250,
+          "percent": 5.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,108,...  [0x10442cef4,0x10442cf14,...]",
+          "samples": 123,
+          "percent": 2.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,76,...  [0x10442cf0c,0x10442cef4,...]",
+          "samples": 122,
+          "percent": 2.88
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,96  [0x104252778,0x104252788]",
+          "samples": 56,
+          "percent": 1.32
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 96,80  [0x104252788,0x104252778]",
+          "samples": 46,
+          "percent": 1.09
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 96  [0x104252788]",
+          "samples": 15,
+          "percent": 0.35
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80  [0x104252778]",
+          "samples": 6,
+          "percent": 0.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 240  [0x10442bf48]",
+          "samples": 1,
+          "percent": 0.02
+        }
+      ]
+    },
+    "profile-scan-native": {
+      "samples": 4225,
+      "percent": {
+        "scanner": 100.0
+      },
+      "scanner_phases_percent": {
+        "validation": 100.0
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108,...  [0x102aecf00,0x102aecf14,...]",
+          "samples": 621,
+          "percent": 14.7
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,108,...  [0x102aecef4,0x102aecf14,...]",
+          "samples": 543,
+          "percent": 12.85
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,76,...  [0x102aecf14,0x102aecef4,...]",
+          "samples": 511,
+          "percent": 12.09
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,100,...  [0x102aecf00,0x102aecf0c,...]",
+          "samples": 484,
+          "percent": 11.46
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,88,...  [0x102aecf14,0x102aecf00,...]",
+          "samples": 412,
+          "percent": 9.75
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,76,...  [0x102aecf00,0x102aecef4,...]",
+          "samples": 371,
+          "percent": 8.78
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,100,...  [0x102aecf14,0x102aecf0c,...]",
+          "samples": 370,
+          "percent": 8.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,88,...  [0x102aecf0c,0x102aecf00,...]",
+          "samples": 272,
+          "percent": 6.44
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,108,...  [0x102aecf0c,0x102aecf14,...]",
+          "samples": 248,
+          "percent": 5.87
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,76,...  [0x102aecf0c,0x102aecef4,...]",
+          "samples": 142,
+          "percent": 3.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,88,...  [0x102aecef4,0x102aecf00,...]",
+          "samples": 120,
+          "percent": 2.84
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,96  [0x102912778,0x102912788]",
+          "samples": 85,
+          "percent": 2.01
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 96,80  [0x102912788,0x102912778]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80  [0x102912778]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 96  [0x102912788]",
+          "samples": 5,
+          "percent": 0.12
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 448  [0x102aec018]",
+          "samples": 1,
+          "percent": 0.02
+        }
+      ]
+    }
+  }
+}

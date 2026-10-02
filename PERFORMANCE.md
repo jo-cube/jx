@@ -1947,3 +1947,89 @@ future work, not new indexing/ownership machinery in this milestone.
 retain final and labelled experimental evidence. `just all`, `just build`, all **1,679**
 upstream classifications and **54,049** differential comparisons pass. Latency
 distributions remain unmeasured.
+
+## M26: bounded native kernels
+
+**Retain the JIT as opt-in**, for single-result primitive plans and numeric fold bodies.
+Cranelift 0.136.1 removes useful dispatch/primitive overhead in repeated numeric loops;
+it does not accelerate JSON validation or traversal. No general JSONata native evaluator,
+string/lookup JIT or constructor ownership path is introduced.
+
+Measurements use the **same feature-enabled release binary**, with native installation
+on/off at compile time, seven warmed **300 ms** samples per workload in both orders.
+Apple M4/macOS 26.5.1, Rust 1.98.1, existing release/LTO settings and allocation counter.
+Full validation/capture, evaluation and result consumption are timed; serialization and
+I/O are excluded. Rust controls validate fully but specialize the fixture layout.
+
+| Workload | Input | Plan records/s | Native records/s | Gain, both orders |
+| --- | ---: | ---: | ---: | ---: |
+| Arithmetic | 13 B | 9.33 M | 13.06 M | 40.1–40.3% |
+| Arithmetic | 500 B | 2.71 M | 2.94 M | 8.4–8.5% |
+| Denser arithmetic | 500 B | 2.56 M | 2.91 M | 13.3–13.8% |
+| Varied nested branches | 500 B | 2.72 M | 2.83 M | 3.9–5.0% |
+| Dense mapped fold, 32 rows | 472 B | 221,742 | 337,956 | 52.4–55.3% |
+| Dense mapped fold, 1,024 rows | 14,794 B | 7,068 | 10,737 | 51.9–57.2% |
+| Filter/map/fold, 1,024 rows | 14,794 B | 7,580 | 10,066 | 32.8–36.2% |
+| Primitive numeric fold, 16,384 items | 39,946 B | 1,051 | 1,730 | 64.6–64.9% |
+| Padded arithmetic, scan control | 1 MiB | 1,857 | 1,853 | −0.2–0.0% |
+
+Rates are first-order medians; ranges include reversed order. Large object folds remain
+roughly 7–8% below the purpose-written Rust control (about 11,600 records/s); 500 B
+arithmetic is within roughly 3% (about 3.03 M records/s). Native execution closes a
+substantial part of the loop gap without owning/materializing candidate values.
+Branch-heavy gains are smaller, and 10 KiB/1 MiB scalar work is effectively scan-bound;
+sub-percent differences are not optimization evidence.
+
+Warmed profiles attribute about **39–43%** of fold/pipeline self samples to plan
+code before native compilation and **12–16%** afterwards; these categories include
+input acquisition/runtime helpers as well as instruction dispatch. Scanner samples
+remain **54–57%** of native loop work. Unsymbolized executable samples account for
+roughly **9–15%**; complete traces are retained rather than claiming precise native
+instruction costs. Scalar scanner share rises **84 → 91%** and the 1 MiB control
+samples entirely in scanner routines. Drop/clone samples do not imply heap allocation.
+
+Warmed complete scalar compilation rises from **3.8–5.9 µs** to **254–391 µs**;
+first-in-process native initialization is reported separately in the logs. Emitted
+scalar code is **716–1,144 B**; the measured numeric fold is **504 B**, filtered
+pipeline **1,368 B**. Code sizes include emitted constant pools, not the module's
+page-rounded mapping or Rust metadata. Static kernels compile once; there is no
+per-record compilation. At these measured scalar rates, added compilation amortizes
+at roughly **8,000–13,000 records** for 500 B inputs. Fold-body acquisition/compilation
+samples and rate differences imply roughly tens of evaluations for 1,024-row inputs
+and about one for the largest folds. Do not infer useful amortization from noisy
+scan-control differences.
+
+All measured successful kernels and controls allocate **0 per record**. Full arithmetic
+compilation uses **1,284 allocation requests /649,170 requested B**, versus the plan's
+**148 /7,464 B**; most native compiler scratch is released immediately. Isolated warmed
+installation measures **1,135 requests /641,705 B**, retaining **2,064 heap B** plus
+an executable mapping rounded to this host's **16 KiB page**. Expression clones share
+the immutable code; eight repeated final-owner drops return live Rust allocation
+bytes to baseline. The allocator does not count OS mappings/RSS; code release is
+owned by the auditable native boundary. Values, contexts and frames gain no fields.
+
+Feature-off comparisons against committed M25 keep paths, scalar work, direct calls,
+lookups and nested callbacks within roughly **2%**, with unchanged allocations.
+Grouping improves **5.6–6.4%** despite no grouping algorithm change; this is a
+build/layout observation, not a JIT or traversal improvement claim. The earlier
+M25 grouping regression still has no isolated structural explanation.
+
+Native inputs can eagerly decode pure fields from untaken branches. Type/shape/guard
+failure retries the existing interpreter, then its tree fallback; failure-path extra
+work is not a speed claim. Constructor programs returning multiple member registers,
+static lookup, remainder, dynamic calls, eval/randomness, strings and provenance remain
+Rust/tree/plan boundaries. Feature-off builds contain no native state or dispatch
+check. Broadening native coverage or compiling traversal is not justified by this pass.
+
+[Both-order samples](benchmarks/m26/final-paired-comparison.csv) /
+[reverse](benchmarks/m26/final-reverse-comparison.csv),
+[compilation/ownership](benchmarks/m26/memory.csv), [profiles](benchmarks/m26/profiles.json),
+[environment and commands](benchmarks/m26/environment.json),
+[feature-off controls](benchmarks/m26/controls-comparison.csv) /
+[reverse](benchmarks/m26/controls-reverse-comparison.csv),
+[checks](benchmarks/m26/checks.log) and [differentials](benchmarks/m26/differential.txt)
+retain evidence. `just all`, `just build`, all **1,679** upstream classifications and
+**54,049** differential comparisons through `--jit` pass. The complete feature-off
+[benchmark sweep](benchmarks/m26/after.csv) passes **1,690 groups /11,830 samples**,
+including allocation assertions. [Source hashes](benchmarks/m26/source.json) pin the
+measured workspace against M25. Other hosts and latency distributions remain unmeasured.

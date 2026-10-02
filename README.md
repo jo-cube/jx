@@ -9,7 +9,8 @@ Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
 Requires Rust **1.98.1** and [just](https://just.systems). The workspace contains
-`crates/jx` (library) and `crates/jx-cli` (binary `jx`). APIs may change freely.
+`crates/jx` (library), `crates/jx-cli` (binary `jx`) and the optional
+`crates/jx-native` executable-code boundary. APIs may change freely.
 
 ```sh
 just all
@@ -71,6 +72,13 @@ escaping program data. Both inherit bindings and optional focus. `$random` / `$s
 initialize their stream lazily; `Random::seeded` with `evaluate_with_random` provides
 repeatable caller-owned draws across records.
 `base64` supplies the binary codecs; `serde_json` is a test-only oracle and fixture reader.
+
+An optional `jit` feature compiles bounded numeric/boolean plans with Cranelift.
+Call `expression.enable_native()` once after compilation, or build the CLI with
+`cargo build -p jx-cli --release --features jit --locked` and pass `--jit`.
+Unsupported regions and guards retain interpreter/tree fallback. Native code helps
+numeric loops; scanning-dominated workloads remain limited by Rust traversal.
+`just bench-plan`, `bench-jit` and `bench-jit-memory` reproduce the scoped experiment.
 
 The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact
 NDJSON synchronously. Missing produces no line; null produces `null`; sequences
