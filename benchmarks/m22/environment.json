@@ -1,0 +1,49 @@
+{
+  "baseline": "d55bdc9",
+  "rust": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "system": "Darwin MacBook.local 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132 arm64",
+  "command": "cargo bench -p jx --bench throughput --locked",
+  "baseline_commit": "d55bdc9bdb640d63ac16d4a74c121282d6254a46",
+  "cpu": "Apple M4",
+  "memory_bytes": 25769803776,
+  "profile": "release, thin LTO, codegen-units=1; no target-cpu override",
+  "upstream_revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+  "environment": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_TARGET_DIR": null,
+    "JX_BENCH_FILTER": null,
+    "JX_BENCH_BYTES": null,
+    "JX_BENCH_SAMPLE_MS": null
+  },
+  "benchmark_binary_sha256": {
+    "before": "39b305cacbf6d5629d412a4dce3574d91d0cecb6bb5b4b3d770bdfff85bd39aa",
+    "initial_eval": "e127977d06b2b6b7d47ee858f10792fe8b8110f37df371a518c437ca640fbd68",
+    "after": "e9af6dc67e9610a10e46b7ffc53f2ad591928e3f4ef8a6a5c0dd0a34a1241781"
+  },
+  "counts": {
+    "baseline_workloads": 1395,
+    "final_workloads": 1477,
+    "classified_cases": 1679,
+    "differential_comparisons": 50336
+  },
+  "commands": [
+    "just all",
+    "just build",
+    "just bench",
+    "python3 benchmarks/m22/measure.py <M21-binary> <M22-binary> benchmarks/m22/filters.json benchmarks/m22/paired",
+    "python3 benchmarks/m22/measure.py <M21-binary> <M22-binary> benchmarks/m22/filters.json benchmarks/m22/reverse --reverse",
+    "python3 benchmarks/m22/measure.py <initial-M22-binary> <M22-binary> benchmarks/m22/static-filters.json benchmarks/m22/static",
+    "python3 benchmarks/m22/measure.py <initial-M22-binary> <M22-binary> benchmarks/m22/static-filters.json benchmarks/m22/static-reverse --reverse",
+    "python3 benchmarks/m22/memory.py",
+    "node scripts/check-<suite>.cjs <pinned-upstream-checkout> target/release/jx",
+    "python3 benchmarks/m22/measure.py <M21-binary> <M22-binary> benchmarks/m22/regression-filters.json benchmarks/m22/regression",
+    "python3 benchmarks/m22/measure.py <M21-binary> <M22-binary> benchmarks/m22/regression-filters.json benchmarks/m22/regression-reverse --reverse"
+  ],
+  "methodology_notes": [
+    "Full snapshots use seven 50 ms samples. Selected both-order pairs use seven 300 ms samples. Evaluation includes validation and complete consumption; no serialization except explicitly named workloads.",
+    "Baseline full-run later rows overlapped development builds/tests; full snapshot ratios are not isolated regression evidence. Both-order pairs ran without other tests/builds.",
+    "Initial eval binary is an internal M22 snapshot before runtime-storage analysis and final tail-context fixes, not a committed reproducible revision. It identifies the arena-allocation alternative; rely on final allocation assertions and M21/final pairs for stable claims.",
+    "A first paired attempt selected a stale executable and stopped before saving rows; final pairs use the executable explicitly reported by Cargo."
+  ]
+}

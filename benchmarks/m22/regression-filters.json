@@ -1,0 +1,30 @@
+[
+  {
+    "filter": "filter/wide_predicate",
+    "bytes": 164
+  },
+  {
+    "filter": "filter/wide_predicate",
+    "bytes": 2736
+  },
+  {
+    "filter": "filter/wide_predicate",
+    "bytes": 23392
+  },
+  {
+    "filter": "filter/computed_last",
+    "bytes": 100
+  },
+  {
+    "filter": "filter/none",
+    "bytes": 100
+  },
+  {
+    "filter": "filter/predicate",
+    "bytes": 100
+  },
+  {
+    "filter": "filter/sequence_last",
+    "bytes": 2736
+  }
+]

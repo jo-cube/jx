@@ -1,0 +1,74 @@
+[
+  {
+    "filter": "ascii/nested",
+    "bytes": 100
+  },
+  {
+    "filter": "ascii/nested",
+    "bytes": 500
+  },
+  {
+    "filter": "ascii/nested",
+    "bytes": 1048576
+  },
+  {
+    "filter": "compiler/repeated_fields",
+    "bytes": 500
+  },
+  {
+    "filter": "compiler/lookup_record",
+    "bytes": 500
+  },
+  {
+    "filter": "plan/branch",
+    "bytes": 500
+  },
+  {
+    "filter": "plan/object",
+    "bytes": 500
+  },
+  {
+    "filter": "filter/predicate",
+    "bytes": 500
+  },
+  {
+    "filter": "aggregate/filtered_sum",
+    "bytes": 500
+  },
+  {
+    "filter": "aggregate/deep_sum",
+    "bytes": 136
+  },
+  {
+    "filter": "function/direct",
+    "bytes": 500
+  },
+  {
+    "filter": "function/closure",
+    "bytes": 500
+  },
+  {
+    "filter": "function/callback",
+    "bytes": 500
+  },
+  {
+    "filter": "function/partial",
+    "bytes": 500
+  },
+  {
+    "filter": "lexical/repeated_binding",
+    "bytes": 500
+  },
+  {
+    "filter": "matcher/contains",
+    "bytes": 500
+  },
+  {
+    "filter": "matcher/replace_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "format/mixed",
+    "bytes": 500
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "filter": "eval/static_scalar",
+    "bytes": 500
+  },
+  {
+    "filter": "eval/context",
+    "bytes": 500
+  },
+  {
+    "filter": "eval/nested",
+    "bytes": 500
+  },
+  {
+    "filter": "eval/static_literal",
+    "bytes": 500
+  },
+  {
+    "filter": "eval/folded_literal",
+    "bytes": 500
+  }
+]

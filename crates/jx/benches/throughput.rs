@@ -12,6 +12,8 @@ mod composition;
 mod constructors;
 #[path = "workloads/demands.rs"]
 mod demands;
+#[path = "workloads/effects.rs"]
+mod effects;
 #[path = "workloads/execution.rs"]
 mod execution;
 #[path = "workloads/filters.rs"]
@@ -314,6 +316,7 @@ fn main() {
     helpers::run(smoke);
     formatting::run(smoke);
     functions::run(smoke);
+    effects::run(smoke);
     composition::run(smoke);
     matchers::run(smoke);
     structure::run(smoke);

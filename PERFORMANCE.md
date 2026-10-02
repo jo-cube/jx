@@ -1611,3 +1611,77 @@ precede the final token classifier. Full-run timing alone is not regression evid
 comparisons pass. Tail calls use a loop with a separate million-iteration budget;
 non-tail stack guards remain explicit. No dependency, value/context variant, input
 cache, function lowering or JIT is added. Latency percentiles remain unmeasured.
+
+
+## Milestone 22 — dynamic programs and runtime effects
+
+Same Apple M4 / Rust 1.98.1 / release profile. **1,477 workloads** include **82** new
+compile/eval/effect cases at 100 B–1 MiB and 8/128/1,024-item arrays. Full runs use
+seven 50 ms samples; isolated both-order comparisons use 300 ms. Validation and full
+consumption are timed; serialization is excluded from the following results.
+
+Selected final medians, with 500 B input except the last three rows:
+
+| Workload | Records/s | Allocations / requested bytes |
+| --- | ---: | ---: |
+| Prepared scalar `$eval` | 988,756 | 0 / 0 |
+| Dynamic-source `$eval` | 528,144 | 21 / 892 |
+| Prepared replacement focus | 1,290,865 | 0 / 0 |
+| Nested prepared `$eval` | 953,915 | 0 / 0 |
+| Prepared object literal | 2,814,931 | 1 / 16 |
+| Inherited lexical binding | 852,812 | 5 / 568 |
+| Prepared escaping closure | 788,079 | 7 / 792 |
+| `$random`, default / injected | 2,610,532 / 2,694,627 | 4 / 216; 3 / 184 |
+| Three-item `$shuffle` | 1,241,050 | 6 / 360 |
+| Dynamic closure map, 1,024 items / 4,055 B | 3,088 | 8,234 / 866,620 |
+| Prepared mapped eval, same input | 11,931 | 10 / 49,104 |
+| Shuffle + sum, same input | 35,000 | 14 / 49,320 |
+
+Constant direct sources compile once. Dynamic sources compile per call; only escaped
+program data is promoted, with input leaves borrowed and imported values shared.
+Separating runtime-storage demand from replay effects removes **3 allocations / 184 B**
+from pure prepared scalar/context/nested programs; static literals retain only their
+fresh identity token. Allocation budgets assert those final counts. Internal M22
+both-order experiments show roughly 4–6% scalar/context/nested and 11–12% literal
+improvements. That initial snapshot predates final tail-context fixes and is not a
+committed revision; metadata identifies this limitation. Counter overhead is included.
+
+The dynamic callback fixture exposes the scope bridge's cost: copied frame slots,
+definition loans and alias-preserving export per invocation. It shares record leaves
+and callable program data but performs many short allocations. The prepared mapped
+control executes scalar eval rather than closure calls; its difference is architectural
+context, not an isolated callback speedup claim. Batch invocation regions are a future
+opportunity; no cache, owned input tree or general runtime is introduced.
+
+Ordinary path, plan, filter, fold and lookup pairs remain within about **1.5%**.
+Direct calls lose **1.26% / 1.64%**; other selected closure/callback/partial pairs lose
+up to 1.43%. Allocation counts are unchanged. Owning dynamic binding names widens
+frame storage by 8 B; the arena's random/clock state adds a net 8 B. Typical lexical
+records request **48 B more**, for example direct calls **584 → 632 B**. Native matcher
+state adds 8 B without another allocation; replacement callbacks request 56 B more
+including their arena. Plain paths, scalars, filters and aggregates still allocate zero.
+
+Full snapshots suggested 6–9% filter losses. Both-order repeats recover ordinary and
+wide predicates and sequence positions; computed-last on **100 B** retains a
+**3.81% / 2.97%** loss (about 13–17 ns/record). It runs the same pure scanner/filter
+path with no scope, extra scan or allocation. Both builds outline the common evaluate
+and tree-dispatch routines; no structural traversal change was found. Its remaining
+entry/dispatch/layout cost is not isolated, and no special positional fast path is added.
+Baseline snapshot later rows overlapped development activity; isolated pairs govern
+regression conclusions. Earlier nested-array rescanning costs remain unchanged.
+
+Separate CLI processes peak at **2.34 → 2.69 MiB** for one/100 dynamic-literal records,
+**2.58 → 2.95 MiB** for dynamic 1,024-item callback maps, and **2.38 → 2.70 MiB** for
+escaped 100,000-step tails. These include buffers/process/allocator high water, not
+live retained storage or per-record allocation totals. Tail execution loans definitions
+for the whole region and uses the existing loop; ownership does not open a bridge per hop.
+
+[Full samples](benchmarks/m22/after.csv), [snapshot comparison](benchmarks/m22/comparison.csv),
+[paired](benchmarks/m22/paired-comparison.csv) / [reverse](benchmarks/m22/reverse-comparison.csv),
+[filter repeats](benchmarks/m22/regression-comparison.csv) / [reverse](benchmarks/m22/regression-reverse-comparison.csv),
+[internal static-eval experiment](benchmarks/m22/static-comparison.csv) /
+[reverse](benchmarks/m22/static-reverse-comparison.csv), [memory](benchmarks/m22/memory.json),
+[environment/commands](benchmarks/m22/environment.json) and [source hashes](benchmarks/m22/source.json)
+retain evidence. `just all`, `just build`, all **1,679** classified cases and **50,336**
+differential comparisons pass. All 16 prior blockers are promoted; only the existing
+non-tail recursion limit remains. No dependencies, plan instructions or JIT are added.

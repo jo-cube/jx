@@ -1,0 +1,8 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+filter/wide_predicate,164,645459,650820,0.83,0.0,0.0,0.0,0.0
+filter/wide_predicate,2736,39364,41296,4.91,0.0,0.0,0.0,0.0
+filter/wide_predicate,23392,4943,5037,1.9,0.0,0.0,0.0,0.0
+filter/computed_last,100,2296484,2208900,-3.81,0.0,0.0,0.0,0.0
+filter/none,100,2385810,2381110,-0.2,0.0,0.0,0.0,0.0
+filter/predicate,100,2091559,2084572,-0.33,0.0,0.0,0.0,0.0
+filter/sequence_last,2736,44610,44933,0.72,0.0,0.0,0.0,0.0

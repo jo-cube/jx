@@ -4,7 +4,7 @@ A Rust JSONata engine designed for compiling an expression once and evaluating
 millions of independent JSON records. Early development: **paths through objects and arrays,
 result sequences, scalar operators, filters, aggregates, constructors, lexical
 variables, conditionals, closures, compiled function signatures and tail recursion, wildcard navigation, grouping, ordering, indexed/joined paths,
-common string/collection/higher-order functions (including round, pad, sort/zip/single and encoding), conversions, function pipelines, regex/matcher text processing, parent navigation, structural transforms, and numeric/integer/date pictures**.
+common string/collection/higher-order functions (including round, pad, sort/zip/single and encoding), conversions, function pipelines, regex/matcher text processing, parent navigation, structural transforms, numeric/integer/date pictures, dynamic `$eval`, and random/shuffle effects**.
 Full JSONata is the semantic target; see
 [coverage](CONFORMANCE.md).
 
@@ -66,6 +66,10 @@ structure and borrowed leaves. Input is never parsed into a general JSON DOM. Re
 one evaluation, and continuations retain their subject. ASCII subjects stay borrowed;
 escaped/non-ASCII subjects decode once to UTF-16. Static format pictures and date matchers compile once; dynamic pictures parse when called.
 `$now` / `$millis` share one evaluation timestamp; ordinary expressions do not read the clock.
+Constant source at a direct `$eval` call compiles once; dynamic source compiles per call and owns only
+escaping program data. Both inherit bindings and optional focus. `$random` / `$shuffle`
+initialize their stream lazily; `Random::seeded` with `evaluate_with_random` provides
+repeatable caller-owned draws across records.
 `base64` supplies the binary codecs; `serde_json` is a test-only oracle and fixture reader.
 
 The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact

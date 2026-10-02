@@ -94,7 +94,8 @@
 
 `analysis.rs` marks expressions and path stages that read/change lexical state or
 create/call closures. It lowers direct builtin calls only when no binding or parameter
-in the expression can shadow their name. Pure expressions allocate no scope arena;
+in the expression can shadow their name. Compilation separates replay safety from runtime-storage demand. Expressions that
+need no scope, call state or clock allocate no scope arena;
 static aggregates retain their streaming folds. There is no per-record name analysis.
 
 `runtime.rs` owns an evaluation-local arena of parent-linked frames with small linear
@@ -183,6 +184,38 @@ body/arguments retain lexical focus; native contextual tails share builtin evalu
 with a distinct caller focus. Context-free native/scalar bodies use ordinary calls.
 Released block slots and parameter capacity can be reused across tail iterations and
 callbacks, without new state in `Value`, `Context`, non-lexical paths or execution plans.
+
+### Dynamic evaluation and effects
+
+`dynamic.rs` prepares constant direct `$eval` source with the normal compiler once, without
+folding its execution. Dynamic source compiles per call. Dynamic programs leave
+builtin names shadowable so they inherit the caller's bindings; enclosing programs
+that can call `$eval` also conservatively retain builtin lookup. Replacement focus
+changes `$`, not `$$` or the lexical frame. Native tail calls use invocation context,
+including its environment, as the pinned reference does.
+
+Static programs borrow their enclosing expression's storage. Truly dynamic programs
+use `runtime/bridge.rs` for a shorter compilation lifetime: copy scope slots, share
+input/constructed leaves, execute, then export changed frames and results. Only this
+boundary owns dynamic binding names, literal bytes, container member lists and escaped
+lambda/transform definitions. Unchanged imported values preserve their identities;
+escaped matcher patterns retain compiled regex state. Ordinary `Value` lifetimes and
+borrowed definitions do not change. Captures remain frame indices without arena back-edges.
+
+`dynamic/borrow.rs` loans owned callable definitions for an entire invocation region,
+so recursive references enter the existing tail loop. `dynamic/retention.rs` memoizes
+aliases only while exporting that region. No per-record input cache or replayable
+sequence becomes a stored value. Dynamic closure callbacks currently copy scope slots
+per invocation; that containment has a measurable allocation cost.
+
+`random.rs` is a shared single-threaded draw stream, seeded lazily on first use.
+`evaluate_with_random` accepts an optional caller-owned deterministic stream. Nested
+programs share it; errors preserve consumed draws. `$random` returns a binary64 value
+in `[0,1)`. `$shuffle` uses inside-out Fisher–Yates and retains its explicit output
+array with borrowed/shared leaves. Missing/zero/single inputs draw nothing. Both are
+effectful and cannot fold or replay. Non-effect plans keep their existing instructions
+and allocation behavior; runtime arenas add one optional random handle, not a universal
+value/context field. No dependency or host-call registry is added.
 
 ### Conversion and composition
 
@@ -556,9 +589,11 @@ mutable-document overlay, universal ancestry tracking or second evaluator.
     uncaptured parameter/block slots. Non-tail recursion and infinite execution have
     separate explicit guards; no function lowering or JIT is introduced.
 
-Next semantic work: dynamic `$eval` and randomness need deliberate lifetime/resource
-contracts; the 16 corpus blockers are confined to those areas. Remaining picture and
-native host-coercion boundaries stay in CONFORMANCE.
+22. **Complete: dynamic evaluation and runtime effects.** Prepared static programs,
+    contained ownership for dynamic code and escaped callables, inherited scopes/focus,
+    lazy injectable randomness and shuffle. All 16 remaining corpus blockers are promoted.
+
+Remaining picture and native host-coercion boundaries stay in CONFORMANCE.
 Full mutable transform aliasing needs a deliberate transient-document model; do not
 broaden immutable copy/update by approximating those effects. Host invocation still
 needs a lifetime/resource contract.

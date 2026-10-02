@@ -1,0 +1,6 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+eval/static_scalar,500,939622,985307,4.86,3.0,0.0,184.0,0.0
+eval/context,500,1214233,1291414,6.36,3.0,0.0,184.0,0.0
+eval/nested,500,908768,949038,4.43,3.0,0.0,184.0,0.0
+eval/static_literal,500,2511912,2817498,12.17,4.0,1.0,200.0,16.0
+eval/folded_literal,500,2512610,2812873,11.95,4.0,1.0,200.0,16.0

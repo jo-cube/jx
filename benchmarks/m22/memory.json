@@ -1,0 +1,70 @@
+{
+  "cli_sha256": "8412fe778304441348379f56a731a353b662a6137dd6b2611feff0902d192f08",
+  "method": "Separate /usr/bin/time -l CLI processes. Compact output verified. RSS includes executable, input/output buffers and allocator high water; it is not live retained or per-frame storage.",
+  "results": [
+    {
+      "workload": "dynamic_literal",
+      "expression": "$eval(code)",
+      "records": 1,
+      "max_rss_bytes": 2457600,
+      "input_bytes": 44,
+      "parameters": {
+        "code": "{\"out\":{\"n\":7,\"a\":[1,2,3]}}"
+      }
+    },
+    {
+      "workload": "dynamic_literal",
+      "expression": "$eval(code)",
+      "records": 100,
+      "max_rss_bytes": 2818048,
+      "input_bytes": 44,
+      "parameters": {
+        "code": "{\"out\":{\"n\":7,\"a\":[1,2,3]}}"
+      }
+    },
+    {
+      "workload": "dynamic_closure_map",
+      "expression": "($f:=$eval(code);$map(a,$f))",
+      "records": 1,
+      "max_rss_bytes": 2703360,
+      "input_bytes": 4045,
+      "parameters": {
+        "code": "function($x){$x*2}",
+        "a_length": 1024
+      }
+    },
+    {
+      "workload": "dynamic_closure_map",
+      "expression": "($f:=$eval(code);$map(a,$f))",
+      "records": 100,
+      "max_rss_bytes": 3096576,
+      "input_bytes": 4045,
+      "parameters": {
+        "code": "function($x){$x*2}",
+        "a_length": 1024
+      }
+    },
+    {
+      "workload": "dynamic_tail",
+      "expression": "($f:=$eval(code);$f(n,0))",
+      "records": 1,
+      "max_rss_bytes": 2490368,
+      "input_bytes": 69,
+      "parameters": {
+        "code": "($f:=function($n,$a){$n=0?$a:$f($n-1,$a+1)};$f)",
+        "n": 100000
+      }
+    },
+    {
+      "workload": "dynamic_tail",
+      "expression": "($f:=$eval(code);$f(n,0))",
+      "records": 100,
+      "max_rss_bytes": 2834432,
+      "input_bytes": 69,
+      "parameters": {
+        "code": "($f:=function($n,$a){$n=0?$a:$f($n-1,$a+1)};$f)",
+        "n": 100000
+      }
+    }
+  ]
+}
