@@ -16,6 +16,7 @@ pub const EXPRESSIONS: &[&str] = &[
     "$formatInteger(a,picture)",
     "$formatNumber(a,picture)",
     "($f:=$eval('function(){' & $string({'value':a}) & '}');$f())",
+    r#"($f:=$eval('function($r){{"n":$r.n+1,"keep":' & $string({'value':a}) & '}}');$map(rows,$f))"#,
 ];
 
 pub fn snapshot(expression: &jx::Expression, input: &[u8]) -> (Vec<Vec<u8>>, Option<Error>) {
@@ -71,6 +72,11 @@ pub fn exercise(bytes: &[u8]) {
         }),
         ..Default::default()
     };
+    // Small fixed-template inputs exercise optimized paths that controls bypass,
+    // while bounding constructor expansion separately from cooperative quotas.
+    if expected.is_none() && bytes.len() <= 1024 {
+        let _ = snapshot(&expression, bytes);
+    }
     let evaluated = expression.evaluate_with(Some(bytes), options);
     if let Some(expected) = expected {
         assert_eq!(evaluated.unwrap_err(), expected);
