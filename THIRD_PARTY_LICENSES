@@ -1,8 +1,8 @@
 Third-party notices for default jx CLI binaries
 
 The default dependency graph contains base64, regress and memchr.
-Their MIT license texts follow. Optional native artifacts are not distributed
-by the release workflow; review their additional dependency notices separately.
+Their MIT license texts follow. Native-capable archives carry the additional
+notices recorded in THIRD_PARTY_LICENSES_NATIVE.
 
 
 --- base64 0.22.1 (https://github.com/marshallpierce/rust-base64) ---

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archive an already-built default CLI; never builds, uploads or publishes."""
+"""Archive an already-built CLI variant; never builds, uploads or publishes."""
 import argparse
 import gzip
 import hashlib
@@ -19,18 +19,22 @@ TARGETS = (
 )
 
 
-def archive(binary, target, version, revision, epoch, output, root=ROOT):
+def archive(binary, target, version, revision, epoch, output, root=ROOT, variant="default"):
+    if variant not in ('default', 'native'):
+        raise ValueError('unsupported release variant')
     if target not in TARGETS or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.-]+)?', version):
         raise ValueError('unsupported target or invalid version')
-    name = f'jx-v{version}-{target}'
+    name = f'jx-v{version}-{target}' + ('-native' if variant == 'native' else '')
+    notices = 'THIRD_PARTY_LICENSES_NATIVE' if variant == 'native' else 'THIRD_PARTY_LICENSES'
+    features = 'jit (execution requires --jit)' if variant == 'native' else 'default (no native backend)'
     files = {
         'jx.exe' if target.endswith('msvc') else 'jx': binary.read_bytes(),
         'README.md': (root / 'crates/jx-cli/README.md').read_bytes(),
         'LICENSE': (root / 'LICENSE').read_bytes(),
-        'THIRD_PARTY_LICENSES': (root / 'THIRD_PARTY_LICENSES').read_bytes(),
+        'THIRD_PARTY_LICENSES': (root / notices).read_bytes(),
         'CLI.md': (root / 'docs/cli.md').read_bytes(),
         'COMPATIBILITY.md': (root / 'docs/compatibility.md').read_bytes(),
-        'BUILD.txt': f'version={version}\nrevision={revision}\ntarget={target}\nrust=1.98.1\nfeatures=default (no native backend)\nsource_date_epoch={epoch}\n'.encode(),
+        'BUILD.txt': f'version={version}\nrevision={revision}\ntarget={target}\nrust=1.98.1\nvariant={variant}\nfeatures={features}\nsource_date_epoch={epoch}\n'.encode(),
     }
     output.mkdir(parents=True, exist_ok=True)
     path = output / (name + ('.zip' if target.endswith('msvc') else '.tar.gz'))
@@ -62,6 +66,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--target', required=True, choices=TARGETS)
     parser.add_argument('--output', type=Path, default=ROOT / 'dist')
+    parser.add_argument('--variant', choices=('default', 'native'), default='default')
     args = parser.parse_args()
     status = subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT)
     if status:
@@ -77,9 +82,9 @@ def main():
     if actual != f'jx {version}':
         parser.error(f'binary version mismatch: {actual}')
     help_text = subprocess.check_output([binary, '--help'], text=True)
-    if '--jit' in help_text:
-        parser.error('release artifacts must use the default build without native support')
-    print(archive(binary, args.target, version, revision, epoch, args.output))
+    if ('--jit' in help_text) != (args.variant == 'native'):
+        parser.error('binary native support does not match the requested release variant')
+    print(archive(binary, args.target, version, revision, epoch, args.output, variant=args.variant))
 
 
 if __name__ == '__main__':
