@@ -1,0 +1,59 @@
+# Produces downloadable archives only; no tags or GitHub Releases are created.
+name: Release artifacts
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Existing commit or tag to build (version comes from Cargo.toml)'
+        required: true
+        default: dev
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+          - os: macos-14
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.98.1
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and exercise the default CLI
+        run: |
+          SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+          export SOURCE_DATE_EPOCH
+          build_root="$(python3 -c 'import os; print(os.getcwd())')"
+          export RUSTFLAGS="--remap-path-prefix=$build_root=."
+          cargo build -p jx-cli --release --locked --target ${{ matrix.target }}
+          cargo test -p jx-cli --locked --target ${{ matrix.target }}
+      - run: python3 scripts/package-release.py --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jx-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14

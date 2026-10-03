@@ -29,3 +29,7 @@ target
 fuzz/artifacts/
 fuzz/corpus/
 fuzz/coverage/
+
+# Locally assembled release archives and Python tooling caches
+/dist/
+__pycache__/

@@ -5,15 +5,27 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+documentation = "https://github.com/jo-cube/jx/blob/dev/docs/embedding.md"
+
+keywords = ["jsonata", "json", "query"]
+categories = ["parser-implementations"]
+include = ["src/**", "examples/**", "README.md", "LICENSE"]
+
+[package.metadata.docs.rs]
+features = []
 
 [lints]
 workspace = true
 
 [features]
+default = []
 jit = ["dep:jx-native"]
 
 [dependencies]
-jx-native = { path = "../jx-native", optional = true }
+jx-native = { version = "=0.1.0", path = "../jx-native", optional = true }
 base64 = "0.22.1"
 regress = { version = "0.12.0", default-features = false, features = ["std", "utf16"] }
 

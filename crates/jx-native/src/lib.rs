@@ -1,4 +1,16 @@
 #![deny(unsafe_code)]
+//! Internal native backend for `jx`; enable through the engine's `jit` feature.
+
+#[cfg(not(any(
+    all(
+        target_arch = "x86_64",
+        any(target_os = "linux", target_os = "macos", target_os = "windows")
+    ),
+    all(target_arch = "aarch64", any(target_os = "linux", target_os = "macos")),
+)))]
+compile_error!(
+    "jx native support requires x86_64 Linux/macOS/Windows or aarch64 Linux/macOS; build jx without the jit feature on other targets"
+);
 mod compile;
 #[allow(unsafe_code)]
 mod executable;
