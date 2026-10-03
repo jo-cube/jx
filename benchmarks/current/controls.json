@@ -1,0 +1,38 @@
+[
+  {
+    "name": "path",
+    "workload": "ascii/shallow",
+    "bytes": 500,
+    "mode": "normal"
+  },
+  {
+    "name": "scalar",
+    "workload": "execution/arithmetic",
+    "bytes": 1024,
+    "mode": "normal"
+  },
+  {
+    "name": "lookup",
+    "workload": "acquisition/lookup_8192_short_varying",
+    "bytes": 500,
+    "mode": "normal"
+  },
+  {
+    "name": "pipeline",
+    "workload": "regions/filtered_sum",
+    "bytes": 41828,
+    "mode": "normal"
+  },
+  {
+    "name": "constructor",
+    "workload": "execution/constructor",
+    "bytes": 500,
+    "mode": "normal"
+  },
+  {
+    "name": "native_pipeline",
+    "workload": "jit/filter_map_fold",
+    "bytes": 14794,
+    "mode": "native"
+  }
+]

@@ -1,0 +1,116 @@
+[
+  {
+    "name": "path",
+    "workload": "ascii/shallow",
+    "bytes": 500,
+    "mode": "normal",
+    "records_per_second": 3205781.5,
+    "input_mib_per_second": 1528.6357402801514,
+    "allocations_per_record": [
+      0.0
+    ],
+    "allocated_bytes_per_record": [
+      0.0
+    ],
+    "pass_medians": [
+      3324497.0,
+      3183176.0
+    ],
+    "pass_difference_percent": 4.439622565638857
+  },
+  {
+    "name": "scalar",
+    "workload": "execution/arithmetic",
+    "bytes": 1024,
+    "mode": "normal",
+    "records_per_second": 1610234.5,
+    "input_mib_per_second": 1572.49462890625,
+    "allocations_per_record": [
+      0.0
+    ],
+    "allocated_bytes_per_record": [
+      0.0
+    ],
+    "pass_medians": [
+      1642375.0,
+      1595041.0
+    ],
+    "pass_difference_percent": 2.967572620390313
+  },
+  {
+    "name": "lookup",
+    "workload": "acquisition/lookup_8192_short_varying",
+    "bytes": 500,
+    "mode": "normal",
+    "records_per_second": 2817282.0,
+    "input_mib_per_second": 1343.3847427368164,
+    "allocations_per_record": [
+      0.0
+    ],
+    "allocated_bytes_per_record": [
+      0.0
+    ],
+    "pass_medians": [
+      2855288.0,
+      2806495.0
+    ],
+    "pass_difference_percent": 1.7385742714667307
+  },
+  {
+    "name": "pipeline",
+    "workload": "regions/filtered_sum",
+    "bytes": 41828,
+    "mode": "normal",
+    "records_per_second": 5917.5,
+    "input_mib_per_second": 236.0507869720459,
+    "allocations_per_record": [
+      0.0
+    ],
+    "allocated_bytes_per_record": [
+      0.0
+    ],
+    "pass_medians": [
+      5910.0,
+      5924.0
+    ],
+    "pass_difference_percent": 0.23688663282572797
+  },
+  {
+    "name": "constructor",
+    "workload": "execution/constructor",
+    "bytes": 500,
+    "mode": "normal",
+    "records_per_second": 2450244.5,
+    "input_mib_per_second": 1168.367624282837,
+    "allocations_per_record": [
+      3.0
+    ],
+    "allocated_bytes_per_record": [
+      152.0
+    ],
+    "pass_medians": [
+      2453108.0,
+      2442439.0
+    ],
+    "pass_difference_percent": 0.4368174599242769
+  },
+  {
+    "name": "native_pipeline",
+    "workload": "jit/filter_map_fold",
+    "bytes": 14794,
+    "mode": "native",
+    "records_per_second": 10240.0,
+    "input_mib_per_second": 144.47265625,
+    "allocations_per_record": [
+      0.0
+    ],
+    "allocated_bytes_per_record": [
+      0.0
+    ],
+    "pass_medians": [
+      10038.0,
+      10307.0
+    ],
+    "pass_difference_percent": 2.6798166965531056
+  }
+]

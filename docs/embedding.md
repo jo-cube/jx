@@ -1,135 +1,193 @@
 # Embedding jx
 
-From a checkout, run `cargo run -p jx --example embedding --locked`, or pipe NDJSON
-to `cargo run -p jx --example stream --locked -- 'price*quantity'`. The examples use
-only public APIs; the stream example expects bounded trusted input, while the CLI
-enforces byte limits during reading. Add `jx` as a path/git dependency pinned to your
-reviewed revision until registry publication is deliberately chosen. Default features
-are empty; enable `jit` and call `enable_native()` once for optional numeric acceleration.
+Compile once and evaluate independent borrowed byte records. `Expression` is cloneable
+and `Send + Sync`, so callers can share it directly or through `Arc`. Evaluation state
+and ordinary runtime values stay local to the caller; the engine does not spawn workers.
 
-For a local checkout in an external Rust application:
+Use a Git dependency pinned to a reviewed revision:
 
 ```toml
 [dependencies]
-jx = { path = "/path/to/jx/crates/jx" }
+jx = { git = "https://github.com/jo-cube/jx", rev = "REVIEWED_COMMIT" }
 ```
 
-A Git dependency can instead name this repository and a reviewed `rev`. The crates.io
-name `jx` belongs to a different project; do not use a registry dependency until this
-engine deliberately publishes under its chosen package name.
+Registry publication will come later; the crates.io package named `jx` is a different
+project. The library target/import remains `jx`, and APIs are pre-release and can change.
+For checkout development, use `jx = { path = "/path/to/jx/crates/jx" }` instead.
+Default features are empty; [native support](releases.md#optional-native-acceleration)
+is optional and also requires `enable_native()` once before sharing an expression.
 
-Compile once, share `Expression` (or `Arc<Expression>`) across callers, and evaluate
-independent borrowed byte records. Evaluations and runtime values are local to a caller;
-`OwnedValue` snapshots are `Send + Sync` and independent of input and expression storage.
-
-## Values and results
-
-`Evaluation::for_each` streams without collecting. `try_for_each` returns either
-`ConsumeError::Evaluation` or the original `ConsumeError::Consumer`; consumer failure
-stops later traversal. Scalar computations and lexical retention can run before the
-consumer is called. `single()` stops at the second item with `CardinalityError`.
-`collect_owned()` explicitly collects detached snapshots, preserving result cardinality.
-
-`Value::get` accesses a container field without mapping/flattening; raw duplicate fields
-use the last decoded key. `array_items` and `object_entries` return optional iterators,
-not copied collections. Keys decode to `Cow<str>`; entries expose raw duplicate keys in
-storage order. `as_str()` returns `Result<Option<Cow<str>>, Error>`: a type mismatch is
-`None`, escapes allocate, and isolated surrogates raise `EncodingError`. `string_units`
-preserves those units losslessly. Numbers remain binary64, including computed NaN/infinity;
-JSON serialization encodes nonfinite numbers as null.
-
-`Value::to_owned()` copies only when explicitly requested, preserving missing, null,
-array/sequence shape and encoded UTF-16 string units. It does not use CLI serialization
-or round-trip through a parser. Snapshot access uses `OwnedValue::as_value()`;
-`OwnedValue::from_json()` validates and detaches JSON input. Functions anywhere in a
-snapshot are rejected: JSONata closures carry evaluation-local frame indices. They can
-be inspected as function values, or invoked during a host callback in that same evaluation,
-but cannot be injected into a different evaluation. Host functions have independent ownership.
-
-## Bindings and host functions
-
-External names omit `$` and must be declared before compilation. This keeps static
-builtin resolution and purity analysis correct, including declarations that shadow
-builtin names. Supplying an undeclared name raises `BindingError`, rather than executing
-already-folded or planned code with stale assumptions. Missing declarations fall back
-to the builtin (if any); an explicit `Value::Undefined` shadows it with missing.
-Local bindings, parameters and tuple bindings shadow external bindings lexically.
+## Compile and consume
 
 ```rust
-let expression = jx::CompileOptions::default()
-    .binding("scale").binding("add")
-    .compile("$add(price*$scale, quantity)")?;
-let add = jx::HostFunction::new(2, |args, _context| {
-    let a = args[0].as_ref().unwrap().as_number().unwrap();
-    let b = args[1].as_ref().unwrap().as_number().unwrap();
-    Ok(Some(jx::Value::Number(a+b)))
-}).with_signature("<nn:n>")?;
-expression.evaluate_with(Some(br#"{"price":2.5,"quantity":3}"#), jx::EvaluationOptions {
-    bindings: vec![("scale", jx::Value::Number(2.0)), ("add", add.value())],
-    ..Default::default()
-})?.for_each(|value| assert_eq!(value.as_number(), Some(8.0)))?;
-# Ok::<(), jx::Error>(())
+fn main() -> Result<(), jx::Error> {
+    let expression = jx::compile("items[price>10].price")?;
+    let input = br#"{"items":[{"price":5},{"price":12},{"price":20}]}"#;
+    expression.evaluate(input)?.for_each(|value| {
+        println!("{}", value.as_number().unwrap());
+    })?;
+    Ok(())
+}
 ```
 
-Bindings retain evaluated values once. `Value::from_json`, `from_string`, `from_array`
-and `from_object` construct embedding inputs; raw values remain borrowed. Names and
-values need only live through the evaluation. Reuse a host `value()` by cloning it to
-avoid rebuilding its callable wrapper per record. Host implementations are synchronous
-`Send + Sync` closures; mutable state may use normal Rust synchronization. Every host
-call is effectful and is excluded from purity-based replay, key caching and lowering.
-The declared arity describes callback argument selection; optional signatures validate
-arguments once per call using the same compiled rules as JSONata lambdas. Return types
-are descriptive, matching JSONata. Unsigned callbacks validate their own arguments.
+`for_each` consumes a sequence without collecting it. `try_for_each` stops on consumer
+failure and distinguishes `ConsumeError::Evaluation` from your original consumer error.
+`single()` returns `None` for missing and reports `CardinalityError` at the second item.
+`collect_owned()` deliberately collects detached snapshots. Scalar computation and
+lexical retention can happen before consumption; lazy navigation can fail during it.
+Earlier delivered values remain visible after a later failure.
 
-`HostContext` exposes focus/root, a cooperative checkpoint and synchronous `invoke` for
-JSONata function arguments. Returned argument/focus clones preserve borrowing; newly
-constructed values own only their new storage. Callback re-entry shares the lexical
-arena, random source and controls. `Error::user` becomes a structured cause of `HostError`;
-Rust panics retain normal Rust panic policy. Host code is trusted and must cooperate
-with cancellation. No FFI/plugin registry, async protocol or detached closure API exists.
+## Borrowed access and owned snapshots
 
-## Context and effects
+Use `as_number`, `as_bool`, `as_str`, `get`, `array_items` and `object_entries` rather
+than inspecting storage variants. Container access does not map/flatten values.
+`as_str()` returns `Result<Option<Cow<str>>, Error>`: mismatch is `None`, unescaped text
+borrows, and escape decoding may allocate. Isolated UTF-16 surrogates have no Rust `str`
+representation; `string_units` preserves them. Object entries expose storage order and
+raw duplicate keys; `get` selects the last decoded matching key.
+
+```rust
+fn main() -> Result<(), jx::Error> {
+    let expression = jx::compile("customer")?;
+    let snapshot = {
+        let input = br#"{"customer":{"name":"Ada","id":42}}"#.to_vec();
+        let value = expression.evaluate(&input)?.single()?.unwrap();
+        assert_eq!(value.get("name").unwrap().as_str()?.unwrap(), "Ada");
+        value.to_owned()?
+    }; // input is gone; snapshot remains valid
+    assert_eq!(snapshot.as_value().get("id").unwrap().as_number(), Some(42.0));
+    Ok(())
+}
+```
+
+Ordinary results may borrow both the input and compiled expression. Do not recycle the
+input buffer while results remain borrowed. New containers own their structure but can
+retain borrowed leaves. `OwnedValue` is independent of both lifetimes and `Send + Sync`;
+`to_owned()` preserves missing/null, sequence shape and UTF-16 units without a serialization
+round-trip. `OwnedValue::from_json` validates and detaches an input value.
+
+Snapshots reject functions anywhere inside them. JSONata closures carry evaluation-local
+frame indices; they can be returned/used inside that evaluation but cannot be injected
+into another. Independently owned host functions can cross evaluations.
+
+## External bindings and host callbacks
+
+Declare names without `$` before compilation so builtin resolution, folding and plans
+respect external shadowing. Bindings store already-evaluated values once; undeclared
+injection raises `BindingError`. An unsupplied declared name can fall back to a builtin;
+explicit `Value::Undefined` shadows it with missing. Local variables/parameters shadow
+external names lexically.
+
+```rust
+fn main() -> Result<(), jx::Error> {
+    let expression = jx::CompileOptions::default()
+        .binding("scale").binding("add")
+        .compile("$add(price*$scale, quantity)")?;
+    let add = jx::HostFunction::new(2, |args, _context| {
+        let a = args[0].as_ref().unwrap().as_number().unwrap();
+        let b = args[1].as_ref().unwrap().as_number().unwrap();
+        Ok(Some(jx::Value::Number(a+b)))
+    }).with_signature("<nn:n>")?;
+    let add_value = add.value(); // reuse this wrapper across records
+    let options = jx::EvaluationOptions {
+        bindings: vec![("scale", jx::Value::Number(2.0)), ("add", add_value.clone())],
+        ..Default::default()
+    };
+    let value = expression.evaluate_with(Some(br#"{"price":2.5,"quantity":3}"#), options)?
+        .single()?.unwrap();
+    assert_eq!(value.as_number(), Some(8.0));
+    Ok(())
+}
+```
+
+`Value::from_json` supplies validated borrowed input; `from_string`, `from_array` and
+`from_object` construct owned structure. Names/values need only live through evaluation.
+
+Host implementations are synchronous `Send + Sync` closures. Every call is effectful,
+including calls reading mutable state; no host purity promise enters plans or key reuse.
+Optional signatures compile once and validate arguments using JSONata's rules; callbacks
+without signatures validate their own arguments. Arity controls higher-order argument
+selection, and return signature types are descriptive.
+
+`HostContext` exposes focus/root, `checkpoint()` and synchronous `invoke()` for JSONata
+function arguments. Re-entry shares the lexical arena, controls and random stream.
+Returned argument/focus clones preserve borrowing; newly built values own their new
+storage. `Error::user` becomes a nested cause of `HostError`. Panics follow Rust's normal
+policy. Host code is trusted and must cooperate with cancellation; there is no async/FFI
+framework or detached JSONata function runtime.
+
+## Root, focus and effects
 
 `evaluate_with(None, options)` means absent input; `Some(b"null")` means JSON null.
-`options.focus` replaces current `$`, while `$$` remains the validated input/absent root.
-Root arrays retain top-level focus semantics. `$eval` inherits the same bindings and
-resource controls, including dynamically owned programs and escaping callbacks.
-`options.random` or `evaluate_with_random` accepts a caller-owned `Random` stream;
-`Random::seeded` is deterministic. Defaults initialize randomness lazily.
-An empty options value with present input uses the ordinary evaluation fast path.
+`options.focus` replaces `$`, while `$$` retains the original input or absent root:
+
+```rust
+fn main() -> Result<(), jx::Error> {
+    let expression = jx::compile("[$$.id, $.price]")?;
+    let options = jx::EvaluationOptions {
+        focus: Some(jx::Value::from_json(br#"{"price":12}"#)?),
+        ..Default::default()
+    };
+    let value = expression.evaluate_with(Some(br#"{"id":42}"#), options)?.single()?.unwrap();
+    let numbers: Vec<_> = value.array_items().unwrap().map(|v| v.as_number().unwrap()).collect();
+    assert_eq!(numbers, [42.0, 12.0]);
+    Ok(())
+}
+```
+
+`$eval` inherits lexical bindings and controls; escaping dynamic programs own what their
+results need. `options.random` or `evaluate_with_random` accepts a `Random` stream;
+`Random::seeded` provides deterministic draws. Defaults initialize randomness lazily.
+Empty options with present input use ordinary evaluation.
 
 ## Limits and cancellation
 
-Existing hard ceilings always apply: JSON/expression depth 128, at most 64 active
-calls/512 accumulated expression levels, and one million iterations per tail chain.
-`EvaluationOptions` can supply `Limits`, `Cancellation` and/or a monotonic `deadline`.
-No configurable control state is allocated unless one is requested.
+```rust
+fn main() -> Result<(), jx::Error> {
+    let expression = jx::compile("$sum(items.price)")?;
+    let cancellation = jx::Cancellation::default(); // clone to a cancelling thread
+    let options = jx::EvaluationOptions {
+        limits: Some(jx::Limits { max_work: 100_000, ..Default::default() }),
+        cancellation: Some(cancellation.clone()),
+        deadline: Some(std::time::Instant::now() + std::time::Duration::from_secs(1)),
+        ..Default::default()
+    };
+    expression.evaluate_with(Some(br#"{"items":[{"price":12}]}"#), options)?
+        .for_each(|value| assert_eq!(value.as_number(), Some(12.0)))?;
+    Ok(())
+}
+```
 
-`Limits::default()` allows one million work checkpoints, inspected/emitted intermediate
-items and emitted results, 16 MiB of compact result JSON across an evaluation, 64 calls,
-and one million tail calls per chain. Stack/tail settings can tighten hard ceilings.
-Work units are semantic checkpoints, not CPU instructions: calls, loop/traversal
-boundaries and retained collection arguments count; exact counts may evolve.
-Result bytes exclude NDJSON delimiters; function-bearing results remain available to
-non-serializing consumers and do not accrue completed JSON bytes. Limits are checked before
-delivering each result. Calls/traversal can fail before `evaluate_with` returns or during consumption.
-Controlled planned regions use their tree source to keep checkpoints effective.
+Controls are optional; no control state allocates unless requested. Work units count
+semantic checkpoints, not instructions. Result counts and compact byte totals are checked
+before delivery; JSONata function results remain inspectable without a JSON encoding.
+Controls can fail during evaluation or consumption. Controlled planned regions use tree
+execution where needed; empty options preserve the ordinary fast path.
 
-Cancellation tokens are cloneable across threads and remain cancelled once set.
-Deadlines/cancellation are cooperative, not hard process timeouts or memory quotas.
-Complete JSON validation runs before effects/control failures; callers should bound
-input/source sizes. Regex calls and noncooperating host code cannot be interrupted
-mid-call. String/picture helpers retain their existing local growth guards. Output
-preflight rejects oversized results but cannot undo construction already completed.
-Applications handling hostile code still need their own process-level isolation.
+Tokens stay cancelled after `cancel()`. Deadlines/cancellation are cooperative, not
+process timeouts or memory quotas. Complete input validation runs first. Regex/formatting
+and noncooperating host calls cannot be interrupted mid-call; output preflight cannot
+undo construction already performed. Bound input/source sizes and use process isolation
+where hostile code requires it. [Compatibility and limits](compatibility.md#resource-policy)
+list hard/default ceilings.
 
-## Diagnostics
+## Diagnostics and examples
 
-`Error` exposes kind, message, byte offset, `Phase`, `Source`, point `span()` and optional
-nested `cause()` (also standard `std::error::Error::source`). `location(source)` returns
-one-based line/Unicode-scalar column when the offset is a valid boundary. Point spans
-are deliberate where a complete token range is unavailable. Input-validation errors,
-compile errors, dynamic source errors, host causes and output-limit errors have distinct
-sources/phases. Dynamic errors preserve the outer call offset and inner failure.
-Exact upstream messages/codes, call traces and parser recovery are not API contracts.
-`Value::write_compact` uses ordinary `io::Error` for serialization/I/O failures.
+`Error` exposes kind/message, byte offset, `Phase`, `Source`, point `span()` and optional
+`cause()` (also `std::error::Error::source`). `location(source)` gives one-based line and
+Unicode-scalar column at valid offsets. Dynamic/host failures preserve nested causes.
+Exact upstream messages, call traces and parser recovery are not API contracts.
+`Value::write_compact` uses `io::Error` for serialization/I/O failures; raw output and
+language `$string` conversion have different contracts.
+
+Runnable [embedding](../crates/jx/examples/embedding.rs) and
+[stream](../crates/jx/examples/stream.rs) examples use only public APIs:
+
+```sh
+cargo run -p jx --example embedding --locked
+printf '%s\n' '{"price":2.5,"quantity":3}' |
+  cargo run -p jx --example stream --locked -- 'price * quantity'
+```
+
+The stream example expects trusted bounded input. Use the CLI's reader or your own
+byte limits for untrusted streams.

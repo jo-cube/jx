@@ -1,54 +1,152 @@
-# Current performance
+# Performance and efficiency
 
-The intended workload is compile once/evaluate millions of independent records, usually
-500 B–1 KiB. Complete UTF-8 JSON validation is included. The current engine combines
-specialized paths/demand capture, a bounded scalar/loop plan, and tree fallback.
-No worker pool or universal input DOM/index is used.
+## Current measurements
 
-These measurements are scoped controls from an Apple M4 arm64 macOS machine, Rust
-1.98.1, release thin LTO, seven 300 ms samples, with repeated comparisons in both orders.
-They measure warmed evaluation and consumption, **not CLI I/O or serialization**.
-See [recorded environment and commands](../benchmarks/m30/environment.json) and
-[detailed results/profiles](../PERFORMANCE.md#runtime-consolidation).
+| Workload | Input bytes | Mode | Records/s | Input MiB/s | Allocations/record |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Shallow path | 500 | normal | 3.21 M | 1,529 | 0 |
+| Scalar arithmetic | 1,024 | normal | 1.61 M | 1,572 | 0 |
+| 8,192-key static lookup | 500 | normal | 2.82 M | 1,343 | 0 |
+| Filter/map/sum, 1,024 rows | 41,828 | normal | 5.92 k | 236 | 0 |
+| Constructed object | 500 | normal | 2.45 M | 1,168 | 3 |
+| Numeric filter/map/sum, 1,024 rows | 14,794 | native | 10.24 k | 144 | 0 |
 
-| Workload | Current evidence |
+The table reports medians across two passes, each with seven 300 ms warmed samples.
+It includes full input validation and result consumption, not compilation, serialization
+or I/O. Allocation counts include allocator growth/reallocation; requested bytes are
+not retained heap or RSS. The constructed object uses 152 requested bytes per record.
+Pass medians differ by 0.2–4.5%; the table rounds rates accordingly. These measurements
+are scoped examples, not portable throughput guarantees.
+
+[Raw samples, selections and summary](../benchmarks/current) and the
+[reproduction environment](../benchmarks/current/environment.json) identify source,
+compiler/target, build settings, executable hashes and machine/OS. Hardware details
+are retained there only for reproduction.
+
+| Selection | Expression/fixture |
 | --- | --- |
-| 500 B scalar arithmetic | Interpreter ~2.69 M records/s; optional native ~2.93 M/s; validating fixed-shape Rust control ~3.03 M/s |
-| Numeric kernels | Optional native improves 500 B arithmetic ~9%, 1 KiB ~5%, object folds 54–59%, numeric folds 69–71%, dense filter/map/fold 34–36% |
-| 1 MiB sparse arithmetic | Scanning dominates (~100% profile samples); native does not improve throughput |
-| Pure dynamic object callbacks | Avoiding frame copies improves throughput 38–66% across 8–16,384 rows; at 1,024 rows allocations fall 14,426 to 7,258 |
-| Retained output | A 16,384-row dynamic constructor fixture still peaks near 3.80 MB; output lifetime dominates memory |
+| `ascii/shallow`, 500 B | `id`, one borrowed scalar |
+| `execution/arithmetic`, 1 KiB | Repeated numeric field loads/arithmetic, one primitive result |
+| `acquisition/lookup_8192_short_varying`, 500 B | Compiled 8,192-key object, rotating hit/miss keys |
+| `regions/filtered_sum`, 41,828 B | `$sum($map($filter(rows,…),…))` over 1,024 nested rows |
+| `execution/constructor`, 500 B | Fixed schema plus computed arithmetic member, one object |
+| `jit/filter_map_fold`, 14,794 B | Native-enabled numeric filter/map/sum over 1,024 rows |
 
-Ordinary path/scalar/native controls retain zero per-record allocations. Construction,
-lexical capture, dynamic programs, grouping/sorting and owned strings/results can allocate;
-allocation assertions and live-heap fixtures distinguish counts, requested bytes and
-retained output. Requested heap is not RSS. The Rust control does not implement general
-JSONata shape/error semantics, and these figures are not cross-engine marketing claims.
+Normal/native rows use different fixtures; their rates describe each workload independently.
+The measurements use the normal build for ordinary rows and a `jit` build with native
+execution enabled for the final row.
 
-Remaining costs are mostly complete validation/traversal (often 58–99% of sampled time),
-string callback projections/conversions, non-lowered dynamic bridges, genuine captures,
-effectful comparators and transform reconstruction. Small build-level callback deltas
-remain: a three-item numeric partial fixture is ~2% slower, with wider maps steady;
-a 500 B string callback is ~1% slower. Repeated historical regressions were inconsistent;
-removed experiments and limits of attribution are recorded with the evidence.
+`jx` is designed for one compiled expression evaluated over many independent records.
+Compilation can spend work on analysis so repeated execution stays small. Performance
+depends on expression shape, record layout, result size and the caller's consumption.
+There is no universal comparison with other query engines.
 
-## Native policy
+## Where work is saved
 
-Default builds do not include Cranelift. `jit` is an explicit Cargo feature, and callers
-also opt into code generation with `enable_native()` / CLI `--jit`. It compiles only
-bounded primitive numeric/boolean regions. JSON scanning, sequences, strings, allocation,
-dynamic calls/effects, provenance and general constructors stay in Rust. Guards and
-compilation failures preserve interpreter fallback; compiled expressions share code safely.
+- Constants, constructors, regexes, pictures and static lookup tables are prepared once.
+  Static object lookup uses a compact fingerprint index with exact UTF-16 equality checks.
+- Validation captures demanded fields/paths where possible. Repeated planned loads and
+  pure call arguments can reuse spans instead of scanning the object again.
+- Raw input and unescaped strings stay borrowed. Primitive scalar operations do not need
+  boxed values; immutable construction retains borrowed leaves.
+- Sequences stream when cardinality and effects allow. Selected filter/map/aggregate
+  regions fuse iteration and primitive computation without intermediate collections.
+- Bounded plans share loads/computations and reduce repeated tree dispatch. Unsupported
+  shapes retain normal tree execution.
+- Frames recycle or retire when captures no longer escape. Ownership is paid for where
+  lexical retention, sorting, grouping, construction or detached snapshots require it.
 
-Native code helps dense numeric work most. Warm kernel installation in the recorded experiment cost ~0.25–0.39 ms, amortizing
-after ~8,000–13,000 typical scalar records or tens of large folds. This is a
-per-expression cost; amortization depends on the eligible region and record size. Compilation-cost/code-size
-measurements are in the [native experiment](../benchmarks/m26/environment.json).
-Measure your own expression before enabling it. Native execution is not selected
-implicitly and unsupported target requests fail clearly at build time.
+Allocation budgets are executable assertions in the benchmark suite. Ordinary paths and
+eligible scalar/fold plans have zero-allocation cases; this is not a promise for every
+expression. Construction, string decoding/conversion, sorting, grouping, callbacks and
+owned snapshots can allocate.
 
-Run `just bench` for the full default suite, `just bench-plan` / `just bench-jit` for
-same-binary numeric comparisons, and `just bench-runtime-memory` for live heap.
-Benchmark compilation separately; preserve toolchain, inputs, flags, sample count and
-record sizes. End-to-end CLI throughput includes framing/serialization/I/O and should
-not be inferred from library evaluation numbers.
+## Trade-offs
+
+| Workload | Main cost / useful approach |
+| --- | --- |
+| Small static scalar expressions | Validation, demand acquisition and primitive execution; plans can share field loads |
+| Large records, few demanded fields | Complete validation remains necessary; capture removes extra traversals but cannot skip bytes |
+| Numeric filter/map/folds | Fused plans reduce per-item dispatch; native execution can help suitable kernels |
+| Strings and general callbacks | Decoding/conversion, projections, invocation and retained values remain Rust work |
+| Sorting/grouping | Candidates must be retained; pure keys can be reused, observable callbacks cannot |
+| Transforms | Clone conversion and rebuilding affected containers remain necessary |
+
+Unplanned consumers and nested-array/cardinality operations can still rescan. Genuine
+escaping closures and retained outputs must keep their data alive. Effects, errors,
+randomness and dynamic calls cannot be memoized to improve a benchmark.
+
+## Optional native execution
+
+Default builds are independent of Cranelift. The `jit` feature plus explicit enablement
+accelerates eligible numeric/boolean registers and selected folds; it does not replace
+the JSONata runtime. Validation, traversal, strings, ownership and dynamic/effectful
+operations remain in Rust. Unsupported regions and guard failures use normal execution.
+
+Native execution helps most when suitable numeric work repeats many times per record
+or the expression is reused over many records. Scanning-dominated workloads may gain
+little. Measure installation cost separately from warmed evaluation; compilation is
+not a per-record operation. Keep native opt-in and compare it with the same plan binary.
+
+## Measuring
+
+To reproduce a table row, use its exact workload selector and input size:
+
+```sh
+JX_BENCH_FILTER=ascii/shallow JX_BENCH_BYTES=500 JX_BENCH_SAMPLE_MS=300 just bench
+JX_BENCH_FILTER=jit/filter_map_fold JX_BENCH_BYTES=14794 JX_BENCH_SAMPLE_MS=300 just bench-jit
+```
+
+Repeat all six selectors from `benchmarks/current/controls.json` in reverse order for
+the second pass. Refresh this small current measurement set when publishing new figures;
+keep development comparison snapshots outside user documentation.
+
+Benchmarks live in `crates/jx/benches`, with workloads separated by semantic area.
+They cover compilation, validation, paths/sequences, scalar kernels, callbacks,
+filter/map/folds, lookup tables, constructors, pictures, sorting/grouping and transforms.
+Fixtures range from tiny records through typical 500 B–1 KiB records to 1 MiB and wide
+nested arrays. Purpose-written Rust controls exist for selected transformations; they
+do not implement all JSONata shape/error rules.
+
+```sh
+just bench
+JX_BENCH_FILTER=arithmetic JX_BENCH_BYTES=500 JX_BENCH_SAMPLE_MS=300 just bench
+just bench-runtime
+just bench-runtime-memory
+just bench-embedding
+just bench-plan
+just bench-jit
+just bench-jit-memory
+```
+
+Throughput CSV reports records/s, input bytes/s, allocations and requested bytes per
+record. Compilation has separate workload rows. The normal harness warms up, then runs
+seven samples; `--smoke` runs short allocation/correctness checks rather than a timing
+comparison. Most execution rows consume results without serialization or I/O;
+`identity_write` explicitly includes compact output into a reused buffer.
+
+For a reproducible comparison, retain the commit/dirty diff, commands, compiler/target,
+release settings, machine/OS, workload sizes and raw samples alongside your result.
+Save local output under `target/`, use matched inputs/builds, reverse comparison order,
+and repeat meaningful changes. The current representative selections are in
+`crates/jx/benches/controls.json`; reusable tools preserve raw samples and compare medians:
+
+```sh
+# Use executables printed by cargo bench --bench throughput --no-run.
+python3 scripts/compare-benchmarks.py BASELINE_BINARY CANDIDATE_BINARY \
+  crates/jx/benches/controls.json target/comparison
+python3 scripts/compare-native.py NATIVE_FEATURE_BINARY target/native --ms 300
+# Repeat each with --reverse to check ordering bias.
+```
+
+Profile long warmed runs of the same executable with your platform profiler (`sample`
+on macOS, `perf` on Linux). `JX_BENCH_FILTER`, `JX_BENCH_BYTES` and
+`JX_BENCH_SAMPLE_MS` select/extend an individual workload. Keep full traces; inlining
+and unsymbolized native code can make aggregate attribution approximate.
+Requested/peak live heap is not RSS; `runtime_memory` measures both transient and escaping
+captures, while `native_memory` measures code installation/sharing/retention.
+
+For native/interpreter comparisons, `just bench-plan` and `just bench-jit` select the
+same kernel fixtures with execution disabled/enabled in the same feature build. Record
+code size and compilation cost. Amortization is compilation seconds divided by saved
+seconds per record; a gain inside a kernel may disappear end-to-end when scanning dominates.
