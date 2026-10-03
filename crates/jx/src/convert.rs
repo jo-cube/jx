@@ -27,7 +27,7 @@ pub(crate) fn string<'e, 'i>(
     }
     let mut text = String::new();
     write_json(&value, &mut text, pretty, 0, offset)?;
-    Ok(Some(Value::String(OwnedString::units(text.encode_utf16()))))
+    Ok(Some(Value::String(OwnedString::text(text))))
 }
 
 pub(crate) fn concat<'e, 'i>(

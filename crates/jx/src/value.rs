@@ -219,6 +219,16 @@ impl OwnedString {
 mod tests {
     use super::*;
     #[test]
+    fn utf8_text_preserves_control_escaping_and_surrogate_encoding() {
+        for text in ["", "123.5", "é中😀", "\"\\\n\t\r\0\u{1f}", r"\ud800"] {
+            let value = OwnedString::text(text.to_owned());
+            crate::validate(value.json.as_bytes()).unwrap();
+            assert_eq!(serde_json::from_str::<String>(&value.json).unwrap(), text);
+            assert_eq!(value.json, OwnedString::units(text.encode_utf16()).json);
+        }
+    }
+
+    #[test]
     fn concatenation_preserves_encoding_and_shared_identity() {
         for len in [0, 1, 20, 60, 61, 62, 63, 64, 128] {
             for tail in ["abc", "é😀", r"\ud800\udc00", r"\n\\"] {

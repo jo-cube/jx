@@ -32,7 +32,7 @@ pub(super) fn run(smoke: bool) {
             ),
             ("number_text", "$number(n)", json!([12.5]), 0),
             ("number_value", "$number(v)", json!([12.5]), 0),
-            ("string_number", "$string(v)", json!(["12.5"]), 12),
+            ("string_number", "$string(v)", json!(["12.5"]), 6),
             ("string_object", "$string(obj)", json!(["{\"n\":1.2}"]), 24),
             (
                 "string_pretty",

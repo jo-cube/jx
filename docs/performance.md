@@ -50,7 +50,8 @@ There is no universal comparison with other query engines.
   Traversal of validated input skips subtree boundaries without parsing their grammar
   again, reducing work for callbacks, navigation, sorting/grouping and transforms.
 - Raw input and unescaped strings stay borrowed. Primitive scalar operations do not need
-  boxed values; immutable construction retains borrowed leaves.
+  boxed values; immutable construction retains borrowed leaves. String conversion
+  avoids a UTF-16 round-trip and reuses its UTF-8 text buffer when escaping permits.
 - Sequences stream when cardinality and effects allow. Selected filter/map/aggregate
   regions fuse iteration and primitive computation without intermediate collections.
 - Bounded plans share loads/computations and reduce repeated tree dispatch. Unsupported
