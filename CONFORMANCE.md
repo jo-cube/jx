@@ -68,4 +68,5 @@ done
 
 For native parity, build with `just build-jit` and set `JX_DIFFERENTIAL_JIT=1` for the
 same loop. The helper verifies the upstream revision. Ordinary `just all` and CI use
-vendored fixtures and need neither Node nor an upstream checkout.
+vendored fixtures and need neither Node nor an upstream checkout. Manual CI/release
+preparation can opt into the pinned-upstream differential suites in both modes.

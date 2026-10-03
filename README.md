@@ -112,6 +112,6 @@ method and trade-offs; [architecture](ARCHITECTURE.md) explains the execution la
 ## Development
 
 `just all` checks formatting, strict Clippy, default/native tests, conformance, archive
-tooling and allocation budgets. `just build`, `just bench` and `just robustness` offer
-focused workflows. Start with [contributing/testing](docs/development.md);
+tooling, guide examples and allocation budgets. `just build`, `just bench` and
+`just robustness` offer focused workflows. Start with [contributing/testing](docs/development.md);
 [AGENTS.md](AGENTS.md) contains the durable implementation rules.

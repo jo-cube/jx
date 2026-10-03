@@ -31,14 +31,29 @@ a semantic bug; do not emulate unsupported behavior silently.
 | `just test` | All-feature workspace tests |
 | `just conformance` | Pinned language inventory |
 | `just robustness` | Seeded boundary properties and native safety tests |
-| `just all` / `just ci` | Formatting, strict Clippy, default/native tests, archive tests and benchmark smoke |
+| `just all` / `just ci` | Formatting, strict Clippy, default/native tests, archive tests, guide examples and benchmark smoke |
 | `just bench` | Warmed execution/compilation and allocation measurements |
 | `just package` | Assemble and verify source archives, without publishing |
+| `just guides` | Check documentation links and execute Rust guide examples offline |
+| `just release-smoke ARCHIVE` | Verify checksum/contents and execute an extracted CLI |
 
 `just all` deliberately exercises the optional backend as well as default builds.
 Default-only checks are `cargo test --locked` and `cargo clippy --all-targets --locked -- -D warnings`.
-Use a supported native host for the full workflow. CI separates default/native jobs
-on Linux, macOS and Windows; package verification runs separately.
+Use a supported native host for the full workflow. **CI** keeps formatting, strict
+Clippy, source packaging, Rustdoc, guide examples, archive tooling and allocation smoke
+in one Linux job. Five host jobs run default/native tests and release-archive smoke in
+separate steps; both modes include all 1,679 conformance outcomes and robustness checks.
+Windows executes the extracted `.exe`, not a cross-built placeholder.
+
+The same workflow serves manual **Release artifacts** preparation. Its candidate ref
+is resolved once; platform jobs use that exact commit. Only release preparation uploads
+verified archives. Actions are commit-pinned and Rust caches are keyed per host target.
+Platform jobs are configured coverage, not evidence of a completed run.
+
+Optional differential checks are available through the CI dispatch checkbox and enabled
+by default for release preparation. They fetch the pinned JSONata revision and compare
+both normal/native CLI modes. Ordinary push/PR CI and `just all` use vendored fixtures
+and do not require Node or an upstream checkout.
 
 ```sh
 cargo run -p jx --example embedding --locked

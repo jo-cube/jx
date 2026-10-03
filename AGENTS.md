@@ -40,7 +40,8 @@ latency. Typical records are 500 B–1 KiB; large inputs must remain viable. API
 - Every upstream case has a manifest status and asserted outcome; no silent skips.
   Keep revisions, provenance and licenses. Ordinary CI does not download upstream JS.
 - Run **`just all`** before handoff: formatting, strict Clippy, default/native tests,
-  archive tests and allocation-asserting benchmark smoke. Run `just build` as well.
+  archive tests, guide examples and allocation-asserting benchmark smoke. Run
+  `just build` as well.
   Hot-path changes need warmed benchmarks and profiles, not just smoke timing.
 - Measure compilation separately from execution. Preserve workload/environment,
   commands and raw samples for a claim; report records/s, bytes/s and allocations

@@ -2,8 +2,9 @@
 
 The CLI executable and Rust library import are both `jx`. CLI binaries are distributed
 through [GitHub Releases](https://github.com/jo-cube/jx/releases); registry publication
-is deferred. No release is published yet: the download examples apply once assets are
-available. [Source installation](#source-builds) works now.
+is deferred. The repository is still private and no release is published: downloads
+apply once public assets are available. [Source installation](#source-builds) requires
+repository access for now.
 
 ## Platforms
 
@@ -17,10 +18,11 @@ Use the target name matching your operating system and architecture:
 | macOS Apple Silicon | `aarch64-apple-darwin` | macOS 11+ |
 | Windows x86-64 | `x86_64-pc-windows-msvc` | MSVC runtime |
 
-CI tests normal/native builds on these five platforms. Linux/macOS have local execution
-evidence; Windows runtime validation remains a CI check. macOS binaries are unsigned
-and unnotarized. Other Rust targets may support the normal engine but have no release
-archive here.
+CI is configured to run normal/native tests and extracted CLI archives on all five
+hosts. Verify successful jobs at the candidate revision before distributing their
+assets; Windows runtime validation remains pending until its job passes. macOS binaries
+are unsigned and unnotarized. Other Rust targets may support the normal engine but have
+no release archive here.
 
 ## Download and install
 
@@ -111,10 +113,17 @@ only when desired. APIs are pre-release and can change.
 
 ## Preparing release archives
 
-The manually dispatched **Release artifacts** workflow builds/tests both variants at
-an existing commit/tag and uploads archives/checksums to its run. Maintainers can attach
-validated files to a GitHub Release separately. The workflow never creates tags, publishes
-releases or publishes crates.
+The manually dispatched **Release artifacts** workflow reuses **CI** at an existing
+ref, resolved once to a commit. Repository checks run on Linux; five platform jobs each
+test/build the normal variant, then the optional native variant. Both archives are
+checksummed, inspected, extracted and executed on the matching host, including Windows.
+Each run artifact named `jx-TARGET` contains both verified archives and their checksums.
+
+Release preparation enables pinned-upstream differential checks in both modes by default;
+the dispatch option can disable them. Ordinary push/PR CI uses the vendored language
+corpus without fetching upstream JavaScript. Maintainers can attach validated run files
+to a GitHub Release separately. The workflows have read-only repository permissions
+and never create tags, publish releases/crates or change visibility.
 
 The packager uses Python 3.9+ and Cargo. On a matching host with a clean tree:
 
@@ -124,21 +133,25 @@ export SOURCE_DATE_EPOCH
 export RUSTFLAGS="--remap-path-prefix=$PWD=."
 # macOS: export MACOSX_DEPLOYMENT_TARGET=11.0
 cargo build -p jx-cli --release --locked --target aarch64-apple-darwin
-python3 scripts/package-release.py --target aarch64-apple-darwin
+archive="$(python3 scripts/package-release.py --target aarch64-apple-darwin)"
+just release-smoke "$archive"
 # Native variant:
 cargo build -p jx-cli --release --features jit --locked --target aarch64-apple-darwin
-python3 scripts/package-release.py --target aarch64-apple-darwin --variant native
+archive="$(python3 scripts/package-release.py --target aarch64-apple-darwin --variant native)"
+just release-smoke "$archive"
 ```
 
 The tool checks binary version/native capability before packaging. Stable member ordering,
-modes, owner IDs and commit timestamps make archives deterministic for identical binaries
-with the same Python/zlib. Locked dependencies, path remapping, thin LTO and one codegen
-unit support reproducibility; different OS/linker combinations may produce different bytes.
+modes, owner IDs and commit timestamps make archives deterministic for identical contents
+and metadata with the same Python/zlib. Locked dependencies, path remapping, thin LTO
+and one codegen unit support reproducibility; different OS/linker combinations may produce different bytes.
 
 Run `just all`, `just build`, source package checks, documentation/examples and relevant
 platform checks. Verify checksums, inspect archive contents and smoke-test extracted binaries
-with stdin, files, expression files and a failure case. Review notices after dependency or
-toolchain changes: `THIRD_PARTY_LICENSES` covers normal releases, and
+with `just release-smoke ARCHIVE`: version/help, stdin/files, expression files, cardinality,
+limits, failure exit codes, line atomicity and native execution/fallback. The checker
+verifies the adjacent checksum and exact archive layout before running extracted bytes.
+Review notices after dependency or toolchain changes: `THIRD_PARTY_LICENSES` covers normal releases, and
 `python3 scripts/update-native-notices.py` refreshes `THIRD_PARTY_LICENSES_NATIVE` from the
 locked native dependency graph. Both include the Rust standard library notice.
 
