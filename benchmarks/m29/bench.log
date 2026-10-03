@@ -1,0 +1,4 @@
+cargo bench -p jx --bench throughput --locked
+    Finished `bench` profile [optimized] target(s) in 0.03s
+     Running benches/throughput.rs (target/release/deps/throughput-1b5b3923bf796647)
+string storage control: shared 16 B, inline 24 B, current Value 24 B

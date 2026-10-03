@@ -1,0 +1,411 @@
+   Compiling jx v0.1.0 (/Users/josh/Documents/Workspace/jo-cube/jx/crates/jx)
+   Compiling jx-cli v0.1.0 (/Users/josh/Documents/Workspace/jo-cube/jx/crates/jx-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.85s
+     Running unittests src/lib.rs (target/debug/deps/jx-5c39ac25acc6c2b5)
+
+running 18 tests
+test json::string::tests::size_hints_bound_remaining_units ... ok
+test json::string::tests::equal_strings_have_equal_fingerprints ... ok
+test constant::tests::fingerprint_collisions_require_exact_key_equality ... ok
+test plan::tests::dynamic_effects_and_retained_results_do_not_lower_as_callbacks ... ok
+test function::acquire::tests::effects_in_arguments_and_dynamic_targets_stay_on_the_tree ... ok
+test plan::tests::shared_computations_keep_wide_constructors_in_one_region ... ok
+test plan::tests::nested_demands_preserve_replacement_and_array_fallback ... ok
+test runtime::tests::closure_focus_is_an_escape_root_even_with_an_older_frame ... ok
+test runtime::tests::an_older_frame_write_keeps_its_new_capture_alive ... ok
+test plan::tests::whole_regions_lower ... ok
+test runtime::tests::temporary_captures_release_their_frames_before_record_completion ... ok
+test value::tests::concatenation_preserves_encoding_and_shared_identity ... ok
+test plan::tests::pure_callback_folds_match_staged_tree_errors ... ok
+test function::acquire::tests::captured_calls_match_original_calls_and_exact_errors ... ok
+test plan::tests::plan_and_tree_agree_on_values_and_exact_errors ... ok
+test plan::tests::parameter_regions_lower_and_match_original_calls ... ok
+test plan::tests::fixed_objects_lookup_and_capture_match_the_tree ... ok
+test plan::tests::branches_and_folds_match_the_tree ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.15s
+
+     Running tests/acquisition.rs (target/debug/deps/acquisition-ed7c255a28819c7d)
+
+running 2 tests
+test captured_arguments_borrow_input_and_validation_precedes_effects ... ok
+test acquisition_lookup_and_string_results ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/aggregates.rs (target/debug/deps/aggregates-876a2f81d671fe60)
+
+running 5 tests
+test validation_cancellation_and_mapped_aggregate_errors ... ok
+test aggregate_arguments_finish_before_type_or_arity_checks ... ok
+test aggregates_preserve_ieee_values_and_signed_zero ... ok
+test aggregate_calls_keep_syntax_and_depth_limits_explicit ... ok
+test aggregate_semantics ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/builtins.rs (target/debug/deps/builtins-0fb36744982705d7)
+
+running 5 tests
+test missing_matchers_and_host_exceptions_are_explicit ... ok
+test validation_and_argument_errors_precede_callback_execution ... ok
+test computed_strings_preserve_json_encoding_and_surrogate_units ... ok
+test builtin_retention_keeps_input_borrowing_and_evaluates_arguments_once ... ok
+test builtin_semantics ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/compatibility.rs (target/debug/deps/compatibility-c83eada6b46dd29e)
+
+running 3 tests
+test native_array_coercion_stringifies_negative_zero ... ok
+test date_literals_reject_known_legacy_case_fold_mismatches ... ok
+test residual_compatibility ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/compiler.rs (target/debug/deps/compiler-8e8e49522c4bfe91)
+
+running 4 tests
+test constant_errors_remain_runtime_errors_after_validation ... ok
+test static_lookup_still_validates_and_normalizes_its_key ... ok
+test lookup_shapes_keys_and_calls ... ok
+test constant_construction_keeps_identity_and_shape ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/composition.rs (target/debug/deps/composition-d495a756fa864021)
+
+running 7 tests
+test concatenation_preserves_escape_and_surrogate_boundaries ... ok
+test string_identity_and_partial_arguments_keep_borrowing ... ok
+test validation_and_error_order_are_preserved ... ok
+test jsonata_stringification_is_distinct_from_output_serialization ... ok
+test composed_calls_keep_resource_limits_and_record_isolation ... ok
+test direct_path_conversion_matches_dynamic_calls ... ok
+test conversion_and_composition_semantics ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/conformance.rs (target/debug/deps/conformance-40cddbe4d9d4427d)
+
+running 1 test
+test pinned_upstream_groups_have_explicit_expected_outcomes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.20s
+
+     Running tests/consolidation.rs (target/debug/deps/consolidation-bcac31bfff5f1ae2)
+
+running 5 tests
+test traversal_cancellation_still_follows_complete_validation ... ok
+test immediate_calls_preserve_rebinding_and_escaping_captures ... ok
+test nested_lookup_preserves_array_boundaries_and_decoded_duplicate_keys ... ok
+test ordering_and_grouping_preserve_upstream_outcomes ... ok
+test wide_groups_compare_encoded_keys_without_losing_member_order ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/constructors.rs (target/debug/deps/constructors-a6f64bd373536e55)
+
+running 9 tests
+test null_collapse_reports_a_type_error_instead_of_a_host_exception ... ok
+test implicit_string_iteration_after_constructor_collapse_is_explicitly_deferred ... ok
+test serialization_keeps_unicode_units_and_arbitrary_json_keys ... ok
+test object_construction_does_not_mutate_empty_input_arrays ... ok
+test containers_own_structure_and_retain_borrowed_members ... ok
+test construction_preserves_internal_numbers_and_undefined ... ok
+test construction_validates_before_output_and_cancels_between_containers ... ok
+test constructor_syntax_and_depth_are_bounded ... ok
+test constructor_semantics ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/effects.rs (target/debug/deps/effects-478e0efd389e2d2b)
+
+running 8 tests
+test dynamic_results_borrow_input_and_validation_precedes_effects ... ok
+test compatibility_boundaries_are_explicit ... ok
+test dynamic_randomness_shares_the_injected_source ... ok
+test skipped_effects_and_trivial_shuffles_do_not_draw ... ok
+test dynamic_errors_preserve_effects_and_shuffle_uses_one_shared_stream ... ok
+test eval_errors_keep_the_nested_diagnostic ... ok
+test injected_randomness_is_shared_and_not_replayed ... ok
+test dynamic_evaluation_semantics ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+     Running tests/embedding.rs (target/debug/deps/embedding-e0bda2b0b34ec084)
+
+running 7 tests
+test diagnostics_identify_source_and_nested_cause ... ok
+test host_callback_results_keep_escaping_lexical_and_dynamic_closures ... ok
+test host_signatures_and_reentrant_jsonata_callbacks_share_the_runtime ... ok
+test focus_missing_borrowing_and_repeated_bindings ... ok
+test host_calls_compose_with_callbacks_partials_and_dynamic_code ... ok
+test external_bindings_shadow_builtins_without_folding_effects ... ok
+test pinned_upstream_external_binding_cases ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/execution.rs (target/debug/deps/execution-54f3e2427d52e331)
+
+running 7 tests
+test planned_regions_do_not_round_borrowed_output ... ok
+test numeric_regions_keep_validation_and_error_precedence ... ok
+test numeric_regions_compose_with_contexts_and_retention ... ok
+test numeric_regions_accept_constructed_and_retained_contexts ... ok
+test branches_fixed_objects_and_streamed_folds_compose ... ok
+test numeric_regions_preserve_missing_shape_and_record_isolation ... ok
+test numeric_regions_preserve_ordering_and_stream_cancellation ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/filters.rs (target/debug/deps/filters-498acedc1ac69cf4)
+
+running 5 tests
+test undefined_sequence_items_remain_distinct_from_null ... ok
+test filtered_values_borrow_input_and_cancellation_stops_predicates ... ok
+test upstream_stage_errors_take_precedence_over_later_stage_errors ... ok
+test filter_semantics ... ok
+test filters_have_bounded_depth_and_keep_deferred_syntax_explicit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/formatting.rs (target/debug/deps/formatting-6654bbe0f9cbe392)
+
+running 2 tests
+test pictures_do_not_change_validation_or_argument_order ... ok
+test numeric_and_date_picture_semantics ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/functions.rs (target/debug/deps/functions-a6515a4057481d3f)
+
+running 5 tests
+test ambiguous_signature_matching_is_bounded ... ok
+test frame_recycling_preserves_escaped_callback_bindings ... ok
+test function_runtime_semantics ... ok
+test tail_borrowing_validation_and_reuse ... ok
+test infinite_tail_calls_use_execution_budget_and_release_the_record ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.63s
+
+     Running tests/helpers.rs (target/debug/deps/helpers-b3aa71aefe3628d9)
+
+running 4 tests
+test user_messages_and_comment_errors_are_explicit ... ok
+test helpers_preserve_borrowing_and_validation ... ok
+test predicates_after_grouping_require_a_path_or_boundary ... ok
+test everyday_helper_semantics ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/json_validation.rs (target/debug/deps/json_validation-e44178e449dfbb4d)
+
+running 6 tests
+test valid_json_syntax_and_utf8 ... ok
+test rejects_invalid_utf8_anywhere_even_in_unselected_fields ... ok
+test invalid_json_syntax ... ok
+test deterministic_mutations_agree_with_serde_on_common_json_domain ... ok
+test depth_limit_and_large_shallow_records ... ok
+test planned_capture_preserves_complete_validation_and_exact_diagnostics ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/lexical.rs (target/debug/deps/lexical-bf2c9cff37c9ff52)
+
+running 8 tests
+test function_results_are_opaque_and_not_json ... ok
+test retained_bindings_preserve_input_borrowing ... ok
+test retained_output_obeys_consumer_cancellation ... ok
+test deferred_features_and_constructor_binding_races_are_explicit ... ok
+test recursion_accounts_for_large_function_bodies ... ok
+test recursion_is_bounded_and_an_error_does_not_poison_reuse ... ok
+test evaluations_isolate_scope_and_validate_before_execution ... ok
+test lexical_semantics ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/matchers.rs (target/debug/deps/matchers-60a40e786f2b8fa2)
+
+running 6 tests
+test complete_validation_precedes_matcher_execution ... ok
+test legacy_case_folding_and_native_coercion_are_explicitly_deferred ... ok
+test legacy_greek_simple_uppercase_aliases_remain_explicitly_unsupported ... ok
+test independent_evaluations_and_cloned_expressions_have_fresh_cursors ... ok
+test borrowing_and_continuation_retention ... ok
+test matcher_semantics ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/navigation.rs (target/debug/deps/navigation-30d994a8a828e57f)
+
+running 4 tests
+test range_limits_and_deferred_tuple_navigation_are_explicit ... ok
+test validation_borrowing_and_cancellation ... ok
+test nested_fallbacks_compile_without_expanding_the_left_tree ... ok
+test navigation_semantics ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/regions.rs (target/debug/deps/regions-61ec7f7f706d89aa)
+
+running 3 tests
+test effectful_callbacks_keep_random_draw_order ... ok
+test validation_precedes_planned_calls_and_fold_output ... ok
+test pure_region_results_and_fallbacks_match_readable_cases ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/resource_controls.rs (target/debug/deps/resource_controls-041df15215849b3e)
+
+running 5 tests
+test controls_and_external_bindings_compose_without_native_support ... ok
+test limits_do_not_require_json_encodable_results ... ok
+test tightening_stack_and_tail_limits_is_explicit_and_native_plans_keep_safe_fallback ... ok
+test controls_check_retained_builtin_arguments_and_parenthesized_focus_paths ... ok
+test limits_stop_retention_and_consumption_and_validation_still_precedes_effects ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/robustness.rs (target/debug/deps/robustness-15509bf2030afdab)
+
+running 5 tests
+test escaping_dynamic_literals_retain_their_program_after_the_call_returns ... ok
+test host_failure_deadline_and_cancellation_do_not_leak_into_later_evaluations ... ok
+test fallback_and_shared_expression_ownership_survive_adversarial_shapes ... ok
+test seeded_parser_scanner_and_serialization_mutations ... ok
+test adversarial_dynamic_pictures_fail_without_panicking_or_losing_validation ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/runtime.rs (target/debug/deps/runtime-f3e0e2982d58a8ce)
+
+running 4 tests
+test temporary_callback_captures_do_not_replay_effects ... ok
+test transient_and_escaped_callbacks_preserve_borrowed_input ... ok
+test dynamic_plan_guards_preserve_errors_and_record_reuse ... ok
+test runtime_boundary_semantics ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scalars.rs (target/debug/deps/scalars-3f00191b04973a56)
+
+running 7 tests
+test expression_whitespace_matches_the_language_tokenizer ... ok
+test computed_scalars_and_literal_strings_need_no_owned_output ... ok
+test operator_errors_have_expression_offsets_after_complete_validation ... ok
+test duplicate_keys_unicode_and_binary64_boundaries ... ok
+test compile_errors_and_expression_depth_are_bounded ... ok
+test scalar_operators_and_sequence_operands ... ok
+test structural_equality_and_boolean_casting_respect_input_depth_limits ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/semantics.rs (target/debug/deps/semantics-0a24414442d3f99b)
+
+running 8 tests
+test serialization_propagates_consumer_failure ... ok
+test compact_serialization_preserves_string_and_number_bytes ... ok
+test unsupported_semantics_fail_explicitly ... ok
+test validate_before_returning_a_selected_value_or_semantic_error ... ok
+test results_borrow_input_not_the_expression ... ok
+test object_paths_missing_and_raw_values ... ok
+test field_names_compare_decoded_escapes ... ok
+test compile_once_reuse_across_records_and_threads ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sequences.rs (target/debug/deps/sequences-807fc37769f900a3)
+
+running 6 tests
+test fully_validate_before_emitting_any_sequence_item ... ok
+test streamed_values_borrow_their_original_ranges ... ok
+test cancellation_preserves_the_consumer_error_and_stops_emission ... ok
+test duplicate_keys_and_escaped_names_inside_arrays ... ok
+test array_navigation_and_sequence_boundaries ... ok
+test traversal_is_bounded_by_validated_input_depth_not_array_width ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/structure.rs (target/debug/deps/structure-b0a5f5f7d788211d)
+
+running 8 tests
+test undeducible_parents_fail_without_recursive_analysis ... ok
+test unsupported_non_json_transform_edges_are_explicit ... ok
+test transform_alias_boundaries_are_explicit ... ok
+test validation_cancellation_and_record_isolation ... ok
+test clone_conversion_preserves_utf16_and_checks_all_numeric_leaves ... ok
+test clones_and_updates_keep_unrelated_leaves_borrowed ... ok
+test resolved_parent_paths_count_toward_the_function_stack_budget ... ok
+test parent_and_transform_semantics ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/tuples.rs (target/debug/deps/tuples-4c0d4251563b57c3)
+
+running 5 tests
+test invalid_bindings_and_parent_navigation_remain_explicit ... ok
+test scoped_paths_validate_before_output_and_borrow_selected_values ... ok
+test an_empty_scoped_group_constructs_an_empty_object ... ok
+test cancellation_stops_scoped_stages_before_later_errors ... ok
+test scoped_path_semantics ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/value_access.rs (target/debug/deps/value_access-9ddc980ef7c1b9c8)
+
+running 2 tests
+test owned_results_keep_sequence_shape_and_duplicate_keys_and_reject_cross_arena_closures ... ok
+test decoded_access_works_across_storage_and_owned_snapshots ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/jx-b40571f2d4c0a842)
+
+running 3 tests
+test stream::tests::oversized_unterminated_record_stays_bounded ... ok
+test stream::tests::output_failure_stops_before_consuming_the_next_record ... ok
+test stream::tests::framing_is_independent_of_buffer_boundaries ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (target/debug/deps/cli-cb8ecef0d5e941bc)
+
+running 24 tests
+test formatting_is_compiled_once_and_streams_records ... ok
+test everyday_helpers_and_user_errors_stream_records ... ok
+test errors_have_distinct_exit_codes_and_record_context ... ok
+test invalid_record_never_emits_a_partial_sequence ... ok
+test builtins_frame_sequences_and_escape_computed_strings ... ok
+test aggregates_distinguish_missing_empty_and_failed_records ... ok
+test filters_frame_values_and_report_streamed_errors ... ok
+test conversion_and_chaining_preserve_ndjson_boundaries ... ok
+test kept_sequences_and_reductions_preserve_record_framing ... ok
+test ndjson_missing_null_arrays_and_final_unterminated_record ... ok
+test lexical_runtime_is_fresh_for_each_record ... ok
+test constructors_frame_complete_outputs_and_mapped_failures ... ok
+test exact_record_limit_including_cr_but_excluding_lf ... ok
+test matcher_results_keep_ndjson_framing_and_record_isolation ... ok
+test dynamic_eval_streams_records_and_wraps_errors ... ok
+test serialization_failure_never_publishes_an_incomplete_result ... ok
+test streams_multiple_files_and_stdin_in_order ... ok
+test scoped_paths_reset_bindings_and_preserve_sequence_framing ... ok
+test parent_navigation_and_transforms_preserve_record_boundaries ... ok
+test sequences_are_separate_lines_and_raw_arrays_stay_values ... ok
+test output_limits_and_expression_files ... ok
+test help_empty_input_options_and_invalid_utf8 ... ok
+test scalar_results_and_runtime_errors_are_framed_per_record ... ok
+test signed_tail_functions_stream_and_report_record_errors ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+
+   Doc-tests jx
+
+running 2 tests
+test crates/jx/src/lib.rs - (line 4) ... ok
+test crates/jx/src/embedding.rs - embedding::CompileOptions (line 7) ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 3.78s; merged doctests compilation took 3.25s

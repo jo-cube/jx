@@ -1,0 +1,23 @@
+   Compiling jx v0.1.0 (/Users/josh/Documents/Workspace/jo-cube/jx/crates/jx)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.46s
+     Running tests/compatibility.rs (target/debug/deps/compatibility-95eec569e51e7c43)
+
+running 3 tests
+test native_array_coercion_stringifies_negative_zero ... ok
+test date_literals_reject_known_legacy_case_fold_mismatches ... ok
+test residual_compatibility ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/matchers.rs (target/debug/deps/matchers-57a7c32c31cf3792)
+
+running 6 tests
+test complete_validation_precedes_matcher_execution ... ok
+test legacy_case_folding_and_native_coercion_are_explicitly_deferred ... ok
+test legacy_greek_simple_uppercase_aliases_remain_explicitly_unsupported ... ok
+test independent_evaluations_and_cloned_expressions_have_fresh_cursors ... ok
+test borrowing_and_continuation_retention ... ok
+test matcher_semantics ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

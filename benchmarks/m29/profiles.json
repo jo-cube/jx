@@ -1,0 +1,290 @@
+{
+  "method": "Sequential five-second, one-millisecond macOS sample after first 1.5 second timed sample; disjoint approximate attribution using M27 summarize-profiles.py. Inlined helper attribution is approximate.",
+  "profiles": {
+    "m27": {
+      "samples": 4210,
+      "percent": {
+        "allocation/drop/clone": 32.49,
+        "function/callback boundary": 15.8,
+        "other": 26.72,
+        "scanner": 23.04,
+        "frame/bridge": 1.95
+      },
+      "scanner_phases_percent": {
+        "validation": 23.04
+      },
+      "top_self": [
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 155,
+          "percent": 3.68
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x104ea7478,0x104ea748c,...]",
+          "samples": 133,
+          "percent": 3.16
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 28  [0x188b4b088]",
+          "samples": 78,
+          "percent": 1.85
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,8,...  [0x104ea7478,0x104ea7428,...]",
+          "samples": 64,
+          "percent": 1.52
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x104ea748c,0x104ea7478,...]",
+          "samples": 59,
+          "percent": 1.4
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 180  [0x104e3e390]",
+          "samples": 44,
+          "percent": 1.05
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x104e3e2dc]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,8,...  [0x104ea748c,0x104ea7428,...]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x188d37144]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,76,...  [0x104ea7478,0x104ea746c,...]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,76,...  [0x104ea7484,0x104ea746c,...]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0,28,...  [0x188b4b06c,0x188b4b088,...]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x188b4a144]",
+          "samples": 22,
+          "percent": 0.52
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0,28  [0x188b4b06c,0x188b4b088]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvXs0_NtCsds78668uu60_2jx9containerNtB5_8ElementsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-1b5b3923bf796647) + 660  [0x104edeb94]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in throughput-1b5b3923bf796647) + 332  [0x104ec85f4]",
+          "samples": 21,
+          "percent": 0.5
+        }
+      ]
+    },
+    "m28": {
+      "samples": 4212,
+      "percent": {
+        "function/callback boundary": 18.73,
+        "allocation/drop/clone": 29.13,
+        "other": 26.59,
+        "scanner": 24.69,
+        "frame/bridge": 0.85
+      },
+      "scanner_phases_percent": {
+        "validation": 24.69
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 88,108,...  [0x1003db638,0x1003db64c,...]",
+          "samples": 114,
+          "percent": 2.71
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 88,8,...  [0x1003db638,0x1003db5e8,...]",
+          "samples": 70,
+          "percent": 1.66
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 108,88,...  [0x1003db64c,0x1003db638,...]",
+          "samples": 54,
+          "percent": 1.28
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m29-m28-bench) + 0  [0x10036e508]",
+          "samples": 45,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 100,76,...  [0x1003db644,0x1003db62c,...]",
+          "samples": 45,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x188d37144]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 108,76,...  [0x1003db64c,0x1003db62c,...]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x188b4a144]",
+          "samples": 39,
+          "percent": 0.93
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in jx-m29-m28-bench) + 6876  [0x1003c4a6c]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 76,100,...  [0x1003db62c,0x1003db644,...]",
+          "samples": 36,
+          "percent": 0.85
+        },
+        {
+          "symbol": "DYLD-STUB$$_platform_bzero  (in libsystem_malloc.dylib) + 12  [0x188b627f8]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 76,88,...  [0x1003db62c,0x1003db638,...]",
+          "samples": 30,
+          "percent": 0.71
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 1568  [0x188b4b68c]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in jx-m29-m28-bench) + 180  [0x10036e5bc]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 108,8,...  [0x1003db64c,0x1003db5e8,...]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in jx-m29-m28-bench) + 88,100,...  [0x1003db638,0x1003db644,...]",
+          "samples": 22,
+          "percent": 0.52
+        }
+      ]
+    },
+    "m29": {
+      "samples": 4215,
+      "percent": {
+        "allocation/drop/clone": 30.91,
+        "function/callback boundary": 18.24,
+        "other": 26.38,
+        "scanner": 22.78,
+        "frame/bridge": 1.68
+      },
+      "scanner_phases_percent": {
+        "validation": 22.78
+      },
+      "top_self": [
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 142,
+          "percent": 3.37
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x1005444a0,0x1005444b4,...]",
+          "samples": 121,
+          "percent": 2.87
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x1005444b4,0x1005444a0,...]",
+          "samples": 95,
+          "percent": 2.25
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-1b5b3923bf796647) + 6808  [0x10052d4f0]",
+          "samples": 83,
+          "percent": 1.97
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 28  [0x188b4b088]",
+          "samples": 52,
+          "percent": 1.23
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x188b4a144]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0,28,...  [0x188b4b06c,0x188b4b088,...]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x1004d6a70]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,8,...  [0x1005444b4,0x100544450,...]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0  [0x188b4b06c]",
+          "samples": 28,
+          "percent": 0.66
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,76,...  [0x1005444ac,0x100544494,...]",
+          "samples": 27,
+          "percent": 0.64
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 24  [0x1004d6a88]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x188d37144]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 592  [0x10056920c]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,100  [0x100544494,0x1005444ac]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,100,...  [0x1005444a0,0x1005444ac,...]",
+          "samples": 23,
+          "percent": 0.55
+        }
+      ]
+    }
+  }
+}

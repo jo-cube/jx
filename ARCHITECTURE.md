@@ -26,6 +26,8 @@ callbacks can use those same regions. It deduplicates paths/computations and cap
 nested field demands while validating every byte. Guards retry only pure regions through
 the retained tree source, preserving error precedence and exposing no partial output.
 Strings, provenance, dynamic invocation/effects and general ownership stay in Rust.
+Date matchers keep a compiled flag for exact supplementary literals so their UTF-8
+matching preserves legacy UTF-16 case rules without a new subject copy.
 
 Validation is complete, including undemanded branches and fields. Scanner internals use
 compact static diagnostics. Captures store raw spans or missing/deferred markers on the
@@ -62,7 +64,9 @@ can emit one finished container at a time.
 Grouping builds local key groups, with a decoded-key hash index above 32 distinct keys.
 Ordering retains candidates/indices and lazily computes replay-safe keys once at first
 comparison; secondary keys remain short-circuited. Effectful/tuple comparators preserve
-reference invocation order. Tuple bindings use ordinary lexical frames. Demand-derived
+reference invocation order. Tuple bindings use ordinary lexical frames. A tuple-local
+flag preserves the post-sort object context until mapping resumes bindings; it adds
+no metadata to ordinary values/paths. Demand-derived
 parent slots capture only requested ancestry; ordinary paths have no universal ancestry
 metadata. Clone/transform views share untouched structure and rebuild changed containers
 and ancestors with borrowed leaves; advanced mutable host aliasing remains unsupported.
@@ -126,7 +130,9 @@ an incomplete result. Earlier finished results remain visible; I/O write failure
 still interrupt output. Optional work controls use the library API. The CLI owns framing,
 filenames, line numbering, exit policy and expression-file loading.
 
-Prioritize residual compatibility and robustness evidence over broader execution machinery.
+Keep compatibility boundaries and boundary-failure tests current. Seeded properties run
+with ordinary tests; optional coverage-guided fuzzing shares their bounded harness.
+Cross-platform CI is configured for default/native builds; unsafe invocation remains isolated.
 Keep pure tree/plan and native layers separate. Remaining string callback projections,
 nonprimitive dynamic bridges, genuine captured lifetimes and unplanned traversal need
 specific measurements before caching, garbage collection or further lowering.

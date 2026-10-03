@@ -65,6 +65,7 @@ Unsupported regions and guards retain interpreter/tree fallback. Numeric loops b
 scanning-dominated records generally do not. The core library has no Cranelift dependency
 unless `jit` is enabled. The workspace build/check also exercises the native crate.
 
-`just` lists developer commands. [Architecture](ARCHITECTURE.md),
+`just` lists developer commands. `just robustness` runs boundary properties; optional
+[coverage-guided fuzzing](fuzz/README.md) extends them. [Architecture](ARCHITECTURE.md),
 [conformance](CONFORMANCE.md), [performance](PERFORMANCE.md) and
 [agent guidance](AGENTS.md) describe implementation boundaries and evidence.

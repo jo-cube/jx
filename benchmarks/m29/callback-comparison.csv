@@ -1,0 +1,15 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+ascii/shallow,500,3124259,3127765,0.11,0.0,0.0,0.0,0.0
+execution/arithmetic,100,6100025,6174005,1.21,0.0,0.0,0.0,0.0
+execution/arithmetic,500,2671590,2671125,-0.02,0.0,0.0,0.0,0.0
+acquisition/call_three,500,1973162,1874170,-5.02,3.0,3.0,200.0,200.0
+acquisition/lookup_8192_short_raw,500,2239687,2886853,28.9,0.0,0.0,0.0,0.0
+acquisition/string_callback,100,1351291,1268392,-6.13,14.0,14.0,961.0,961.0
+regions/groups,41828,1656,1675,1.15,4017.0,4017.0,154528.0,154528.0
+regions/nested_map,41828,3629,3633,0.11,14.0,14.0,49368.0,49368.0
+function/direct,500,2313384,2293072,-0.88,3.0,3.0,200.0,200.0
+function/partial_callback,500,671706,669867,-0.27,8.0,8.0,520.0,520.0
+lexical/closure_call,500,787575,784590,-0.38,7.0,7.0,808.0,808.0
+eval/dynamic_closure_map,4055,10885,11082,1.81,53.0,53.0,52059.0,52059.0
+runtime/transient,50102,1444,1445,0.07,4112.0,4112.0,475736.0,475736.0
+runtime/planned,50102,3552,3568,0.45,14.0,14.0,49368.0,49368.0

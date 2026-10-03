@@ -1,0 +1,167 @@
+{
+  "baseline_commit": "12f9f664616934a420b686509b51dde5f4e3044e",
+  "rust": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "host": "Darwin MacBook.local 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132 arm64",
+  "cpu": "Apple M4",
+  "benchmark": "Release thin LTO/one codegen unit; default features; validation and consumption; allocation counters enabled. Sequential final runs; no concurrent builds/tests/profiles.",
+  "source_hashes": "source-sha256.json",
+  "binaries": {
+    "m27_throughput": {
+      "path": "/private/tmp/jx-m28-baseline/target/release/deps/throughput-1b5b3923bf796647",
+      "sha256": "67e1adf745b634948d698d62e8d707b73bbffe6e1249276d6be83ebc12e8db8e"
+    },
+    "m28_throughput": {
+      "path": "/private/tmp/jx-m29-m28-bench",
+      "sha256": "d2e2638edf3112a8490b352c3d9152563caf4f111a0791b96d916db812a6054e"
+    },
+    "m29_profile_and_pre_key_throughput": {
+      "path": "/private/tmp/jx-m29-tuple-before",
+      "sha256": "c092bc477eae9af620243d70ef2144126fb1181b39cfddf8565ad78788bd293a"
+    },
+    "m29_throughput": {
+      "path": "target/release/deps/throughput-1b5b3923bf796647",
+      "sha256": "f07d28603373468e7ccfcb24743a17d5badeea99ba9fc716552d266e37f06780"
+    },
+    "m29_native_cli": {
+      "path": "target/release/jx",
+      "sha256": "5deffb832a2d8601cb03f98cf46647cb7f7cb18e351a22273da4f48ae8480626"
+    }
+  },
+  "commands": [
+    "just all > benchmarks/m29/checks.log 2>&1",
+    "just build > benchmarks/m29/build.log 2>&1",
+    "cargo build -p jx-cli --release --features jit --locked > benchmarks/m29/native-build.log 2>&1",
+    "cargo bench -p jx --bench throughput --no-run --locked > benchmarks/m29/bench-build.log 2>&1",
+    "cargo test -p jx -p jx-cli --no-default-features --locked > benchmarks/m29/default-tests.log 2>&1",
+    "cargo test --workspace --all-features --target x86_64-apple-darwin --locked > benchmarks/m29/x86-macos-final.log 2>&1",
+    "cargo test -p jx --test matchers --test compatibility --test robustness --all-features --locked > benchmarks/m29/robustness-final.log 2>&1",
+    "cargo fmt --manifest-path fuzz/Cargo.toml -- --check",
+    "JX_DIFFERENTIAL_JIT=1 node scripts/check-*.cjs /private/tmp/jx-jsonata-reference target/release/jx (all 25 individually; differential.txt records exact commands)",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m29-m28-bench target/release/deps/throughput-1b5b3923bf796647 benchmarks/m29/controls.json benchmarks/m29/final",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m29-m28-bench target/release/deps/throughput-1b5b3923bf796647 benchmarks/m29/controls.json benchmarks/m29/final-reverse --reverse",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m29-tuple-before target/release/deps/throughput-1b5b3923bf796647 benchmarks/m29/key-controls.json benchmarks/m29/key",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m29-tuple-before target/release/deps/throughput-1b5b3923bf796647 benchmarks/m29/key-controls.json benchmarks/m29/key-reverse --reverse",
+    "JX_BENCH_FILTER=compatibility/ JX_BENCH_SAMPLE_MS=300 target/release/deps/throughput-1b5b3923bf796647 > benchmarks/m29/compatibility-final.csv",
+    "JX_BENCH_SAMPLE_MS=25 just bench > benchmarks/m29/after.csv 2> benchmarks/m29/bench.log",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m28-baseline/target/release/deps/throughput-1b5b3923bf796647 /private/tmp/jx-m29-tuple-before benchmarks/m29/string-control.json benchmarks/m29/string-m27 (also --reverse)",
+    "For each M27/M28/pre-key M29 binary: JX_BENCH_FILTER=acquisition/string_callback JX_BENCH_BYTES=100 JX_BENCH_SAMPLE_MS=1500 BINARY > profile-string-VERSION.csv; after 1.5 seconds, /usr/bin/sample PID 5 1 -file profile-string-VERSION.txt; gzip profile and summarize with benchmarks/m27/summarize-profiles.py"
+  ],
+  "upstream": {
+    "version": "2.2.0",
+    "revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+    "cases": 1679,
+    "supported": 1390,
+    "expected_errors": 288,
+    "resource_guards": 1,
+    "blockers": 0,
+    "differential_suites": 25,
+    "differential_comparisons": 54685,
+    "new_differential_comparisons": 422,
+    "new_readable_cases": 66
+  },
+  "full_final": {
+    "groups": 1802,
+    "samples": 12614,
+    "samples_per_group": 7,
+    "sample_ms": 25,
+    "timed_seconds": 450.603,
+    "exit_code": 0
+  },
+  "controls": {
+    "groups": 20,
+    "samples_per_group": 7,
+    "sample_ms": 300,
+    "orders": [
+      "M28/M29",
+      "M29/M28"
+    ],
+    "features": "default; native disabled",
+    "allocation_counts": "Unchanged in all 20 controls; tuple row flag adds requested bytes, not allocations."
+  },
+  "compatibility": {
+    "groups": 14,
+    "samples_per_group": 7,
+    "sample_ms": 300,
+    "sizes": [
+      500,
+      10240
+    ],
+    "tuple_widths": [
+      8,
+      128,
+      1024
+    ]
+  },
+  "key_comparison": {
+    "baseline": "M29 before borrowed @ key and expanded Greek-fold guard",
+    "change": "Value::from_string(\"@\") becomes borrowed Value::StringLiteral(RawJson(\"\\\"@\\\"\")); no global string representation change",
+    "orders": [
+      "pre-key M29/final M29",
+      "final M29/pre-key M29"
+    ],
+    "qualification": "Greek guards affect Unicode tests too. Tuple filter throughput is essentially unchanged; grouping is 15\u201319% faster. Tuple allocation reductions are deterministic."
+  },
+  "callback_investigation": {
+    "m27_orders": "string-m27-*.csv",
+    "profiles": "profiles.json; three sequential five-second/one-millisecond samples",
+    "profile_epoch": "M29 profile/pre-key binary predates borrowed @ key and expanded Greek-fold guard; neither feature is exercised by the profiled fixture. Binary hash retained above.",
+    "rejected_experiment": "Reordered plan Option check before scope.controlled() in FunctionKind::Lambda invocation. Exploratory single-order callback-*.csv failed to establish a gain (string callback -6.1%). Removed; trial binary/source snapshot not retained, so not final performance claims.",
+    "remaining_regression": "M28 versus M27 string callback still ~3\u20135% slower with 14 allocations unchanged; eight requested bytes come from M28 control pointer. M29 numeric lambda partial callback ~3% slower; no changed frame/value/plan operations or new allocation. Inlining/binary layout remain possible, not established instruction-cycle attribution."
+  },
+  "robustness": {
+    "deterministic_mutations": 4096,
+    "dynamic_picture_mutations": 1024,
+    "native_fallback_shapes": 484,
+    "coverage_guided_runs": 500000,
+    "tool": "cargo-fuzz 0.13.2; libfuzzer-sys 0.4.13",
+    "toolchain": "nightly 1.101.0 (2026-10-03); address sanitizer and coverage instrumentation",
+    "runs": [
+      {
+        "log": "fuzz-run.log.gz",
+        "command": "Running `fuzz/target/aarch64-apple-darwin/release/boundaries -artifact_prefix=/Users/josh/Documents/Workspace/jo-cube/jx/fuzz/artifacts/boundaries/ -max_len=16384 -timeout=10 -runs=50000 /Users/josh/Documents/Workspace/jo-cube/jx/fuzz/corpus/boundaries`",
+        "result": "Done 50000 runs in 2 second(s)"
+      },
+      {
+        "log": "fuzz-large.log.gz",
+        "command": "Running `fuzz/target/aarch64-apple-darwin/release/boundaries -artifact_prefix=/Users/josh/Documents/Workspace/jo-cube/jx/fuzz/artifacts/boundaries/ -max_len=16384 -timeout=10 -rss_limit_mb=2048 -runs=200000 -seed=29 /Users/josh/Documents/Workspace/jo-cube/jx/fuzz/corpus/boundaries`",
+        "result": "Done 200000 runs in 9 second(s)"
+      },
+      {
+        "log": "fuzz-final.log.gz",
+        "command": "Running `fuzz/target/aarch64-apple-darwin/release/boundaries -artifact_prefix=/Users/josh/Documents/Workspace/jo-cube/jx/fuzz/artifacts/boundaries/ -max_len=16384 -timeout=10 -rss_limit_mb=2048 -runs=200000 -seed=29 /Users/josh/Documents/Workspace/jo-cube/jx/fuzz/corpus/boundaries`",
+        "result": "Done 200000 runs in 10 second(s)"
+      },
+      {
+        "log": "fuzz-verification.log.gz",
+        "command": "Running `fuzz/target/aarch64-apple-darwin/release/boundaries -artifact_prefix=/Users/josh/Documents/Workspace/jo-cube/jx/fuzz/artifacts/boundaries/ -runs=50000 -seed=29 -max_len=16384 -timeout=10 -rss_limit_mb=2048 /Users/josh/Documents/Workspace/jo-cube/jx/fuzz/corpus/boundaries`",
+        "result": "Done 50000 runs in 3 second(s)"
+      }
+    ],
+    "findings": 0,
+    "bounds": "Arbitrary UTF-8 expressions compile only, <=256 bytes. JSON <=16 KiB executes fixed templates with work/items/output limits. Arbitrary regex/host execution excluded.",
+    "corpus": "Initial small JSON/expression seeds plus wider/nested records, then coverage-guided discoveries; generated corpus ignored. Ordinary tests retain fixed reproducible seeds; generated corpus not a stable conformance corpus."
+  },
+  "platforms": {
+    "executed": [
+      "aarch64-apple-darwin normal/native full workspace checks",
+      "x86_64-apple-darwin normal/native full workspace tests under Rosetta"
+    ],
+    "configured_only": [
+      "ubuntu-latest normal/native CI",
+      "windows-latest normal/native CI",
+      "macos-latest CI"
+    ],
+    "remote_ci": "Not run; no push."
+  },
+  "limitations": [
+    "Throughput from Apple M4 arm64 only; Intel macOS tests under Rosetta are compatibility evidence, not native x86 performance claims.",
+    "Linux and Windows workflow coverage configured but unexecuted.",
+    "Legacy ECMAScript /i exclusions remain explicit for 29 UTF-16 units; no dependency fork or approximate folding.",
+    "Allocation bytes are requested Rust heap bytes, not RSS or allocator size classes; no latency-distribution claim.",
+    "Coverage-guided ASan runs use normal engine; optional native code has separate adversarial-shape, bounds, code-lifetime and two-platform tests.",
+    "Cooperative limits cannot interrupt regex or noncooperating hosts; bounded fuzzing is not a hostile-code sandbox guarantee.",
+    "Earlier sweeps discarded, including a full sweep overlapped by a late regression test. after.csv is the final uncontended sweep.",
+    "No new general-runtime metadata, ownership model, engine dependency, native lowering, or unsafe code."
+  ],
+  "completed_at_utc": "2026-10-03T07:36:32.321634+00:00"
+}

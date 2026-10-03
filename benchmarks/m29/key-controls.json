@@ -1,0 +1,58 @@
+[
+  {
+    "filter": "compatibility/unicode_icase",
+    "bytes": 500
+  },
+  {
+    "filter": "compatibility/unicode_replace",
+    "bytes": 500
+  },
+  {
+    "filter": "compatibility/unicode_date_static",
+    "bytes": 500
+  },
+  {
+    "filter": "compatibility/numeric_partial",
+    "bytes": 500
+  },
+  {
+    "filter": "compatibility/unicode_icase",
+    "bytes": 10240
+  },
+  {
+    "filter": "compatibility/unicode_replace",
+    "bytes": 10240
+  },
+  {
+    "filter": "compatibility/unicode_date_static",
+    "bytes": 10240
+  },
+  {
+    "filter": "compatibility/numeric_partial",
+    "bytes": 10240
+  },
+  {
+    "filter": "compatibility/sorted_tuple_filter",
+    "bytes": 74
+  },
+  {
+    "filter": "compatibility/sorted_tuple_group",
+    "bytes": 74
+  },
+  {
+    "filter": "compatibility/sorted_tuple_filter",
+    "bytes": 1182
+  },
+  {
+    "filter": "compatibility/sorted_tuple_group",
+    "bytes": 1182
+  },
+  {
+    "filter": "compatibility/sorted_tuple_filter",
+    "bytes": 10167
+  },
+  {
+    "filter": "compatibility/sorted_tuple_group",
+    "bytes": 10167
+  }
+]

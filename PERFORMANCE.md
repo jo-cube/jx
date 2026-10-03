@@ -105,3 +105,67 @@ assertions. [M28 evidence](benchmarks/m28/environment.json) records commands, so
 hashes, both timing orders and the final differential run. CLI serialization uses a reusable
 bounded line buffer, adding one copy per result to prevent partial serialization output.
 Engine benchmarks omit that CLI copy.
+
+## Residual compatibility and robustness
+
+M29 broadens Unicode regex/date pictures, numeric builtin partial coercion and postfix
+composition after tuple sorting. Static patterns/pictures still compile once. Known
+legacy case-fold mismatches remain explicit; date pictures additionally check supplementary
+literals exactly. The value, context, frame, scanner and plan layouts/paths are unchanged.
+Only tuple rows add a local flag (32 → 40 bytes on arm64); existing ordered/grouped controls
+retain allocation counts, with requested bytes rising 1.9% /3.1% respectively.
+
+Seven 300 ms samples in both orders against M28 retain these median throughput changes:
+
+| Existing control | Bytes | M29 versus M28, two orders |
+|---|---:|---:|
+| Shallow path | 500 | -1.7% /-0.3% |
+| Planned arithmetic | 100 | -0.4% /+0.7% |
+| Planned arithmetic | 500 | +0.7% /-0.6% |
+| Three field arguments | 500 | -0.2% /0.0% |
+| 8,192-key lookup | 500 | -0.5% /-0.2% |
+| String callback | 100 | -1.0% /-0.3% |
+| Numeric partial callback | 500 | -3.5% /-3.2% |
+| Regex callback replacement | 500 | +0.9% /+1.3% |
+| Static date parsing | 500 | +0.9% /+1.7% |
+
+All 20 controls retain allocation counts and zero-allocation paths remain zero-allocation.
+The partial callback control uses a lambda, not the new Math coercion helper; its modest
+regression has no new frame/value/plan operations or allocations. Binary layout/inlining
+changes remain possible; no instruction-level attribution is established. It is documented
+rather than addressed with a speculative dispatch patch.
+
+M28's string-callback regression remains: repeated M27 comparisons give -4.7% /-3.2%,
+with 14 allocations unchanged (953 → 961 requested bytes). Five-second sampled profiles
+put scanner helpers at 23–25%, allocation/drop/clone at 29–32%, and function boundaries
+at 16–19%; frame/bridge self samples are below 2%. Reordering the plan/control checks
+failed to improve it and was removed. Shared cooperative guards and nonprimitive bridges
+remain the accepted cost; these sampled categories do not identify exact cycle overhead.
+
+For the new post-sort workloads, borrowing the fixed `@` key removes avoidable owned-string
+construction. Compared with M29 before that key change, grouping throughput improves
+15–19% at widths 8/128/1,024 in both orders. Filter throughput varies -2.1% to +1.2%, so
+no filter speedup is claimed. At width 1,024, allocations drop 10,259 → 7,187 for filtering
+and 22,584 → 14,904 for grouping; grouping requests 976,152 → 891,672 bytes. Named binding
+keys and required tuple objects still allocate. The final Unicode-fold guards are also
+included in this comparison: 500 B Unicode date parsing varies -3.4% /-1.3% against the
+earlier M29 implementation, with identical allocations; 10 KiB controls are within 0.3%.
+The broader guard is retained for correctness.
+
+Final new 500 B workloads, including validation/consumption but not serialization:
+
+| Workload | Records/s | Allocations | Requested bytes/record |
+|---|---:|---:|---:|
+| Unicode case-insensitive contains | 1,212,873 | 7 | 240 |
+| Unicode replacement | 922,386 | 16 | 442 |
+| Static Unicode date picture | 1,081,016 | 6 | 1,400 |
+| Numeric builtin partial | 1,155,872 | 8 | 736 |
+
+The complete final sweep checks 1,802 groups /12,614 samples and allocation assertions.
+All 1,679 upstream classifications and 54,685 differential comparisons remain green.
+Seeded boundary properties run in ordinary tests; optional ASan/coverage-guided fuzzing
+completed 500,000 executions without a failure. Normal/native tests ran on arm64 macOS
+and x86_64 macOS under Rosetta. Linux/Windows CI is configured, not yet remotely executed.
+Fuzz dependencies live in a separate development-only workspace; engine dependencies,
+unsafe boundary and native coverage are unchanged. [M29 evidence](benchmarks/m29/environment.json)
+records exact commands, hashes, profiles and platform limitations.

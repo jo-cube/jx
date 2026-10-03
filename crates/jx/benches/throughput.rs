@@ -7,6 +7,8 @@ mod acquisition;
 mod aggregates;
 #[path = "workloads/builtins.rs"]
 mod builtins;
+#[path = "workloads/compatibility.rs"]
+mod compatibility;
 #[path = "workloads/compiler.rs"]
 mod compiler;
 #[path = "workloads/composition.rs"]
@@ -357,4 +359,5 @@ fn main() {
     string_storage::run(smoke);
     runtime::run(smoke);
     embedding::run(smoke);
+    compatibility::run(smoke);
 }
