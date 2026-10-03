@@ -47,3 +47,7 @@ bench-runtime:
 
 bench-runtime-memory:
     cargo bench -p jx --bench runtime_memory --locked
+
+# Public API overhead, decoding, ownership and cooperative controls.
+bench-embedding:
+    JX_BENCH_EMBEDDING_ONLY=1 cargo bench -p jx --bench throughput --locked

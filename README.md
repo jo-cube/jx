@@ -1,99 +1,70 @@
 # jx
 
-A Rust JSONata engine designed for compiling an expression once and evaluating
-millions of independent JSON records. Early development: **paths through objects and arrays,
-result sequences, scalar operators, filters, aggregates, constructors, lexical
-variables, conditionals, closures, compiled function signatures and tail recursion, wildcard navigation, grouping, ordering, indexed/joined paths,
-common string/collection/higher-order functions (including round, pad, sort/zip/single and encoding), conversions, function pipelines, regex/matcher text processing, parent navigation, structural transforms, numeric/integer/date pictures, dynamic `$eval`, and random/shuffle effects**.
-Full JSONata is the semantic target; see
-[coverage](CONFORMANCE.md).
+A Rust JSONata engine for compiling once and evaluating independent JSON records.
+It supports the large majority of practical JSONata: navigation, sequences, operators,
+filters, aggregates, constructors, lexical functions, grouping/sorting, regex, pictures,
+parent navigation, transforms and dynamic evaluation. The pinned 2.2.0 language corpus
+has 1,679 asserted outcomes, including one documented recursion guard. See
+[compatibility boundaries](CONFORMANCE.md); passing this corpus is not a claim of
+complete compatibility with every JavaScript host behavior.
 
-Requires Rust **1.98.1** and [just](https://just.systems). The workspace contains
-`crates/jx` (library), `crates/jx-cli` (binary `jx`) and the optional
-`crates/jx-native` executable-code boundary. APIs may change freely.
+Rust **1.98.1**, edition 2024. APIs are still unstable. The library and CLI use safe Rust;
+optional native numeric kernels have a separate, bounded executable-code boundary.
 
 ```sh
 just all
 just build
 printf '%s\n' '{"customer":{"id":42}}' | target/release/jx 'customer.id'
-target/release/jx 'price * quantity' records.ndjson
-target/release/jx '{"amount":$formatNumber(price,"#,##0.00"),"date":$fromMillis(timestamp,"[Y0001]-[M01]-[D01]")}' records.ndjson
-target/release/jx 'orders[price > 10].id' records.ndjson
-target/release/jx '$sum(orders[price > 10].price)' records.ndjson
-target/release/jx '{"total":$sum(orders[price > 10].price),"ids":[orders.id]}' records.ndjson
-target/release/jx '($prices:=orders.price; {"total":$sum($prices),"count":$count($prices)})' records.ndjson
-target/release/jx 'orders[price > 10]^(>price){kind:{"ids":id[],"total":$sum(price)}}' records.ndjson
-target/release/jx 'orders#$i.{"index":$i,"id":id}' records.ndjson
-target/release/jx '$join($map(orders,function($r){$uppercase($trim($r.name))}),", ")' records.ndjson
-target/release/jx 'orders ~> $map(function($r){$r.name & "=" & $number($r.price)}) ~> $join(", ")' records.ndjson
-target/release/jx 'orders[name ~> /hat/i].{"name":$replace(name,/hat/i,"cap")}' records.ndjson
-target/release/jx 'orders.items[price > %.limit].{"order":%.id,"price":price}' records.ndjson
-target/release/jx '$ ~> |orders[price > 10]|{"price":price*1.2},"obsolete"|' records.ndjson
-target/release/jx --max-record-bytes 1048576 '$' records.ndjson
+target/release/jx '{"total":$sum(orders[price>10].price),"ids":[orders.id]}' records.ndjson
+target/release/jx -f transform.jsonata records.ndjson
+target/release/jx --max-record-bytes 1048576 --max-output-bytes 16777216 '$' records.ndjson
 ```
 
 ```rust
 let expression = jx::compile("price * quantity")?;
-expression.evaluate(br#"{"price":2.5,"quantity":3}"#)?.for_each(|value| {
-    assert!(matches!(value, jx::Value::Number(7.5)));
-})?;
+let value = expression.evaluate(br#"{"price":2.5,"quantity":3}"#)?.single()?;
+assert_eq!(value.unwrap().as_number(), Some(7.5));
+# Ok::<(), jx::Error>(())
 ```
 
-Evaluation validates the entire UTF-8 record before returning results. Paths keep
-borrowed raw JSON; computed numbers and booleans use primitives. `write_compact`
-serializes both, plus constructed objects and arrays. Containers own their member
-lists and retain borrowed leaves; cloning a constructed value shares its storage. Input slices extracted with `as_raw()` can outlive the expression;
-string literals borrow compiled storage; computed strings own shared encoded bytes. Constant constructors also borrow immutable
-compiled data, and static object lookups use a prebuilt key index. `try_for_each` propagates consumer errors
-immediately, distinguishing `ConsumeError::Consumer` from `ConsumeError::Evaluation`.
-Both callback APIs return evaluation failures. Lexical bindings and function arguments
-retain evaluated sequences once; repeated variable use does not re-run expressions.
-Function values are opaque and `write_compact` rejects them as non-JSON.
+`evaluate` validates the entire UTF-8 JSON record before exposing any result. Missing
+emits nothing; null is a value; arrays are one value; sequences stream their items.
+`for_each` and `try_for_each` avoid collection, and consumer failure stops later work.
+Scalar/lexical expressions may finish before consumption; streamed evaluation failures
+can follow earlier values. `single` requires at most one result. `collect_owned` is
+an explicit materialization boundary for results that must outlive input/expression.
 
-Ordinary field paths and scalar/filter/aggregate workloads on borrowed or primitive
-values allocate no per-record heap storage. Dynamic constructors allocate their structure and retained
-member sequences; constant containers allocate only a fresh identity token; mapped constructors can emit one container at a time. Structural
-equality may retain borrowed members or one sequence. Sorting, grouping and `[]`
-retention store their output; scoped paths allocate binding/frame storage and can stream
-boolean filters and aggregates; wildcard/descendant object enumeration retains one
-object’s members to resolve duplicate keys and ordering. Higher-order functions retain
-arguments and output once, keeping borrowed leaves; string transformations own their results.
-`$string` performs JSONata conversion separately from token-preserving output; string inputs
-keep borrowing. Static builtin chains retain their ordinary streaming execution; partial
-functions store evaluated arguments. Parent access captures only statically demanded
-path contexts. `$clone` gives input/compiled containers fresh identities through immutable
-views; transforms rebuild changed containers and their ancestors while sharing untouched
-structure and borrowed leaves. Input is never parsed into a general JSON DOM. Regex literals compile once with `regress`; matcher cursors are local to
-one evaluation, and continuations retain their subject. ASCII subjects stay borrowed;
-escaped/non-ASCII subjects decode once to UTF-16. Static format pictures and date matchers compile once; dynamic pictures parse when called.
-`$now` / `$millis` share one evaluation timestamp; ordinary expressions do not read the clock.
-Constant source at a direct `$eval` call compiles once; dynamic source compiles per call and owns only
-escaping program data. Both inherit bindings and optional focus. `$random` / `$shuffle`
-initialize their stream lazily; `Random::seeded` with `evaluate_with_random` provides
-repeatable caller-owned draws across records.
-`base64` supplies the binary codecs; `serde_json` is a test-only oracle and fixture reader.
+Use `value_type`, `as_number`, `as_bool`, `as_str`, `get`, `array_items` and
+`object_entries` across all storage forms. Unescaped strings borrow; decoded escapes
+allocate. Isolated UTF-16 surrogates use `string_units` rather than Rust `str`.
+`write_compact` preserves raw number/escape spelling; JSONata `$string` has its own
+conversion rules. Constructed containers retain borrowed leaves. No input DOM is
+required, and ordinary paths/scalar plans retain zero-allocation execution.
 
-An optional `jit` feature compiles bounded numeric/boolean plans with Cranelift.
-Call `expression.enable_native()` once after compilation, or build the CLI with
-`cargo build -p jx-cli --release --features jit --locked` and pass `--jit`.
-Unsupported regions and guards retain interpreter/tree fallback. Native code helps
-numeric loops; scanning-dominated workloads remain limited by Rust traversal.
-`just bench-plan`, `bench-jit` and `bench-jit-memory` reproduce the scoped experiment.
+[Embedding guide](docs/embedding.md) covers external bindings, synchronous host
+callbacks, focus/absent input, ownership, diagnostics and cooperative resource limits.
+Compiled expressions are `Send + Sync`; each evaluation owns its lexical/effect state.
+Declare external names with `CompileOptions` before compilation so builtin shadowing,
+constant folding, plans and native execution remain correct. Host calls are always
+effectful; there is no host purity override or async framework.
 
-The CLI compiles once, accepts stdin or files (`-` means stdin), and writes compact
-NDJSON synchronously. Missing produces no line; null produces `null`; sequences
-emit one line per item. An array value or explicitly kept sequence (`expr[]`) stays on one line. JSONata mapping and singleton rules
-determine which is returned; see the examples in [coverage](CONFORMANCE.md).
-Blank lines are ignored; the last line may omit LF. The default 1 MiB record limit excludes LF but includes
-CR and whitespace. Memory is bounded by the largest accepted record plus I/O
-buffers, lexical frames/retained values and constructed output for that record, and equality/grouping
-storage where needed. Invalid records or runtime
-errors stop processing. JSON validation precedes all output; a later mapped expression error
-can leave earlier items from that record written. Each aggregate consumes its whole
-argument before emitting its scalar result. A constructor finishes its members before
-emitting its container; mapped constructors can emit earlier complete containers.
-Usage/compilation errors exit 2; record/I/O errors exit 1; broken pipes exit 0.
+The CLI compiles once and streams stdin/files (`-` means stdin) with synchronous
+backpressure. Blank lines are ignored; the final line may omit LF. Options precede the
+expression or `-f`; `--` allows expressions beginning with `-`. `--version` prints the
+version. Input defaults to 1 MiB per record, excluding LF and including CR/whitespace;
+output defaults to 16 MiB per result, excluding LF. Both buffers are reused across files.
+Each result is serialized completely before its NDJSON line is published. A failed
+result leaves no partial line; earlier complete results remain visible. An underlying
+I/O failure can still interrupt a write. `--max-work N` enables cooperative controls
+with the other default library limits. Engine retention/construction can require more
+memory than the I/O buffers. Usage/compilation errors exit 2; record/I/O errors exit 1;
+broken pipes exit 0. Diagnostics include file/record context and error phase.
 
-`just` lists commands. [Architecture and milestones](ARCHITECTURE.md),
-[conformance](CONFORMANCE.md), [benchmarking](PERFORMANCE.md), and
-[agent guidance](AGENTS.md) describe the development contract.
+Native acceleration stays opt-in: build with `cargo build -p jx-cli --release --features jit --locked`, then pass `--jit`, or call `enable_native()` on a compiled expression.
+Unsupported regions and guards retain interpreter/tree fallback. Numeric loops benefit;
+scanning-dominated records generally do not. The core library has no Cranelift dependency
+unless `jit` is enabled. The workspace build/check also exercises the native crate.
+
+`just` lists developer commands. [Architecture](ARCHITECTURE.md),
+[conformance](CONFORMANCE.md), [performance](PERFORMANCE.md) and
+[agent guidance](AGENTS.md) describe implementation boundaries and evidence.

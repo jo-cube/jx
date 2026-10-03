@@ -19,6 +19,8 @@ mod constructors;
 mod demands;
 #[path = "workloads/effects.rs"]
 mod effects;
+#[path = "workloads/embedding.rs"]
+mod embedding;
 #[path = "workloads/execution.rs"]
 mod execution;
 #[path = "workloads/filters.rs"]
@@ -294,6 +296,10 @@ fn main() {
         native::run(smoke);
         return;
     }
+    if std::env::var_os("JX_BENCH_EMBEDDING_ONLY").is_some() {
+        embedding::run(smoke);
+        return;
+    }
     if std::env::var_os("JX_BENCH_RUNTIME_ONLY").is_some() {
         runtime::run(smoke);
         return;
@@ -350,4 +356,5 @@ fn main() {
     acquisition::run(smoke);
     string_storage::run(smoke);
     runtime::run(smoke);
+    embedding::run(smoke);
 }
