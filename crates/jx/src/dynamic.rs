@@ -315,7 +315,6 @@ impl<'e, 'i> Callable<'e, 'i> {
             && let Definition::Lambda(definition) = self.definition.as_ref()
             && !definition.tail
             && let Some(plan) = &definition.plan
-            && plan.is_scalar()
         {
             let validated;
             let arguments = if validate && let Some(signature) = &definition.signature {
@@ -324,10 +323,10 @@ impl<'e, 'i> Callable<'e, 'i> {
             } else {
                 args
             };
-            // Primitive plan results borrow no dynamic program data. Keep all
-            // other outputs on the existing lifetime/ownership bridge.
+            // Pure plans cannot read or write lexical frames. Retain only their
+            // result; unsupported shapes still use the scope bridge below.
             let result = scope.call(offset, definition.body.depth, || {
-                Ok(plan.primitive(arguments, &self.focus, self.wrapped))
+                Ok(plan.retained(arguments, &self.focus, self.wrapped))
             })?;
             if let Some(result) = result {
                 return Ok(result);

@@ -109,3 +109,77 @@ fn temporary_callback_captures_do_not_replay_effects() {
         draws("[1..6].$random()", 7)
     );
 }
+
+#[test]
+fn dynamic_object_guards_match_static_callbacks_and_allow_record_reuse() {
+    let dynamic = jx::compile("($f:=$eval(code);$map(rows,$f))").unwrap();
+    for code in [
+        "function($r){{'n':$r.n+1,'b':$r.n>1,'s':'é😀','a':[{'s':'keep'}]}}",
+        "function($r)<o:o>{{'n':$r.n+1}}",
+    ] {
+        let direct = jx::compile(&format!("$map(rows,{code})")).unwrap();
+        for row in [
+            "null",
+            "false",
+            "{}",
+            r#"{"n":2}"#,
+            r#"{"n":null}"#,
+            r#"{"n":[2]}"#,
+            r#"{"n":"bad"}"#,
+            r#"{"n":1e999}"#,
+        ] {
+            let input = format!(
+                "{{\"code\":{},\"rows\":[{{\"n\":1}},{row},{{\"n\":3}}]}}",
+                serde_json::to_string(code).unwrap()
+            )
+            .into_bytes();
+            let snapshot = |expression: &jx::Expression, controlled: bool| {
+                let evaluation = if controlled {
+                    expression.evaluate_with(
+                        Some(&input),
+                        jx::EvaluationOptions {
+                            limits: Some(jx::Limits::default()),
+                            ..Default::default()
+                        },
+                    )
+                } else {
+                    expression.evaluate(&input)
+                };
+                let mut values = Vec::new();
+                evaluation
+                    .and_then(|e| {
+                        e.for_each(|v| {
+                            let mut bytes = Vec::new();
+                            v.write_compact(&mut bytes).unwrap();
+                            values.push(bytes);
+                        })
+                    })
+                    .map(|()| values)
+                    .map_err(|e| (e.kind, e.message))
+            };
+            let expected = snapshot(&direct, false);
+            assert_eq!(snapshot(&dynamic, false), expected, "{code}: {row}");
+            assert_eq!(
+                snapshot(&dynamic, true),
+                expected,
+                "controlled {code}: {row}"
+            );
+        }
+    }
+}
+
+#[test]
+fn retained_dynamic_object_members_preserve_surrogate_units() {
+    let expression = jx::compile("($f:=$eval(code);$v:=$f(1);$eval('null');$v)").unwrap();
+    let input = br#"{"code":"function($x){{'n':$x+1,'nested':{'text':'\\ud800','a':[1,2]}}}"}"#;
+    let value = expression
+        .evaluate(input)
+        .unwrap()
+        .single()
+        .unwrap()
+        .unwrap();
+    let mut output = Vec::new();
+    value.write_compact(&mut output).unwrap();
+    assert_eq!(output, br#"{"n":2,"nested":{"text":"\ud800","a":[1,2]}}"#);
+    jx::validate(&output).unwrap();
+}

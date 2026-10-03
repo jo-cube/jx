@@ -5,10 +5,9 @@ pub(crate) struct Callback {
     pub(super) execution: Execution,
 }
 impl Callback {
-    pub(crate) fn is_scalar(&self) -> bool {
-        matches!(self.execution, Execution::Scalar(_))
-    }
-    pub(crate) fn primitive<'e, 'i>(
+    // Registers carry only primitives. Static object members may borrow this
+    // short-lived program, so export those through the existing retention boundary.
+    pub(crate) fn retained<'e, 'i>(
         &self,
         arguments: &[Option<Value<'e, 'i>>],
         focus: &Value<'e, 'i>,
@@ -18,7 +17,10 @@ impl Callback {
             Operand::Missing => Some(Operand::Missing),
             Operand::One(Value::Number(n)) => Some(Operand::One(Value::Number(n))),
             Operand::One(Value::Boolean(b)) => Some(Operand::One(Value::Boolean(b))),
-            _ => None,
+            Operand::One(value) => Some(Operand::One(
+                crate::dynamic::Retention::default().value(&value),
+            )),
+            Operand::Many(_) => unreachable!(),
         }
     }
 

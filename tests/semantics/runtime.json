@@ -287,5 +287,118 @@
         "n": 3
       }
     ]
+  },
+  {
+    "rule": "dynamic planned object survives later dynamic compilation",
+    "expr": "($f:=$eval(code);$v:=$f(2);$eval('1+2');$v)",
+    "data": {
+      "code": "function($x){{\"n\":$x+1,\"label\":\"é😀\",\"nested\":[{\"keep\":\"value\"}]}}"
+    },
+    "items": [
+      {
+        "n": 3,
+        "label": "é😀",
+        "nested": [
+          {
+            "keep": "value"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "rule": "dynamic planned object preserves missing members and constant null",
+    "expr": "($f:=$eval(code);$map(rows,$f))",
+    "data": {
+      "code": "function($r){{\"n\":$r.n+1,\"missing\":$r.absent+1,\"keep\":null}}",
+      "rows": [
+        {
+          "n": 1
+        },
+        {}
+      ]
+    },
+    "items": [
+      {
+        "n": 2,
+        "keep": null
+      },
+      {
+        "keep": null
+      }
+    ]
+  },
+  {
+    "rule": "dynamic planned object uses captured focus",
+    "expr": "($f:=$eval(code,focus);$map(a,$f))",
+    "data": {
+      "code": "function($x){{\"n\":$x+base}}",
+      "focus": {
+        "base": 10
+      },
+      "a": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      {
+        "n": 11
+      },
+      {
+        "n": 12
+      }
+    ]
+  },
+  {
+    "rule": "dynamic planned object partial application",
+    "expr": "($f:=$eval(code);$map(a,$f(?,3)))",
+    "data": {
+      "code": "function($x,$y)<nn:o>{{\"n\":$x+$y}}",
+      "a": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      {
+        "n": 4
+      },
+      {
+        "n": 5
+      }
+    ]
+  },
+  {
+    "rule": "dynamic planned object retained in a closure",
+    "expr": "($f:=$eval(code);$v:=$f(2);$g:=function(){$v};$eval(\"null\");$g())",
+    "data": {
+      "code": "function($x){{\"n\":$x+1,\"label\":\"retained\"}}"
+    },
+    "items": [
+      {
+        "n": 3,
+        "label": "retained"
+      }
+    ]
+  },
+  {
+    "rule": "dynamic object body with lexical state stays on tree",
+    "expr": "($base:=5;$f:=$eval(code);$base:=7;$map(a,$f))",
+    "data": {
+      "code": "function($x){{\"n\":$x+$base}}",
+      "a": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      {
+        "n": 8
+      },
+      {
+        "n": 9
+      }
+    ]
   }
 ]

@@ -25,6 +25,8 @@ async function main() {
             'function($x){$x>1 ? $x*2 : $x+1}', 'function($x){$x and true}',
             'function($x){$x}', 'function($x){{"n":$x,"s":"literal"}}',
             'function($x){function(){$x}}', 'function($x){$eval("$x")}',
+            'function($x){{"n":$x+1,"b":$x>1,"s":"é😀","a":[{"s":"keep"}]}}',
+            'function($x)<n:o>{{"n":$x+1}}',
         ]) await check({expr:code==='function($x){function(){$x}}' ? '($f:=$eval(code);$fs:=$map(a,$f);$map($fs,function($g){$g()}))' : '($f:=$eval(code);$map(a,$f))',data:{a,code}});
     }
     console.log(`Checked ${checked()} runtime-boundary evaluations against upstream`);
