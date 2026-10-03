@@ -1,8 +1,0 @@
-workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record
-execution/filtered_sum,8586,0,7456,1.000090000,7455,64011455,0.000000,0.000000
-execution/filtered_sum,8586,1,7040,1.000858125,7034,60393615,0.000000,0.000000
-execution/filtered_sum,8586,2,7104,1.004381125,7073,60728883,0.000000,0.000000
-execution/filtered_sum,8586,3,7040,1.001828459,7027,60335120,0.000000,0.000000
-execution/filtered_sum,8586,4,7488,1.000299791,7486,64272700,0.000000,0.000000
-execution/filtered_sum,8586,5,7488,1.000262208,7486,64275115,0.000000,0.000000
-execution/filtered_sum,8586,6,7520,1.003382750,7495,64349043,0.000000,0.000000

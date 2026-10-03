@@ -1,8 +1,0 @@
-workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record
-acquisition/lookup_32768_unicode_escaped,500,0,1456480,1.500028708,970968,485484042,0.000000,0.000000
-acquisition/lookup_32768_unicode_escaped,500,1,1374880,1.500025125,916571,458285657,0.000000,0.000000
-acquisition/lookup_32768_unicode_escaped,500,2,1388448,1.500018792,925620,462810202,0.000000,0.000000
-acquisition/lookup_32768_unicode_escaped,500,3,1388864,1.500027125,925893,462946295,0.000000,0.000000
-acquisition/lookup_32768_unicode_escaped,500,4,1429248,1.500017375,952821,476410482,0.000000,0.000000
-acquisition/lookup_32768_unicode_escaped,500,5,1461312,1.500010291,974201,487100658,0.000000,0.000000
-acquisition/lookup_32768_unicode_escaped,500,6,1468192,1.500004750,978792,489395784,0.000000,0.000000

@@ -1,3 +1,0 @@
-profile-fold {'plan': 39.63, 'allocation/drop/clone': 3.65, 'other': 7.07, 'scanner': 49.64}
-profile-scalar {'scanner': 83.25, 'other': 4.29, 'plan': 10.8, 'allocation/drop/clone': 1.07, 'native ABI/input acquisition': 0.59}
-profile-scan {'scanner': 99.98, 'other': 0.02}

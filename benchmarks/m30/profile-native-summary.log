@@ -1,3 +1,0 @@
-profile-fold {'scanner': 58.57, 'other': 13.06, 'plan': 13.97, 'allocation/drop/clone': 5.11, 'unsymbolized executable code': 9.29}
-profile-scalar {'scanner': 89.14, 'other': 4.88, 'plan': 2.66, 'native ABI/input acquisition': 0.78, 'allocation/drop/clone': 1.0, 'unsymbolized executable code': 1.54}
-profile-scan {'scanner': 100.0}

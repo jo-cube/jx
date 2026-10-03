@@ -1,2 +1,0 @@
-workload,input_bytes,before_records_per_second,after_records_per_second,change_percent,before_allocations,after_allocations,before_requested_bytes,after_requested_bytes
-builtin/map_builtin,100,2002386.778097,1581431.830323,-21.022659,3.0,3.0,224.0,224.0

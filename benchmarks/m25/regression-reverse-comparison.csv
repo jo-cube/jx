@@ -1,6 +1,0 @@
-workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
-regions/groups,41828,1665,1564,-6.07,4017.0,4017.0,154528.0,154528.0
-acquisition/string_callback,100,1355222,1320470,-2.56,14.0,14.0,945.0,945.0
-execution/arithmetic,100,6433225,6363412,-1.09,0.0,0.0,0.0,0.0
-acquisition/call_three,500,714867,2031791,184.22,3.0,3.0,184.0,184.0
-acquisition/lookup_8192_short_raw,500,1889528,2967188,57.03,0.0,0.0,0.0,0.0

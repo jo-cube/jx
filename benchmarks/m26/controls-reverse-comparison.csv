@@ -1,9 +1,0 @@
-workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
-ascii/shallow,500,3126121,3122482,-0.12,0.0,0.0,0.0,0.0
-execution/arithmetic,100,6240519,6322560,1.31,0.0,0.0,0.0,0.0
-execution/arithmetic,500,2689532,2697258,0.29,0.0,0.0,0.0,0.0
-acquisition/call_three,500,2006559,1998693,-0.39,3.0,3.0,184.0,184.0
-acquisition/lookup_8192_short_raw,500,2905545,2923844,0.63,0.0,0.0,0.0,0.0
-acquisition/string_callback,100,1336991,1363653,1.99,14.0,14.0,945.0,945.0
-regions/groups,41828,1568,1669,6.44,4017.0,4017.0,154528.0,154528.0
-regions/nested_map,41828,3594,3627,0.92,14.0,14.0,49352.0,49352.0

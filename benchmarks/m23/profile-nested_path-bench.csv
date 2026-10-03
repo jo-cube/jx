@@ -1,8 +1,0 @@
-workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record
-consolidation/nested_path,155,0,117408,1.800278208,65217,10108571,0.000000,0.000000
-consolidation/nested_path,155,1,117408,1.800206542,65219,10108973,0.000000,0.000000
-consolidation/nested_path,155,2,117408,1.800129625,65222,10109405,0.000000,0.000000
-consolidation/nested_path,155,3,118304,1.800426125,65709,10184878,0.000000,0.000000
-consolidation/nested_path,155,4,119168,1.800419166,66189,10259300,0.000000,0.000000
-consolidation/nested_path,155,5,119104,1.800227000,66161,10254885,0.000000,0.000000
-consolidation/nested_path,155,6,118848,1.800477459,66009,10231419,0.000000,0.000000

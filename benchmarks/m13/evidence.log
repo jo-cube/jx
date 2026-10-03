@@ -1,7 +1,0 @@
-Sampling process 34299 for 3 seconds with 1 millisecond of run time between samples
-Sampling completed, processing symbols...
-Sample analysis of process 34299 written to file benchmarks/m13/m12-profile.txt
-Sampling process 34303 for 3 seconds with 1 millisecond of run time between samples
-Sampling completed, processing symbols...
-Sample analysis of process 34303 written to file benchmarks/m13/final-profile.txt
-Measured 679 workloads; profiles and focused repeats complete

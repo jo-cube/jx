@@ -1,4 +1,4 @@
-// M23 traversal, pure-key retention, grouping and escaping-capture regressions.
+// Traversal, pure-key retention, grouping and escaping-capture regressions.
 const fs = require('node:fs');
 const path = require('node:path');
 const {check, root, checked} = require('./differential.cjs');

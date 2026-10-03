@@ -1,7 +1,0 @@
-workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
-regions/object,47,1948760,1978095,1.51,8.0,8.0,576.0,576.0
-regions/object,306,356289,360119,1.07,23.0,23.0,2056.0,2056.0
-regions/object,5042,23716,24598,3.72,267.0,267.0,29896.0,29896.0
-regions/object,41828,3034,3140,3.49,2062.0,2062.0,237768.0,237768.0
-regions/reusable_members,100,5108300,5490720,7.49,2.0,2.0,136.0,136.0
-regions/reusable_members,500,2465829,2524985,2.4,2.0,2.0,136.0,136.0

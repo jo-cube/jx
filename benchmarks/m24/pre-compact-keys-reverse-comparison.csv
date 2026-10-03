@@ -1,8 +1,0 @@
-workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
-helper/sort_callback,162,194277,350523,80.42,41.0,15.0,4216.0,1528.0
-helper/sort_callback,2588,6736,15431,129.08,925.0,27.0,110008.0,23608.0
-helper/sort_callback,21428,623,1505,141.57,10278.0,36.0,1171896.0,188472.0
-helper/filtered_sorted,21428,907,1490,64.28,10737.0,6127.0,761277.0,318525.0
-regions/groups,41828,1691,1610,-4.79,4017.0,4017.0,154528.0,154528.0
-consolidation/sort_tuple,61112,1734,1667,-3.86,2067.0,2067.0,311680.0,311680.0
-aggregate/filtered_sum,500,2514784,2471473,-1.72,0.0,0.0,0.0,0.0

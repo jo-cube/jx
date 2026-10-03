@@ -1,8 +1,0 @@
-workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record
-consolidation/distinct_groups,61112,0,416,1.910317208,218,13308047,13.000000,294712.000000
-consolidation/distinct_groups,61112,1,416,1.916495917,217,13265143,13.000000,294712.000000
-consolidation/distinct_groups,61112,2,416,1.912287292,218,13294337,13.000000,294712.000000
-consolidation/distinct_groups,61112,3,416,1.942093916,214,13090300,13.000000,294712.000000
-consolidation/distinct_groups,61112,4,416,1.905468250,218,13341913,13.000000,294712.000000
-consolidation/distinct_groups,61112,5,416,1.902009375,219,13366176,13.000000,294712.000000
-consolidation/distinct_groups,61112,6,416,1.895697458,219,13410680,13.000000,294712.000000

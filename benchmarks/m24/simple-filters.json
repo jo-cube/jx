@@ -1,5 +1,0 @@
-[
- {"filter":"function/callback","bytes":500},
- {"filter":"function/signed_callback","bytes":500},
- {"filter":"function/partial_callback","bytes":500}
-]

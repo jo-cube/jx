@@ -1,6 +1,0 @@
-workload,input_bytes,baseline_rps,final_rps,ratio,baseline_allocations,final_allocations,baseline_bytes,final_bytes
-compiler/constant_membership,100,2854109.0,2703739.0,0.9473145559612475,1.0,1.0,16.0,16.0
-array/empty,2,50413805.0,50693391.0,1.0055458222207192,0.0,0.0,0.0,0.0
-navigation/deep_descendants,24,1138696.0,1148722.0,1.008804808307046,4.0,4.0,536.0,536.0
-aggregate/nested_sum,16396,7982.0,8086.0,1.013029315960912,0.0,0.0,0.0,0.0
-execution/mapped_sum,8586,13982.0,13389.0,0.957588327850093,0.0,0.0,0.0,0.0

@@ -1,3 +1,0 @@
-cargo build --workspace --release --locked
-   Compiling jx-cli v0.1.0 (/Users/josh/Documents/Workspace/jo-cube/jx/crates/jx-cli)
-    Finished `release` profile [optimized] target(s) in 4.30s

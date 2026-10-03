@@ -1,2 +1,0 @@
-workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record
-compile/nested_fallback,0,0,256,0.053413458,4793,0,11286.000000,450459.000000

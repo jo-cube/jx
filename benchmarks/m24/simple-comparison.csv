@@ -1,4 +1,0 @@
-workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
-function/callback,500,974079,1030227,5.76,8.0,6.0,776.0,392.0
-function/signed_callback,500,851601,899306,5.6,8.0,6.0,776.0,392.0
-function/partial_callback,500,650998,682456,4.83,10.0,8.0,888.0,504.0

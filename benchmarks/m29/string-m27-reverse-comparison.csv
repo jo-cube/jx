@@ -1,2 +1,0 @@
-workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
-acquisition/string_callback,100,1366162,1321973,-3.23,14.0,14.0,953.0,961.0

@@ -1,9 +1,0 @@
-workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
-format/date_parse_constant,1024,1769605,1786698,0.97,0.0,0.0,0.0,0.0
-format/date_parse_iso,1024,855556,851088,-0.52,0.0,0.0,0.0,0.0
-format/number_static,10240,92609,92534,-0.08,2.0,2.0,54.0,54.0
-format/integer_parse_static,10240,94704,94221,-0.51,1.0,1.0,8.0,8.0
-helper/decimal_round,100,2503802,2489874,-0.56,0.0,0.0,0.0,0.0
-matcher/literal_contains,100,2568030,2591760,0.92,5.0,5.0,158.0,158.0
-matcher/closure,100,1917904,1902774,-0.79,11.0,10.0,936.0,880.0
-filter/wide_predicate,23392,5007,5025,0.36,0.0,0.0,0.0,0.0

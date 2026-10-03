@@ -1,3 +1,0 @@
-cargo bench -p jx --bench throughput --locked
-    Finished `bench` profile [optimized] target(s) in 0.01s
-     Running benches/throughput.rs (target/release/deps/throughput-1b5b3923bf796647)

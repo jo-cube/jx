@@ -1,6 +1,0 @@
-workload,input_bytes,before_records_per_second,after_records_per_second,change_percent,before_allocations,after_allocations,before_requested_bytes,after_requested_bytes
-aggregate/nested_filtered_sum,1048588,66.576626,69.640851,4.602553,0.0,0.0,0.0,0.0
-ascii/validate,100,11684347.394082,11899391.874763,1.840449,0.0,0.0,0.0,0.0
-execution/arithmetic,500,2718747.750482,2729273.176817,0.387142,0.0,0.0,0.0,0.0
-filter/negative_chain,20,105614.620357,105309.571285,-0.288832,0.0,0.0,0.0,0.0
-transform/clone,150,943677.905035,965860.227598,2.350624,10.0,10.0,1136.0,1136.0
