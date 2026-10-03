@@ -9,6 +9,9 @@ import zipfile
 SPEC = importlib.util.spec_from_file_location('release', Path(__file__).parents[1] / 'package-release.py')
 release = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(release)
+SMOKE_SPEC = importlib.util.spec_from_file_location('smoke', Path(__file__).parents[1] / 'smoke-release.py')
+smoke = importlib.util.module_from_spec(SMOKE_SPEC)
+SMOKE_SPEC.loader.exec_module(smoke)
 
 
 class ReleaseArchive(unittest.TestCase):
@@ -28,6 +31,9 @@ class ReleaseArchive(unittest.TestCase):
                         suffix = '.zip' if target.endswith('msvc') else '.tar.gz'
                         self.assertEqual(first.name, name + suffix)
                         self.assertEqual(first.read_bytes(), second.read_bytes())
+                        build, _ = smoke.inspect_archive(first, 'abc')
+                        self.assertEqual(build['target'], target)
+                        self.assertEqual(build['variant'], variant)
                         digest = hashlib.sha256(first.read_bytes()).hexdigest()
                         self.assertEqual(first.with_name(first.name + '.sha256').read_text(),
                                          f'{digest}  {first.name}\n')
@@ -52,6 +58,31 @@ class ReleaseArchive(unittest.TestCase):
                         self.assertIn(f'features={features}'.encode(), contents['BUILD.txt'])
                         notices = 'THIRD_PARTY_LICENSES_NATIVE' if variant == 'native' else 'THIRD_PARTY_LICENSES'
                         self.assertEqual(contents['THIRD_PARTY_LICENSES'], (release.ROOT / notices).read_bytes())
+
+    def test_smoke_rejects_wrong_checksums_and_revisions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / 'binary'
+            binary.write_bytes(b'not executed')
+            packed = release.archive(binary, 'x86_64-apple-darwin', '0.1.0', 'abc', 1, root)
+            with self.assertRaisesRegex(ValueError, 'source revision'):
+                smoke.inspect_archive(packed, 'different')
+            packed.with_name(packed.name + '.sha256').write_text('0' * 64 + '\n')
+            with self.assertRaisesRegex(ValueError, 'checksum'):
+                smoke.inspect_archive(packed)
+
+    def test_smoke_rejects_unexpected_archive_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / 'binary'
+            binary.write_bytes(b'not executed')
+            packed = release.archive(binary, 'x86_64-pc-windows-msvc', '0.1.0', 'abc', 1, root)
+            with zipfile.ZipFile(packed, 'a') as contents:
+                contents.writestr('jx-v0.1.0-x86_64-pc-windows-msvc/../escape', b'bad')
+            digest = hashlib.sha256(packed.read_bytes()).hexdigest()
+            packed.with_name(packed.name + '.sha256').write_text(f'{digest}  {packed.name}\n')
+            with self.assertRaisesRegex(ValueError, 'archive contents'):
+                smoke.inspect_archive(packed)
 
     def test_package_licenses_match_root(self):
         for name in ['jx', 'jx-cli', 'jx-native']:

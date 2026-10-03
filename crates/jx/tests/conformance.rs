@@ -168,7 +168,11 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
             for index in 0..count {
                 disk.insert(format!(
                     "{}#{index}",
-                    path.strip_prefix(&root).unwrap().to_str().unwrap()
+                    path.strip_prefix(&root)
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .replace('\\', "/")
                 ));
             }
         }

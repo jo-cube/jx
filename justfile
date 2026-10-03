@@ -28,6 +28,7 @@ all:
     cargo test -p jx -p jx-cli --locked
     just test
     just packaging-tests
+    just guides
     cargo bench -p jx --bench throughput --all-features --locked -- --smoke
     JX_BENCH_NATIVE_ONLY=1 JX_BENCH_NATIVE=1 cargo bench -p jx --features jit --bench throughput --locked -- --smoke
 
@@ -69,3 +70,11 @@ package:
 
 packaging-tests:
     python3 -m unittest discover -s scripts/tests
+
+# Public guide examples and documentation links, without network access.
+guides:
+    python3 scripts/check-guides.py
+
+# Verify and execute the exact files in an already-prepared archive.
+release-smoke archive:
+    python3 scripts/smoke-release.py {{quote(archive)}}
