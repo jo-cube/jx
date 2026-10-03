@@ -32,9 +32,23 @@ pub(crate) enum Stream<'e, 'i> {
 }
 impl<'e, 'i> Stream<'e, 'i> {
     pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
+        if let Self::Expression(node, context) = self
+            && let Some(scope) = &context.scope
+            && scope.controlled()
+        {
+            scope.checkpoint(node.offset)?;
+            return self.walk_unchecked(&mut |value| {
+                scope.item(node.offset)?;
+                output(value)
+            });
+        }
+        self.walk_unchecked(output)
+    }
+    fn walk_unchecked(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
             Self::Path(path) => path.try_for_each(output),
             Self::Expression(node, context) => match &node.kind {
+                Kind::Path(path) => path.select_context(context).try_for_each(output),
                 Kind::Wildcard => crate::navigate::wildcard(&context.value, output),
                 Kind::Descendants => crate::navigate::descendants(context.value.clone(), output),
                 Kind::Range(left, right) => {
@@ -194,7 +208,11 @@ impl Node {
         }
         match &self.kind {
             Kind::Path(path) if !path.fields.is_empty() => {
-                Some(Stream::Path(path.select_context(input)))
+                if input.scope.as_ref().is_some_and(|s| s.controlled()) {
+                    Some(Stream::Expression(self, input.clone()))
+                } else {
+                    Some(Stream::Path(path.select_context(input)))
+                }
             }
             Kind::Route(..)
             | Kind::Filter(..)

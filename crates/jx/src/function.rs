@@ -34,6 +34,7 @@ pub(crate) struct Definition {
 #[derive(Debug)]
 pub(crate) enum FunctionKind<'e, 'i> {
     Builtin(Builtin),
+    Host(crate::HostFunction),
     Dynamic(Box<crate::dynamic::Callable<'e, 'i>>),
     Matcher(Rc<crate::matcher::State<'e>>),
     MatchNext(Rc<crate::matcher::Continuation<'e, 'i>>),
@@ -111,6 +112,7 @@ pub(super) fn invoke_literal<'e, 'i>(
 pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
     match &function.kind {
         FunctionKind::Builtin(builtin) => builtin.arity(),
+        FunctionKind::Host(function) => function.arity,
         FunctionKind::Dynamic(callable) => callable.arity(),
         FunctionKind::Matcher(_) => 2,
         FunctionKind::MatchNext(_) => 0,
@@ -138,7 +140,15 @@ pub(crate) fn invoke_checked<'e, 'i>(
     offset: usize,
     validate: bool,
 ) -> Result<Operand<'e, 'i>, Error> {
+    if matches!(
+        function.kind,
+        FunctionKind::Builtin(_) | FunctionKind::Matcher(_) | FunctionKind::MatchNext(_)
+    ) && let Some(scope) = &context.scope
+    {
+        scope.checkpoint(offset)?;
+    }
     match &function.kind {
+        FunctionKind::Host(function) => function.invoke(arguments, context, offset, validate),
         FunctionKind::Dynamic(callable) => callable.invoke(arguments, context, offset, validate),
         FunctionKind::Builtin(builtin) => {
             if validate {
@@ -183,7 +193,8 @@ pub(crate) fn invoke_checked<'e, 'i>(
             let params = &definition.params;
             let body = &definition.body;
             scope.call(offset, body.depth, || {
-                if let Some(plan) = &definition.plan
+                if !scope.controlled()
+                    && let Some(plan) = &definition.plan
                     && let Some(result) = plan.run(arguments, focus, *wrapped)
                 {
                     return Ok(result);

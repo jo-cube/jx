@@ -88,6 +88,9 @@ pub(super) fn call<'e, 'i>(
         }
     }
     let indices = crate::ordering::indices(values.len(), |a, b| {
+        if let Some(scope) = &context.scope {
+            scope.checkpoint(offset)?;
+        }
         let swap = if let Some(callback) = callback {
             // $sort's comparator uses JavaScript truth, not effective boolean
             // conversion. Containers and functions are always truthy here.

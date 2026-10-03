@@ -14,7 +14,7 @@ struct ScanError {
 }
 impl From<ScanError> for Error {
     fn from(error: ScanError) -> Self {
-        Self::new(error.kind, error.offset, error.message)
+        Self::new(error.kind, error.offset, error.message).input()
     }
 }
 

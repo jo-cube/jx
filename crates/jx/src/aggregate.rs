@@ -48,7 +48,16 @@ impl Aggregate {
             match value {
                 Value::Undefined => {}
                 value if value.is_array() => {
-                    value.elements().for_each(|item| fold.push(item));
+                    if let Some(scope) = &input.scope
+                        && scope.controlled()
+                    {
+                        for item in value.elements() {
+                            scope.item(offset)?;
+                            fold.push(item);
+                        }
+                    } else {
+                        value.elements().for_each(|item| fold.push(item));
+                    }
                 }
                 value => fold.push(value),
             }

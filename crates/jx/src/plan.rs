@@ -275,6 +275,9 @@ impl Plan {
     }
     // Only pure regions may retry: fallback preserves offsets and error precedence.
     pub fn run<'e, 'i>(&'e self, context: &Context<'e, 'i>) -> Option<Operand<'e, 'i>> {
+        if context.scope.as_ref().is_some_and(|s| s.controlled()) {
+            return None;
+        }
         match &self.execution {
             Execution::Scalar(program) => program.run(context).map(Cell::operand),
             Execution::Fold(pipeline) => pipeline.run(context),

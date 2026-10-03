@@ -186,6 +186,7 @@ impl<'e, 'i> Retention<'e, 'i> {
             Value::Function(f) => Value::Function(Rc::new(Function {
                 kind: match &f.kind {
                     FunctionKind::Builtin(b) => FunctionKind::Builtin(*b),
+                    FunctionKind::Host(f) => FunctionKind::Host(f.clone()),
                     FunctionKind::Lambda {
                         definition,
                         focus,

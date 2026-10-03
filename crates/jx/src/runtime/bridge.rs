@@ -58,6 +58,7 @@ impl<'e, 'i> Scope<'e, 'i> {
                 writes: Cell::new(self.runtime.writes.get()),
                 timestamp: Cell::new(self.runtime.timestamp.get()),
                 random: RefCell::new(self.runtime.random.borrow().clone()),
+                control: self.runtime.control.clone(),
             }),
             frame: self.frame,
         };

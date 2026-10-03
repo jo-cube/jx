@@ -16,6 +16,7 @@ pub struct Evaluation<'expression, 'input> {
 
 #[derive(Debug)]
 pub(crate) enum Results<'e, 'i> {
+    Controlled(Box<(Results<'e, 'i>, crate::controls::Control)>),
     Path(PathEvaluation<'e, 'i>),
     Expression(&'e Node, Context<'e, 'i>),
     Scalar(Option<Value<'e, 'i>>),
@@ -35,9 +36,50 @@ impl<E: std::fmt::Display> std::fmt::Display for ConsumeError<E> {
         }
     }
 }
-impl<E: std::error::Error + 'static> std::error::Error for ConsumeError<E> {}
+impl<E: std::error::Error + 'static> std::error::Error for ConsumeError<E> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Evaluation(e) => Some(e),
+            Self::Consumer(e) => Some(e),
+        }
+    }
+}
 
 impl<'e, 'i> Evaluation<'e, 'i> {
+    /// Collect independent owned snapshots. Missing is an empty vector; an array
+    /// is one value, and a sequence is multiple values.
+    pub fn collect_owned(self) -> Result<Vec<crate::OwnedValue>, Error> {
+        let mut values = Vec::new();
+        self.try_for_each(|v| {
+            values.push(v.to_owned()?);
+            Ok(())
+        })
+        .map_err(|e| match e {
+            ConsumeError::Evaluation(e) | ConsumeError::Consumer(e) => e,
+        })?;
+        Ok(values)
+    }
+    /// Require at most one result; stop at the second item without running later work.
+    pub fn single(self) -> Result<Option<Value<'e, 'i>>, Error> {
+        let mut first = None;
+        self.try_for_each(|v| {
+            if first.is_some() {
+                return Err(Error::new(
+                    crate::ErrorKind::CardinalityError,
+                    0,
+                    "expected at most one result",
+                )
+                .result());
+            }
+            first = Some(v);
+            Ok(())
+        })
+        .map_err(|e| match e {
+            ConsumeError::Evaluation(e) | ConsumeError::Consumer(e) => e,
+        })?;
+        Ok(first)
+    }
+
     /// Stream values without collecting; evaluation errors may follow earlier output.
     pub fn for_each(self, mut output: impl FnMut(Value<'e, 'i>)) -> Result<(), Error> {
         match self.try_for_each(|value| {
@@ -54,7 +96,36 @@ impl<'e, 'i> Evaluation<'e, 'i> {
         self,
         mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
     ) -> Result<(), ConsumeError<E>> {
+        let result = match self.result {
+            Results::Controlled(controlled) => {
+                let (result, control) = *controlled;
+                enum Failure<E> {
+                    Control(Error),
+                    Consumer(E),
+                }
+                return Evaluation { result }
+                    .consume(|value| {
+                        control.result(&value).map_err(Failure::Control)?;
+                        output(value).map_err(Failure::Consumer)
+                    })
+                    .map_err(|e| match e {
+                        ConsumeError::Evaluation(e)
+                        | ConsumeError::Consumer(Failure::Control(e)) => {
+                            ConsumeError::Evaluation(e)
+                        }
+                        ConsumeError::Consumer(Failure::Consumer(e)) => ConsumeError::Consumer(e),
+                    });
+            }
+            result => result,
+        };
+        Evaluation { result }.consume(output)
+    }
+    fn consume<E>(
+        self,
+        mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
+    ) -> Result<(), ConsumeError<E>> {
         match self.result {
+            Results::Controlled(_) => unreachable!("controls are applied once by try_for_each"),
             Results::Path(path) => path.try_for_each(output).map_err(ConsumeError::Consumer),
             Results::Scalar(Some(value)) if value.unpacks_sequence() => {
                 for item in value.elements() {

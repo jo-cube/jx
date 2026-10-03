@@ -227,6 +227,10 @@ impl Library {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if let Some(scope) = &context.scope {
+            scope.arguments(args, offset)?;
+        }
+
         if self == Self::Zip {
             return Ok(Operand::One(
                 if args
@@ -373,6 +377,9 @@ impl Library {
             if args.is_empty() {
                 return Err(type_error(offset));
             }
+            if let Some(scope) = &context.scope {
+                scope.arguments(args, offset)?;
+            }
             return Ok(Operand::One(super::arrays::zip(args)));
         }
         if self == Self::Replace {
@@ -409,6 +416,9 @@ impl Library {
         }
         for (i, arg) in args.iter().enumerate() {
             values[i + skip] = arg.clone();
+        }
+        if let Some(scope) = &context.scope {
+            scope.arguments(values, offset)?;
         }
         for (value, param) in values.iter_mut().zip(params) {
             if matches!(value, Some(Value::Undefined)) {

@@ -77,6 +77,6 @@ fn function(f: &crate::Function<'_, '_>, start: usize) -> bool {
         }
         FunctionKind::Chain(a, b) => function(a, start) || function(b, start),
         FunctionKind::MatchNext(next) => reaches(next.value(), start),
-        FunctionKind::Builtin(_) | FunctionKind::Matcher(_) => false,
+        FunctionKind::Builtin(_) | FunctionKind::Host(_) | FunctionKind::Matcher(_) => false,
     }
 }

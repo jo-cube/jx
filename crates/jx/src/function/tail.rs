@@ -108,8 +108,15 @@ fn block<'e, 'i>(
         let Some((last, prefix)) = nodes.split_last() else {
             return Ok(Outcome::Done(None));
         };
-        for node in prefix {
-            crate::retain::materialize(node, &context)?;
+        if scope.controlled() {
+            for node in prefix {
+                scope.checkpoint(node.offset)?;
+                crate::retain::materialize(node, &context)?;
+            }
+        } else {
+            for node in prefix {
+                crate::retain::materialize(node, &context)?;
+            }
         }
         evaluate(last, &context, caller)
     })();
@@ -127,6 +134,7 @@ pub(super) fn invoke<'e, 'i>(
     let scope = context.scope.as_ref().expect("lexical runtime");
     let mut pending: Option<Call<'e, 'i>> = None;
     let mut steps = 0;
+    let max_tail_calls = scope.max_tail_calls();
     let mut child: Option<Scope<'e, 'i>> = None;
     let result = (|| loop {
         let null_focus = pending.as_ref().is_some_and(|p| p.null_focus);
@@ -200,7 +208,7 @@ pub(super) fn invoke<'e, 'i>(
             }
             return super::invoke_checked(function, arguments, caller, offset, validate);
         };
-        if steps == 1_000_000 {
+        if steps == max_tail_calls {
             return Err(crate::Error::new(
                 crate::ErrorKind::EvaluationLimit,
                 offset,

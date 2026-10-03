@@ -6,7 +6,11 @@ use std::collections::HashSet;
 
 // Resolve only builtins that cannot be rebound anywhere in this expression.
 // Conservative across scopes: compile cost is cheap, observable rebinding is not.
-pub(crate) fn prepare(root: &mut Node, dynamic: bool) -> Result<(), crate::Error> {
+pub(crate) fn prepare(
+    root: &mut Node,
+    dynamic: bool,
+    external: &[Box<str>],
+) -> Result<(), crate::Error> {
     let mut invalid = None;
     let mut transform_binding = None;
     visit(root, &mut |node| {
@@ -43,7 +47,7 @@ pub(crate) fn prepare(root: &mut Node, dynamic: bool) -> Result<(), crate::Error
             "unscoped binding in concurrent constructor members is deferred; use a block",
         ));
     }
-    let mut bound = HashSet::new();
+    let mut bound: HashSet<String> = external.iter().map(|n| n.to_string()).collect();
     visit(root, &mut |node| match &node.kind {
         Kind::Bind(name, _) => {
             bound.insert(name.to_string());

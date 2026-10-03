@@ -128,6 +128,11 @@ impl Builtin {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if !matches!(self, Self::Library(_) | Self::Runtime(_))
+            && let Some(scope) = &context.scope
+        {
+            scope.arguments(args, offset)?;
+        }
         match self {
             Self::Library(function) => function.values(args, context, offset),
             Self::Lookup => match args {

@@ -84,6 +84,7 @@ pub(crate) struct Runtime<'e, 'i> {
     writes: Cell<usize>,
     timestamp: Cell<i64>,
     random: RefCell<Option<crate::Random>>,
+    control: Option<crate::controls::Control>,
 }
 #[derive(Clone, Debug)]
 pub(crate) struct Scope<'e, 'i> {
@@ -91,6 +92,52 @@ pub(crate) struct Scope<'e, 'i> {
     pub frame: usize,
 }
 impl<'e, 'i> Scope<'e, 'i> {
+    pub fn configure(
+        mut self,
+        bindings: BindingValues<'e, 'i>,
+        control: Option<crate::controls::Control>,
+    ) -> Self {
+        let runtime = Rc::get_mut(&mut self.runtime).expect("configure before sharing the scope");
+        if !bindings.is_empty() {
+            let frames = runtime.frames.get_mut();
+            let mut values = bindings;
+            let root = frames[0].bindings.lookup("$").unwrap().clone();
+            values.push(("$", root));
+            frames[0].bindings = Bindings::Owned(values);
+        }
+        runtime.control = control;
+        self
+    }
+    pub fn controlled(&self) -> bool {
+        self.runtime.control.is_some()
+    }
+    pub fn checkpoint(&self, offset: usize) -> Result<(), Error> {
+        if let Some(control) = self.runtime.control.as_ref() {
+            control.checkpoint(offset)?;
+        }
+        Ok(())
+    }
+    pub fn item(&self, offset: usize) -> Result<(), Error> {
+        if let Some(control) = self.runtime.control.as_ref() {
+            control.item(offset)?;
+        }
+        Ok(())
+    }
+    pub fn arguments(&self, values: &[Option<Value<'e, 'i>>], offset: usize) -> Result<(), Error> {
+        if let Some(control) = &self.runtime.control {
+            for value in values.iter().flatten() {
+                control.inspect(value, offset)?;
+            }
+        }
+        Ok(())
+    }
+    pub fn max_tail_calls(&self) -> usize {
+        self.runtime
+            .control
+            .as_ref()
+            .map_or(1_000_000, |c| c.max_tail_calls())
+    }
+
     pub fn with_random(root: Value<'e, 'i>, clock: bool, random: Option<&crate::Random>) -> Self {
         Self {
             runtime: Rc::new(Runtime {
@@ -105,6 +152,7 @@ impl<'e, 'i> Scope<'e, 'i> {
                 writes: Cell::new(usize::MAX),
                 timestamp: Cell::new(if clock { timestamp() } else { i64::MIN }),
                 random: RefCell::new(random.cloned()),
+                control: None,
             }),
             frame: 0,
         }
@@ -249,11 +297,17 @@ impl<'e, 'i> Scope<'e, 'i> {
     ) -> Result<T, Error> {
         let depth = self.runtime.depth.get();
         let tree_depth = self.runtime.tree_depth.get();
-        if depth >= 64 || tree_depth + body_depth > 512 {
+        let max_calls = if let Some(control) = &self.runtime.control {
+            control.checkpoint(offset)?;
+            control.max_calls()
+        } else {
+            64
+        };
+        if depth >= max_calls || tree_depth + body_depth > 512 {
             return Err(Error::new(
                 ErrorKind::DepthLimit,
                 offset,
-                "function stack exceeds 64 calls or 512 expression levels",
+                "function call depth or expression stack limit exceeded",
             ));
         }
         self.runtime.depth.set(depth + 1);
@@ -290,8 +344,15 @@ pub(crate) fn block<'e, 'i>(
         };
         let result = (|| {
             let mut result = None;
-            for node in nodes {
-                result = crate::retain::materialize(node, &context)?;
+            if scope.controlled() {
+                for node in nodes {
+                    scope.checkpoint(node.offset)?;
+                    result = crate::retain::materialize(node, &context)?;
+                }
+            } else {
+                for node in nodes {
+                    result = crate::retain::materialize(node, &context)?;
+                }
             }
             Ok(result)
         })();

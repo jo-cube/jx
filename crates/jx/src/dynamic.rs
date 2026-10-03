@@ -63,6 +63,9 @@ impl Builtin {
         context: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
+        if let Some(scope) = &context.scope {
+            scope.arguments(args, offset)?;
+        }
         match self {
             Self::Eval => evaluate(args, None, context, offset),
             Self::Random if args.is_empty() => Ok(Operand::One(Value::Number(
@@ -195,8 +198,11 @@ fn source<'a>(value: &'a Value<'_, '_>, offset: usize) -> Result<Cow<'a, str>, E
             )
         })
 }
-fn wrapped(error: Error, kind: ErrorKind, offset: usize) -> Error {
-    Error::custom(
+fn wrapped(mut error: Error, kind: ErrorKind, offset: usize) -> Error {
+    if error.source == crate::Source::Expression {
+        error.source = crate::Source::DynamicExpression;
+    }
+    let wrapped = Error::custom(
         kind,
         offset,
         format!(
@@ -208,7 +214,8 @@ fn wrapped(error: Error, kind: ErrorKind, offset: usize) -> Error {
             },
             error
         ),
-    )
+    );
+    wrapped.with_cause(error)
 }
 fn evaluate<'e, 'i>(
     args: &[Option<Value<'e, 'i>>],
@@ -304,7 +311,8 @@ impl<'e, 'i> Callable<'e, 'i> {
         validate: bool,
     ) -> Result<Operand<'e, 'i>, Error> {
         let scope = context.scope.as_ref().expect("dynamic closure runtime");
-        if let Definition::Lambda(definition) = self.definition.as_ref()
+        if !scope.controlled()
+            && let Definition::Lambda(definition) = self.definition.as_ref()
             && !definition.tail
             && let Some(plan) = &definition.plan
             && plan.is_scalar()

@@ -4,11 +4,12 @@
 //! ```
 //! let expression = jx::compile("price * quantity")?;
 //! expression.evaluate(br#"{"price":2.5,"quantity":3}"#)?.for_each(|value| {
-//!     assert!(matches!(value, jx::Value::Number(7.5)));
+//!     assert_eq!(value.as_number(), Some(7.5));
 //! })?;
 //! # Ok::<(), jx::Error>(())
 //! ```
 
+mod access;
 mod aggregate;
 mod analysis;
 mod builtin;
@@ -17,8 +18,10 @@ mod compile;
 mod constant;
 mod construct;
 mod container;
+mod controls;
 mod convert;
 mod dynamic;
+mod embedding;
 mod error;
 mod evaluate;
 mod expression;
@@ -44,9 +47,12 @@ mod transform;
 mod tuple;
 mod value;
 
+pub use access::{OwnedValue, ValueType};
 pub use constant::ConstantValue;
 pub use container::{Array, Object};
-pub use error::{Error, ErrorKind};
+pub use controls::{Cancellation, Limits};
+pub use embedding::{CompileOptions, EvaluationOptions, HostContext, HostFunction};
+pub use error::{Error, ErrorKind, Phase, Source, Span};
 pub use evaluate::{ConsumeError, Evaluation};
 pub use function::Function;
 pub use json::{MAX_DEPTH, RawJson, validate};
@@ -60,10 +66,11 @@ pub struct Expression {
     root: expression::Node,
     runtime: bool,
     acquisition: Option<json::Demand>,
+    bindings: Box<[Box<str>]>,
 }
 
 pub fn compile(source: &str) -> Result<Expression, Error> {
-    parse::expression(source)
+    parse::expression(source).map_err(Error::compilation)
 }
 
 /// Newly installed native kernels and failures; unsupported plans are left unchanged.
