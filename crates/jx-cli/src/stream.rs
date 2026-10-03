@@ -25,34 +25,95 @@ fn record(reader: &mut impl BufRead, buffer: &mut Vec<u8>, limit: usize) -> io::
     }
 }
 
+#[derive(Default)]
+pub struct Buffers {
+    input: Vec<u8>,
+    output: Vec<u8>,
+}
+pub struct Config {
+    pub record_bytes: usize,
+    pub output_bytes: usize,
+    pub work: Option<usize>,
+}
+struct Line<'a> {
+    bytes: &'a mut Vec<u8>,
+    limit: usize,
+}
+impl Write for Line<'_> {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        if bytes.len() > self.limit.saturating_sub(self.bytes.len()) {
+            return Err(io::Error::new(
+                io::ErrorKind::FileTooLarge,
+                "result exceeds --max-output-bytes",
+            ));
+        }
+        self.bytes.extend_from_slice(bytes);
+        Ok(bytes.len())
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 pub fn run(
     mut reader: impl BufRead,
     output: &mut impl Write,
     expression: &jx::Expression,
-    buffer: &mut Vec<u8>,
-    limit: usize,
+    buffers: &mut Buffers,
+    config: &Config,
 ) -> io::Result<()> {
     let mut line = 1;
     loop {
-        let present = record(&mut reader, buffer, limit)
+        let present = record(&mut reader, &mut buffers.input, config.record_bytes)
             .map_err(|error| io::Error::new(error.kind(), format!("line {line}: {error}")))?;
         if !present {
             return Ok(());
         }
-        if !buffer.iter().all(|b| matches!(b, b' ' | b'\t' | b'\r')) {
-            let values = expression.evaluate(buffer).map_err(|error| {
-                io::Error::new(io::ErrorKind::InvalidData, format!("line {line}: {error}"))
+        if !buffers
+            .input
+            .iter()
+            .all(|b| matches!(b, b' ' | b'\t' | b'\r'))
+        {
+            let values = if let Some(work) = config.work {
+                expression.evaluate_with(
+                    Some(&buffers.input),
+                    jx::EvaluationOptions {
+                        limits: Some(jx::Limits {
+                            max_work: work,
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    },
+                )
+            } else {
+                expression.evaluate(&buffers.input)
+            }
+            .map_err(|error| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("line {line}: {:?}: {error}", error.phase),
+                )
             })?;
             values
                 .try_for_each(|value| {
-                    value.write_compact(&mut *output)?;
-                    output.write_all(b"\n")
+                    buffers.output.clear();
+                    value
+                        .write_compact(Line {
+                            bytes: &mut buffers.output,
+                            limit: config.output_bytes,
+                        })
+                        .map_err(|e| {
+                            io::Error::new(e.kind(), format!("line {line}: serialization: {e}"))
+                        })?;
+                    buffers.output.push(b'\n');
+                    output.write_all(&buffers.output)
                 })
                 .map_err(|error| match error {
                     jx::ConsumeError::Consumer(error) => error,
-                    jx::ConsumeError::Evaluation(error) => {
-                        io::Error::new(io::ErrorKind::InvalidData, format!("line {line}: {error}"))
-                    }
+                    jx::ConsumeError::Evaluation(error) => io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("line {line}: {:?}: {error}", error.phase),
+                    ),
                 })?;
         }
         line += 1;
@@ -74,8 +135,12 @@ mod tests {
                 reader,
                 &mut output,
                 &jx::compile("a").unwrap(),
-                &mut Vec::new(),
-                32,
+                &mut Buffers::default(),
+                &Config {
+                    record_bytes: 32,
+                    output_bytes: 1024,
+                    work: None,
+                },
             )
             .unwrap();
             assert_eq!(output, b"1\nnull\n[2,3]\n");
@@ -86,17 +151,21 @@ mod tests {
     fn oversized_unterminated_record_stays_bounded() {
         let input = vec![b' '; 100_000];
         let mut reader = BufReader::with_capacity(3, Cursor::new(input));
-        let mut buffer = Vec::new();
+        let mut buffer = Buffers::default();
         let error = run(
             &mut reader,
             &mut Vec::new(),
             &jx::compile("$").unwrap(),
             &mut buffer,
-            8,
+            &Config {
+                record_bytes: 8,
+                output_bytes: 1024,
+                work: None,
+            },
         )
         .unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::InvalidData);
-        assert!(buffer.len() <= 8);
+        assert!(buffer.input.len() <= 8);
         assert!(
             reader.get_ref().position() <= 12,
             "stop reading at the bound, not at EOF"
@@ -119,8 +188,12 @@ mod tests {
             &mut input,
             &mut Fails,
             &jx::compile("$").unwrap(),
-            &mut Vec::new(),
-            16,
+            &mut Buffers::default(),
+            &Config {
+                record_bytes: 16,
+                output_bytes: 1024,
+                work: None,
+            },
         )
         .unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::BrokenPipe);

@@ -453,3 +453,40 @@ fn native_plans_preserve_record_framing_and_failure_output() {
     assert_eq!(output.status.code(), Some(1));
     assert!(output.stdout.is_empty());
 }
+
+#[test]
+fn serialization_failure_never_publishes_an_incomplete_result() {
+    let output = run(&["[1,function(){2}]"], b"null\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty(), "{:?}", output.stdout);
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("line 1: serialization:")
+    );
+    let output = run(&["(1; [1, function(){2}])"], b"null\n");
+    assert!(output.stdout.is_empty());
+}
+
+#[test]
+fn output_limits_and_expression_files() {
+    let output = run(&["--max-output-bytes", "3", "$"], b"1\n[1,2]\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    let path = std::env::temp_dir().join(format!("jx-expression-{}.jsonata", std::process::id()));
+    std::fs::write(&path, "/* expression file */\na+1\n").unwrap();
+    let output = run(&["-f", path.to_str().unwrap()], br#"{"a":2}"#);
+    std::fs::remove_file(path).unwrap();
+    assert!(output.status.success(), "{:?}", output.stderr);
+    assert_eq!(output.stdout, b"3\n");
+    let version = run(&["--version"], b"");
+    assert!(version.status.success());
+    assert_eq!(
+        version.stdout,
+        format!("jx {}\n", env!("CARGO_PKG_VERSION")).as_bytes()
+    );
+    assert_eq!(
+        run(&["--max-work", "2", "[1..100]"], b"null").status.code(),
+        Some(1)
+    );
+}
