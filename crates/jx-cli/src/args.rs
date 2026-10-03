@@ -1,13 +1,24 @@
 use std::{ffi::OsString, path::PathBuf};
 
-pub const HELP: &str = "Usage: jx [OPTIONS] [--] EXPRESSION [FILE ...]\n\
-       jx [OPTIONS] -f EXPRESSION_FILE [FILE ...]\n\
-Compile once and process NDJSON. No files, or '-', reads stdin.\n\
-Missing produces no line; sequences emit one line per item; raw arrays stay on one line.\n\
--f, --expression-file PATH reads UTF-8 expression source.\n\
---version prints the version. --max-output-bytes N bounds each result line (default 16 MiB).\n\
---max-work N enables cooperative evaluation limits. --max-record-bytes N bounds input.\n\
-Blank lines are ignored. Default record limit: 1048576 bytes excluding LF.\n";
+pub const HELP: &str = "Usage: jx [OPTIONS] [--] EXPRESSION [FILE ...]
+       jx [OPTIONS] -f EXPRESSION_FILE [FILE ...]
+
+Compile once and stream NDJSON. No files, or '-', reads stdin.
+Missing emits no line; sequences emit one line per item; arrays stay one value.
+Options precede the expression. Use -- before expressions beginning with '-'.
+
+Options:
+  -f, --expression-file PATH  Read UTF-8 JSONata source from a file
+      --max-record-bytes N   Input limit excluding LF (default 1048576)
+      --max-output-bytes N   Per-result limit excluding LF (default 16777216)
+      --max-work N           Enable cooperative limits with N work checkpoints
+  -h, --help                 Print help
+      --version              Print version
+
+Blank lines are ignored; CRLF and final lines without LF are accepted.
+A failed result publishes no partial line; earlier complete lines remain.
+Exit codes: 0 success/broken pipe, 1 record or I/O error, 2 usage/compile error.
+";
 
 pub struct Args {
     pub expression: String,

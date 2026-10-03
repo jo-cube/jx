@@ -11,7 +11,10 @@ fn run(args: &[&str], input: &[u8]) -> Output {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    child.stdin.take().unwrap().write_all(input).unwrap();
+    if let Err(error) = child.stdin.take().unwrap().write_all(input) {
+        // A usage/compile error can close stdin before this test writes its input.
+        assert_eq!(error.kind(), std::io::ErrorKind::BrokenPipe);
+    }
     child.wait_with_output().unwrap()
 }
 
@@ -489,4 +492,71 @@ fn output_limits_and_expression_files() {
         run(&["--max-work", "2", "[1..100]"], b"null").status.code(),
         Some(1)
     );
+}
+#[test]
+fn expression_file_streams_typical_records_in_order() {
+    let root = std::env::temp_dir().join(format!("jx-stream-é-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("expression with spaces.jsonata");
+    let records = root.join("records with spaces.ndjson");
+    std::fs::write(
+        &source,
+        "/* reusable program */\n{'id':id,'total':$sum(items[price>10].price)}\n",
+    )
+    .unwrap();
+    let mut input = String::new();
+    let mut expected = Vec::new();
+    for id in 0..4096 {
+        input.push_str(&format!(
+            "{{\"id\":{id},\"items\":[{{\"price\":5}},{{\"price\":12}}],\"padding\":\"{}\"}}\r\n",
+            "x".repeat(440)
+        ));
+        expected.extend_from_slice(format!("{{\"id\":{id},\"total\":12}}\n").as_bytes());
+    }
+    std::fs::write(&records, input).unwrap();
+    let output = run(
+        &["-f", source.to_str().unwrap(), records.to_str().unwrap()],
+        b"",
+    );
+    std::fs::remove_dir_all(root).unwrap();
+    assert!(output.status.success(), "{:?}", output.stderr);
+    assert_eq!(output.stdout, expected);
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn expression_file_failures_keep_usage_exit_and_empty_stdout() {
+    let path =
+        std::env::temp_dir().join(format!("jx-source-errors-{}.jsonata", std::process::id()));
+    std::fs::write(&path, b"1+\xff").unwrap();
+    let invalid_utf8 = run(&["-f", path.to_str().unwrap()], b"null\n");
+    std::fs::write(&path, "1+\n").unwrap();
+    let invalid_expression = run(&["--expression-file", path.to_str().unwrap()], b"null\n");
+    std::fs::remove_file(&path).unwrap();
+    let missing_file = run(&["-f", path.to_str().unwrap()], b"null\n");
+    for output in [invalid_utf8, invalid_expression, missing_file] {
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        assert!(!output.stderr.is_empty());
+    }
+}
+
+#[test]
+fn help_describes_limits_exit_policy_and_native_feature() {
+    let output = run(&["--help"], b"");
+    assert!(output.status.success());
+    let help = String::from_utf8(output.stdout).unwrap();
+    for option in [
+        "--expression-file",
+        "--max-record-bytes",
+        "--max-output-bytes",
+        "--max-work",
+        "--version",
+        "Exit codes:",
+    ] {
+        assert!(help.contains(option), "{option}");
+    }
+    assert_eq!(help.contains("--jit"), cfg!(feature = "jit"));
+    #[cfg(not(feature = "jit"))]
+    assert_eq!(run(&["--jit", "$"], b"null\n").status.code(), Some(2));
 }
