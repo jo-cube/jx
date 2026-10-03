@@ -29,6 +29,7 @@ impl Bindings {
 #[derive(Clone)]
 struct Row<'e, 'i> {
     value: Value<'e, 'i>,
+    object_context: bool,
     bindings: Rc<crate::runtime::BindingValues<'e, 'i>>,
 }
 type Emit<'a, 'e, 'i> = dyn FnMut(Row<'e, 'i>) -> Walk + 'a;
@@ -40,6 +41,30 @@ impl<'e, 'i> Row<'e, 'i> {
             *previous = value;
         } else {
             bindings.push((name, value));
+        }
+    }
+    fn object(&self) -> Value<'e, 'i> {
+        let mut members = Vec::with_capacity(self.bindings.len() + 1);
+        members.push((
+            Value::StringLiteral(crate::RawJson("\"@\"")),
+            self.value.clone(),
+        ));
+        members.extend(
+            self.bindings
+                .iter()
+                .map(|(name, value)| (Value::from_string(*name), value.clone())),
+        );
+        Value::object(members)
+    }
+    fn stage<T>(&self, outer: &Context<'e, 'i>, run: impl FnOnce(&Context<'e, 'i>) -> T) -> T {
+        if self.object_context {
+            run(&Context {
+                value: self.object(),
+                wrapped: false,
+                scope: outer.scope.clone(),
+            })
+        } else {
+            self.scoped(outer, run)
         }
     }
     fn scoped<T>(&self, outer: &Context<'e, 'i>, run: impl FnOnce(&Context<'e, 'i>) -> T) -> T {
@@ -64,17 +89,6 @@ pub(crate) fn active(node: &Node) -> bool {
         Kind::Sort(base, _) | Kind::Keep(base, _) | Kind::Filter(base, _) => active(base),
         Kind::Group(base) => crate::provenance::captured(base),
         Kind::Block(items) => items.last().is_some_and(crate::provenance::captured),
-        _ => false,
-    }
-}
-
-// The reference loses its tuple marker after sorting an existing tuple stream.
-// A following map restores it; direct grouping would expose internal tuple objects.
-pub(crate) fn ends_sorted(node: &Node) -> bool {
-    match &node.kind {
-        Kind::Sort(base, _) => active(base),
-        Kind::Tuples(steps, _) => steps.last().is_some_and(|s| ends_sorted(&s.node)),
-        Kind::Keep(base, _) | Kind::Filter(base, _) => ends_sorted(base),
         _ => false,
     }
 }
@@ -156,6 +170,7 @@ fn source<'e, 'i>(
     View::Operand(&node.run(context)?).candidates(false, &mut |value| {
         output(Row {
             value,
+            object_context: false,
             bindings: bindings.clone(),
         })
     })
@@ -183,6 +198,7 @@ fn route<'e, 'i>(
                     view.candidates(false, &mut |value| {
                         emit(Row {
                             value,
+                            object_context: false,
                             bindings: bindings.clone(),
                         })
                     })
@@ -196,6 +212,7 @@ fn route<'e, 'i>(
                     if multiple {
                         return emit(Row {
                             value,
+                            object_context: false,
                             bindings: bindings.clone(),
                         });
                     }
@@ -203,10 +220,12 @@ fn route<'e, 'i>(
                         multiple = true;
                         emit(Row {
                             value: first,
+                            object_context: false,
                             bindings: bindings.clone(),
                         })?;
                         emit(Row {
                             value,
+                            object_context: false,
                             bindings: bindings.clone(),
                         })
                     } else {
@@ -219,6 +238,7 @@ fn route<'e, 'i>(
                 View::Operand(&Operand::One(value)).candidates(false, &mut |value| {
                     emit(Row {
                         value,
+                        object_context: false,
                         bindings: bindings.clone(),
                     })
                 })?;
@@ -230,6 +250,7 @@ fn route<'e, 'i>(
             if context.wrapped || absolute || focus {
                 emit(Row {
                     value: context.value.clone(),
+                    object_context: false,
                     bindings: bindings.clone(),
                 })
             } else {
@@ -238,6 +259,7 @@ fn route<'e, 'i>(
                     &mut |value| {
                         emit(Row {
                             value,
+                            object_context: false,
                             bindings: bindings.clone(),
                         })
                     },
@@ -279,16 +301,21 @@ fn ordered<'e, 'i>(
     })?;
     let mut keys = crate::ordering::Keys::new(rows.len(), terms);
     let indices = crate::ordering::indices(rows.len(), |a, b| {
-        rows[a].scoped(context, |left| {
-            rows[b].scoped(context, |right| {
+        rows[a].stage(context, |left| {
+            rows[b].stage(context, |right| {
                 keys.compare(a, b, terms, offset, |index, term| {
                     crate::retain::materialize(term, if index == a { left } else { right })
                 })
             })
         })
     })?;
+    // Multi-item sorting drops the reference tuple marker; postfix stages see
+    // objects, while a later map resumes tuple focus. Singleton sorting is inert.
+    let expose = rows.len() > 1;
     for index in indices {
-        output(rows[index].clone())?;
+        let mut row = rows[index].clone();
+        row.object_context |= expose;
+        output(row)?;
     }
     Ok(())
 }

@@ -37,7 +37,6 @@ fn parse(source: &str, dynamic: bool, bindings: &[Box<str>]) -> Result<Expressio
     crate::provenance::prepare(&mut root)?;
     crate::analysis::prepare(&mut root, dynamic, bindings)?;
     crate::compile::prepare(&mut root);
-    crate::analysis::check_composition(&mut root)?;
     crate::plan::prepare(&mut root);
     let runtime = crate::analysis::requires_runtime(&mut root);
     let acquisition = crate::function::acquire::prepare(&root);

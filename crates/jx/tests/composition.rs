@@ -127,7 +127,6 @@ fn validation_and_error_order_are_preserved() {
     for source in [
         "$min(?)({})",
         "$max(?)({})",
-        "$abs(?)('2')",
         "$map(?,$abs)(2)",
         "$string(?)(1)",
     ] {

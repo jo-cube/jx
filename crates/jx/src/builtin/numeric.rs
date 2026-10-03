@@ -57,3 +57,82 @@ pub(crate) fn round(n: f64, p: f64) -> f64 {
         shift(shift(n, p as i32).round_ties_even(), -(p as i32))
     }
 }
+
+// Signature-bypassing native partials use ECMAScript numeric coercion. This is
+// deliberately separate from strict $number and ordinary numeric signatures.
+pub(super) fn native_number(value: &Value<'_, '_>, offset: usize) -> Result<f64, crate::Error> {
+    Ok(match value.atomic() {
+        Value::Number(n) => n,
+        Value::Boolean(b) => f64::from(b),
+        Value::Null => 0.0,
+        Value::Undefined => f64::NAN,
+        value if value.string_body().is_some() => {
+            let Ok(text) = value.as_str() else {
+                return Ok(f64::NAN);
+            };
+            let text = text
+                .as_deref()
+                .unwrap()
+                .trim_matches(|c: char| matches!(c, '\u{0009}'..='\u{000d}' | '\u{0020}' | '\u{00a0}' | '\u{1680}' | '\u{2000}'..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}'));
+            if text.is_empty() {
+                0.0
+            } else if matches!(text, "Infinity" | "+Infinity") {
+                f64::INFINITY
+            } else if text == "-Infinity" {
+                f64::NEG_INFINITY
+            } else if let Some((digits, radix)) = text
+                .strip_prefix("0x")
+                .or_else(|| text.strip_prefix("0X"))
+                .map(|s| (s, 16))
+                .or_else(|| {
+                    text.strip_prefix("0o")
+                        .or_else(|| text.strip_prefix("0O"))
+                        .map(|s| (s, 8))
+                })
+                .or_else(|| {
+                    text.strip_prefix("0b")
+                        .or_else(|| text.strip_prefix("0B"))
+                        .map(|s| (s, 2))
+                })
+            {
+                if digits.is_empty() {
+                    f64::NAN
+                } else {
+                    digits
+                        .chars()
+                        .try_fold(0.0, |n, ch| {
+                            ch.to_digit(radix).map(|d| n * radix as f64 + d as f64)
+                        })
+                        .unwrap_or(f64::NAN)
+                }
+            } else if text
+                .bytes()
+                .any(|b| b.is_ascii_alphabetic() && !matches!(b, b'e' | b'E'))
+            {
+                f64::NAN
+            } else {
+                text.parse().unwrap_or(f64::NAN)
+            }
+        }
+        value if value.is_array() => {
+            let mut items = value.elements();
+            match (items.next(), items.next()) {
+                (None, _) => 0.0,
+                (Some(item), None) => match item.atomic() {
+                    Value::Boolean(_) => f64::NAN,
+                    Value::Null | Value::Undefined => 0.0,
+                    Value::Number(0.0) => 0.0,
+                    _ => return native_number(&item, offset),
+                },
+                _ => f64::NAN,
+            }
+        }
+        _ => {
+            return Err(crate::Error::new(
+                crate::ErrorKind::UnsupportedExpression,
+                offset,
+                "native object/function numeric coercion is deferred",
+            ));
+        }
+    })
+}

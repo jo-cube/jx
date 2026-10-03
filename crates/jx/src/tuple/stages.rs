@@ -58,6 +58,7 @@ pub(super) fn pipeline<'e, 'i>(
                 .candidates(false, &mut |value| {
                     let mut next = row.clone();
                     next.value = value;
+                    next.object_context = false;
                     selected(next)
                 })
             })
@@ -104,7 +105,7 @@ fn filter<'e, 'i>(
     if boolean(predicate) || matches!(predicate.kind, Kind::Number(n) if n >= 0.0) {
         let mut index = 0;
         transform(input, |row| {
-            let result = select(&row, predicate, context, index, 0, output);
+            let result = select(&row, predicate, context, (index, 0), output);
             index += 1;
             result
         })
@@ -115,7 +116,7 @@ fn filter<'e, 'i>(
             Ok(())
         })?;
         for (index, row) in rows.iter().enumerate() {
-            select(row, predicate, context, index, rows.len(), output)?;
+            select(row, predicate, context, (index, rows.len()), output)?;
         }
         Ok(())
     }
@@ -124,11 +125,11 @@ fn select<'e, 'i>(
     row: &Row<'e, 'i>,
     predicate: &'e Node,
     context: &Context<'e, 'i>,
-    index: usize,
-    length: usize,
+    position: (usize, usize),
     output: &mut Emit<'_, 'e, 'i>,
 ) -> Walk {
-    row.scoped(context, |context| {
+    let (index, length) = position;
+    row.stage(context, |context| {
         let value = predicate.run(context)?;
         crate::filter::select(&value, predicate.offset, index, || Ok(length), &mut || {
             output(row.clone())

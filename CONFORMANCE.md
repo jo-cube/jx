@@ -33,7 +33,7 @@ beyond that inventory remain explicit. Errors use local
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures, compiled signatures and tail execution |
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
 | Dynamic evaluation / effects | `$eval` with inherited environment and optional focus; lazy `$random` / `$shuffle` with deterministic injection |
-| Deferred runtime/integration | Native host coercions, asynchronous integration and non-tail recursion beyond resource guards |
+| Deferred runtime/integration | Remaining JavaScript native coercions, asynchronous integration and non-tail recursion beyond resource guards |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments / names | Non-nesting `/* … */` comments; Unicode field/variable names supported |
 | Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null` require backticks; bare `function` / `λ` are names outside lambda syntax |
@@ -123,11 +123,11 @@ Grouping combines both current values and each named binding by key before evalu
 member values. Equal keys from different members still fail. Sorting keeps bindings
 attached to their candidates. The pinned reference ignores a direct `#` on a sort
 that already carries tuples; `^(key)[true]#$i` explicitly indexes the sorted stream.
-Context-dependent predicates, grouping and another sort immediately after sorting an
-existing tuple stream are explicitly deferred: the reference drops its tuple marker
-and exposes internal objects there. Literal predicates remain supported. Insert a
-map (`^(key).$[predicate]` or `^(key).${key:value}`) to restore the binding context.
-Readable cases freeze these boundaries.
+Predicates, grouping and another sort immediately after a multi-item tuple sort see
+ordinary objects containing `@` (the current value) and named binding fields. Lexical
+variables then resolve in the enclosing scope, rather than the candidate bindings.
+Singleton sorting preserves tuple context. A map (`^(key).$[predicate]` or
+`^(key).${key:value}`) restores the binding context. Readable cases freeze these boundaries.
 
 Boolean predicates and nonnegative literal positions stream. Predicates that may
 need the sequence length retain rows once; sorting/grouping also retain their inputs.
@@ -421,7 +421,11 @@ Lambda partials bypass their original signature. Native count reads array/string
 length (UTF-16 for strings), returns zero for missing, reads an object's `length`, and
 returns missing for scalar numbers/booleans; null is a type error. Native zip partials
 take one formal argument, return singleton tuples for arrays and `[]` otherwise.
-Other JavaScript signature-bypass coercions remain runtime `UnsupportedExpression`.
+Native `$abs`, `$floor`, `$ceil`, `$sqrt` and `$power` partials coerce primitive and
+array inputs using ECMAScript numeric rules: null/booleans, surrounding ECMAScript
+whitespace, radix strings and empty/singleton arrays. Invalid numeric text or
+multielement arrays produce NaN; ordinary calls keep strict signatures. Object/function
+coercion and other signature-bypass coercions remain runtime `UnsupportedExpression`.
 Native `$string` partials are deferred because the pinned reference cannot represent
 its default parameter; use `$string` as a callback or wrap it in a lambda.
 
@@ -466,7 +470,8 @@ Limits and explicit policies:
   array members, or in object members, are rejected at compile time. Use member-local
   parenthesized blocks; race-dependent shared assignment is deferred.
 - `Value::Function` is opaque. `write_compact` and the CLI reject function output because
-  it has no JSON encoding. Host function registration/invocation remains deferred.
+  it has no JSON encoding. Synchronous host callbacks use the [embedding API](docs/embedding.md);
+  asynchronous integration remains deferred.
 
 ### User signatures and tail calls
 
@@ -638,7 +643,9 @@ Date rendering supports Gregorian components, names, widths, ordinals, ISO week/
 month components, fractional milliseconds, escaped brackets and timezone pictures.
 Pictured parsing handles separated/adjacent integer fields, names, timezones and
 leading/trailing defaults; missing matches produce missing, interior gaps fail.
-Default parsing accepts the reference ISO grammar with explicit UTC/offset timestamps
+Unicode picture literals support pictured parsing as well as formatting; supplementary
+letters retain exact legacy UTF-16 matching rather than Unicode case folding. Default
+parsing accepts the reference ISO grammar with explicit UTC/offset timestamps
 and date-only forms. Invalid calendar components preserve computed NaN (JSON output
 is null), distinct from no match. `$now` and `$millis` share a timestamp per evaluation.
 
@@ -649,8 +656,8 @@ use the reference's 1900 offset. ISO-week parsing fails with the same D3136 cate
 upstream. Non-finite decimal output follows the reference's picture-dependent strings.
 
 Explicit boundaries: host-local ISO times without a timezone; legacy fractional
-date-only syntax; lone-surrogate picture/subject text; non-ASCII case-insensitive date
-pictures and dotless-i/long-s subjects; multi-unit decimal syntax symbols; large fixed
+date-only syntax; lone-surrogate picture/subject text; dotless-i/long-s and Greek extended
+aliases in case-insensitive date pictures/subjects; multi-unit decimal syntax symbols; large fixed
 integer/decimal/radix output (absolute value ≥10²¹); non-finite exponent, word or infinite
 alphabetic/Roman rendering; and legacy week/day derivation in years 0–99 are deferred.
 Huge padding/Roman outputs and exponent overflow have tested resource guards. Fraction
@@ -693,10 +700,13 @@ function: JSON output still rejects it; select its JSON members or use `$match`.
 
 Explicit boundaries: native regex calls require string subjects and numeric offsets;
 JavaScript argument coercions and literal-string replacement by a function are
-unsupported. The engine's legacy `/i` folding differs for dotless-i/long-s:
-case-insensitive patterns containing non-ASCII source or `\u` escapes are rejected
-at compilation, and subjects containing U+0131/U+017F raise `UnsupportedExpression`
-when matched under `/i`. Case-sensitive Unicode and surrogate patterns are supported.
+unsupported. The dependency's legacy `/i` folding differs for dotless-i/long-s and Greek
+extended lowercase aliases:
+patterns containing U+0131/U+017F, U+1F80–1F87, U+1F90–1F97, U+1FA0–1FA7,
+U+1FB3/U+1FC3/U+1FF3 (literals, escapes or ranges) are rejected at compilation;
+subjects containing those units raise `UnsupportedExpression`
+when matched under `/i`. Other Unicode, escapes, classes and backreferences are supported,
+including case-insensitive matching. Case-sensitive surrogate patterns remain supported.
 `g`/`u`/`s` flags are not JSONata literal syntax. Dynamic regex construction, engine
 extensions, and regex timeouts remain deferred. The
 [matcher corpus](tests/semantics/matchers.json), retention regressions, imported groups
@@ -796,6 +806,7 @@ node scripts/check-functions.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-effects.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-consolidation.cjs /tmp/jsonata-reference target/release/jx
 node scripts/check-regions.cjs /tmp/jsonata-reference target/release/jx
+node scripts/check-compatibility.cjs /tmp/jsonata-reference target/release/jx
 ```
 
 It checks the 42 readable cases and 5,894 deterministic generated/curated path
@@ -936,3 +947,21 @@ resource ceilings remain. Opt-in work/item/result/byte/stack/tail limits, deadli
 cancellation are cooperative; configured plans use their tree source. Validation precedes
 control failures/effects. Regex/host calls cannot be interrupted mid-call; output preflight
 cannot undo already completed construction. See [embedding contracts](docs/embedding.md).
+
+## Residual compatibility and robustness
+
+[The compatibility corpus](tests/semantics/compatibility.json) freezes 66 cases beyond
+the pinned inventory: Unicode `/i`/pictured dates, native numeric partial coercion and
+post-sort tuple context. The optional compatibility differential adds Unicode subject,
+coercion and tuple-width matrices: **422** comparisons, bringing all 25 suites to
+**54,685** comparisons. Pinned classifications remain unchanged.
+
+`just robustness` runs seeded parser/JSON/picture mutations, serialization and owned
+snapshot properties, native/interpreter shape parity and shared-code lifetime tests.
+Embedding tests cover cancellation during host calls, expired deadlines, escaping
+dynamic programs and recovery after errors. The optional [coverage-guided target](fuzz/README.md)
+shares the bounded runtime harness; arbitrary expressions are compiled rather than
+executed with uninterruptible regex work. These checks extend evidence, not a claim
+that cooperative controls safely sandbox arbitrary hostile code. CI is configured for
+normal/native builds on Linux, macOS and Windows; actual local platform runs are recorded in
+[performance evidence](benchmarks/m29/environment.json).

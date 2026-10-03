@@ -115,7 +115,7 @@ fn complete_validation_precedes_matcher_execution() {
 
 #[test]
 fn legacy_case_folding_and_native_coercion_are_explicitly_deferred() {
-    for source in ["/é/i", r"/\u0061/i", "/ſ/i", "/ı/i"] {
+    for source in ["/ſ/i", "/ı/i", r"/\u0131/i", "/[Ā-ƀ]/i"] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression
@@ -138,6 +138,24 @@ fn legacy_case_folding_and_native_coercion_are_explicitly_deferred() {
     for source in ["//", "/a", "/a/g", "/a/ii", "/a/mm", "/(/", "/[a-/"] {
         assert_eq!(
             jx::compile(source).unwrap_err().kind,
+            jx::ErrorKind::UnsupportedExpression
+        );
+    }
+}
+
+#[test]
+fn legacy_greek_simple_uppercase_aliases_remain_explicitly_unsupported() {
+    for pattern in ["/ᾀ/i", "/ᾄ/i", "/ᾳ/i", "/\\u1f80/i", "/[ᾀ-᾿]/i"] {
+        assert_eq!(
+            jx::compile(pattern).unwrap_err().kind,
+            jx::ErrorKind::UnsupportedExpression
+        );
+    }
+    for unit in ['ᾀ', 'ᾔ', 'ᾧ', 'ᾳ', 'ῃ', 'ῳ'] {
+        let expression = jx::compile("$contains(text,/./i)").unwrap();
+        let input = serde_json::json!({"text":unit.to_string()}).to_string();
+        assert_eq!(
+            expression.evaluate(input.as_bytes()).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression
         );
     }

@@ -8,7 +8,11 @@ use crate::{Error, sequence::Context};
 #[derive(Clone, Debug)]
 pub(in crate::format) enum Parser {
     Iso,
-    Picture { date: Date, matcher: regress::Regex },
+    Picture {
+        date: Date,
+        matcher: regress::Regex,
+        astral_literals: bool,
+    },
 }
 fn escape(text: &str) -> String {
     let mut out = String::new();
@@ -26,10 +30,10 @@ impl Parser {
             return Ok(Self::Iso);
         };
         let date = Date::new(picture, offset)?;
-        if !picture.is_ascii() {
+        if !crate::matcher::legacy_case_safe_text(picture) {
             return Err(super::super::unsupported(
                 offset,
-                "non-ASCII case-insensitive date pictures are deferred",
+                "legacy date picture folding for dotless-i/long-s and Greek extended aliases is deferred",
             ));
         }
         let mut pattern = String::from("^");
@@ -66,7 +70,15 @@ impl Parser {
         pattern.push('$');
         let matcher =
             regress::Regex::with_flags(&pattern, "i").map_err(|_| error(offset, "D3135"))?;
-        Ok(Self::Picture { date, matcher })
+        let astral_literals = date
+            .parts
+            .iter()
+            .any(|p| matches!(p, Part::Literal(s) if s.chars().any(|c| c.len_utf16() == 2)));
+        Ok(Self::Picture {
+            date,
+            matcher,
+            astral_literals,
+        })
     }
     pub fn needs_clock(&self) -> bool {
         match self {
@@ -92,18 +104,38 @@ impl Parser {
         context: &Context<'_, '_>,
         offset: usize,
     ) -> Result<Option<f64>, Error> {
-        let Self::Picture { date, matcher } = self else {
+        let Self::Picture {
+            date,
+            matcher,
+            astral_literals,
+        } = self
+        else {
             return iso(text, offset).map(Some);
         };
-        if text.contains(['\u{0131}', '\u{017f}']) {
+        if !crate::matcher::legacy_case_safe_text(text) {
             return Err(super::super::unsupported(
                 offset,
-                "legacy date matcher case folding is deferred for dotless-i and long-s",
+                "legacy date matcher case folding for dotless-i/long-s and Greek extended aliases is deferred",
             ));
         }
         let Some(found) = matcher.find(text) else {
             return Ok(None);
         };
+        // This parser uses UTF-8 matching. Legacy ECMAScript /i cannot fold
+        // supplementary UTF-16 pairs, so check those literal matches exactly.
+        if *astral_literals
+            && date.parts.iter().enumerate().any(|(i, part)| {
+                let Part::Literal(literal) = part else {
+                    return false;
+                };
+                literal
+                    .chars()
+                    .zip(text[found.group(i + 1).unwrap()].chars())
+                    .any(|(a, b)| (a.len_utf16() == 2 || b.len_utf16() == 2) && a != b)
+            })
+        {
+            return Ok(None);
+        }
         let mut fields = [None; 128];
         let mut any = false;
         for (i, part) in date.parts.iter().enumerate() {

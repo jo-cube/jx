@@ -255,6 +255,26 @@ impl Library {
             return crate::convert::number(args.first().cloned().flatten(), offset)
                 .map(|value| value.map_or(Operand::Missing, Operand::One));
         }
+        if matches!(
+            self,
+            Self::Abs | Self::Floor | Self::Ceil | Self::Sqrt | Self::Power
+        ) {
+            if args
+                .first()
+                .and_then(Option::as_ref)
+                .is_none_or(|v| matches!(v, Value::Undefined))
+            {
+                return Ok(Operand::Missing);
+            }
+            let mut numbers = [None, None];
+            for (slot, value) in numbers.iter_mut().zip(args) {
+                *slot = value
+                    .as_ref()
+                    .map(|v| super::numeric::native_number(v, offset).map(Value::Number))
+                    .transpose()?;
+            }
+            return self.values(&numbers[..args.len()], context, offset);
+        }
         let (params, _, _) = self.signature();
         // Upstream native partials bypass signatures and array promotion. Keep
         // supported typed calls exact; do not emulate arbitrary JavaScript coercion.

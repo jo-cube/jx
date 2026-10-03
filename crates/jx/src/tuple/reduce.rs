@@ -8,7 +8,7 @@ pub(super) fn evaluate<'e, 'i>(
 ) -> Result<Value<'e, 'i>, Error> {
     let mut groups = crate::construct::Groups::new(pairs.len());
     match walk(base, context, &mut |row| {
-        row.scoped(context, |local| {
+        row.stage(context, |local| {
             groups.add(pairs, local, Some(row.clone()), offset)
         })
         .map_err(Halt::Evaluation)
@@ -17,8 +17,23 @@ pub(super) fn evaluate<'e, 'i>(
         Err(Halt::Stop) => unreachable!(),
         Ok(()) => {}
     }
-    groups.finish(pairs, |(first, rest), value| {
+    groups.finish(pairs, |(first, rest), value_node| {
         let first = first.unwrap();
+        if first.object_context {
+            let value = if rest.is_empty() {
+                first.object()
+            } else {
+                append(std::iter::once(&first).chain(&rest).map(Row::object))
+            };
+            return crate::retain::materialize(
+                value_node,
+                &Context {
+                    value,
+                    wrapped: false,
+                    scope: context.scope.clone(),
+                },
+            );
+        }
         let mut merged = first.clone();
         if !rest.is_empty() {
             let rows = || std::iter::once(&first).chain(&rest);
@@ -40,7 +55,9 @@ pub(super) fn evaluate<'e, 'i>(
             }
             merged.bindings = Rc::new(bindings);
         }
-        merged.scoped(context, |local| crate::retain::materialize(value, local))
+        merged.scoped(context, |local| {
+            crate::retain::materialize(value_node, local)
+        })
     })
 }
 fn append<'e, 'i>(values: impl Iterator<Item = Value<'e, 'i>>) -> Value<'e, 'i> {

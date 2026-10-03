@@ -5,6 +5,7 @@ mod text;
 use crate::{
     Error, ErrorKind, Function, Value, evaluate::Operand, function::FunctionKind, value::type_error,
 };
+pub(crate) use pattern::legacy_case_safe_text;
 pub(crate) use processing::call;
 use std::{cell::Cell, rc::Rc};
 use text::Text;
@@ -23,10 +24,9 @@ impl Pattern {
                 "invalid regex literal",
             ));
         }
-        // regress does not exclude non-ASCII -> ASCII uppercase folds in legacy
-        // /i mode. Restrict patterns that could introduce such equivalences.
+        // Keep the dependency's known legacy-fold mismatches explicit.
         let legacy_icase = flags.contains('i');
-        if legacy_icase && (!source.is_ascii() || source.contains(r"\u")) {
+        if legacy_icase && !pattern::legacy_case_safe(source) {
             return Err(legacy_case_error(offset));
         }
         regress::Regex::from_unicode(pattern::units(source).into_iter(), flags)
@@ -204,6 +204,6 @@ fn legacy_case_error(offset: usize) -> Error {
     Error::new(
         ErrorKind::UnsupportedExpression,
         offset,
-        "legacy regex case folding for non-ASCII patterns or dotless-i/long-s is deferred",
+        "legacy regex case folding for dotless-i/long-s and Greek extended aliases is deferred",
     )
 }

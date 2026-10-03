@@ -80,17 +80,7 @@ fn cancellation_stops_scoped_stages_before_later_errors() {
 
 #[test]
 fn invalid_bindings_and_parent_navigation_remain_explicit() {
-    for expression in [
-        "a@name",
-        "a#name",
-        "a[0]@$x",
-        "a^(id)@$x",
-        "a#$$",
-        r#"a#$i^($i){"positions":$i}"#,
-        r#"a#$i^($i)[true]{"positions":$i}"#,
-        "a#$i^(v)[v>1].$i",
-        "a#$i^(v)^(>$i).$i",
-    ] {
+    for expression in ["a@name", "a#name", "a[0]@$x", "a^(id)@$x", "a#$$"] {
         assert_eq!(
             jx::compile(expression).unwrap_err().kind,
             jx::ErrorKind::UnsupportedExpression,

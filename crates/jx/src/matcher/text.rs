@@ -23,10 +23,10 @@ impl<'e, 'i> Text<'e, 'i> {
     }
     pub fn check_case(&self, icase: bool, offset: usize) -> Result<(), Error> {
         if icase
-            && self
-                .units
-                .as_ref()
-                .is_some_and(|u| u.iter().any(|&u| matches!(u, 0x131 | 0x17f)))
+            && self.units.as_ref().is_some_and(|u| {
+                u.iter()
+                    .any(|&u| super::pattern::unsupported_case_fold(u32::from(u)))
+            })
         {
             return Err(super::legacy_case_error(offset));
         }

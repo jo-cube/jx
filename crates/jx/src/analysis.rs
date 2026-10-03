@@ -290,47 +290,6 @@ fn mutates_scope(node: &Node) -> bool {
     }
 }
 
-// Scoped sorting in the pinned reference loses the tuple marker until the next
-// map. Keep that host-internal representation out of the value model explicitly.
-pub(crate) fn check_composition(root: &mut Node) -> Result<(), crate::Error> {
-    fn literal(node: &Node) -> bool {
-        matches!(
-            node.kind,
-            Kind::Number(_)
-                | Kind::Boolean(_)
-                | Kind::Null
-                | Kind::String(_)
-                | Kind::Missing
-                | Kind::Prepared(_)
-        )
-    }
-    let mut invalid = None;
-    visit(root, &mut |node| {
-        let unsupported = match &node.kind {
-            Kind::Reduce(base, _) | Kind::Sort(base, _) => crate::tuple::ends_sorted(base),
-            Kind::Filter(base, predicates) => {
-                crate::tuple::ends_sorted(base) && predicates.iter().any(|p| !literal(p))
-            }
-            Kind::Tuples(steps, _) => steps.iter().any(|step| {
-                crate::tuple::ends_sorted(&step.node) && step.predicates.iter().any(|p| !literal(p))
-            }),
-            _ => false,
-        };
-        if unsupported {
-            invalid = Some(node.offset);
-        }
-    });
-    if let Some(offset) = invalid {
-        Err(crate::Error::new(
-            crate::ErrorKind::UnsupportedExpression,
-            offset,
-            "context operations immediately after tuple sorting are deferred; insert .$ first",
-        ))
-    } else {
-        Ok(())
-    }
-}
-
 pub(crate) fn own_clock(kind: &Kind) -> bool {
     match kind {
         Kind::Eval(call) => call.needs_clock(),
