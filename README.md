@@ -1,24 +1,34 @@
 # jx
 
-A Rust JSONata engine for compiling once and evaluating independent JSON records.
-It supports the large majority of practical JSONata: navigation, sequences, operators,
-filters, aggregates, constructors, lexical functions, grouping/sorting, regex, pictures,
-parent navigation, transforms and dynamic evaluation. The pinned 2.2.0 language corpus
-has 1,679 asserted outcomes, including one documented recursion guard. See
-[compatibility boundaries](CONFORMANCE.md); passing this corpus is not a claim of
-complete compatibility with every JavaScript host behavior.
+A Rust JSONata engine and streaming CLI for compiling expressions once and evaluating
+independent JSON records. Input stays borrowed where possible; validation covers the
+entire record before any result or effect. No general input DOM is required.
 
-Rust **1.98.1**, edition 2024. APIs are still unstable. The library and CLI use safe Rust;
-optional native numeric kernels have a separate, bounded executable-code boundary.
+The pinned JSONata 2.2.0 language corpus has **1,679 asserted outcomes**: 1,390 results,
+288 mapped errors and one documented non-tail recursion guard. Compatibility beyond
+that corpus is explicit. Rust **1.98.1**, edition 2024; MIT licensed. APIs remain unstable.
+
+## Install and use
+
+From a checkout of this repository:
 
 ```sh
-just all
-just build
-printf '%s\n' '{"customer":{"id":42}}' | target/release/jx 'customer.id'
-target/release/jx '{"total":$sum(orders[price>10].price),"ids":[orders.id]}' records.ndjson
-target/release/jx -f transform.jsonata records.ndjson
-target/release/jx --max-record-bytes 1048576 --max-output-bytes 16777216 '$' records.ndjson
+cargo install --path crates/jx-cli --locked
+printf '%s\n' '{"customer":{"id":42}}' | jx 'customer.id'
+jx '{"total":$sum(orders[price>10].price),"ids":[orders.id]}' records.ndjson
+jx -f transform.jsonata records.ndjson
 ```
+
+The CLI streams NDJSON from stdin and files with bounded reusable buffers and synchronous
+backpressure. Missing emits no line; sequences emit one line per item; arrays remain one
+value. Each result is serialized completely before its line is published. See the
+[CLI reference](docs/cli.md) for limits, exit codes, quoting and failure behavior.
+
+Binary archives/checksums can be prepared for Linux, macOS and Windows with the
+[release workflow](docs/releases.md). Publication is a separate maintainer action;
+this repository's workflows never publish crates or create GitHub Releases.
+
+## Embed
 
 ```rust
 let expression = jx::compile("price * quantity")?;
@@ -27,45 +37,33 @@ assert_eq!(value.unwrap().as_number(), Some(7.5));
 # Ok::<(), jx::Error>(())
 ```
 
-`evaluate` validates the entire UTF-8 JSON record before exposing any result. Missing
-emits nothing; null is a value; arrays are one value; sequences stream their items.
-`for_each` and `try_for_each` avoid collection, and consumer failure stops later work.
-Scalar/lexical expressions may finish before consumption; streamed evaluation failures
-can follow earlier values. `single` requires at most one result. `collect_owned` is
-an explicit materialization boundary for results that must outlive input/expression.
+Compiled expressions are `Send + Sync`; evaluations have independent local state.
+`for_each` / `try_for_each` consume streamed results, decoded accessors preserve borrowing,
+and `collect_owned` explicitly detaches snapshots. Declare external bindings before
+compilation; synchronous host callbacks remain effectful. The [embedding guide](docs/embedding.md)
+and runnable [examples](crates/jx/examples) cover ownership, contexts, diagnostics and
+cooperative resource controls. See [compatibility and limits](docs/compatibility.md)
+before running untrusted expressions.
 
-Use `value_type`, `as_number`, `as_bool`, `as_str`, `get`, `array_items` and
-`object_entries` across all storage forms. Unescaped strings borrow; decoded escapes
-allocate. Isolated UTF-16 surrogates use `string_units` rather than Rust `str`.
-`write_compact` preserves raw number/escape spelling; JSONata `$string` has its own
-conversion rules. Constructed containers retain borrowed leaves. No input DOM is
-required, and ordinary paths/scalar plans retain zero-allocation execution.
+## Features and performance
 
-[Embedding guide](docs/embedding.md) covers external bindings, synchronous host
-callbacks, focus/absent input, ownership, diagnostics and cooperative resource limits.
-Compiled expressions are `Send + Sync`; each evaluation owns its lexical/effect state.
-Declare external names with `CompileOptions` before compilation so builtin shadowing,
-constant folding, plans and native execution remain correct. Host calls are always
-effectful; there is no host purity override or async framework.
+Default features are empty. Ordinary Cargo builds and `just build` do not compile
+Cranelift. The optional `jit` feature builds a bounded native backend; execution also
+requires `--jit` or `Expression::enable_native()`. Interpreter fallback remains in place.
+Supported native targets are x86_64 Linux/macOS/Windows and aarch64 Linux/macOS.
 
-The CLI compiles once and streams stdin/files (`-` means stdin) with synchronous
-backpressure. Blank lines are ignored; the final line may omit LF. Options precede the
-expression or `-f`; `--` allows expressions beginning with `-`. `--version` prints the
-version. Input defaults to 1 MiB per record, excluding LF and including CR/whitespace;
-output defaults to 16 MiB per result, excluding LF. Both buffers are reused across files.
-Each result is serialized completely before its NDJSON line is published. A failed
-result leaves no partial line; earlier complete results remain visible. An underlying
-I/O failure can still interrupt a write. `--max-work N` enables cooperative controls
-with the other default library limits. Engine retention/construction can require more
-memory than the I/O buffers. Usage/compilation errors exit 2; record/I/O errors exit 1;
-broken pipes exit 0. Diagnostics include file/record context and error phase.
+Numeric loops benefit most; large scanning-dominated records generally do not. Allocation
+depends on the expression: ordinary paths/scalar plans can allocate nothing per record,
+while constructors, callbacks and retained results may allocate. The [current performance
+summary](docs/performance.md) gives scoped measurements and links to reproducible evidence.
 
-Native acceleration stays opt-in: build with `cargo build -p jx-cli --release --features jit --locked`, then pass `--jit`, or call `enable_native()` on a compiled expression.
-Unsupported regions and guards retain interpreter/tree fallback. Numeric loops benefit;
-scanning-dominated records generally do not. The core library has no Cranelift dependency
-unless `jit` is enabled. The workspace build/check also exercises the native crate.
+## Develop
 
-`just` lists developer commands. `just robustness` runs boundary properties; optional
-[coverage-guided fuzzing](fuzz/README.md) extends them. [Architecture](ARCHITECTURE.md),
-[conformance](CONFORMANCE.md), [performance](PERFORMANCE.md) and
-[agent guidance](AGENTS.md) describe implementation boundaries and evidence.
+`just all` runs formatting, strict Clippy, default/native tests, conformance, packaging
+tests and allocation-asserting benchmark smoke. `just build`, `just bench`, `just robustness`
+and `just package` provide focused checks. `just package` assembles/verifies source
+archives only. CI separates default/native builds on Linux, macOS and Windows.
+
+[Architecture](ARCHITECTURE.md), [conformance inventory](CONFORMANCE.md),
+[detailed performance evidence](PERFORMANCE.md) and [agent guidance](AGENTS.md) describe
+the implementation. Coverage-guided fuzzing is documented [separately](fuzz/README.md).

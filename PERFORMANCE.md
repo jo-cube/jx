@@ -1,5 +1,8 @@
 # Performance
 
+For users, start with the [current performance summary](docs/performance.md). Detailed
+measurements below retain their workload/version context; they are not general claims.
+
 Optimize compile-once/evaluate-many execution, especially independent 500 B–1 KiB
 records. Report scoped measurements rather than general speed claims. Input validation,
 output construction and semantic work all count in end-to-end throughput.

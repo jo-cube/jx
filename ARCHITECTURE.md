@@ -134,7 +134,10 @@ filenames, line numbering, exit policy and expression-file loading.
 
 Keep compatibility boundaries and boundary-failure tests current. Seeded properties run
 with ordinary tests; optional coverage-guided fuzzing shares their bounded harness.
-Cross-platform CI is configured for default/native builds; unsafe invocation remains isolated.
+Default workspace members exclude the native crate; engine/CLI native features and execution
+remain separate opt-ins. Versioned path dependencies and independent source packages keep
+publication separate from binary artifact preparation. Cross-platform CI tests default/native
+builds separately; unsafe invocation remains isolated. See [release policy](docs/releases.md).
 Keep pure tree/plan and native layers separate. Remaining string callback projections,
 nonprimitive dynamic bridges, genuine captured lifetimes and unplanned traversal need
 specific measurements before caching, garbage collection or further lowering.

@@ -1,5 +1,23 @@
 # Embedding jx
 
+From a checkout, run `cargo run -p jx --example embedding --locked`, or pipe NDJSON
+to `cargo run -p jx --example stream --locked -- 'price*quantity'`. The examples use
+only public APIs; the stream example expects bounded trusted input, while the CLI
+enforces byte limits during reading. Add `jx` as a path/git dependency pinned to your
+reviewed revision until registry publication is deliberately chosen. Default features
+are empty; enable `jit` and call `enable_native()` once for optional numeric acceleration.
+
+For a local checkout in an external Rust application:
+
+```toml
+[dependencies]
+jx = { path = "/path/to/jx/crates/jx" }
+```
+
+A Git dependency can instead name this repository and a reviewed `rev`. The crates.io
+name `jx` belongs to a different project; do not use a registry dependency until this
+engine deliberately publishes under its chosen package name.
+
 Compile once, share `Expression` (or `Arc<Expression>`) across callers, and evaluate
 independent borrowed byte records. Evaluations and runtime values are local to a caller;
 `OwnedValue` snapshots are `Send + Sync` and independent of input and expression storage.

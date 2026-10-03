@@ -2,8 +2,8 @@
 
 Semantic authority: [official language documentation](https://docs.jsonata.org/overview.html)
 and the [upstream suite](https://github.com/jsonata-js/jsonata/tree/v2.2.0/test/test-suite).
-The large majority of the pinned language corpus passes; compatibility boundaries
-beyond that inventory remain explicit. Errors use local
+Every pinned language case has an asserted result, mapped error or explicit resource
+guard; compatibility boundaries beyond that inventory remain explicit. Errors use local
 `ErrorKind` values and byte offsets; upstream diagnostic codes are deferred.
 
 | Area | Current behavior / status |
@@ -740,19 +740,12 @@ embedding, asynchronous API and parser-recovery tests are outside this inventory
 | Blocked compatibility | 0 | All prior blockers promoted |
 | Recursion guard | 1 | Non-tail factorial exceeds the bounded stack |
 
-M22 promotes all **16** remaining `$eval`/randomness cases: **14** results and **2**
-mapped errors. The sole local limit is non-tail factorial; no language case is blocked.
-M21 promotes **48** signature/tail/guard cases: **38** results and **10** mapped errors.
-All signature cases and finite tail-recursive cases pass; one non-tail factorial
-remains an explicit local limit. Infinite tail recursion asserts an execution-budget
-error rather than a stack-depth error.
-M20 promotes all **333** number/integer/base/date family cases: **298** results and
-**35** mapped errors. Picture/date boundaries outside that pinned corpus remain explicit below.
-The legacy singular `transform` group is now entirely supported: its 104 cases
-exercise ordinary queries/constructors; structural updates live in `transforms`.
-M19 promoted **142** cases that the baseline already handled (73 results, 69 mapped errors),
-then added helper coverage, corrected two parser gaps and fixed a syntax-adapter gap. A blocker is not
-counted as a passing upstream case simply because it rejects the expression.
+All finite tail-recursive and signature cases pass. Infinite tail recursion asserts an
+execution-budget error. The sole local limit is non-tail factorial; no language case
+is blocked. The legacy singular `transform` group exercises ordinary queries and
+constructors; structural updates live in `transforms`. Picture/date boundaries beyond
+the pinned corpus remain explicit below. A blocker is not counted as passing merely
+because it rejects an expression.
 
 `tests/conformance/manifest.json` is the reviewed inventory and importer source of
 truth. Every row has an asserted outcome; changing implementation requires promoting
@@ -866,7 +859,7 @@ lexical/focus shape matrices, escaped callable recursion and randomized permutat
 invariants. Eight Rust tests separately assert wrapped diagnostics, compatibility boundaries, deterministic draws, borrowing, skipped
 effects and validation/error ordering. All **19** suites total **50,336** comparisons.
 
-## M23 consolidation regressions
+## Traversal and retention regressions
 
 Language coverage and all 1,679 upstream classifications are unchanged. Five focused
 Rust tests and 18 small reference examples freeze nested flattening, duplicate decoded
@@ -877,7 +870,7 @@ keys and closures. Optimizations retain only replay-safe sort results; no callba
 runtime effect is memoized. Existing resource/embedding boundaries remain explicit. All
 20 differential suites now total 50,839 comparisons.
 
-## M24 pure-region regression coverage
+## Pure-region regression coverage
 
 Language classifications remain **1,390 supported /288 expected errors /1 resource
 limit /0 blockers**, covering all **1,679** upstream cases. Lowering adds no language
@@ -889,7 +882,7 @@ bits and complete errors, including branches, arrays, missing, overflow and wide
 constructors. Integration tests retain full-validation and random draw-order guarantees.
 All 21 differential suites now cover **52,796** comparisons.
 
-## M25 acquisition and lookup regression coverage
+## Acquisition and lookup regression coverage
 
 All **1,679** language classifications remain unchanged. The 38 readable cases in
 `tests/semantics/acquisition.json` cover path arguments, duplicate decoded keys and
@@ -912,7 +905,7 @@ Executable-boundary tests check rejected programs, guards, shared code lifetime 
 final ownership release. `JX_DIFFERENTIAL_JIT=1` selects `--jit` in the optional
 upstream differential runner; it requires a CLI built with `--features jit`.
 
-## M27 runtime-boundary regression coverage
+## Runtime-boundary regression coverage
 
 M27 changes lifetime/dispatch boundaries, with no classification changes. The
 [readable runtime corpus](tests/semantics/runtime.json) and `tests/runtime.rs` cover
