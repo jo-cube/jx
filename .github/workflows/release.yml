@@ -1,84 +1,26 @@
-# Produces downloadable archives only; no tags or GitHub Releases are created.
+# Builds verified run artifacts only; never creates tags, releases or publications.
 name: Release artifacts
+
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Existing commit or tag to build (version comes from Cargo.toml)'
+        description: 'Existing commit, tag or branch to build (version comes from Cargo.toml)'
+        type: string
         required: true
         default: dev
+      differential:
+        description: 'Compare both modes with the pinned upstream implementation'
+        type: boolean
+        default: true
+
 permissions:
   contents: read
+
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            variant: default
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            variant: native
-          - os: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-            variant: default
-          - os: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-            variant: native
-          - os: macos-14
-            target: aarch64-apple-darwin
-            variant: default
-          - os: macos-14
-            target: aarch64-apple-darwin
-            variant: native
-          - os: macos-15-intel
-            target: x86_64-apple-darwin
-            variant: default
-          - os: macos-15-intel
-            target: x86_64-apple-darwin
-            variant: native
-          - os: windows-2022
-            target: x86_64-pc-windows-msvc
-            variant: default
-          - os: windows-2022
-            target: x86_64-pc-windows-msvc
-            variant: native
-    runs-on: ${{ matrix.os }}
-    env:
-      MACOSX_DEPLOYMENT_TARGET: '11.0'
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.98.1
-          targets: ${{ matrix.target }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Build and exercise the selected CLI
-        run: |
-          SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
-          export SOURCE_DATE_EPOCH
-          build_root="$(python3 -c 'import os; print(os.getcwd())')"
-          export RUSTFLAGS="--remap-path-prefix=$build_root=."
-          if [ '${{ matrix.variant }}' = 'native' ]; then
-            cargo build -p jx-cli --release --features jit --locked --target ${{ matrix.target }}
-            cargo test -p jx-cli --features jit --locked --target ${{ matrix.target }}
-          else
-            cargo build -p jx-cli --release --locked --target ${{ matrix.target }}
-            cargo test -p jx-cli --locked --target ${{ matrix.target }}
-          fi
-      - run: python3 scripts/package-release.py --target ${{ matrix.target }} --variant ${{ matrix.variant }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: jx-${{ matrix.target }}-${{ matrix.variant }}
-          path: dist/*
-          if-no-files-found: error
-          retention-days: 14
+  verify:
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ inputs.ref }}
+      artifacts: true
+      differential: ${{ inputs.differential }}
