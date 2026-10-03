@@ -32,7 +32,9 @@ Every input byte is validated, including undemanded fields and untaken branches.
 Compact demand metadata captures required raw spans during validation where possible.
 Repeated planned loads and pure call arguments reuse those captures. Nested demanded
 objects can share a scan; arrays and dynamic navigation use ordinary traversal.
-There is no universal input index or per-record cache.
+Traversal of validated spans locates token boundaries without repeating grammar
+validation. The validator and traversal cursor share path/demand handling; only the
+validator accepts unchecked input. There is no universal input index or per-record cache.
 
 ## Plans and fallback
 

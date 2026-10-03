@@ -18,7 +18,7 @@ impl From<ScanError> for Error {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Selection<'a, 'path> {
     Missing,
     Value(RawJson<'a>),
@@ -32,7 +32,7 @@ pub(crate) fn select<'a, 'path>(
     let text = std::str::from_utf8(input).map_err(|error| {
         Error::new(ErrorKind::InvalidJson, error.valid_up_to(), "invalid UTF-8")
     })?;
-    let mut scanner = Scanner { text, at: 0 };
+    let mut scanner = Scanner::<false> { text, at: 0 };
     scanner.space();
     let selected = scanner.value(0, Some(fields))?;
     scanner.space();
@@ -51,7 +51,7 @@ pub(crate) fn capture<'a>(
     let text = std::str::from_utf8(input).map_err(|error| {
         Error::new(ErrorKind::InvalidJson, error.valid_up_to(), "invalid UTF-8")
     })?;
-    let mut scanner = Scanner { text, at: 0 };
+    let mut scanner = Scanner::<false> { text, at: 0 };
     scanner.space();
     let raw = scanner.capture_value(0, demand, output)?;
     scanner.space();
@@ -61,12 +61,12 @@ pub(crate) fn capture<'a>(
     Ok(raw)
 }
 
-struct Scanner<'a> {
+struct Scanner<'a, const VALIDATED: bool> {
     text: &'a str,
     at: usize,
 }
 
-impl<'a> Scanner<'a> {
+impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
     fn value<'path>(
         &mut self,
         depth: usize,
@@ -74,6 +74,14 @@ impl<'a> Scanner<'a> {
     ) -> Result<Selection<'a, 'path>, ScanError> {
         let start = self.at;
         let remaining = path.filter(|fields| !fields.is_empty());
+        if VALIDATED && remaining.is_none() {
+            let raw = self.raw_value();
+            return Ok(if path.is_some() {
+                Selection::Value(raw)
+            } else {
+                Selection::Missing
+            });
+        }
         let selection = match self.byte() {
             Some(b'{') => {
                 self.open(depth)?;
@@ -228,6 +236,10 @@ impl<'a> Scanner<'a> {
     }
 
     fn string(&mut self) -> Result<(), ScanError> {
+        if VALIDATED {
+            self.skip_string();
+            return Ok(());
+        }
         self.at += 1;
         loop {
             match self.byte() {
@@ -334,18 +346,60 @@ impl<'a> Scanner<'a> {
     }
 }
 
-// These cursors only receive validated RawJson. Reuse the scanner for value
-// boundaries; do not maintain a second JSON grammar for traversal.
-impl<'a> Scanner<'a> {
+// The validation and traversal modes share path/demand handling. Only RawJson
+// cursors use VALIDATED: they locate boundaries without rechecking JSON grammar.
+impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
+    fn skip_string(&mut self) {
+        debug_assert!(VALIDATED);
+        self.at += 1;
+        let bytes = self.text.as_bytes();
+        while bytes[self.at] != b'"' {
+            if bytes[self.at] == b'\\' {
+                self.at += 1;
+            }
+            self.at += 1;
+        }
+        self.at += 1;
+    }
+
     fn raw_value(&mut self) -> RawJson<'a> {
+        debug_assert!(VALIDATED);
         let start = self.at;
-        self.value(0, None).expect("validated subtree");
+        match self.text.as_bytes()[self.at] {
+            b'"' => self.skip_string(),
+            b'{' | b'[' => {
+                let mut depth = 1;
+                self.at += 1;
+                while depth != 0 {
+                    match self.text.as_bytes()[self.at] {
+                        b'"' => {
+                            self.skip_string();
+                            continue;
+                        }
+                        b'{' | b'[' => depth += 1,
+                        b'}' | b']' => depth -= 1,
+                        _ => {}
+                    }
+                    self.at += 1;
+                }
+            }
+            b't' | b'n' => self.at += 4,
+            b'f' => self.at += 5,
+            _ => {
+                while matches!(
+                    self.byte(),
+                    Some(b'-' | b'+' | b'.' | b'e' | b'E' | b'0'..=b'9')
+                ) {
+                    self.at += 1;
+                }
+            }
+        }
         RawJson(&self.text[start..self.at])
     }
 }
 
 pub(crate) struct Elements<'a> {
-    scanner: Scanner<'a>,
+    scanner: Scanner<'a, true>,
 }
 
 impl<'a> Iterator for Elements<'a> {
@@ -371,20 +425,20 @@ impl<'a> RawJson<'a> {
     pub(crate) fn elements(self) -> Elements<'a> {
         debug_assert!(self.is_array());
         Elements {
-            scanner: Scanner {
+            scanner: Scanner::<true> {
                 text: self.0,
                 at: 1,
             },
         }
     }
 
-    // Array delimiters need no subtree boundary scan. Non-array leaves still use
-    // the validating grammar; this cursor only accepts already validated slices.
+    // Array delimiters need no subtree boundary scan. Non-array leaves use the
+    // validated cursor so nested arrays do not repeatedly parse their contents.
     pub(crate) fn try_for_each_flattened<E>(
         self,
         mut output: impl FnMut(Self) -> Result<(), E>,
     ) -> Result<(), E> {
-        let mut scanner = Scanner {
+        let mut scanner = Scanner::<true> {
             text: self.0,
             at: 0,
         };
@@ -399,7 +453,7 @@ impl<'a> RawJson<'a> {
     }
 
     pub(crate) fn select<'path>(self, fields: &'path [Box<str>]) -> Selection<'a, 'path> {
-        Scanner {
+        Scanner::<true> {
             text: self.0,
             at: 0,
         }
@@ -411,7 +465,7 @@ impl<'a> RawJson<'a> {
         if self.as_bytes()[0] != b'{' {
             return None;
         }
-        let mut scanner = Scanner {
+        let mut scanner = Scanner::<true> {
             text: self.0,
             at: 1,
         };
@@ -438,7 +492,7 @@ impl<'a> RawJson<'a> {
 
 /// Object members retain encoded keys so comparisons need no decoded allocation.
 pub(crate) struct Members<'a> {
-    scanner: Scanner<'a>,
+    scanner: Scanner<'a, true>,
 }
 
 impl<'a> Iterator for Members<'a> {
@@ -465,7 +519,7 @@ impl<'a> RawJson<'a> {
     pub(crate) fn members(self) -> Members<'a> {
         debug_assert_eq!(self.as_bytes()[0], b'{');
         Members {
-            scanner: Scanner {
+            scanner: Scanner::<true> {
                 text: self.0,
                 at: 1,
             },
@@ -475,7 +529,7 @@ impl<'a> RawJson<'a> {
 
 impl<'a> RawJson<'a> {
     pub(crate) fn capture(self, demand: &Demand, output: &mut Captures<'a>) {
-        Scanner {
+        Scanner::<true> {
             text: self.0,
             at: 0,
         }
@@ -502,3 +556,6 @@ impl<'a> Elements<'a> {
         Some(raw)
     }
 }
+
+#[cfg(test)]
+mod tests;

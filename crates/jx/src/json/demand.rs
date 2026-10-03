@@ -31,7 +31,7 @@ impl<'a> Captures<'a> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Captured<'a> {
     Missing,
     Raw(RawJson<'a>),

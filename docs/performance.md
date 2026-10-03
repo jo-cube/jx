@@ -47,6 +47,8 @@ There is no universal comparison with other query engines.
   Static object lookup uses a compact fingerprint index with exact UTF-16 equality checks.
 - Validation captures demanded fields/paths where possible. Repeated planned loads and
   pure call arguments can reuse spans instead of scanning the object again.
+  Traversal of validated input skips subtree boundaries without parsing their grammar
+  again, reducing work for callbacks, navigation, sorting/grouping and transforms.
 - Raw input and unescaped strings stay borrowed. Primitive scalar operations do not need
   boxed values; immutable construction retains borrowed leaves.
 - Sequences stream when cardinality and effects allow. Selected filter/map/aggregate

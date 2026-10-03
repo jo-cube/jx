@@ -140,6 +140,10 @@ fn deterministic_mutations_agree_with_serde_on_common_json_domain() {
 fn planned_capture_preserves_complete_validation_and_exact_diagnostics() {
     let expressions = [
         "x*x+y*y+x",
+        "x&y",
+        "{'x':x,'y':y}",
+        "$map(payload.rows,function($r){$r.x&$r.y})",
+        "payload.rows^(x).y",
         "active ? payload.x*payload.x+payload.y : 0",
         r#"{"n":payload.x*payload.y+1}"#,
         "$sum(payload.rows[x>0].(x*y+1))",
