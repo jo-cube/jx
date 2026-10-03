@@ -1,0 +1,188 @@
+{
+  "baseline_commit": "9672f42580f26a1ab707225638fe63f62b7d4933",
+  "rust": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "host": "Darwin MacBook.local 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132 arm64",
+  "cpu": "Apple M4",
+  "benchmark": "Apple M4 arm64; release thin LTO/one codegen unit; validation and consumption, no serialization unless _write fixture; benchmark-only allocation counters. All timings and profiles sequential; no concurrent builds/tests.",
+  "source_hashes": "source-sha256.json",
+  "binaries": {
+    "m27_throughput": {
+      "path": "/private/tmp/jx-m28-baseline/target/release/deps/throughput-1b5b3923bf796647",
+      "sha256": "67e1adf745b634948d698d62e8d707b73bbffe6e1249276d6be83ebc12e8db8e"
+    },
+    "m28_throughput": {
+      "path": "/private/tmp/jx-m29-m28-bench",
+      "sha256": "d2e2638edf3112a8490b352c3d9152563caf4f111a0791b96d916db812a6054e"
+    },
+    "m29_original_throughput": {
+      "path": "/private/tmp/jx-m30-before",
+      "sha256": "f07d28603373468e7ccfcb24743a17d5badeea99ba9fc716552d266e37f06780"
+    },
+    "m29_matched_throughput": {
+      "path": "/private/tmp/jx-m30-matched-before",
+      "sha256": "215a3aee189f16920054f534b3472ef9ac1fcf4f67d5d0fee20bd6b9779967ff"
+    },
+    "m29_matched_memory": {
+      "path": "/private/tmp/runtime_memory-25389f89bd0685ad",
+      "sha256": "ee0a0cb4e5cd38be57269abda8c79408f492c03784ce468d2fcb896b2eddafb6"
+    },
+    "m30_throughput": {
+      "path": "target/release/deps/throughput-1b5b3923bf796647",
+      "sha256": "df0a3918cb3e14a6ec19f6bca196e855f74ba7593110fca9fe6bed0acc732e5c"
+    },
+    "m30_native_throughput": {
+      "path": "target/release/deps/throughput-c4f4d8c7339efca9",
+      "sha256": "d4c3749ea981470fe42afa50d122bebd12c4be3d5e5c47fbef8e5d755e98b863"
+    },
+    "m30_memory": {
+      "path": "target/release/deps/runtime_memory-25389f89bd0685ad",
+      "sha256": "dc7007917d58d057675d0c46355bd8f1d3ae6a210041bafa525e324619e27d9c"
+    },
+    "m30_native_cli": {
+      "path": "target/release/jx",
+      "sha256": "c64aa0cc9ccd0d24df152c96c995934cf1258ce578d53f54dd7e22bbe7fd04a5"
+    },
+    "rejected_guard_ablation": {
+      "path": "/private/tmp/jx-m30-guard-ablation",
+      "sha256": "bb153a65cf7756e187d66135446e5f1f562b64f8346650bd529a08ec802ec3b5"
+    },
+    "rejected_dispatch": {
+      "path": "/private/tmp/jx-m30-dispatch",
+      "sha256": "59851d4475d214d71b2029d701eb6292bb1046a06d80885e776b59a4dde7b9ea"
+    },
+    "preliminary_bridge": {
+      "path": "/private/tmp/jx-m30-bridge",
+      "sha256": "f5930d825749498c147218fb7adbc76e043cfecc2989d8973a6ae1360f09fe78"
+    }
+  },
+  "commands": [
+    "just all > benchmarks/m30/checks.log 2>&1",
+    "just build > benchmarks/m30/build.log 2>&1",
+    "cargo build -p jx-cli --release --features jit --locked > benchmarks/m30/native-build.log 2>&1",
+    "cargo bench -p jx --bench throughput --no-run --locked > benchmarks/m30/final-bench-build.log 2>&1",
+    "cargo bench -p jx --bench throughput --features jit --no-run --locked > benchmarks/m30/native-bench-build.log 2>&1",
+    "cargo test -p jx -p jx-cli --no-default-features --locked > benchmarks/m30/default-tests.log 2>&1",
+    "cargo test --workspace --all-features --target x86_64-apple-darwin --locked > benchmarks/m30/x86-tests.log 2>&1",
+    "JX_DIFFERENTIAL_JIT=1 node scripts/check-*.cjs /private/tmp/jx-jsonata-reference target/release/jx (all 25 individually; differential.txt records commands)",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m30-matched-before target/release/deps/throughput-1b5b3923bf796647 benchmarks/m30/controls.json benchmarks/m30/final (also final-reverse --reverse)",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m29-m28-bench /private/tmp/jx-m30-before benchmarks/m30/regression-controls.json benchmarks/m30/m28 (also m28-reverse --reverse)",
+    "python3 benchmarks/m24/measure.py /private/tmp/jx-m28-baseline/target/release/deps/throughput-1b5b3923bf796647 /private/tmp/jx-m30-before benchmarks/m30/regression-controls.json benchmarks/m30/m27 (also m27-reverse --reverse)",
+    "python3 benchmarks/m30/profile.py /private/tmp/jx-m30-before benchmarks/m30/profiles-before.json benchmarks/m30/before-profiles",
+    "python3 benchmarks/m30/profile.py target/release/deps/throughput-1b5b3923bf796647 benchmarks/m30/profiles-before.json benchmarks/m30/after-profiles",
+    "python3 benchmarks/m30/summarize.py PROFILE_DIRECTORY (each of four profile directories)",
+    "python3 benchmarks/m30/native.py target/release/deps/throughput-c4f4d8c7339efca9 benchmarks/m30/native-controls.json benchmarks/m30",
+    "python3 benchmarks/m30/profile.py target/release/deps/throughput-c4f4d8c7339efca9 benchmarks/m30/native-profiles.json benchmarks/m30/native-interpreter-profiles --native-only",
+    "python3 benchmarks/m30/profile.py target/release/deps/throughput-c4f4d8c7339efca9 benchmarks/m30/native-profiles.json benchmarks/m30/native-profiles --native-only --native",
+    "/private/tmp/runtime_memory-25389f89bd0685ad > benchmarks/m30/memory-before.csv",
+    "target/release/deps/runtime_memory-25389f89bd0685ad > benchmarks/m30/memory-after.csv",
+    "JX_BENCH_SAMPLE_MS=25 just bench > benchmarks/m30/after.csv 2> benchmarks/m30/bench.log",
+    "JX_FUZZ_ITERATIONS=100000 just robustness > benchmarks/m30/robustness.log 2>&1",
+    "cargo +nightly fuzz run boundaries -- -runs=200000 -seed=30 -max_len=16384 -timeout=10 -rss_limit_mb=2048 > benchmarks/m30/fuzz.log 2>&1 (compressed afterward)"
+  ],
+  "matched_baseline": "Expanded M30 benchmark sources with only crates/jx/src/dynamic.rs and crates/jx/src/plan/callback.rs restored to baseline HEAD for compilation, then final files restored. Same fixtures/profile/toolchain; no simultaneous builds/timings. Matched binary retained above.",
+  "upstream": {
+    "version": "2.2.0",
+    "revision": "8ee4476f8a228bfc7a62979ae0a9c13a4043cd03",
+    "cases": 1679,
+    "supported": 1390,
+    "expected_errors": 288,
+    "resource_guards": 1,
+    "blockers": 0,
+    "differential_suites": 25,
+    "differential_comparisons": 54715,
+    "new_differential_comparisons": 30,
+    "classification_changes": 0
+  },
+  "full_final": {
+    "groups": 1806,
+    "samples": 12642,
+    "samples_per_group": 7,
+    "sample_ms": 25,
+    "timed_seconds": 450.866,
+    "exit_code": 0
+  },
+  "controls": {
+    "filters": 40,
+    "groups": 42,
+    "samples_per_group": 7,
+    "sample_ms": 300,
+    "orders": [
+      "matched M29/M30",
+      "M30/matched M29"
+    ],
+    "features": "default; native disabled",
+    "qualification": "transform/update substring also selects update_write, accounting for two extra groups. All unrelated allocation counts and requested bytes unchanged."
+  },
+  "profiles": {
+    "before": 16,
+    "after": 16,
+    "native_interpreter": 3,
+    "native": 3,
+    "warmup_seconds": 1.5,
+    "sample_seconds": 5,
+    "interval_ms": 1,
+    "qualification": "Approximate self-sample attribution including inlined code; function/callback categories include helper execution, not only dispatch. Traversal phases distinguish unassigned scanner work from descendants of plan/call symbols; not all unassigned scanning is validation. Unsymbolized executable code kept separate."
+  },
+  "memory": {
+    "observations_per_version": 200,
+    "widths": [
+      8,
+      128,
+      1024,
+      16384
+    ],
+    "iterations": 5,
+    "after_drop_bytes": 0,
+    "allocations": "Requested Rust heap bytes and counts; not RSS or allocator size classes.",
+    "qualification": "Dynamic object live-heap fixture includes an additional retained constant string member, unlike throughput fixture. Same output survives; peak remains approximately 3.80 MB at widest input despite reduced temporary allocation."
+  },
+  "native": {
+    "groups": 10,
+    "samples_per_group": 7,
+    "sample_ms": 300,
+    "orders": [
+      "interpreter/native",
+      "native/interpreter"
+    ],
+    "qualification": "Same feature-enabled binary, existing explicit JIT selection; no lowering or native code changes. All selected runtime groups zero-allocation. Rust controls validate input but do not implement general JSONata shape/error semantics."
+  },
+  "callback_investigation": {
+    "notes": "regression-notes.md",
+    "historical": "Fresh repeats do not reliably reproduce earlier string/partial deltas. Exact instruction-cycle cause unresolved; layout/inlining and measurement variation remain possible.",
+    "removed_experiments": "Nil-guard ablation and checkpoint dispatch rearrangement did not establish material repeatable gains. Source edits described in notes; trial binaries/logs retained, no experimental source machinery remains. Preliminary bridge measurements superseded by matched final fixtures.",
+    "remaining": "Final three-item numeric partial at 500 B is approximately 2% slower in both orders; wider partial maps are steady and allocations unchanged. No new operation executes there. Accepted bridge gains justify modest build-level cost; no specialized patch retained."
+  },
+  "robustness": {
+    "seeded_boundary_mutations": 100000,
+    "property_tests": 5,
+    "coverage_guided_runs": 200000,
+    "findings": 0,
+    "tool": "cargo-fuzz 0.13.2; libfuzzer-sys 0.4.13",
+    "toolchain": "nightly 1.101.0 (2026-10-03); address sanitizer and coverage instrumentation",
+    "fuzz_log": "fuzz.log.gz",
+    "fuzz_result": "Done 200000 runs in 11 second(s)",
+    "bounds": "Arbitrary UTF-8 expressions compile only <=256 bytes. Fixed templates execute controlled valid JSON <=16 KiB with work/items/output limits, plus ordinary plan/fallback execution <=1 KiB to bound growth. No arbitrary regex or host calls.",
+    "corpus": "Fixed reproducible ordinary property seeds plus existing coverage-guided corpus (5168 files at start); generated corpus ignored, not a stable conformance suite."
+  },
+  "platforms": {
+    "executed": [
+      "aarch64-apple-darwin normal/native full checks",
+      "x86_64-apple-darwin normal/native full workspace tests under Rosetta"
+    ],
+    "configured_only": [
+      "ubuntu-latest CI",
+      "windows-latest CI",
+      "macos-latest CI"
+    ],
+    "remote_ci": "Not run; no push."
+  },
+  "limitations": [
+    "Throughput measured on Apple M4 arm64 only; Rosetta evidence is compatibility, not native x86 performance.",
+    "No latency-distribution or RSS claim. Timed full sweep is broad smoke; longer paired controls establish accepted gain.",
+    "ASan fuzz uses ordinary engine; optional native has separate adversarial fallback, ownership/bounds and two-platform tests.",
+    "Cooperative controls cannot interrupt regex or noncooperating hosts; fuzzing is not a hostile-code sandbox guarantee.",
+    "A first differential invocation used a default CLI after just build; rebuilt feature-enabled CLI and all 25 suites reran successfully. differential.txt is the final successful run.",
+    "No public API, dependency, feature, value/frame representation, demand metadata, native lowering or unsafe boundary changes."
+  ],
+  "completed_at_utc": "2026-10-03T09:36:35.244665+00:00"
+}

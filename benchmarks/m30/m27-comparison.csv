@@ -1,0 +1,4 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+acquisition/string_callback,100,1313898,1337762,1.82,14.0,14.0,953.0,961.0
+acquisition/string_callback,500,730443,720769,-1.32,14.0,14.0,953.0,961.0
+function/partial_callback,500,669802,666815,-0.45,8.0,8.0,512.0,520.0

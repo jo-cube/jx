@@ -1,0 +1,51 @@
+JX_DIFFERENTIAL_JIT=1 node scripts/check-acquisition.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 1253 acquisition/lookup/string evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-aggregates.cjs /private/tmp/jx-jsonata-reference target/release/jx
+4948 aggregate evaluations match JSONata 2.2.0, including errors and sequence boundaries
+JX_DIFFERENTIAL_JIT=1 node scripts/check-builtins.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 1923 builtin evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-compatibility.cjs /private/tmp/jx-jsonata-reference target/release/jx
+422 residual compatibility comparisons passed
+JX_DIFFERENTIAL_JIT=1 node scripts/check-compiler.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 947 compiler evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-composition.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 2635 conversion/composition evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-consolidation.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 503 consolidation evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-constructors.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 5000 constructor evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-effects.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 253 dynamic/effect evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-embedding.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 41 external-binding/lexical equivalences against upstream; Rust embedding tests assert the public API
+JX_DIFFERENTIAL_JIT=1 node scripts/check-execution.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 4443 execution evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-filters.cjs /private/tmp/jx-jsonata-reference target/release/jx
+3820 filter evaluations match JSONata 2.2.0, including errors and sequence boundaries
+JX_DIFFERENTIAL_JIT=1 node scripts/check-formatting.cjs /private/tmp/jx-jsonata-reference target/release/jx
+2313 formatting differential comparisons passed
+JX_DIFFERENTIAL_JIT=1 node scripts/check-functions.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 558 function-runtime evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-helpers.cjs /private/tmp/jx-jsonata-reference target/release/jx
+1884 helper differential comparisons passed
+JX_DIFFERENTIAL_JIT=1 node scripts/check-lexical.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 2796 lexical evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-matchers.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 1453 regex/matcher evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-navigation.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 1374 navigation evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-plans.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 6546 expanded-plan evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-regions.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 1957 pure-region evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-runtime.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 203 runtime-boundary evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-scalars.cjs /private/tmp/jx-jsonata-reference target/release/jx
+1936 scalar evaluations match JSONata 2.2.0, including error kinds and per-record output
+JX_DIFFERENTIAL_JIT=1 node scripts/check-sequences.cjs /private/tmp/jx-jsonata-reference target/release/jx
+42 readable sequence cases match JSONata 2.2.0
+5894 generated/curated evaluations match the reference CLI stream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-structure.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 624 parent/clone/transform evaluations against upstream
+JX_DIFFERENTIAL_JIT=1 node scripts/check-tuples.cjs /private/tmp/jx-jsonata-reference target/release/jx
+Checked 947 scoped path evaluations against upstream

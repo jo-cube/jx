@@ -45,7 +45,7 @@ fn main() {
         "workload,width,input_bytes,iteration,allocations,requested_bytes,peak_live_bytes,live_at_delivery_bytes,after_drop_bytes"
     );
     for width in [8_u64, 128, 1024, 16384] {
-        let input=serde_json::json!({"rows":(0..width).map(|i|serde_json::json!({"a":i%7,"b":width-i})).collect::<Vec<_>>(),"code":"function($r){$r.a+$r.b+$r.a}"}).to_string();
+        let input=serde_json::json!({"rows":(0..width).map(|i|serde_json::json!({"a":i%7,"b":width-i})).collect::<Vec<_>>(),"code":"function($r){$r.a+$r.b+$r.a}","objectCode":"function($r){{\"n\":$r.a+$r.b,\"label\":\"kept\"}}"}).to_string();
         for (name, source) in [
             (
                 "transient",
@@ -72,6 +72,11 @@ fn main() {
                 "$reduce(rows,function($acc,$r){($f:=function(){$r.a+$r.b};$acc+$f())},0)",
             ),
             ("dynamic_scalar", "($f:=$eval(code);$map(rows,$f))"),
+            ("dynamic_object", "($f:=$eval(objectCode);$map(rows,$f))"),
+            (
+                "partial",
+                "$map(rows,function($r,$base){$r.a+$r.b+$base}(?,3))",
+            ),
             ("planned", "$map(rows,function($r){$r.a+$r.b+$r.a})"),
         ] {
             let expr = jx::compile(source).unwrap();

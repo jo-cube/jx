@@ -1,0 +1,1526 @@
+{
+  "method": "Five-second, one-millisecond samples after the first timed sample; disjoint approximate self attribution. Inlined helpers can be attributed to their caller; see full traces.",
+  "profiles": {
+    "profile-dynamic_object": {
+      "samples": 4197,
+      "percent": {
+        "scanner": 49.58,
+        "function/callback boundary": 19.16,
+        "allocation/drop/clone": 22.97,
+        "fingerprint": 3.0,
+        "frame/bridge": 5.24,
+        "other": 0.05
+      },
+      "scanner_phases_percent": {
+        "beneath function invocation": 41.22,
+        "unassigned scanner/traversal": 8.36
+      },
+      "top_self": [
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 114,
+          "percent": 2.72
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x1025fc580]",
+          "samples": 91,
+          "percent": 2.17
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108  [0x1025fc594]",
+          "samples": 58,
+          "percent": 1.38
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x188d37144]",
+          "samples": 46,
+          "percent": 1.1
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108  [0x1025fc580,0x1025fc594]",
+          "samples": 44,
+          "percent": 1.05
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x1025fbd08]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 728  [0x1025fbdc8]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,436  [0x1025fc580,0x1025fc6dc]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x188b4a144]",
+          "samples": 28,
+          "percent": 0.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 436  [0x1025fc6dc]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 80,176  [0x10258ebf4,0x10258ec54]",
+          "samples": 22,
+          "percent": 0.52
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 576,728,...  [0x1025fbd30,0x1025fbdc8,...]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x10258eba4]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 176,80  [0x10258ec54,0x10258ebf4]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 8,88,...  [0x1025fc530,0x1025fc580,...]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_malloc_zone_malloc  (in libsystem_malloc.dylib) + 12  [0x188b5a044]",
+          "samples": 17,
+          "percent": 0.41
+        }
+      ]
+    },
+    "profile-group": {
+      "samples": 4164,
+      "percent": {
+        "scanner": 46.88,
+        "other": 39.07,
+        "function/callback boundary": 0.58,
+        "allocation/drop/clone": 11.84,
+        "utf16/string decoding": 1.63
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 46.88
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x101054580]",
+          "samples": 71,
+          "percent": 1.71
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x101053d08]",
+          "samples": 45,
+          "percent": 1.08
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 24  [0x100fe6bbc]",
+          "samples": 41,
+          "percent": 0.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100  [0x10105458c]",
+          "samples": 39,
+          "percent": 0.94
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x100fe6ba4]",
+          "samples": 36,
+          "percent": 0.86
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 592  [0x10107939c]",
+          "samples": 29,
+          "percent": 0.7
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 728  [0x101053dc8]",
+          "samples": 29,
+          "percent": 0.7
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76  [0x101054574]",
+          "samples": 28,
+          "percent": 0.67
+        },
+        {
+          "symbol": "_RNvMs0_NtNtCsds78668uu60_2jx4json4scanNtB5_7Scanner9raw_value  (in throughput-1b5b3923bf796647) + 132  [0x101038550]",
+          "samples": 25,
+          "percent": 0.6
+        },
+        {
+          "symbol": "_RNvMNtCsds78668uu60_2jx5valueNtB2_5Value6atomic  (in throughput-1b5b3923bf796647) + 40  [0x101017f78]",
+          "samples": 24,
+          "percent": 0.58
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 48,72,...  [0x101053b20,0x101053b38,...]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvMs0_NtNtCsds78668uu60_2jx4json4scanNtB5_7Scanner9raw_value  (in throughput-1b5b3923bf796647) + 100  [0x101038530]",
+          "samples": 20,
+          "percent": 0.48
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 8  [0x101054530]",
+          "samples": 20,
+          "percent": 0.48
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108  [0x101054594]",
+          "samples": 20,
+          "percent": 0.48
+        },
+        {
+          "symbol": "_RNvMNtCsds78668uu60_2jx5valueNtB2_5Value6atomic  (in throughput-1b5b3923bf796647) + 24  [0x101017f68]",
+          "samples": 19,
+          "percent": 0.46
+        }
+      ]
+    },
+    "profile-lookup": {
+      "samples": 4225,
+      "percent": {
+        "scanner": 86.82,
+        "fingerprint": 6.6,
+        "other": 4.54,
+        "lookup/search": 1.66,
+        "allocation/drop/clone": 0.38
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 86.82
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x100af4580,0x100af4594,...]",
+          "samples": 1548,
+          "percent": 36.64
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x100af4594,0x100af4580,...]",
+          "samples": 1323,
+          "percent": 31.31
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,76,...  [0x100af4580,0x100af4574,...]",
+          "samples": 89,
+          "percent": 2.11
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,100,...  [0x100af4594,0x100af458c,...]",
+          "samples": 86,
+          "percent": 2.04
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 80,96,...  [0x100a64ebc,0x100a64ecc,...]",
+          "samples": 69,
+          "percent": 1.63
+        },
+        {
+          "symbol": "_RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCsds78668uu60_2jx  (in throughput-1b5b3923bf796647) + 12,68,...  [0x100b39db4,0x100b39dec,...]",
+          "samples": 49,
+          "percent": 1.16
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 24,48,...  [0x100af3b08,0x100af3b20,...]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 80,96  [0x100a64ebc,0x100a64ecc]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96,80,...  [0x100a64ecc,0x100a64ebc,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 80,0,...  [0x100a64ebc,0x100a64e6c,...]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 52  [0x100b19180]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-1b5b3923bf796647) + 28,36,...  [0x100b2ec40,0x100b2ec48,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 12,48,...  [0x100af3afc,0x100af3b20,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 12,24,...  [0x100af3afc,0x100af3b08,...]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 48,1268,...  [0x100af3b20,0x100af3fe4,...]",
+          "samples": 14,
+          "percent": 0.33
+        },
+        {
+          "symbol": "mach_absolute_time  (in libsystem_kernel.dylib) + 108,112  [0x188cea10c,0x188cea110]",
+          "samples": 13,
+          "percent": 0.31
+        }
+      ]
+    },
+    "profile-map": {
+      "samples": 4195,
+      "percent": {
+        "scanner": 76.57,
+        "function/callback boundary": 16.02,
+        "allocation/drop/clone": 2.17,
+        "frame/bridge": 5.01,
+        "other": 0.24
+      },
+      "scanner_phases_percent": {
+        "beneath plan/callback": 30.08,
+        "unassigned scanner/traversal": 46.48
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108  [0x100df8580,0x100df8594]",
+          "samples": 66,
+          "percent": 1.57
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,100,...  [0x100df8580,0x100df858c,...]",
+          "samples": 61,
+          "percent": 1.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x100df8580]",
+          "samples": 56,
+          "percent": 1.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 8,76,...  [0x100df8530,0x100df8574,...]",
+          "samples": 44,
+          "percent": 1.05
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108  [0x100df8594]",
+          "samples": 41,
+          "percent": 0.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 532  [0x100df7d04]",
+          "samples": 36,
+          "percent": 0.86
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x100d8aba4]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x100df8580,0x100df8594,...]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,436  [0x100df8580,0x100df86dc]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,88,...  [0x100df8574,0x100df8580,...]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-1b5b3923bf796647) + 696,64,...  [0x100df7790,0x100df7518,...]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 8,88,...  [0x100df8530,0x100df8580,...]",
+          "samples": 28,
+          "percent": 0.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 16,152,...  [0x100df7b00,0x100df7b88,...]",
+          "samples": 28,
+          "percent": 0.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x100df7d08]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,8,...  [0x100df8594,0x100df8530,...]",
+          "samples": 25,
+          "percent": 0.6
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 532,536,...  [0x100df7d04,0x100df7d08,...]",
+          "samples": 24,
+          "percent": 0.57
+        }
+      ]
+    },
+    "profile-partial": {
+      "samples": 4206,
+      "percent": {
+        "scanner": 62.6,
+        "other": 14.72,
+        "allocation/drop/clone": 9.99,
+        "function/callback boundary": 12.08,
+        "frame/bridge": 0.62
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 59.06,
+        "beneath plan/callback": 3.54
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x102978580,0x102978594,...]",
+          "samples": 338,
+          "percent": 8.04
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x102978594,0x102978580,...]",
+          "samples": 292,
+          "percent": 6.94
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,100,...  [0x102978574,0x10297858c,...]",
+          "samples": 212,
+          "percent": 5.04
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,100,...  [0x102978580,0x10297858c,...]",
+          "samples": 158,
+          "percent": 3.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,76,...  [0x10297858c,0x102978574,...]",
+          "samples": 153,
+          "percent": 3.64
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,100,...  [0x102978594,0x10297858c,...]",
+          "samples": 119,
+          "percent": 2.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,108,...  [0x10297858c,0x102978594,...]",
+          "samples": 117,
+          "percent": 2.78
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,76,...  [0x102978594,0x102978574,...]",
+          "samples": 110,
+          "percent": 2.62
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,76,...  [0x102978580,0x102978574,...]",
+          "samples": 102,
+          "percent": 2.43
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,108,...  [0x102978574,0x102978594,...]",
+          "samples": 70,
+          "percent": 1.66
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,88,...  [0x102978574,0x102978580,...]",
+          "samples": 69,
+          "percent": 1.64
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,88,...  [0x10297858c,0x102978580,...]",
+          "samples": 62,
+          "percent": 1.47
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 51,
+          "percent": 1.21
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in throughput-1b5b3923bf796647) + 332  [0x10299cba0]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100  [0x10297858c]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x10290aba4]",
+          "samples": 28,
+          "percent": 0.67
+        }
+      ]
+    },
+    "profile-path": {
+      "samples": 4243,
+      "percent": {
+        "scanner": 98.07,
+        "other": 1.7,
+        "allocation/drop/clone": 0.24
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 98.07
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x104168580,0x104168594,...]",
+          "samples": 1675,
+          "percent": 39.48
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x104168594,0x104168580,...]",
+          "samples": 1452,
+          "percent": 34.22
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96  [0x1040d8ecc]",
+          "samples": 35,
+          "percent": 0.82
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96,128  [0x1040d8ecc,0x1040d8eec]",
+          "samples": 35,
+          "percent": 0.82
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 48,68,...  [0x104167b20,0x104167b34,...]",
+          "samples": 23,
+          "percent": 0.54
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108  [0x104168580,0x104168594]",
+          "samples": 22,
+          "percent": 0.52
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 52  [0x10418d180]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in throughput-1b5b3923bf796647) + 332  [0x10418cba0]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 532,536,...  [0x104167d04,0x104167d08,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,8,...  [0x104168580,0x104168530,...]",
+          "samples": 14,
+          "percent": 0.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 48,532,...  [0x104167b20,0x104167d04,...]",
+          "samples": 14,
+          "percent": 0.33
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96,80,...  [0x1040d8ecc,0x1040d8ebc,...]",
+          "samples": 14,
+          "percent": 0.33
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96,112  [0x1040d8ecc,0x1040d8edc]",
+          "samples": 13,
+          "percent": 0.31
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 52,16,...  [0x10418d180,0x10418d15c,...]",
+          "samples": 13,
+          "percent": 0.31
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96,0,...  [0x1040d8ecc,0x1040d8e6c,...]",
+          "samples": 12,
+          "percent": 0.28
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 628,1176,...  [0x104167d64,0x104167f88,...]",
+          "samples": 12,
+          "percent": 0.28
+        }
+      ]
+    },
+    "profile-pipeline": {
+      "samples": 4228,
+      "percent": {
+        "scanner": 68.61,
+        "other": 8.54,
+        "allocation/drop/clone": 2.77,
+        "plan": 20.08
+      },
+      "scanner_phases_percent": {
+        "beneath plan/callback": 37.44,
+        "unassigned scanner/traversal": 31.17
+      },
+      "top_self": [
+        {
+          "symbol": "_RINvMs_NtCsds78668uu60_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-1b5b3923bf796647) + 300,328,...  [0x102d5435c,0x102d54378,...]",
+          "samples": 135,
+          "percent": 3.19
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 592  [0x102df539c]",
+          "samples": 65,
+          "percent": 1.54
+        },
+        {
+          "symbol": "_RINvMs_NtCsds78668uu60_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-1b5b3923bf796647) + 328,300,...  [0x102d54378,0x102d5435c,...]",
+          "samples": 59,
+          "percent": 1.4
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x102dd0580,0x102dd0594,...]",
+          "samples": 56,
+          "percent": 1.32
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 728,48,...  [0x102dcfdc8,0x102dcfb20,...]",
+          "samples": 52,
+          "percent": 1.23
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108  [0x102dd0580,0x102dd0594]",
+          "samples": 50,
+          "percent": 1.18
+        },
+        {
+          "symbol": "_RINvMs_NtCsds78668uu60_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-1b5b3923bf796647) + 300,1748,...  [0x102d5435c,0x102d54904,...]",
+          "samples": 45,
+          "percent": 1.06
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,8,...  [0x102dd0580,0x102dd0530,...]",
+          "samples": 41,
+          "percent": 0.97
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x102d62ba4]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,88,...  [0x102dd0574,0x102dd0580,...]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 1504,536,...  [0x102dd00d0,0x102dcfd08,...]",
+          "samples": 36,
+          "percent": 0.85
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 532,536  [0x102dcfd04,0x102dcfd08]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 52,16,...  [0x102df5180,0x102df515c,...]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx4plan6binary  (in throughput-1b5b3923bf796647) + 204  [0x102ddeba4]",
+          "samples": 31,
+          "percent": 0.73
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,100,...  [0x102dd0580,0x102dd058c,...]",
+          "samples": 28,
+          "percent": 0.66
+        },
+        {
+          "symbol": "_RINvMs_NtCsds78668uu60_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-1b5b3923bf796647) + 1748,172,...  [0x102d54904,0x102d542dc,...]",
+          "samples": 23,
+          "percent": 0.54
+        }
+      ]
+    },
+    "profile-reduce": {
+      "samples": 4199,
+      "percent": {
+        "scanner": 77.02,
+        "function/callback boundary": 17.6,
+        "allocation/drop/clone": 2.74,
+        "other": 2.64
+      },
+      "scanner_phases_percent": {
+        "beneath plan/callback": 26.01,
+        "unassigned scanner/traversal": 51.01
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 728,136,...  [0x104383dc8,0x104383b78,...]",
+          "samples": 62,
+          "percent": 1.48
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,88,...  [0x104384574,0x104384580,...]",
+          "samples": 56,
+          "percent": 1.33
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 8,76,...  [0x104384530,0x104384574,...]",
+          "samples": 43,
+          "percent": 1.02
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x104383d08]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 576,728,...  [0x104383d30,0x104383dc8,...]",
+          "samples": 36,
+          "percent": 0.86
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 16,136,...  [0x104383b00,0x104383b78,...]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 592  [0x1043a939c]",
+          "samples": 33,
+          "percent": 0.79
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0,24  [0x104316ba4,0x104316bbc]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,8,...  [0x104384580,0x104384530,...]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 48,68,...  [0x104383b20,0x104383b34,...]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x104384580]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108  [0x104384580,0x104384594]",
+          "samples": 29,
+          "percent": 0.69
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 24  [0x104316bbc]",
+          "samples": 28,
+          "percent": 0.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,100,...  [0x104384580,0x10438458c,...]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-1b5b3923bf796647) + 696,852,...  [0x104383790,0x10438382c,...]",
+          "samples": 25,
+          "percent": 0.6
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536,1028,...  [0x104383d08,0x104383ef4,...]",
+          "samples": 25,
+          "percent": 0.6
+        }
+      ]
+    },
+    "profile-scalar": {
+      "samples": 4232,
+      "percent": {
+        "scanner": 83.08,
+        "other": 5.13,
+        "plan": 10.42,
+        "allocation/drop/clone": 1.37
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 83.08
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x1009ac580,0x1009ac594,...]",
+          "samples": 1549,
+          "percent": 36.6
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x1009ac594,0x1009ac580,...]",
+          "samples": 1111,
+          "percent": 26.25
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108  [0x1009ac580,0x1009ac594]",
+          "samples": 79,
+          "percent": 1.87
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 80,96  [0x10091cebc,0x10091cecc]",
+          "samples": 37,
+          "percent": 0.87
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx4plan6binary  (in throughput-1b5b3923bf796647) + 144,4,...  [0x1009bab68,0x1009baadc,...]",
+          "samples": 28,
+          "percent": 0.66
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 592  [0x1009d139c]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-1b5b3923bf796647) + 696,88,...  [0x1009ab790,0x1009ab530,...]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 80  [0x10091cebc]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx4plan6binary  (in throughput-1b5b3923bf796647) + 204  [0x1009baba4]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-1b5b3923bf796647) + 696,900,...  [0x1009ab790,0x1009ab85c,...]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RINvMs_NtCsds78668uu60_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNvMs0_B5_NtB5_4Plan8evaluate0E0B1i_EB7_  (in throughput-1b5b3923bf796647) + 304,320,...  [0x100931460,0x100931470,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-1b5b3923bf796647) + 696,128,...  [0x1009ab790,0x1009ab558,...]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx4plan6binary  (in throughput-1b5b3923bf796647) + 4,80,...  [0x1009baadc,0x1009bab28,...]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x10093eba4]",
+          "samples": 17,
+          "percent": 0.4
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-1b5b3923bf796647) + 696,712,...  [0x1009ab790,0x1009ab7a0,...]",
+          "samples": 16,
+          "percent": 0.38
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx4plan6binary  (in throughput-1b5b3923bf796647) + 80,144,...  [0x1009bab28,0x1009bab68,...]",
+          "samples": 16,
+          "percent": 0.38
+        }
+      ]
+    },
+    "profile-sort": {
+      "samples": 4126,
+      "percent": {
+        "other": 28.04,
+        "scanner": 58.07,
+        "plan": 6.83,
+        "allocation/drop/clone": 7.05
+      },
+      "scanner_phases_percent": {
+        "beneath plan/callback": 18.23,
+        "unassigned scanner/traversal": 39.84
+      },
+      "top_self": [
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x104e0aba4]",
+          "samples": 79,
+          "percent": 1.91
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x104e78580]",
+          "samples": 57,
+          "percent": 1.38
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 24  [0x104e0abbc]",
+          "samples": 54,
+          "percent": 1.31
+        },
+        {
+          "symbol": "_RINvMNtNtCsds78668uu60_2jx8ordering4keysNtB3_4Keys3getNCNCNvB5_8evaluates_00EB7_  (in throughput-1b5b3923bf796647) + 676  [0x104dfb070]",
+          "samples": 48,
+          "percent": 1.16
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 728  [0x104e77dc8]",
+          "samples": 44,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x104e77d08]",
+          "samples": 40,
+          "percent": 0.97
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 532  [0x104e77d04]",
+          "samples": 37,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvXs0_NtCsds78668uu60_2jx5valueNtB5_5ValueNtNtCs8Mbv00yxnRz_4core5clone5Clone5clone  (in throughput-1b5b3923bf796647) + 16  [0x104eb3b58]",
+          "samples": 37,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-1b5b3923bf796647) + 696  [0x104e77790]",
+          "samples": 32,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvXs0_NtCsds78668uu60_2jx5valueNtB5_5ValueNtNtCs8Mbv00yxnRz_4core5clone5Clone5clone  (in throughput-1b5b3923bf796647) + 220  [0x104eb3c24]",
+          "samples": 32,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 436  [0x104e786dc]",
+          "samples": 32,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108  [0x104e78594]",
+          "samples": 30,
+          "percent": 0.73
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100  [0x104e7858c]",
+          "samples": 29,
+          "percent": 0.7
+        },
+        {
+          "symbol": "_RNvMNtCsds78668uu60_2jx5valueNtB2_5Value6atomic  (in throughput-1b5b3923bf796647) + 16  [0x104e3bf60]",
+          "samples": 28,
+          "percent": 0.68
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 52  [0x104e9d180]",
+          "samples": 27,
+          "percent": 0.65
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 592  [0x104e9d39c]",
+          "samples": 27,
+          "percent": 0.65
+        }
+      ]
+    },
+    "profile-string_small": {
+      "samples": 4207,
+      "percent": {
+        "allocation/drop/clone": 28.64,
+        "function/callback boundary": 18.16,
+        "other": 26.69,
+        "scanner": 24.48,
+        "frame/bridge": 2.02
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 24.48
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x10428c580,0x10428c594,...]",
+          "samples": 155,
+          "percent": 3.68
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 145,
+          "percent": 3.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x10428c594,0x10428c580,...]",
+          "samples": 59,
+          "percent": 1.4
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-1b5b3923bf796647) + 6808  [0x104275610]",
+          "samples": 53,
+          "percent": 1.26
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,76,...  [0x10428c58c,0x10428c574,...]",
+          "samples": 48,
+          "percent": 1.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,100,...  [0x10428c580,0x10428c58c,...]",
+          "samples": 39,
+          "percent": 0.93
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x188b4a144]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x188d37144]",
+          "samples": 37,
+          "percent": 0.88
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,100,...  [0x10428c574,0x10428c58c,...]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,88,...  [0x10428c574,0x10428c580,...]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 24  [0x10421ebbc]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in throughput-1b5b3923bf796647) + 332  [0x1042b0ba0]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,76,...  [0x10428c580,0x10428c574,...]",
+          "samples": 26,
+          "percent": 0.62
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x10421eba4]",
+          "samples": 25,
+          "percent": 0.59
+        },
+        {
+          "symbol": "DYLD-STUB$$malloc  (in throughput-1b5b3923bf796647) + 4  [0x104428488]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_free  (in libsystem_malloc.dylib) + 0  [0x188b5ac4c]",
+          "samples": 22,
+          "percent": 0.52
+        }
+      ]
+    },
+    "profile-string_typical": {
+      "samples": 4208,
+      "percent": {
+        "scanner": 58.63,
+        "other": 15.71,
+        "function/callback boundary": 9.55,
+        "allocation/drop/clone": 15.04,
+        "frame/bridge": 1.07
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 58.63
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x102744594,0x102744580,...]",
+          "samples": 1034,
+          "percent": 24.57
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x102744580,0x102744594,...]",
+          "samples": 959,
+          "percent": 22.79
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 81,
+          "percent": 1.92
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,76,...  [0x102744594,0x102744574,...]",
+          "samples": 53,
+          "percent": 1.26
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-1b5b3923bf796647) + 6808  [0x10272d610]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,76,...  [0x102744580,0x102744574,...]",
+          "samples": 33,
+          "percent": 0.78
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x188d37144]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x188b4a144]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x1026d6ba4]",
+          "samples": 22,
+          "percent": 0.52
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json4scan6select  (in throughput-1b5b3923bf796647) + 332  [0x102768ba0]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,88,...  [0x102744574,0x102744580,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,100,...  [0x102744574,0x10274458c,...]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 24  [0x1026d6bbc]",
+          "samples": 15,
+          "percent": 0.36
+        },
+        {
+          "symbol": "_free  (in libsystem_malloc.dylib) + 0  [0x188b5ac4c]",
+          "samples": 13,
+          "percent": 0.31
+        },
+        {
+          "symbol": "_free  (in libsystem_malloc.dylib) + 36  [0x188b5ac70]",
+          "samples": 13,
+          "percent": 0.31
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 1568  [0x188b4b68c]",
+          "samples": 12,
+          "percent": 0.29
+        }
+      ]
+    },
+    "profile-strings": {
+      "samples": 4145,
+      "percent": {
+        "scanner": 33.41,
+        "function/callback boundary": 49.92,
+        "allocation/drop/clone": 14.57,
+        "frame/bridge": 1.91,
+        "other": 0.19
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 33.41
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x1006ac580]",
+          "samples": 86,
+          "percent": 2.07
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108  [0x1006ac594]",
+          "samples": 69,
+          "percent": 1.66
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 57,
+          "percent": 1.38
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100  [0x1006ac58c]",
+          "samples": 41,
+          "percent": 0.99
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76  [0x1006ac574]",
+          "samples": 38,
+          "percent": 0.92
+        },
+        {
+          "symbol": "_RNvMs0_NtCsds78668uu60_2jx8sequenceNtB5_4View4walk  (in throughput-1b5b3923bf796647) + 44  [0x1006902d4]",
+          "samples": 36,
+          "percent": 0.87
+        },
+        {
+          "symbol": "_RNvMs0_NtCsds78668uu60_2jx8sequenceNtB5_4View4walk  (in throughput-1b5b3923bf796647) + 532  [0x1006904bc]",
+          "samples": 31,
+          "percent": 0.75
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 28  [0x188b4b088]",
+          "samples": 30,
+          "percent": 0.72
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0  [0x188b4b06c]",
+          "samples": 29,
+          "percent": 0.7
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x1006abd08]",
+          "samples": 28,
+          "percent": 0.68
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-1b5b3923bf796647) + 6876  [0x100695654]",
+          "samples": 27,
+          "percent": 0.65
+        },
+        {
+          "symbol": "_RNvMs0_NtCsds78668uu60_2jx8sequenceNtB5_4View10candidates  (in throughput-1b5b3923bf796647) + 28  [0x10069011c]",
+          "samples": 26,
+          "percent": 0.63
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x10063eba4]",
+          "samples": 25,
+          "percent": 0.6
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 728  [0x1006abdc8]",
+          "samples": 25,
+          "percent": 0.6
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 52  [0x1006d1180]",
+          "samples": 24,
+          "percent": 0.58
+        },
+        {
+          "symbol": "_RNvNtNtCsds78668uu60_2jx4json6string7matches  (in throughput-1b5b3923bf796647) + 64  [0x1006d118c]",
+          "samples": 24,
+          "percent": 0.58
+        }
+      ]
+    },
+    "profile-transform": {
+      "samples": 4196,
+      "percent": {
+        "allocation/drop/clone": 19.61,
+        "function/callback boundary": 33.37,
+        "utf16/string decoding": 5.65,
+        "scanner": 35.84,
+        "fingerprint": 5.1,
+        "other": 0.43
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 33.13,
+        "beneath plan/callback": 2.72
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x105044580]",
+          "samples": 83,
+          "percent": 1.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108  [0x105044594]",
+          "samples": 78,
+          "percent": 1.86
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76  [0x105044574]",
+          "samples": 59,
+          "percent": 1.41
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100  [0x10504458c]",
+          "samples": 57,
+          "percent": 1.36
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x105043d08]",
+          "samples": 47,
+          "percent": 1.12
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x104fd6ba4]",
+          "samples": 45,
+          "percent": 1.07
+        },
+        {
+          "symbol": "_platform_memset  (in libsystem_platform.dylib) + 180  [0x188d37144]",
+          "samples": 44,
+          "percent": 1.05
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-1b5b3923bf796647) + 28  [0x10507ec40]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib) + 112  [0x188b4a144]",
+          "samples": 38,
+          "percent": 0.91
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108  [0x105044580,0x105044594]",
+          "samples": 38,
+          "percent": 0.91
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-1b5b3923bf796647) + 16  [0x10507ec34]",
+          "samples": 36,
+          "percent": 0.86
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 1504  [0x1050440d0]",
+          "samples": 34,
+          "percent": 0.81
+        },
+        {
+          "symbol": "_RNvMNtNtCsds78668uu60_2jx9transform7rewriteNtB2_7Changes7rewrite  (in throughput-1b5b3923bf796647) + 148,184,...  [0x10501e7c8,0x10501e7ec,...]",
+          "samples": 32,
+          "percent": 0.76
+        },
+        {
+          "symbol": "_RNvXNtNtCsds78668uu60_2jx4json6stringNtB2_5UnitsNtNtNtNtCs8Mbv00yxnRz_4core4iter6traits8iterator8Iterator4next  (in throughput-1b5b3923bf796647) + 36  [0x10507ec48]",
+          "samples": 31,
+          "percent": 0.74
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 728  [0x105043dc8]",
+          "samples": 30,
+          "percent": 0.71
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 1568  [0x188b4b68c]",
+          "samples": 29,
+          "percent": 0.69
+        }
+      ]
+    },
+    "profile-transient": {
+      "samples": 4145,
+      "percent": {
+        "scanner": 33.2,
+        "function/callback boundary": 50.33,
+        "allocation/drop/clone": 14.72,
+        "frame/bridge": 1.69,
+        "other": 0.07
+      },
+      "scanner_phases_percent": {
+        "beneath function invocation": 6.3,
+        "unassigned scanner/traversal": 26.9
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88  [0x1009d0580]",
+          "samples": 56,
+          "percent": 1.35
+        },
+        {
+          "symbol": "__bzero  (in libsystem_platform.dylib) + 0  [0x188d37030]",
+          "samples": 55,
+          "percent": 1.33
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 0  [0x100962ba4]",
+          "samples": 49,
+          "percent": 1.18
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108  [0x1009d0594]",
+          "samples": 38,
+          "percent": 0.92
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 536  [0x1009cfd08]",
+          "samples": 37,
+          "percent": 0.89
+        },
+        {
+          "symbol": "_RNvMs2_NtCsds78668uu60_2jx8evaluateNtNtB7_10expression4Node3run  (in throughput-1b5b3923bf796647) + 6876  [0x1009b9654]",
+          "samples": 35,
+          "percent": 0.84
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100  [0x1009d058c]",
+          "samples": 32,
+          "percent": 0.77
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 24  [0x100962bbc]",
+          "samples": 30,
+          "percent": 0.72
+        },
+        {
+          "symbol": "_xzm_free  (in libsystem_malloc.dylib) + 0  [0x188b4b06c]",
+          "samples": 29,
+          "percent": 0.7
+        },
+        {
+          "symbol": "_RNvMNtCsds78668uu60_2jx7runtimeNtB2_8Bindings6lookup  (in throughput-1b5b3923bf796647) + 320  [0x100998fb8]",
+          "samples": 29,
+          "percent": 0.7
+        },
+        {
+          "symbol": "_platform_memcmp  (in libsystem_platform.dylib) + 280  [0x188d35028]",
+          "samples": 28,
+          "percent": 0.68
+        },
+        {
+          "symbol": "_platform_memcmp  (in libsystem_platform.dylib) + 272  [0x188d35020]",
+          "samples": 28,
+          "percent": 0.68
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCsds78668uu60_2jx5value5ValueEBF_  (in throughput-1b5b3923bf796647) + 28  [0x100962bc0]",
+          "samples": 27,
+          "percent": 0.65
+        },
+        {
+          "symbol": "_RNvMs0_NtCsds78668uu60_2jx8sequenceNtB5_4View10candidates  (in throughput-1b5b3923bf796647) + 28  [0x1009b411c]",
+          "samples": 26,
+          "percent": 0.63
+        },
+        {
+          "symbol": "_RNvNtCsds78668uu60_2jx8function4call  (in throughput-1b5b3923bf796647) + 512  [0x1009f2ba8]",
+          "samples": 23,
+          "percent": 0.55
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner5value  (in throughput-1b5b3923bf796647) + 576,728,...  [0x1009cfd30,0x1009cfdc8,...]",
+          "samples": 23,
+          "percent": 0.55
+        }
+      ]
+    },
+    "profile-traversal": {
+      "samples": 4231,
+      "percent": {
+        "scanner": 99.98,
+        "other": 0.02
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 99.98
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,88,...  [0x1042ec594,0x1042ec580,...]",
+          "samples": 891,
+          "percent": 21.06
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,108,...  [0x1042ec580,0x1042ec594,...]",
+          "samples": 770,
+          "percent": 18.2
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,88,...  [0x1042ec58c,0x1042ec580,...]",
+          "samples": 514,
+          "percent": 12.15
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,76,...  [0x1042ec580,0x1042ec574,...]",
+          "samples": 398,
+          "percent": 9.41
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 88,100,...  [0x1042ec580,0x1042ec58c,...]",
+          "samples": 262,
+          "percent": 6.19
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,76,...  [0x1042ec594,0x1042ec574,...]",
+          "samples": 258,
+          "percent": 6.1
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 108,100,...  [0x1042ec594,0x1042ec58c,...]",
+          "samples": 255,
+          "percent": 6.03
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,100,...  [0x1042ec574,0x1042ec58c,...]",
+          "samples": 240,
+          "percent": 5.67
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,76,...  [0x1042ec58c,0x1042ec574,...]",
+          "samples": 133,
+          "percent": 3.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,88,...  [0x1042ec574,0x1042ec580,...]",
+          "samples": 127,
+          "percent": 3.0
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 100,108,...  [0x1042ec58c,0x1042ec594,...]",
+          "samples": 126,
+          "percent": 2.98
+        },
+        {
+          "symbol": "_RNvMs_NtNtCsds78668uu60_2jx4json4scanNtB4_7Scanner6string  (in throughput-1b5b3923bf796647) + 76,108,...  [0x1042ec574,0x1042ec594,...]",
+          "samples": 123,
+          "percent": 2.91
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 80,96  [0x10425cebc,0x10425cecc]",
+          "samples": 73,
+          "percent": 1.73
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96,80  [0x10425cecc,0x10425cebc]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 80  [0x10425cebc]",
+          "samples": 14,
+          "percent": 0.33
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-1b5b3923bf796647) + 96  [0x10425cecc]",
+          "samples": 7,
+          "percent": 0.17
+        }
+      ]
+    }
+  }
+}

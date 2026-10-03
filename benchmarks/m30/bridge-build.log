@@ -1,0 +1,3 @@
+   Compiling jx v0.1.0 (/Users/josh/Documents/Workspace/jo-cube/jx/crates/jx)
+    Finished `bench` profile [optimized] target(s) in 19.47s
+  Executable benches/throughput.rs (target/release/deps/throughput-1b5b3923bf796647)

@@ -81,8 +81,10 @@ writes retain captures. Tail calls trampoline through existing evaluation, reuse
 frames and share guards; non-tail calls keep a bounded native Rust stack.
 
 Dynamic code uses a shorter-lifetime scope bridge and retains only escaping definitions/
-values. Primitive dynamic callback plans can avoid that bridge; string/container returns
-use its established loan/export path. Random sources are lazy and optional; timestamps
+values. Existing pure dynamic callback plans bypass frame copying: primitives export
+directly, fixed objects retain only their result and static members. Signatures and call
+guards remain shared; controlled execution, lexical state, effects and unsupported shapes
+use the established loan/export path. Random sources are lazy and optional; timestamps
 are evaluation-fixed. No ordinary compiled value becomes universally owned for `$eval`.
 
 `CompileOptions` declares external names before optimization. `EvaluationOptions` supplies

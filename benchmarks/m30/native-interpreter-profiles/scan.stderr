@@ -1,0 +1,37 @@
+native_metadata,arithmetic,29583,533625,1,716,0
+native_region,jit/arithmetic,100,352416,1,716
+native_region,jit/arithmetic,500,305667,1,716
+native_region,jit/arithmetic,1024,286209,1,716
+native_region,jit/arithmetic,10240,278291,1,716
+native_region,jit/arithmetic,1048576,275250,1,716
+Sampling process 85684 for 5 seconds with 1 millisecond of run time between samples
+Sampling completed, processing symbols...
+Sample analysis of process 85684 written to file benchmarks/m30/native-interpreter-profiles/profile-scan.txt
+native_metadata,dense,23167,640292,1,1144,0
+native_region,jit/dense,100,503167,1,1144
+native_region,jit/dense,500,447250,1,1144
+native_region,jit/dense,1024,416500,1,1144
+native_region,jit/dense,10240,402958,1,1144
+native_region,jit/dense,1048576,403334,1,1144
+native_metadata,branch,8708,447666,1,1056,0
+native_region,jit/branch,100,392375,1,1056
+native_region,jit/branch,500,369750,1,1056
+native_region,jit/branch,1024,365000,1,1056
+native_region,jit/branch,10240,353625,1,1056
+native_region,jit/branch,1048576,357584,1,1056
+native_region,jit/tiny,13,308958,1,716
+native_region,jit/fold,122,427125,1,1144
+native_region,jit/filter_map_fold,122,547416,1,1368
+native_region,jit/numeric_fold,26,242958,1,504
+native_region,jit/fold,472,415666,1,1144
+native_region,jit/filter_map_fold,472,511917,1,1368
+native_region,jit/numeric_fold,88,228500,1,504
+native_region,jit/fold,1858,407000,1,1144
+native_region,jit/filter_map_fold,1858,493750,1,1368
+native_region,jit/numeric_fold,322,222084,1,504
+native_region,jit/fold,14794,402083,1,1144
+native_region,jit/filter_map_fold,14794,484709,1,1368
+native_region,jit/numeric_fold,2506,221209,1,504
+native_region,jit/fold,236554,405583,1,1144
+native_region,jit/filter_map_fold,236554,489250,1,1368
+native_region,jit/numeric_fold,39946,222541,1,504

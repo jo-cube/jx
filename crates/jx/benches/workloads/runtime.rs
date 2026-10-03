@@ -70,6 +70,12 @@ pub(super) fn run(smoke: bool) {
                 width * 128 + 128,
             ),
             (
+                "partial",
+                "$map(rows,function($r,$base){$r.a+$r.b+$base}(?,3))",
+                json!(values.iter().map(|v| v + 3).collect::<Vec<_>>()),
+                32,
+            ),
+            (
                 "strings",
                 "$map(rows,function($r){$r.detail.label & $r.detail.label & $r.detail.label})",
                 json!(vec!["abcabcabc"; width as usize]),

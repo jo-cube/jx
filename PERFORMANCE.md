@@ -25,11 +25,27 @@ versioned evidence directories for earlier compiler/traversal/native decisions.
 
 ## Current costs and architecture
 
-M27 samples put scanner/traversal helpers at roughly 87–91% in representative planned
-scalar/static lookup workloads, and 79% in dynamic numeric map after removing its frame
-bridge. String callback boundary helpers account for 47–51% in the profiled string map;
-nonprimitive dynamic results still need scope loan/export. These are sampled/inlined
-helper categories, not exact instruction-cycle attribution.
+M30's warmed five-second samples describe the current engine:
+
+| Workload | Input bytes | Scanner/traversal | Plan | Allocation/drop/clone |
+|---|---:|---:|---:|---:|
+| Planned scalar | 500 | 83% | 10% | 1% |
+| Static 8,192-key lookup | 500 | 87% | — | <1% |
+| Numeric map / reduce | 50,102 / 41,828 | 77% / 77% | within call helpers | 2% / 3% |
+| Filter/map/fold | 41,828 | 69% | 20% | 3% |
+| Repeated string projections | 50,102 | 33% | — | 15% |
+| Pure ordering / grouping | 41,828 | 58% / 47% | 7% / — | 7% / 12% |
+| Structural update | 33,180 | 36% | — | 20% |
+| Dynamic object callback | 6,149 | 50% | within call helpers | 23% |
+| Large sparse scalar | 1,048,576 | ~100% | <1% | <1% |
+
+These are disjoint sampled self categories, with inlined helpers attributed to callers;
+function/callback categories include tree/plan/runtime helpers, not dispatch alone.
+String projection maps spend another ~50% in those helpers; short 100 B string maps
+spend ~29% in allocation/drop/clone, 24% in scanning and 18% in call helpers. Lookup
+fingerprinting/search is ~7%/~2%. Full traces and definitions are retained in
+[M30 evidence](benchmarks/m30/environment.json). General dynamic calls still need the
+scope bridge; existing pure fixed-object plans now export only their result.
 
 Demand capture, primitive callbacks, single-pass nested raw-array flattening, local grouping
 indices and lazily retained pure sort keys are already implemented. Unplanned consumers,
@@ -135,12 +151,13 @@ regression has no new frame/value/plan operations or allocations. Binary layout/
 changes remain possible; no instruction-level attribution is established. It is documented
 rather than addressed with a speculative dispatch patch.
 
-M28's string-callback regression remains: repeated M27 comparisons give -4.7% /-3.2%,
+In the M29 run, M28's string-callback regression remained: M27 comparisons gave -4.7% /-3.2%,
 with 14 allocations unchanged (953 → 961 requested bytes). Five-second sampled profiles
 put scanner helpers at 23–25%, allocation/drop/clone at 29–32%, and function boundaries
 at 16–19%; frame/bridge self samples are below 2%. Reordering the plan/control checks
 failed to improve it and was removed. Shared cooperative guards and nonprimitive bridges
-remain the accepted cost; these sampled categories do not identify exact cycle overhead.
+remain structural costs; those sampled categories do not identify exact cycle overhead.
+M30's fresh repeats below do not reproduce the historical delta consistently.
 
 For the new post-sort workloads, borrowing the fixed `@` key removes avoidable owned-string
 construction. Compared with M29 before that key change, grouping throughput improves
@@ -169,3 +186,64 @@ and x86_64 macOS under Rosetta. Linux/Windows CI is configured, not yet remotely
 Fuzz dependencies live in a separate development-only workspace; engine dependencies,
 unsafe boundary and native coverage are unchanged. [M29 evidence](benchmarks/m29/environment.json)
 records exact commands, hashes, profiles and platform limitations.
+
+## Runtime consolidation
+
+M30 removes scope copying from dynamic callbacks whose bodies already have pure bounded
+plans. Primitive results still export directly; fixed objects use the existing result
+retention code for borrowed program literals/constants. No new value/frame representation,
+cache, demand metadata or lowering/JIT coverage is added. Controlled calls, effects,
+lexical state and failed type/shape guards keep the existing bridge/fallback.
+
+Matched M29/M30 engines use identical expanded fixtures, seven 300 ms samples and both
+orders. Dynamic object map throughput improves 38–40% at 8 rows, 59–62% at 128,
+64–65% at 1,024 and 65–66% at 16,384. At 1,024 rows allocations fall 14,426 → 7,258
+and requested bytes 1,283,735 → 472,727. These fixtures include runtime compilation,
+validation and consumption, without serialization.
+
+Live-heap fixtures additionally retain a constant string member. At 16,384 rows,
+allocations fall 327,790 → 229,486 and total requested bytes 23,206,160 → 16,783,632;
+peak live heap remains ~3.80 MB because the same output must survive. Transient captures,
+genuine escapes, reductions and partial maps retain their existing peaks; all 200 final
+observations have zero after-drop delta. Requested heap is not RSS.
+
+The historical callback deltas are not a reliable current optimization target. Fresh
+M28/M29 partial comparisons give -0.3%/+0.8%; M27/M29 short string comparisons give
++1.8%/-1.0%. Source inspection finds no new executed M29 lambda-partial operations;
+Math coercion is not invoked there. M28's real changes are optional call/plan checks,
+diagnostics and an eight-byte arena pointer, with unchanged allocation counts. Removing
+those nil guard checks did not improve throughput. Moving checkpoints into dispatch
+arms gave marginal/inconsistent results and was removed. Historical instruction-cycle
+attribution remains unresolved; layout/inlining and measurement variation cannot be
+excluded. [Investigation](benchmarks/m30/regression-notes.md).
+
+Final M30 controls retain every unrelated allocation count and zero-allocation path.
+The three-item numeric partial is ~2% slower at 500 B (-1.9%/-2.1%), but wider partial
+maps are steady (-0.5% to +2.1% across 8–16,384 rows); no additional operation runs there.
+The 500 B string callback is ~1% slower, while 100 B changes sign and 10 KiB is steady.
+These modest build-level costs do not justify a specialized dispatch patch. Scalar/path,
+lookup, ordering/grouping, regex/date and transform controls are within roughly 2.4%.
+
+Repeated unplanned string projections/conversions, non-lowered dynamic bridges, genuine
+captures, effectful comparators, sequence replay and transform reconstruction remain.
+The measured map/fold scanner cost is much larger than plan dispatch. Keep existing
+capture/plans and optional native kernels; no current evidence supports universal
+indexing/caching or another representation change.
+
+Same-binary native controls (unchanged kernel coverage) improve 500 B arithmetic ~9%,
+1 KiB arithmetic ~5%, object folds 54–59%, numeric folds 69–71%, and dense filter/map/fold
+34–36% in both orders, all without per-record allocation. The 1 MiB scanning control is
+unchanged. Scalar interpreter/native self samples shift plan helpers from ~11% to ~3%;
+object-fold samples shift them from ~40% to ~14%, with ~9% in unsymbolized native code.
+On the canonical 500 B arithmetic fixture, the interpreter reaches ~89% and native
+~97% of the validating purpose-written Rust control; that control does not implement
+JSONata's general shape/error rules. Traversal therefore occupies a larger fraction
+after acceleration. These are current controls, not M30 JIT changes; native remains explicit and bounded.
+
+The final default sweep covers 1,806 groups /12,642 samples with allocation assertions.
+`just all` and `just build` pass; all 1,679 upstream classifications and 54,715 comparisons
+across 25 differential suites remain green. Boundary properties ran 100,000 seeded
+mutations; ASan/coverage-guided fuzzing completed 200,000 executions without a finding.
+Normal/native tests passed on arm64 macOS and x86_64 macOS under Rosetta; Linux/Windows
+CI remains configured but unexecuted. [M30 evidence](benchmarks/m30/environment.json)
+records commands, binary/source hashes, fresh profiles and measurement limits.

@@ -1,0 +1,26 @@
+[
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 100
+  },
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "function/partial_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "function/direct",
+    "bytes": 500
+  },
+  {
+    "filter": "runtime/strings",
+    "bytes": 50102
+  },
+  {
+    "filter": "runtime/planned",
+    "bytes": 50102
+  }
+]

@@ -1,0 +1,2 @@
+workload,input_bytes,interpreter_records_s,native_records_s,change_percent,interpreter_allocations,native_allocations,interpreter_allocated_bytes,native_allocated_bytes,break_even_records
+jit/fold,236554,430,680,58.14,0.0,0.0,0.0,0.0,

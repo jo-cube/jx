@@ -1,0 +1,7 @@
+workload,input_bytes,before_records_s,after_records_s,change_percent,before_allocations,after_allocations,before_allocated_bytes,after_allocated_bytes
+acquisition/string_callback,100,1370870,1300290,-5.15,14.0,14.0,961.0,961.0
+acquisition/string_callback,500,732511,718593,-1.9,14.0,14.0,961.0,961.0
+function/partial_callback,500,671331,671215,-0.02,8.0,8.0,520.0,520.0
+function/direct,500,2329236,2347059,0.77,3.0,3.0,200.0,200.0
+runtime/strings,50102,1078,1079,0.09,7184.0,7184.0,421464.0,421464.0
+runtime/planned,50102,3543,3561,0.51,14.0,14.0,49368.0,49368.0

@@ -1,0 +1,82 @@
+[
+  {
+    "name": "path",
+    "filter": "ascii/shallow",
+    "bytes": 500
+  },
+  {
+    "name": "scalar",
+    "filter": "execution/arithmetic",
+    "bytes": 500
+  },
+  {
+    "name": "traversal",
+    "filter": "execution/arithmetic",
+    "bytes": 1048576
+  },
+  {
+    "name": "lookup",
+    "filter": "acquisition/lookup_8192_short_raw",
+    "bytes": 500
+  },
+  {
+    "name": "string_small",
+    "filter": "acquisition/string_callback",
+    "bytes": 100
+  },
+  {
+    "name": "string_typical",
+    "filter": "acquisition/string_callback",
+    "bytes": 500
+  },
+  {
+    "name": "partial",
+    "filter": "function/partial_callback",
+    "bytes": 500
+  },
+  {
+    "name": "map",
+    "filter": "runtime/planned",
+    "bytes": 50102
+  },
+  {
+    "name": "strings",
+    "filter": "runtime/strings",
+    "bytes": 50102
+  },
+  {
+    "name": "dynamic_object",
+    "filter": "runtime/dynamic_object",
+    "bytes": 6149
+  },
+  {
+    "name": "pipeline",
+    "filter": "regions/filtered_sum",
+    "bytes": 41828
+  },
+  {
+    "name": "reduce",
+    "filter": "regions/reduce",
+    "bytes": 41828
+  },
+  {
+    "name": "sort",
+    "filter": "regions/sort",
+    "bytes": 41828
+  },
+  {
+    "name": "group",
+    "filter": "regions/groups",
+    "bytes": 41828
+  },
+  {
+    "name": "transform",
+    "filter": "transform/wide_update",
+    "bytes": 33180
+  },
+  {
+    "name": "transient",
+    "filter": "runtime/transient",
+    "bytes": 50102
+  }
+]

@@ -1,0 +1,2429 @@
+cargo fmt --all -- --check
+just clippy
+cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+    Checking jx v0.1.0 (/Users/josh/Documents/Workspace/jo-cube/jx/crates/jx)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s
+just test
+cargo test --workspace --all-features --locked
+   Compiling jx v0.1.0 (/Users/josh/Documents/Workspace/jo-cube/jx/crates/jx)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.68s
+     Running unittests src/lib.rs (target/debug/deps/jx-5c96f2e0bb1691e3)
+
+running 19 tests
+test json::string::tests::size_hints_bound_remaining_units ... ok
+test json::string::tests::equal_strings_have_equal_fingerprints ... ok
+test constant::tests::fingerprint_collisions_require_exact_key_equality ... ok
+test plan::tests::dynamic_effects_and_retained_results_do_not_lower_as_callbacks ... ok
+test function::acquire::tests::effects_in_arguments_and_dynamic_targets_stay_on_the_tree ... ok
+test plan::tests::whole_regions_lower ... ok
+test runtime::tests::an_older_frame_write_keeps_its_new_capture_alive ... ok
+test runtime::tests::closure_focus_is_an_escape_root_even_with_an_older_frame ... ok
+test plan::tests::nested_demands_preserve_replacement_and_array_fallback ... ok
+test runtime::tests::temporary_captures_release_their_frames_before_record_completion ... ok
+test plan::tests::shared_computations_keep_wide_constructors_in_one_region ... ok
+test value::tests::concatenation_preserves_encoding_and_shared_identity ... ok
+test plan::tests::pure_callback_folds_match_staged_tree_errors ... ok
+test function::acquire::tests::captured_calls_match_original_calls_and_exact_errors ... ok
+test plan::tests::plan_and_tree_agree_on_values_and_exact_errors ... ok
+test plan::tests::parameter_regions_lower_and_match_original_calls ... ok
+test plan::tests::native_regions_match_interpreter_and_error_fallback ... ok
+test plan::tests::fixed_objects_lookup_and_capture_match_the_tree ... ok
+test plan::tests::branches_and_folds_match_the_tree ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.12s
+
+     Running tests/acquisition.rs (target/debug/deps/acquisition-fddd630ef24f00c6)
+
+running 2 tests
+test captured_arguments_borrow_input_and_validation_precedes_effects ... ok
+test acquisition_lookup_and_string_results ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/aggregates.rs (target/debug/deps/aggregates-e8734b6346d56d17)
+
+running 5 tests
+test aggregate_arguments_finish_before_type_or_arity_checks ... ok
+test aggregates_preserve_ieee_values_and_signed_zero ... ok
+test validation_cancellation_and_mapped_aggregate_errors ... ok
+test aggregate_calls_keep_syntax_and_depth_limits_explicit ... ok
+test aggregate_semantics ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/builtins.rs (target/debug/deps/builtins-66305aca1dd372f4)
+
+running 5 tests
+test computed_strings_preserve_json_encoding_and_surrogate_units ... ok
+test missing_matchers_and_host_exceptions_are_explicit ... ok
+test builtin_retention_keeps_input_borrowing_and_evaluates_arguments_once ... ok
+test validation_and_argument_errors_precede_callback_execution ... ok
+test builtin_semantics ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/compatibility.rs (target/debug/deps/compatibility-95eec569e51e7c43)
+
+running 3 tests
+test native_array_coercion_stringifies_negative_zero ... ok
+test date_literals_reject_known_legacy_case_fold_mismatches ... ok
+test residual_compatibility ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/compiler.rs (target/debug/deps/compiler-6689f7cc0f07a3db)
+
+running 4 tests
+test constant_errors_remain_runtime_errors_after_validation ... ok
+test static_lookup_still_validates_and_normalizes_its_key ... ok
+test constant_construction_keeps_identity_and_shape ... ok
+test lookup_shapes_keys_and_calls ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/composition.rs (target/debug/deps/composition-d091b762db445c15)
+
+running 7 tests
+test concatenation_preserves_escape_and_surrogate_boundaries ... ok
+test jsonata_stringification_is_distinct_from_output_serialization ... ok
+test string_identity_and_partial_arguments_keep_borrowing ... ok
+test validation_and_error_order_are_preserved ... ok
+test composed_calls_keep_resource_limits_and_record_isolation ... ok
+test direct_path_conversion_matches_dynamic_calls ... ok
+test conversion_and_composition_semantics ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/conformance.rs (target/debug/deps/conformance-0fc7605ce1f87cd0)
+
+running 1 test
+test pinned_upstream_groups_have_explicit_expected_outcomes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.24s
+
+     Running tests/consolidation.rs (target/debug/deps/consolidation-3c313049375ebe4e)
+
+running 5 tests
+test traversal_cancellation_still_follows_complete_validation ... ok
+test immediate_calls_preserve_rebinding_and_escaping_captures ... ok
+test nested_lookup_preserves_array_boundaries_and_decoded_duplicate_keys ... ok
+test wide_groups_compare_encoded_keys_without_losing_member_order ... ok
+test ordering_and_grouping_preserve_upstream_outcomes ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/constructors.rs (target/debug/deps/constructors-d3cfc7bb58f9822a)
+
+running 9 tests
+test null_collapse_reports_a_type_error_instead_of_a_host_exception ... ok
+test implicit_string_iteration_after_constructor_collapse_is_explicitly_deferred ... ok
+test object_construction_does_not_mutate_empty_input_arrays ... ok
+test serialization_keeps_unicode_units_and_arbitrary_json_keys ... ok
+test containers_own_structure_and_retain_borrowed_members ... ok
+test construction_preserves_internal_numbers_and_undefined ... ok
+test construction_validates_before_output_and_cancels_between_containers ... ok
+test constructor_syntax_and_depth_are_bounded ... ok
+test constructor_semantics ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/effects.rs (target/debug/deps/effects-28541024366eac56)
+
+running 8 tests
+test compatibility_boundaries_are_explicit ... ok
+test dynamic_randomness_shares_the_injected_source ... ok
+test dynamic_errors_preserve_effects_and_shuffle_uses_one_shared_stream ... ok
+test dynamic_results_borrow_input_and_validation_precedes_effects ... ok
+test skipped_effects_and_trivial_shuffles_do_not_draw ... ok
+test eval_errors_keep_the_nested_diagnostic ... ok
+test injected_randomness_is_shared_and_not_replayed ... ok
+test dynamic_evaluation_semantics ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/embedding.rs (target/debug/deps/embedding-2b0f270ac36a37e4)
+
+running 7 tests
+test diagnostics_identify_source_and_nested_cause ... ok
+test focus_missing_borrowing_and_repeated_bindings ... ok
+test host_callback_results_keep_escaping_lexical_and_dynamic_closures ... ok
+test host_signatures_and_reentrant_jsonata_callbacks_share_the_runtime ... ok
+test external_bindings_shadow_builtins_without_folding_effects ... ok
+test host_calls_compose_with_callbacks_partials_and_dynamic_code ... ok
+test pinned_upstream_external_binding_cases ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/execution.rs (target/debug/deps/execution-f9df5c73de892a85)
+
+running 7 tests
+test planned_regions_do_not_round_borrowed_output ... ok
+test numeric_regions_accept_constructed_and_retained_contexts ... ok
+test numeric_regions_compose_with_contexts_and_retention ... ok
+test numeric_regions_keep_validation_and_error_precedence ... ok
+test branches_fixed_objects_and_streamed_folds_compose ... ok
+test numeric_regions_preserve_missing_shape_and_record_isolation ... ok
+test numeric_regions_preserve_ordering_and_stream_cancellation ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/filters.rs (target/debug/deps/filters-7e7c9fecc2848747)
+
+running 5 tests
+test filtered_values_borrow_input_and_cancellation_stops_predicates ... ok
+test undefined_sequence_items_remain_distinct_from_null ... ok
+test upstream_stage_errors_take_precedence_over_later_stage_errors ... ok
+test filter_semantics ... ok
+test filters_have_bounded_depth_and_keep_deferred_syntax_explicit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/formatting.rs (target/debug/deps/formatting-be5c2b0c414926a5)
+
+running 2 tests
+test pictures_do_not_change_validation_or_argument_order ... ok
+test numeric_and_date_picture_semantics ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/functions.rs (target/debug/deps/functions-436d6e2d218cf6d0)
+
+running 5 tests
+test ambiguous_signature_matching_is_bounded ... ok
+test frame_recycling_preserves_escaped_callback_bindings ... ok
+test function_runtime_semantics ... ok
+test tail_borrowing_validation_and_reuse ... ok
+test infinite_tail_calls_use_execution_budget_and_release_the_record ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+
+     Running tests/helpers.rs (target/debug/deps/helpers-1f5b97d8843311ce)
+
+running 4 tests
+test user_messages_and_comment_errors_are_explicit ... ok
+test helpers_preserve_borrowing_and_validation ... ok
+test predicates_after_grouping_require_a_path_or_boundary ... ok
+test everyday_helper_semantics ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/json_validation.rs (target/debug/deps/json_validation-766a849e309a34a0)
+
+running 6 tests
+test invalid_json_syntax ... ok
+test valid_json_syntax_and_utf8 ... ok
+test rejects_invalid_utf8_anywhere_even_in_unselected_fields ... ok
+test deterministic_mutations_agree_with_serde_on_common_json_domain ... ok
+test depth_limit_and_large_shallow_records ... ok
+test planned_capture_preserves_complete_validation_and_exact_diagnostics ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/lexical.rs (target/debug/deps/lexical-a04beed457ddb015)
+
+running 8 tests
+test function_results_are_opaque_and_not_json ... ok
+test deferred_features_and_constructor_binding_races_are_explicit ... ok
+test retained_bindings_preserve_input_borrowing ... ok
+test retained_output_obeys_consumer_cancellation ... ok
+test recursion_is_bounded_and_an_error_does_not_poison_reuse ... ok
+test recursion_accounts_for_large_function_bodies ... ok
+test evaluations_isolate_scope_and_validate_before_execution ... ok
+test lexical_semantics ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/matchers.rs (target/debug/deps/matchers-57a7c32c31cf3792)
+
+running 6 tests
+test complete_validation_precedes_matcher_execution ... ok
+test independent_evaluations_and_cloned_expressions_have_fresh_cursors ... ok
+test legacy_case_folding_and_native_coercion_are_explicitly_deferred ... ok
+test borrowing_and_continuation_retention ... ok
+test legacy_greek_simple_uppercase_aliases_remain_explicitly_unsupported ... ok
+test matcher_semantics ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/navigation.rs (target/debug/deps/navigation-da534b6191b152fd)
+
+running 4 tests
+test range_limits_and_deferred_tuple_navigation_are_explicit ... ok
+test validation_borrowing_and_cancellation ... ok
+test nested_fallbacks_compile_without_expanding_the_left_tree ... ok
+test navigation_semantics ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/regions.rs (target/debug/deps/regions-7e8c7f0e540367a4)
+
+running 3 tests
+test effectful_callbacks_keep_random_draw_order ... ok
+test validation_precedes_planned_calls_and_fold_output ... ok
+test pure_region_results_and_fallbacks_match_readable_cases ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/resource_controls.rs (target/debug/deps/resource_controls-f2c3022d6e1f4011)
+
+running 5 tests
+test controls_and_external_bindings_compose_without_native_support ... ok
+test limits_do_not_require_json_encodable_results ... ok
+test tightening_stack_and_tail_limits_is_explicit_and_native_plans_keep_safe_fallback ... ok
+test controls_check_retained_builtin_arguments_and_parenthesized_focus_paths ... ok
+test limits_stop_retention_and_consumption_and_validation_still_precedes_effects ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/robustness.rs (target/debug/deps/robustness-4352f8c677ecb676)
+
+running 5 tests
+test escaping_dynamic_literals_retain_their_program_after_the_call_returns ... ok
+test host_failure_deadline_and_cancellation_do_not_leak_into_later_evaluations ... ok
+test fallback_and_shared_expression_ownership_survive_adversarial_shapes ... ok
+test seeded_parser_scanner_and_serialization_mutations ... ok
+test adversarial_dynamic_pictures_fail_without_panicking_or_losing_validation ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/runtime.rs (target/debug/deps/runtime-23b8d62cb90e0b41)
+
+running 6 tests
+test transient_and_escaped_callbacks_preserve_borrowed_input ... ok
+test retained_dynamic_object_members_preserve_surrogate_units ... ok
+test temporary_callback_captures_do_not_replay_effects ... ok
+test dynamic_plan_guards_preserve_errors_and_record_reuse ... ok
+test runtime_boundary_semantics ... ok
+test dynamic_object_guards_match_static_callbacks_and_allow_record_reuse ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scalars.rs (target/debug/deps/scalars-75004ee9111bc0f8)
+
+running 7 tests
+test expression_whitespace_matches_the_language_tokenizer ... ok
+test computed_scalars_and_literal_strings_need_no_owned_output ... ok
+test operator_errors_have_expression_offsets_after_complete_validation ... ok
+test duplicate_keys_unicode_and_binary64_boundaries ... ok
+test compile_errors_and_expression_depth_are_bounded ... ok
+test scalar_operators_and_sequence_operands ... ok
+test structural_equality_and_boolean_casting_respect_input_depth_limits ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/semantics.rs (target/debug/deps/semantics-e81111d0cf4583a3)
+
+running 8 tests
+test compact_serialization_preserves_string_and_number_bytes ... ok
+test serialization_propagates_consumer_failure ... ok
+test unsupported_semantics_fail_explicitly ... ok
+test results_borrow_input_not_the_expression ... ok
+test validate_before_returning_a_selected_value_or_semantic_error ... ok
+test field_names_compare_decoded_escapes ... ok
+test object_paths_missing_and_raw_values ... ok
+test compile_once_reuse_across_records_and_threads ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sequences.rs (target/debug/deps/sequences-45a914b4804066a3)
+
+running 6 tests
+test streamed_values_borrow_their_original_ranges ... ok
+test cancellation_preserves_the_consumer_error_and_stops_emission ... ok
+test fully_validate_before_emitting_any_sequence_item ... ok
+test duplicate_keys_and_escaped_names_inside_arrays ... ok
+test array_navigation_and_sequence_boundaries ... ok
+test traversal_is_bounded_by_validated_input_depth_not_array_width ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/structure.rs (target/debug/deps/structure-c96a5c1de275f2ae)
+
+running 8 tests
+test undeducible_parents_fail_without_recursive_analysis ... ok
+test validation_cancellation_and_record_isolation ... ok
+test transform_alias_boundaries_are_explicit ... ok
+test clone_conversion_preserves_utf16_and_checks_all_numeric_leaves ... ok
+test unsupported_non_json_transform_edges_are_explicit ... ok
+test clones_and_updates_keep_unrelated_leaves_borrowed ... ok
+test resolved_parent_paths_count_toward_the_function_stack_budget ... ok
+test parent_and_transform_semantics ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/tuples.rs (target/debug/deps/tuples-fea223487823e4bd)
+
+running 5 tests
+test invalid_bindings_and_parent_navigation_remain_explicit ... ok
+test an_empty_scoped_group_constructs_an_empty_object ... ok
+test cancellation_stops_scoped_stages_before_later_errors ... ok
+test scoped_paths_validate_before_output_and_borrow_selected_values ... ok
+test scoped_path_semantics ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/value_access.rs (target/debug/deps/value_access-5ec0a88ec2d527d2)
+
+running 2 tests
+test owned_results_keep_sequence_shape_and_duplicate_keys_and_reject_cross_arena_closures ... ok
+test decoded_access_works_across_storage_and_owned_snapshots ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/jx-d804563ca08791e9)
+
+running 3 tests
+test stream::tests::oversized_unterminated_record_stays_bounded ... ok
+test stream::tests::output_failure_stops_before_consuming_the_next_record ... ok
+test stream::tests::framing_is_independent_of_buffer_boundaries ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (target/debug/deps/cli-315b7d1277d580b2)
+
+running 25 tests
+test errors_have_distinct_exit_codes_and_record_context ... ok
+test everyday_helpers_and_user_errors_stream_records ... ok
+test formatting_is_compiled_once_and_streams_records ... ok
+test builtins_frame_sequences_and_escape_computed_strings ... ok
+test invalid_record_never_emits_a_partial_sequence ... ok
+test aggregates_distinguish_missing_empty_and_failed_records ... ok
+test filters_frame_values_and_report_streamed_errors ... ok
+test conversion_and_chaining_preserve_ndjson_boundaries ... ok
+test kept_sequences_and_reductions_preserve_record_framing ... ok
+test ndjson_missing_null_arrays_and_final_unterminated_record ... ok
+test lexical_runtime_is_fresh_for_each_record ... ok
+test matcher_results_keep_ndjson_framing_and_record_isolation ... ok
+test dynamic_eval_streams_records_and_wraps_errors ... ok
+test exact_record_limit_including_cr_but_excluding_lf ... ok
+test scoped_paths_reset_bindings_and_preserve_sequence_framing ... ok
+test constructors_frame_complete_outputs_and_mapped_failures ... ok
+test help_empty_input_options_and_invalid_utf8 ... ok
+test output_limits_and_expression_files ... ok
+test streams_multiple_files_and_stdin_in_order ... ok
+test parent_navigation_and_transforms_preserve_record_boundaries ... ok
+test serialization_failure_never_publishes_an_incomplete_result ... ok
+test sequences_are_separate_lines_and_raw_arrays_stay_values ... ok
+test scalar_results_and_runtime_errors_are_framed_per_record ... ok
+test signed_tail_functions_stream_and_report_record_errors ... ok
+test native_plans_preserve_record_framing_and_failure_output ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s
+
+     Running unittests src/lib.rs (target/debug/deps/jx_native-5c789b6c39b7f09b)
+
+running 3 tests
+test tests::invalid_programs_fail_without_invocation ... ok
+test tests::guards_and_shared_code_lifetime ... ok
+test tests::invalid_operands_and_forward_branches_keep_the_executable_boundary_bounded ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests jx
+
+running 2 tests
+test crates/jx/src/embedding.rs - embedding::CompileOptions (line 7) ... ok
+test crates/jx/src/lib.rs - (line 4) ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 5.12s; merged doctests compilation took 4.60s
+   Doc-tests jx_native
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+cargo bench -p jx --bench throughput --all-features --locked -- --smoke
+    Finished `bench` profile [optimized] target(s) in 0.02s
+     Running benches/throughput.rs (target/release/deps/throughput-c4f4d8c7339efca9)
+workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record
+compile,0,0,32,0.000008750,3657143,0,8.000000,578.000000
+ascii/validate,100,0,32,0.000002541,12593467,1259346714,0.000000,0.000000
+ascii/identity,100,0,32,0.000002708,11816839,1181683900,0.000000,0.000000
+ascii/shallow,100,0,32,0.000003084,10376135,1037613489,0.000000,0.000000
+ascii/nested,100,0,32,0.000003125,10240000,1024000000,0.000000,0.000000
+ascii/missing,100,0,32,0.000002917,10970175,1097017484,0.000000,0.000000
+ascii/array_value,100,0,32,0.000003000,10666667,1066666667,0.000000,0.000000
+ascii/identity_write,100,0,32,0.000004625,6918919,691891892,0.000000,0.000000
+ascii/validate,500,0,32,0.000008792,3639672,1819836215,0.000000,0.000000
+ascii/identity,500,0,32,0.000008959,3571827,1785913606,0.000000,0.000000
+ascii/shallow,500,0,32,0.000009458,3383379,1691689575,0.000000,0.000000
+ascii/nested,500,0,32,0.000009541,3353946,1676973064,0.000000,0.000000
+ascii/missing,500,0,32,0.000009417,3398110,1699054901,0.000000,0.000000
+ascii/array_value,500,0,32,0.000009458,3383379,1691689575,0.000000,0.000000
+ascii/identity_write,500,0,32,0.000019292,1658719,829359320,0.000000,0.000000
+ascii/validate,1024,0,32,0.000016666,1920077,1966158646,0.000000,0.000000
+ascii/identity,1024,0,32,0.000016791,1905783,1951521649,0.000000,0.000000
+ascii/shallow,1024,0,32,0.000017333,1846189,1890497894,0.000000,0.000000
+ascii/nested,1024,0,32,0.000017458,1832971,1876961851,0.000000,0.000000
+ascii/missing,1024,0,32,0.000017167,1864041,1908778470,0.000000,0.000000
+ascii/array_value,1024,0,32,0.000017333,1846189,1890497894,0.000000,0.000000
+ascii/identity_write,1024,0,32,0.000037750,847682,868026490,0.000000,0.000000
+ascii/validate,10240,0,32,0.000155250,206119,2110660225,0.000000,0.000000
+ascii/identity,10240,0,32,0.000155375,205953,2108962188,0.000000,0.000000
+ascii/shallow,10240,0,32,0.000155959,205182,2101065023,0.000000,0.000000
+ascii/nested,10240,0,32,0.000156042,205073,2099947450,0.000000,0.000000
+ascii/missing,10240,0,32,0.000154166,207568,2125501083,0.000000,0.000000
+ascii/array_value,10240,0,32,0.000170125,188097,1926113152,0.000000,0.000000
+ascii/identity_write,10240,0,32,0.000372708,85858,879186924,0.000000,0.000000
+ascii/validate,65536,0,32,0.001029042,31097,2037965409,0.000000,0.000000
+ascii/identity,65536,0,32,0.001028958,31099,2038131780,0.000000,0.000000
+ascii/shallow,65536,0,32,0.001023417,31268,2049166664,0.000000,0.000000
+ascii/nested,65536,0,32,0.001026042,31188,2043924128,0.000000,0.000000
+ascii/missing,65536,0,32,0.001043291,30672,2010131401,0.000000,0.000000
+ascii/array_value,65536,0,32,0.001028292,31120,2039451829,0.000000,0.000000
+ascii/identity_write,65536,0,32,0.002494667,12827,840654083,0.000000,0.000000
+ascii/validate,1048576,0,32,0.016994542,1883,1974424024,0.000000,0.000000
+ascii/identity,1048576,0,32,0.017075583,1874,1965053375,0.000000,0.000000
+ascii/shallow,1048576,0,32,0.017124792,1869,1959406689,0.000000,0.000000
+ascii/nested,1048576,0,32,0.016493625,1940,2034387953,0.000000,0.000000
+ascii/missing,1048576,0,32,0.017104250,1871,1961759913,0.000000,0.000000
+ascii/array_value,1048576,0,32,0.017120583,1869,1959888399,0.000000,0.000000
+ascii/identity_write,1048576,0,32,0.039435792,811,850862384,0.000000,0.000000
+structured/validate,485,0,32,0.000016875,1896296,919703704,0.000000,0.000000
+structured/identity,485,0,32,0.000015584,2053388,995893224,0.000000,0.000000
+structured/shallow,485,0,32,0.000016084,1989555,964934096,0.000000,0.000000
+structured/nested,485,0,32,0.000016458,1944343,943006441,0.000000,0.000000
+structured/missing,485,0,32,0.000015958,2005264,972552951,0.000000,0.000000
+structured/array_value,485,0,32,0.000016042,1994764,967460416,0.000000,0.000000
+structured/identity_write,485,0,32,0.000025708,1244749,603703127,0.000000,0.000000
+unicode_escaped_keys/validate,960,0,32,0.000027750,1153153,1107027027,0.000000,0.000000
+unicode_escaped_keys/identity,960,0,32,0.000027875,1147982,1102062780,0.000000,0.000000
+unicode_escaped_keys/shallow,960,0,32,0.000028667,1116266,1071615446,0.000000,0.000000
+unicode_escaped_keys/nested,960,0,32,0.000028625,1117904,1073187773,0.000000,0.000000
+unicode_escaped_keys/missing,960,0,32,0.000028292,1131062,1085819313,0.000000,0.000000
+unicode_escaped_keys/array_value,960,0,32,0.000028459,1124425,1079447626,0.000000,0.000000
+unicode_escaped_keys/identity_write,960,0,32,0.000049584,645369,619554695,0.000000,0.000000
+array/shallow,78,0,32,0.000007708,4151531,323819408,0.000000,0.000000
+array/nested,78,0,32,0.000008250,3878788,302545455,0.000000,0.000000
+array/flatten,78,0,32,0.000007584,4219409,329113924,0.000000,0.000000
+array/missing,78,0,32,0.000007416,4314995,336569579,0.000000,0.000000
+array/root,67,0,32,0.000006875,4654545,311854545,0.000000,0.000000
+array/cancel_first,78,0,32,0.000007708,4151531,323819408,0.000000,0.000000
+array/shallow,540,0,32,0.000053542,597662,322737290,0.000000,0.000000
+array/nested,540,0,32,0.000060042,532960,287798541,0.000000,0.000000
+array/flatten,540,0,32,0.000058209,549743,296861310,0.000000,0.000000
+array/missing,540,0,32,0.000051083,626431,338273007,0.000000,0.000000
+array/root,529,0,32,0.000051333,623381,329768375,0.000000,0.000000
+array/cancel_first,540,0,32,0.000026000,1230769,664615385,0.000000,0.000000
+array/shallow,1074,0,32,0.000103500,309179,332057971,0.000000,0.000000
+array/nested,1074,0,32,0.000122959,260249,279507803,0.000000,0.000000
+array/flatten,1074,0,32,0.000119292,268249,288099789,0.000000,0.000000
+array/missing,1074,0,32,0.000103958,307817,330595048,0.000000,0.000000
+array/root,1063,0,32,0.000105458,303438,322554951,0.000000,0.000000
+array/cancel_first,1074,0,32,0.000042417,754415,810241177,0.000000,0.000000
+array/shallow,8606,0,32,0.000815750,39228,337593625,0.000000,0.000000
+array/nested,8606,0,32,0.000913875,35016,301345370,0.000000,0.000000
+array/flatten,8606,0,32,0.000918709,34831,299759772,0.000000,0.000000
+array/missing,8606,0,32,0.000785417,40743,350631575,0.000000,0.000000
+array/root,8595,0,32,0.000809208,39545,339887890,0.000000,0.000000
+array/cancel_first,8606,0,32,0.000257417,124312,1069828333,0.000000,0.000000
+array/shallow,69558,0,32,0.006427375,4979,346308719,0.000000,0.000000
+array/nested,69558,0,32,0.007162958,4467,310745365,0.000000,0.000000
+array/flatten,69558,0,32,0.007102833,4505,313375804,0.000000,0.000000
+array/missing,69558,0,32,0.005991625,5341,371494544,0.000000,0.000000
+array/root,69547,0,32,0.006344834,5043,350758428,0.000000,0.000000
+array/cancel_first,69558,0,32,0.001982333,16143,1122846666,0.000000,0.000000
+array/shallow,1135782,0,32,0.104765250,305,346918697,0.000000,0.000000
+array/nested,1135782,0,32,0.118845166,269,305818278,0.000000,0.000000
+array/flatten,1135782,0,32,0.113541625,282,320103081,0.000000,0.000000
+array/missing,1135782,0,32,0.097964417,327,371002300,0.000000,0.000000
+array/root,1135771,0,32,0.101369167,316,358537740,0.000000,0.000000
+array/cancel_first,1135782,0,32,0.030497333,1049,1191744340,0.000000,0.000000
+array/nested_contexts,972,0,32,0.000185250,172740,167902834,0.000000,0.000000
+array/sparse,785,0,32,0.000114834,278663,218750544,0.000000,0.000000
+array/deep,136,0,32,0.000021166,1511859,205612775,0.000000,0.000000
+array/empty,2,0,32,0.000000625,51200000,102400000,0.000000,0.000000
+array/singleton,12,0,32,0.000002625,12190476,146285714,0.000000,0.000000
+array/nested_values,31,0,32,0.000006708,4770423,147883125,0.000000,0.000000
+compile/scalar,0,0,32,0.000068792,465170,0,72.000000,3934.000000
+scalar/literal,100,0,32,0.000002834,11291461,1129146083,0.000000,0.000000
+scalar/arithmetic,100,0,32,0.000010375,3084337,308433735,0.000000,0.000000
+scalar/nested,100,0,32,0.000010375,3084337,308433735,0.000000,0.000000
+scalar/comparison,100,0,32,0.000009875,3240506,324050633,0.000000,0.000000
+scalar/strings,100,0,32,0.000006917,4626283,462628307,0.000000,0.000000
+scalar/boolean,100,0,32,0.000010542,3035477,303547714,0.000000,0.000000
+scalar/missing,100,0,32,0.000009959,3213174,321317401,0.000000,0.000000
+scalar/short_circuit,100,0,32,0.000003125,10240000,1024000000,0.000000,0.000000
+scalar/mixed,100,0,32,0.000007541,4243469,424346904,0.000000,0.000000
+scalar/write,100,0,32,0.000011250,2844444,284444444,0.000000,0.000000
+scalar/literal,500,0,32,0.000009750,3282051,1641025641,0.000000,0.000000
+scalar/arithmetic,500,0,32,0.000030416,1052078,526038927,0.000000,0.000000
+scalar/nested,500,0,32,0.000030625,1044898,522448980,0.000000,0.000000
+scalar/comparison,500,0,32,0.000029959,1068126,534063220,0.000000,0.000000
+scalar/strings,500,0,32,0.000020375,1570552,785276074,0.000000,0.000000
+scalar/boolean,500,0,32,0.000030375,1053498,526748971,0.000000,0.000000
+scalar/missing,500,0,32,0.000030208,1059322,529661017,0.000000,0.000000
+scalar/short_circuit,500,0,32,0.000009917,3226782,1613391147,0.000000,0.000000
+scalar/mixed,500,0,32,0.000014667,2181769,1090884298,0.000000,0.000000
+scalar/write,500,0,32,0.000031167,1026727,513363493,0.000000,0.000000
+scalar/literal,1024,0,32,0.000018333,1745486,1787377952,0.000000,0.000000
+scalar/arithmetic,1024,0,32,0.000055459,577003,590850899,0.000000,0.000000
+scalar/nested,1024,0,32,0.000055875,572707,586451902,0.000000,0.000000
+scalar/comparison,1024,0,32,0.000055250,579186,593085973,0.000000,0.000000
+scalar/strings,1024,0,32,0.000037500,853333,873813333,0.000000,0.000000
+scalar/boolean,1024,0,32,0.000066333,482414,493992432,0.000000,0.000000
+scalar/missing,1024,0,32,0.000055250,579186,593085973,0.000000,0.000000
+scalar/short_circuit,1024,0,32,0.000018583,1722004,1763332078,0.000000,0.000000
+scalar/mixed,1024,0,32,0.000023250,1376344,1409376344,0.000000,0.000000
+scalar/write,1024,0,32,0.000062417,512681,524985180,0.000000,0.000000
+scalar/literal,10240,0,32,0.000172250,185776,1902351234,0.000000,0.000000
+scalar/arithmetic,10240,0,32,0.000498708,64166,657057837,0.000000,0.000000
+scalar/nested,10240,0,32,0.000501833,63766,652966226,0.000000,0.000000
+scalar/comparison,10240,0,32,0.000502958,63624,651505692,0.000000,0.000000
+scalar/strings,10240,0,32,0.000337041,94944,972225931,0.000000,0.000000
+scalar/boolean,10240,0,32,0.000499000,64128,656673347,0.000000,0.000000
+scalar/missing,10240,0,32,0.000498500,64193,657331996,0.000000,0.000000
+scalar/short_circuit,10240,0,32,0.000169750,188513,1930368189,0.000000,0.000000
+scalar/mixed,10240,0,32,0.000181500,176309,1805399449,0.000000,0.000000
+scalar/write,10240,0,32,0.000499875,64016,655523881,0.000000,0.000000
+scalar/literal,65536,0,32,0.001074667,29777,1951443563,0.000000,0.000000
+scalar/arithmetic,65536,0,32,0.003191750,10026,657053967,0.000000,0.000000
+scalar/nested,65536,0,32,0.003172167,10088,661110213,0.000000,0.000000
+scalar/comparison,65536,0,32,0.003154083,10146,664900702,0.000000,0.000000
+scalar/strings,65536,0,32,0.002124875,15060,986953115,0.000000,0.000000
+scalar/boolean,65536,0,32,0.003167459,10103,662092864,0.000000,0.000000
+scalar/missing,65536,0,32,0.003179458,10065,659594182,0.000000,0.000000
+scalar/short_circuit,65536,0,32,0.001077375,29702,1946538578,0.000000,0.000000
+scalar/mixed,65536,0,32,0.001079625,29640,1942481880,0.000000,0.000000
+scalar/write,65536,0,32,0.003170083,10094,661544824,0.000000,0.000000
+scalar/literal,1048576,0,32,0.017301750,1850,1939366365,0.000000,0.000000
+scalar/arithmetic,1048576,0,32,0.050480417,634,664701958,0.000000,0.000000
+scalar/nested,1048576,0,32,0.050709042,631,661705106,0.000000,0.000000
+scalar/comparison,1048576,0,32,0.049423209,647,678920545,0.000000,0.000000
+scalar/strings,1048576,0,32,0.033792041,947,992968492,0.000000,0.000000
+scalar/boolean,1048576,0,32,0.050650375,632,662471541,0.000000,0.000000
+scalar/missing,1048576,0,32,0.050458166,634,664995077,0.000000,0.000000
+scalar/short_circuit,1048576,0,32,0.017274667,1852,1942406878,0.000000,0.000000
+scalar/mixed,1048576,0,32,0.017206292,1860,1950125687,0.000000,0.000000
+scalar/write,1048576,0,32,0.050335500,636,666615649,0.000000,0.000000
+scalar/sequence_boolean,330,0,32,0.000058208,549753,181418362,0.000000,0.000000
+scalar/sequence_array_equality,330,0,32,0.000080958,395267,130438005,0.000000,0.000000
+scalar/sequence_equality,330,0,32,0.000105209,304156,100371641,3.000000,672.000000
+scalar/array_equality,330,0,32,0.000118375,270327,89208025,16.000000,3264.000000
+scalar/singleton,15,0,32,0.000004875,6564103,98461538,0.000000,0.000000
+scalar/sequence_type_error,330,0,32,0.000035458,902476,297817136,0.000000,0.000000
+scalar/object_equality,125,0,32,0.000046292,691264,86408019,3.000000,1396.000000
+scalar/object_equality,2389,0,32,0.000756375,42307,101071558,7.000000,24948.000000
+scalar/escaped_strings,26,0,32,0.000002958,10818120,281271129,0.000000,0.000000
+compile/filter,0,0,32,0.000040042,799161,0,34.000000,1997.000000
+filter/predicate,100,0,32,0.000015209,2104017,210401736,0.000000,0.000000
+filter/none,100,0,32,0.000013417,2385034,238503391,0.000000,0.000000
+filter/first,100,0,32,0.000010625,3011765,301176471,0.000000,0.000000
+filter/last,100,0,32,0.000012375,2585859,258585859,0.000000,0.000000
+filter/computed_last,100,0,32,0.000013875,2306306,230630631,0.000000,0.000000
+filter/chained,100,0,32,0.000020750,1542169,154216867,0.000000,0.000000
+filter/predicate,500,0,32,0.000028917,1106615,553307743,0.000000,0.000000
+filter/none,500,0,32,0.000026875,1190698,595348837,0.000000,0.000000
+filter/first,500,0,32,0.000024042,1331004,665502038,0.000000,0.000000
+filter/last,500,0,32,0.000025833,1238726,619362830,0.000000,0.000000
+filter/computed_last,500,0,32,0.000027458,1165416,582708136,0.000000,0.000000
+filter/chained,500,0,32,0.000034250,934307,467153285,0.000000,0.000000
+filter/predicate,1024,0,32,0.000045875,697548,714288828,0.000000,0.000000
+filter/none,1024,0,32,0.000043916,728664,746151744,0.000000,0.000000
+filter/first,1024,0,32,0.000041167,777322,795977361,0.000000,0.000000
+filter/last,1024,0,32,0.000043083,742752,760578418,0.000000,0.000000
+filter/computed_last,1024,0,32,0.000044666,716429,733622890,0.000000,0.000000
+filter/chained,1024,0,32,0.000050833,629512,644620620,0.000000,0.000000
+filter/predicate,10240,0,32,0.000343167,93249,954870369,0.000000,0.000000
+filter/none,10240,0,32,0.000341500,93704,959531479,0.000000,0.000000
+filter/first,10240,0,32,0.000338292,94593,968630650,0.000000,0.000000
+filter/last,10240,0,32,0.000340334,94025,962818878,0.000000,0.000000
+filter/computed_last,10240,0,32,0.000360625,88735,908644714,0.000000,0.000000
+filter/chained,10240,0,32,0.000348500,91822,940258250,0.000000,0.000000
+filter/predicate,65536,0,32,0.002093500,15285,1001744447,0.000000,0.000000
+filter/none,65536,0,32,0.002101583,15227,997891589,0.000000,0.000000
+filter/first,65536,0,32,0.002121417,15084,988561890,0.000000,0.000000
+filter/last,65536,0,32,0.002124541,15062,987108274,0.000000,0.000000
+filter/computed_last,65536,0,32,0.002140708,14948,979653460,0.000000,0.000000
+filter/chained,65536,0,32,0.002128708,15033,985175985,0.000000,0.000000
+filter/predicate,1048576,0,32,0.033946042,943,988463751,0.000000,0.000000
+filter/none,1048576,0,32,0.033914083,944,989395231,0.000000,0.000000
+filter/first,1048576,0,32,0.033697125,950,995765425,0.000000,0.000000
+filter/last,1048576,0,32,0.033955417,942,988190839,0.000000,0.000000
+filter/computed_last,1048576,0,32,0.033012500,969,1016415964,0.000000,0.000000
+filter/chained,1048576,0,32,0.033802750,947,992653911,0.000000,0.000000
+filter/wide_predicate,164,0,32,0.000049333,648653,106379097,0.000000,0.000000
+filter/wide_last,164,0,32,0.000028042,1141145,187147850,0.000000,0.000000
+filter/sequence_last,164,0,32,0.000053709,595803,97711743,0.000000,0.000000
+filter/wide_predicate,2736,0,32,0.000783292,40853,111774409,0.000000,0.000000
+filter/wide_last,2736,0,32,0.000379583,84303,230653111,0.000000,0.000000
+filter/sequence_last,2736,0,32,0.000715333,44734,122393347,0.000000,0.000000
+filter/wide_predicate,23392,0,32,0.006362000,5030,117658598,0.000000,0.000000
+filter/wide_last,23392,0,32,0.003165000,10111,236506793,0.000000,0.000000
+filter/sequence_last,23392,0,32,0.005767792,5548,129779992,0.000000,0.000000
+filter/nested,892,0,32,0.000409708,78104,69669130,0.000000,0.000000
+filter/per_group,892,0,32,0.000286292,111774,99702402,0.000000,0.000000
+filter/global,892,0,32,0.000193666,165233,147387771,0.000000,0.000000
+filter/deep,136,0,32,0.000024583,1301713,177032909,0.000000,0.000000
+filter/negative_chain,20,0,32,0.000306083,104547,2090936,0.000000,0.000000
+compile/aggregate,0,0,32,0.000051250,624390,0,50.000000,3270.000000
+aggregate/count,100,0,32,0.000008625,3710145,371014493,0.000000,0.000000
+aggregate/sum,100,0,32,0.000009084,3522677,352267723,0.000000,0.000000
+aggregate/min,100,0,32,0.000009084,3522677,352267723,0.000000,0.000000
+aggregate/max,100,0,32,0.000009083,3523065,352306507,0.000000,0.000000
+aggregate/filtered_count,100,0,32,0.000006083,5260562,526056222,0.000000,0.000000
+aggregate/filtered_sum,100,0,32,0.000006458,4955094,495509446,0.000000,0.000000
+aggregate/empty_sum,100,0,32,0.000006333,5052898,505289752,0.000000,0.000000
+aggregate/count,500,0,32,0.000022083,1449078,724539238,0.000000,0.000000
+aggregate/sum,500,0,32,0.000022583,1416995,708497542,0.000000,0.000000
+aggregate/min,500,0,32,0.000022833,1401480,700740157,0.000000,0.000000
+aggregate/max,500,0,32,0.000022708,1409195,704597499,0.000000,0.000000
+aggregate/filtered_count,500,0,32,0.000013042,2453611,1226805705,0.000000,0.000000
+aggregate/filtered_sum,500,0,32,0.000013209,2422591,1211295329,0.000000,0.000000
+aggregate/empty_sum,500,0,32,0.000013000,2461538,1230769231,0.000000,0.000000
+aggregate/count,1024,0,32,0.000039333,813566,833091806,0.000000,0.000000
+aggregate/sum,1024,0,32,0.000039458,810989,830452633,0.000000,0.000000
+aggregate/min,1024,0,32,0.000039500,810127,829569620,0.000000,0.000000
+aggregate/max,1024,0,32,0.000039542,809266,828688483,0.000000,0.000000
+aggregate/filtered_count,1024,0,32,0.000021625,1479769,1515283237,0.000000,0.000000
+aggregate/filtered_sum,1024,0,32,0.000021666,1476969,1512415767,0.000000,0.000000
+aggregate/empty_sum,1024,0,32,0.000020958,1526863,1563507968,0.000000,0.000000
+aggregate/count,10240,0,32,0.000337542,94803,970782895,0.000000,0.000000
+aggregate/sum,10240,0,32,0.000338416,94558,968275732,0.000000,0.000000
+aggregate/min,10240,0,32,0.000354209,90342,925103541,0.000000,0.000000
+aggregate/max,10240,0,32,0.000335375,95416,977055535,0.000000,0.000000
+aggregate/filtered_count,10240,0,32,0.000169791,188467,1929902056,0.000000,0.000000
+aggregate/filtered_sum,10240,0,32,0.000168792,189582,1941324233,0.000000,0.000000
+aggregate/empty_sum,10240,0,32,0.000178709,179062,1833595398,0.000000,0.000000
+aggregate/count,65536,0,32,0.002101833,15225,997772896,0.000000,0.000000
+aggregate/sum,65536,0,32,0.002069291,15464,1013464032,0.000000,0.000000
+aggregate/min,65536,0,32,0.002076417,15411,1009985952,0.000000,0.000000
+aggregate/max,65536,0,32,0.002076666,15409,1009864851,0.000000,0.000000
+aggregate/filtered_count,65536,0,32,0.001077709,29693,1945935313,0.000000,0.000000
+aggregate/filtered_sum,65536,0,32,0.001083667,29529,1935236563,0.000000,0.000000
+aggregate/empty_sum,65536,0,32,0.001083542,29533,1935459816,0.000000,0.000000
+aggregate/count,1048576,0,32,0.033017959,969,1016247915,0.000000,0.000000
+aggregate/sum,1048576,0,32,0.033884875,944,990248068,0.000000,0.000000
+aggregate/min,1048576,0,32,0.033950542,943,988332734,0.000000,0.000000
+aggregate/max,1048576,0,32,0.033680083,950,996269279,0.000000,0.000000
+aggregate/filtered_count,1048576,0,32,0.017192959,1861,1951637993,0.000000,0.000000
+aggregate/filtered_sum,1048576,0,32,0.017303333,1849,1939188941,0.000000,0.000000
+aggregate/empty_sum,1048576,0,32,0.017252250,1855,1944930777,0.000000,0.000000
+aggregate/array_count,23,0,32,0.000005875,5446809,125276596,0.000000,0.000000
+aggregate/array_sum,23,0,32,0.000007292,4388371,100932529,0.000000,0.000000
+aggregate/array_min,23,0,32,0.000007458,4290695,98685975,0.000000,0.000000
+aggregate/array_max,23,0,32,0.000007417,4314413,99231495,0.000000,0.000000
+aggregate/sequence_sum,23,0,32,0.000014084,2272082,52257881,0.000000,0.000000
+aggregate/computed_sum,23,0,32,0.000012459,2568424,59073762,0.000000,0.000000
+aggregate/wide_filtered_sum,23,0,32,0.000024958,1282154,29489542,0.000000,0.000000
+aggregate/array_count,409,0,32,0.000082667,387095,158321942,0.000000,0.000000
+aggregate/array_sum,409,0,32,0.000094958,336991,137829356,0.000000,0.000000
+aggregate/array_min,409,0,32,0.000093583,341942,139854461,0.000000,0.000000
+aggregate/array_max,409,0,32,0.000093667,341636,139729040,0.000000,0.000000
+aggregate/sequence_sum,409,0,32,0.000176375,181432,74205528,0.000000,0.000000
+aggregate/computed_sum,409,0,32,0.000170500,187683,76762463,0.000000,0.000000
+aggregate/wide_filtered_sum,409,0,32,0.000360375,88796,36317725,0.000000,0.000000
+aggregate/array_count,4017,0,32,0.000573833,55765,224009424,0.000000,0.000000
+aggregate/array_sum,4017,0,32,0.000758208,42205,169536592,0.000000,0.000000
+aggregate/array_min,4017,0,32,0.000769458,41588,167057851,0.000000,0.000000
+aggregate/array_max,4017,0,32,0.000767333,41703,167520490,0.000000,0.000000
+aggregate/sequence_sum,4017,0,32,0.001371166,23338,93747949,0.000000,0.000000
+aggregate/computed_sum,4017,0,32,0.001313709,24359,97848154,0.000000,0.000000
+aggregate/wide_filtered_sum,4017,0,32,0.003069500,10425,41877830,0.000000,0.000000
+aggregate/array_count,87201,0,32,0.009702000,3298,287614100,0.000000,0.000000
+aggregate/array_sum,87201,0,32,0.012140125,2636,229851999,0.000000,0.000000
+aggregate/array_min,87201,0,32,0.012917167,2477,216025077,0.000000,0.000000
+aggregate/array_max,87201,0,32,0.012890583,2482,216470582,0.000000,0.000000
+aggregate/sequence_sum,87201,0,32,0.022584875,1417,123553130,0.000000,0.000000
+aggregate/computed_sum,87201,0,32,0.020157125,1588,138434028,0.000000,0.000000
+aggregate/wide_filtered_sum,87201,0,32,0.050820833,630,54907246,0.000000,0.000000
+aggregate/nested_sum,1036,0,32,0.000244709,130768,135475197,0.000000,0.000000
+aggregate/nested_filtered_sum,1036,0,32,0.000434333,73676,76328531,0.000000,0.000000
+aggregate/nested_filtered_count,1036,0,32,0.000434917,73577,76226039,0.000000,0.000000
+aggregate/nested_sum,16396,0,32,0.003615042,8852,145135796,0.000000,0.000000
+aggregate/nested_filtered_sum,16396,0,32,0.006817167,4694,76963349,0.000000,0.000000
+aggregate/nested_filtered_count,16396,0,32,0.006733541,4752,77919181,0.000000,0.000000
+aggregate/nested_sum,1048588,0,32,0.232111500,138,144563350,0.000000,0.000000
+aggregate/nested_filtered_sum,1048588,0,32,0.434308667,74,77260296,0.000000,0.000000
+aggregate/nested_filtered_count,1048588,0,32,0.428701125,75,78270884,0.000000,0.000000
+aggregate/deep_sum,136,0,32,0.000022250,1438202,195595506,0.000000,0.000000
+aggregate/deep_filtered_sum,136,0,32,0.000025375,1261084,171507389,0.000000,0.000000
+compile/constructor,0,0,32,0.000106916,299300,0,86.000000,6246.000000
+construct/raw_member,100,0,32,0.000006000,5333333,533333333,3.000000,168.000000
+construct/raw_member_write,100,0,32,0.000008375,3820896,382089552,3.000000,168.000000
+construct/scalars,100,0,32,0.000016709,1915136,191513556,3.000000,552.000000
+construct/filtered_summary,100,0,32,0.000031041,1030895,103089462,5.000000,368.000000
+construct/nested,100,0,32,0.000050333,635766,63576580,15.000000,1352.000000
+construct/navigate,100,0,32,0.000017250,1855072,185507246,3.000000,168.000000
+construct/raw_member,500,0,32,0.000012875,2485437,1242718447,3.000000,168.000000
+construct/raw_member_write,500,0,32,0.000024834,1288556,644278006,3.000000,168.000000
+construct/scalars,500,0,32,0.000036833,868786,434393071,3.000000,552.000000
+construct/filtered_summary,500,0,32,0.000051250,624390,312195122,5.000000,368.000000
+construct/nested,500,0,32,0.000078083,409820,204910160,15.000000,1352.000000
+construct/navigate,500,0,32,0.000031208,1025378,512689054,3.000000,168.000000
+construct/raw_member,1024,0,32,0.000021625,1479769,1515283237,3.000000,168.000000
+construct/raw_member_write,1024,0,32,0.000045084,709786,726821045,3.000000,168.000000
+construct/scalars,1024,0,32,0.000062416,512689,524993591,3.000000,552.000000
+construct/filtered_summary,1024,0,32,0.000076583,417847,427875638,5.000000,368.000000
+construct/nested,1024,0,32,0.000111208,287749,294655061,15.000000,1352.000000
+construct/navigate,1024,0,32,0.000047834,668980,685035749,3.000000,168.000000
+construct/raw_member,10240,0,32,0.000173333,184616,1890465174,3.000000,168.000000
+construct/raw_member_write,10240,0,32,0.000403333,79339,812430423,3.000000,168.000000
+construct/scalars,10240,0,32,0.000505666,63283,648016675,3.000000,552.000000
+construct/filtered_summary,10240,0,32,0.000523417,61137,626040041,5.000000,368.000000
+construct/nested,10240,0,32,0.000721083,44378,454427576,15.000000,1352.000000
+construct/navigate,10240,0,32,0.000349334,91603,938013477,3.000000,168.000000
+construct/raw_member,65536,0,32,0.001099625,29101,1907151984,3.000000,168.000000
+construct/raw_member_write,65536,0,32,0.002558834,12506,819573290,3.000000,168.000000
+construct/scalars,65536,0,32,0.003172084,10088,661127511,3.000000,552.000000
+construct/filtered_summary,65536,0,32,0.003213042,9959,652699840,5.000000,368.000000
+construct/nested,65536,0,32,0.004262458,7507,492005317,15.000000,1352.000000
+construct/navigate,65536,0,32,0.002137625,14970,981066370,3.000000,168.000000
+construct/raw_member,1048576,0,32,0.017290500,1851,1940628206,3.000000,168.000000
+construct/raw_member_write,1048576,0,32,0.040512000,790,828259084,3.000000,168.000000
+construct/scalars,1048576,0,32,0.050619542,632,662875061,3.000000,552.000000
+construct/filtered_summary,1048576,0,32,0.049810541,642,673641188,5.000000,368.000000
+construct/nested,1048576,0,32,0.067276667,476,498752889,15.000000,1352.000000
+construct/navigate,1048576,0,32,0.033703500,949,995577077,3.000000,168.000000
+construct/mapped_objects,262,0,32,0.000075625,423140,110862810,12.000000,1184.000000
+construct/collected_objects,262,0,32,0.000079833,400837,105019228,15.000000,1352.000000
+construct/collected_write,262,0,32,0.000086458,370122,96971940,15.000000,1352.000000
+construct/filtered_aggregate,262,0,32,0.000087333,366414,96000366,3.000000,296.000000
+construct/mapped_objects,4334,0,32,0.001159875,27589,119571506,192.000000,18944.000000
+construct/collected_objects,4334,0,32,0.001188250,26930,116716179,199.000000,21992.000000
+construct/collected_write,4334,0,32,0.001294959,24711,107098371,199.000000,21992.000000
+construct/filtered_aggregate,4334,0,32,0.001221750,26192,113515858,3.000000,296.000000
+construct/mapped_objects,36190,0,32,0.008944417,3578,129475180,1536.000000,151552.000000
+construct/collected_objects,36190,0,32,0.008882334,3603,130380146,1546.000000,176104.000000
+construct/collected_write,36190,0,32,0.009744042,3284,118850062,1546.000000,176104.000000
+construct/filtered_aggregate,36190,0,32,0.009602833,3332,120597744,3.000000,296.000000
+construct/mapped_objects,624958,0,32,0.144921625,221,137996355,24576.000000,2424832.000000
+construct/collected_objects,624958,0,32,0.144049291,222,138832034,24590.000000,2818024.000000
+construct/collected_write,624958,0,32,0.158313917,202,126322792,24590.000000,2818024.000000
+construct/filtered_aggregate,624958,0,32,0.158433875,202,126227147,3.000000,296.000000
+construct/nested_summary,1036,0,32,0.000832416,38442,39826241,3.000000,296.000000
+construct/nested_summary,16396,0,32,0.012960000,2469,40483951,3.000000,296.000000
+construct/nested_summary,1048588,0,32,0.820875958,39,40876841,3.000000,296.000000
+compile/lexical,0,0,32,0.000057167,559763,0,42.000000,2809.000000
+lexical/lookup,100,0,32,0.000013292,2407463,240746314,5.000000,584.000000
+lexical/repeated_binding,100,0,32,0.000014750,2169492,216949153,5.000000,584.000000
+lexical/retained_sequence,100,0,32,0.000020375,1570552,157055215,7.000000,728.000000
+lexical/closure_call,100,0,32,0.000023291,1373921,137392126,7.000000,808.000000
+lexical/escaped_closure,100,0,32,0.000035042,913190,91318989,9.000000,1032.000000
+lexical/mixed,100,0,32,0.000046000,695652,69565217,13.000000,1520.000000
+lexical/lookup,500,0,32,0.000031167,1026727,513363493,5.000000,584.000000
+lexical/repeated_binding,500,0,32,0.000027542,1161862,580930942,5.000000,584.000000
+lexical/retained_sequence,500,0,32,0.000033708,949330,474664768,7.000000,728.000000
+lexical/closure_call,500,0,32,0.000042291,756662,378331087,7.000000,808.000000
+lexical/escaped_closure,500,0,32,0.000046209,692506,346252894,9.000000,1032.000000
+lexical/mixed,500,0,32,0.000066875,478505,239252336,13.000000,1520.000000
+lexical/lookup,1024,0,32,0.000043209,740586,758360527,5.000000,584.000000
+lexical/repeated_binding,1024,0,32,0.000046125,693767,710417344,5.000000,584.000000
+lexical/retained_sequence,1024,0,32,0.000050458,634191,649411392,7.000000,728.000000
+lexical/closure_call,1024,0,32,0.000068000,470588,481882353,7.000000,808.000000
+lexical/escaped_closure,1024,0,32,0.000071542,447290,458024657,9.000000,1032.000000
+lexical/mixed,1024,0,32,0.000090500,353591,362077348,13.000000,1520.000000
+lexical/lookup,10240,0,32,0.000340291,94037,962940542,5.000000,584.000000
+lexical/repeated_binding,10240,0,32,0.000341666,93659,959065286,5.000000,584.000000
+lexical/retained_sequence,10240,0,32,0.000347875,91987,941947539,7.000000,728.000000
+lexical/closure_call,10240,0,32,0.000511084,62612,641147052,7.000000,808.000000
+lexical/escaped_closure,10240,0,32,0.000514625,62181,636735487,9.000000,1032.000000
+lexical/mixed,10240,0,32,0.000535292,59780,612151872,13.000000,1520.000000
+lexical/lookup,65536,0,32,0.002133042,15002,983174265,5.000000,584.000000
+lexical/repeated_binding,65536,0,32,0.002165208,14779,968568378,5.000000,584.000000
+lexical/retained_sequence,65536,0,32,0.002137625,14970,981066370,7.000000,728.000000
+lexical/closure_call,65536,0,32,0.003170708,10092,661414422,7.000000,808.000000
+lexical/escaped_closure,65536,0,32,0.003187541,10039,657921577,9.000000,1032.000000
+lexical/mixed,65536,0,32,0.003232125,9901,648846193,13.000000,1520.000000
+lexical/lookup,1048576,0,32,0.034076833,939,984669908,5.000000,584.000000
+lexical/repeated_binding,1048576,0,32,0.033894042,944,989980245,5.000000,584.000000
+lexical/retained_sequence,1048576,0,32,0.033868208,945,990735382,7.000000,728.000000
+lexical/closure_call,1048576,0,32,0.050689417,631,661961293,7.000000,808.000000
+lexical/escaped_closure,1048576,0,32,0.050119917,638,669482992,9.000000,1032.000000
+lexical/mixed,1048576,0,32,0.050339458,636,666563236,13.000000,1520.000000
+lexical/mapped_calls,106,0,32,0.000063125,506931,53734653,9.000000,984.000000
+lexical/repeated_projection,106,0,32,0.000035750,895105,94881119,8.000000,920.000000
+lexical/mapped_calls,1692,0,32,0.000730250,43821,74144471,13.000000,6744.000000
+lexical/repeated_projection,1692,0,32,0.000361666,88479,149707188,12.000000,6680.000000
+lexical/mapped_calls,14260,0,32,0.005729708,5585,79641057,16.000000,49752.000000
+lexical/repeated_projection,14260,0,32,0.002811833,11380,162285598,15.000000,49688.000000
+lexical/mapped_calls,251044,0,32,0.094852583,337,84693613,20.000000,787032.000000
+lexical/repeated_projection,251044,0,32,0.043963833,728,182727653,19.000000,786968.000000
+lexical/nested_retention,1036,0,32,0.000465708,68713,71186237,10.000000,2072.000000
+lexical/nested_retention,16396,0,32,0.007073500,4524,74174313,14.000000,25112.000000
+lexical/nested_retention,1048588,0,32,0.446271250,72,75189285,20.000000,1573400.000000
+compile/nested_fallback,0,0,32,0.000150417,212742,0,113.000000,7201.000000
+compile/navigation,0,0,32,0.000077000,415584,0,55.000000,4199.000000
+navigation/keep,100,0,32,0.000017125,1868613,186861314,2.000000,144.000000
+navigation/wildcard,100,0,32,0.000031167,1026727,102672699,8.000000,1072.000000
+navigation/descendants,100,0,32,0.000043458,736343,73634314,8.000000,1072.000000
+navigation/ordering,100,0,32,0.000021250,1505882,150588235,6.000000,320.000000
+navigation/grouping,100,0,32,0.000032000,1000000,100000000,11.000000,824.000000
+navigation/membership,100,0,32,0.000019584,1633987,163398693,2.000000,32.000000
+navigation/fallback,100,0,32,0.000010125,3160494,316049383,0.000000,0.000000
+navigation/mixed,100,0,32,0.000032042,998689,99868922,11.000000,1048.000000
+navigation/keep,500,0,32,0.000030583,1046333,523166465,2.000000,144.000000
+navigation/wildcard,500,0,32,0.000045042,710448,355224013,8.000000,1072.000000
+navigation/descendants,500,0,32,0.000069500,460432,230215827,8.000000,1072.000000
+navigation/ordering,500,0,32,0.000034459,928640,464319916,6.000000,320.000000
+navigation/grouping,500,0,32,0.000041417,772630,386314798,11.000000,824.000000
+navigation/membership,500,0,32,0.000033166,964844,482421757,2.000000,32.000000
+navigation/fallback,500,0,32,0.000030458,1050627,525313547,0.000000,0.000000
+navigation/mixed,500,0,32,0.000044708,715756,357877785,11.000000,1048.000000
+navigation/keep,1024,0,32,0.000047167,678440,694723005,2.000000,144.000000
+navigation/wildcard,1024,0,32,0.000062584,511313,523584303,8.000000,1072.000000
+navigation/descendants,1024,0,32,0.000109792,291460,298455261,8.000000,1072.000000
+navigation/ordering,1024,0,32,0.000059125,541226,554215645,6.000000,320.000000
+navigation/grouping,1024,0,32,0.000058042,551325,564556700,11.000000,824.000000
+navigation/membership,1024,0,32,0.000050084,638927,654260842,2.000000,32.000000
+navigation/fallback,1024,0,32,0.000055667,574847,588643182,0.000000,0.000000
+navigation/mixed,1024,0,32,0.000061500,520325,532813008,11.000000,1048.000000
+navigation/keep,10240,0,32,0.000344750,92821,950485859,2.000000,144.000000
+navigation/wildcard,10240,0,32,0.000359708,88961,910961113,8.000000,1072.000000
+navigation/descendants,10240,0,32,0.000693000,46176,472842713,8.000000,1072.000000
+navigation/ordering,10240,0,32,0.000349542,91548,937455299,6.000000,320.000000
+navigation/grouping,10240,0,32,0.000355416,90035,921961870,11.000000,824.000000
+navigation/membership,10240,0,32,0.000352667,90737,929148460,2.000000,32.000000
+navigation/fallback,10240,0,32,0.000510583,62673,641776166,0.000000,0.000000
+navigation/mixed,10240,0,32,0.000358750,89199,913393728,11.000000,1048.000000
+navigation/keep,65536,0,32,0.002128333,15035,985349567,2.000000,144.000000
+navigation/wildcard,65536,0,32,0.002151250,14875,974852760,8.000000,1072.000000
+navigation/descendants,65536,0,32,0.004258250,7515,492491516,8.000000,1072.000000
+navigation/ordering,65536,0,32,0.002178291,14690,962751074,6.000000,320.000000
+navigation/grouping,65536,0,32,0.002139125,14959,980378426,11.000000,824.000000
+navigation/membership,65536,0,32,0.002140458,14950,979767881,2.000000,32.000000
+navigation/fallback,65536,0,32,0.003181416,10058,659188236,0.000000,0.000000
+navigation/mixed,65536,0,32,0.002150000,14884,975419535,11.000000,1048.000000
+navigation/keep,1048576,0,32,0.033941125,943,988606948,2.000000,144.000000
+navigation/wildcard,1048576,0,32,0.034024250,941,986191672,8.000000,1072.000000
+navigation/descendants,1048576,0,32,0.067541291,474,496798795,8.000000,1072.000000
+navigation/ordering,1048576,0,32,0.034004125,941,986775340,6.000000,320.000000
+navigation/grouping,1048576,0,32,0.034020250,941,986307626,11.000000,824.000000
+navigation/membership,1048576,0,32,0.033986583,942,987284659,2.000000,32.000000
+navigation/fallback,1048576,0,32,0.050416167,635,665549049,0.000000,0.000000
+navigation/mixed,1048576,0,32,0.033998542,941,986937381,11.000000,1048.000000
+navigation/wide_sort,250,0,32,0.000063750,501961,125490196,9.000000,968.000000
+navigation/wide_group,250,0,32,0.000069709,459051,114762800,10.000000,1016.000000
+navigation/wide_descendants,250,0,32,0.000123125,259898,64974619,20.000000,2680.000000
+navigation/range,250,0,32,0.000035541,900369,225092147,4.000000,360.000000
+navigation/wide_sort,4144,0,32,0.000931583,34350,142346951,13.000000,14408.000000
+navigation/wide_group,4144,0,32,0.000938792,34086,141253867,18.000000,9656.000000
+navigation/wide_descendants,4144,0,32,0.001796625,17811,73809504,260.000000,34840.000000
+navigation/range,4144,0,32,0.000404875,79037,327528249,8.000000,6120.000000
+navigation/wide_sort,34657,0,32,0.007910667,4045,140193488,16.000000,114760.000000
+navigation/wide_group,34657,0,32,0.007105000,4504,156090640,24.000000,74168.000000
+navigation/wide_descendants,34657,0,32,0.013668041,2341,81139938,2052.000000,274968.000000
+navigation/range,34657,0,32,0.003165208,10110,350379501,11.000000,49128.000000
+navigation/wide_sort,600386,0,32,0.142710917,224,134624263,20.000000,1835080.000000
+navigation/wide_group,600386,0,32,0.115706833,277,166043366,32.000000,1180088.000000
+navigation/wide_descendants,600386,0,32,0.223424458,143,85990371,32772.000000,4391448.000000
+navigation/range,600386,0,32,0.052955166,604,362804112,15.000000,786408.000000
+navigation/distinct_groups,194,0,32,0.000057125,560175,108673961,5.000000,1464.000000
+navigation/distinct_groups,3246,0,32,0.001052792,30395,98663364,13.000000,51472.000000
+navigation/distinct_groups,27486,0,32,0.008311750,3850,105820315,19.000000,427816.000000
+navigation/deep_descendants,24,0,32,0.000013292,2407463,57779115,4.000000,536.000000
+navigation/deep_descendants,72,0,32,0.000017083,1873207,134870924,4.000000,536.000000
+navigation/deep_descendants,136,0,32,0.000032125,996109,135470817,4.000000,536.000000
+compiler/lookup_8_hit,501,0,32,0.000010625,3011765,1508894118,0.000000,0.000000
+rust/lookup_8_hit,501,0,32,0.000009625,3324675,1665662338,0.000000,0.000000
+compiler/lookup_8_miss,501,0,32,0.000010334,3096574,1551383782,0.000000,0.000000
+rust/lookup_8_miss,501,0,32,0.000009541,3353946,1680327010,0.000000,0.000000
+compiler/varying_lookup_8,501,0,32,0.000010708,2988420,1497198356,0.000000,0.000000
+rust/varying_lookup_8,501,0,32,0.000009708,3296251,1651421508,0.000000,0.000000
+compiler/bound_lookup_8,16,0,32,0.000009083,3523065,56369041,6.000000,600.000000
+compile/lookup_8,0,0,32,0.000110500,289593,0,60.000000,5577.000000
+compiler/lookup_128_hit,501,0,32,0.000010667,2999906,1502953033,0.000000,0.000000
+rust/lookup_128_hit,501,0,32,0.000009667,3310231,1658425572,0.000000,0.000000
+compiler/lookup_128_miss,501,0,32,0.000010250,3121951,1564097561,0.000000,0.000000
+rust/lookup_128_miss,501,0,32,0.000009541,3353946,1680327010,0.000000,0.000000
+compiler/varying_lookup_128,501,0,32,0.000010833,2953937,1479922459,0.000000,0.000000
+rust/varying_lookup_128,501,0,32,0.000009750,3282051,1644307692,0.000000,0.000000
+compiler/bound_lookup_128,16,0,32,0.000009500,3368421,53894737,6.000000,600.000000
+compile/lookup_128,0,0,32,0.001715458,18654,0,672.000000,111385.000000
+compiler/lookup_1024_hit,501,0,32,0.000010875,2942529,1474206897,0.000000,0.000000
+rust/lookup_1024_hit,501,0,32,0.000009708,3296251,1651421508,0.000000,0.000000
+compiler/lookup_1024_miss,501,0,32,0.000010583,3023717,1514882358,0.000000,0.000000
+rust/lookup_1024_miss,501,0,32,0.000009625,3324675,1665662338,0.000000,0.000000
+compiler/varying_lookup_1024,501,0,32,0.000011167,2865586,1435658637,0.000000,0.000000
+rust/varying_lookup_1024,501,0,32,0.000010042,3186616,1596494722,0.000000,0.000000
+compiler/bound_lookup_1024,16,0,32,0.000009916,3227108,51633723,6.000000,600.000000
+compile/lookup_1024,0,0,32,0.012268667,2608,0,5161.000000,904369.000000
+compiler/lookup_4096_hit,501,0,32,0.000011000,2909091,1457454545,0.000000,0.000000
+rust/lookup_4096_hit,501,0,32,0.000009708,3296251,1651421508,0.000000,0.000000
+compiler/lookup_4096_miss,501,0,32,0.000010667,2999906,1502953033,0.000000,0.000000
+rust/lookup_4096_miss,501,0,32,0.000009583,3339247,1672962538,0.000000,0.000000
+compiler/varying_lookup_4096,501,0,32,0.000011583,2762669,1384097384,0.000000,0.000000
+rust/varying_lookup_4096,501,0,32,0.000010416,3072197,1539170507,0.000000,0.000000
+compiler/bound_lookup_4096,16,0,32,0.000010500,3047619,48761905,6.000000,600.000000
+compile/lookup_4096,0,0,32,0.048434458,661,0,20527.000000,3623105.000000
+compiler/constant_scalar,100,0,32,0.000003083,10379500,1037950049,0.000000,0.000000
+compiler/repeated_fields,100,0,32,0.000006125,5224490,522448980,0.000000,0.000000
+compiler/dynamic_leaves,100,0,32,0.000005375,5953488,595348837,3.000000,152.000000
+compiler/filtered_sum,100,0,32,0.000006958,4599023,459902271,0.000000,0.000000
+compiler/invariant_aggregate,100,0,32,0.000006667,4799760,479976001,0.000000,0.000000
+compiler/builtin_reference,100,0,32,0.000003125,10240000,1024000000,0.000000,0.000000
+compiler/static_array,100,0,32,0.000003375,9481481,948148148,1.000000,16.000000
+compiler/constant_membership,100,0,32,0.000010541,3035765,303576511,1.000000,16.000000
+compiler/lookup_record,100,0,32,0.000003875,8258065,825806452,0.000000,0.000000
+rust/repeated_fields,100,0,32,0.000004041,7918832,791883197,0.000000,0.000000
+compiler/constant_scalar,500,0,32,0.000009958,3213497,1606748343,0.000000,0.000000
+compiler/repeated_fields,500,0,32,0.000012958,2469517,1234758450,0.000000,0.000000
+compiler/dynamic_leaves,500,0,32,0.000012291,2603531,1301765519,3.000000,152.000000
+compiler/filtered_sum,500,0,32,0.000013625,2348624,1174311927,0.000000,0.000000
+compiler/invariant_aggregate,500,0,32,0.000020250,1580247,790123457,0.000000,0.000000
+compiler/builtin_reference,500,0,32,0.000010083,3173659,1586829317,0.000000,0.000000
+compiler/static_array,500,0,32,0.000010250,3121951,1560975610,1.000000,16.000000
+compiler/constant_membership,500,0,32,0.000024166,1324174,662087230,1.000000,16.000000
+compiler/lookup_record,500,0,32,0.000010542,3035477,1517738570,0.000000,0.000000
+rust/repeated_fields,500,0,32,0.000010833,2953937,1476968522,0.000000,0.000000
+compiler/constant_scalar,1024,0,32,0.000018625,1718121,1759355705,0.000000,0.000000
+compiler/repeated_fields,1024,0,32,0.000021458,1491285,1527076149,0.000000,0.000000
+compiler/dynamic_leaves,1024,0,32,0.000021000,1523810,1560380952,3.000000,152.000000
+compiler/filtered_sum,1024,0,32,0.000022209,1440857,1475437886,0.000000,0.000000
+compiler/invariant_aggregate,1024,0,32,0.000037375,856187,876735786,0.000000,0.000000
+compiler/builtin_reference,1024,0,32,0.000018709,1710407,1751456518,0.000000,0.000000
+compiler/static_array,1024,0,32,0.000018917,1691600,1732198552,1.000000,16.000000
+compiler/constant_membership,1024,0,32,0.000041292,774969,793567761,1.000000,16.000000
+compiler/lookup_record,1024,0,32,0.000019083,1676885,1717130430,0.000000,0.000000
+rust/repeated_fields,1024,0,32,0.000019500,1641026,1680410256,0.000000,0.000000
+compiler/constant_scalar,10240,0,32,0.000170000,188235,1927529412,0.000000,0.000000
+compiler/repeated_fields,10240,0,32,0.000172667,185328,1897756954,0.000000,0.000000
+compiler/dynamic_leaves,10240,0,32,0.000172292,185731,1901887493,3.000000,152.000000
+compiler/filtered_sum,10240,0,32,0.000173625,184305,1887285817,0.000000,0.000000
+compiler/invariant_aggregate,10240,0,32,0.000334333,95713,980100678,0.000000,0.000000
+compiler/builtin_reference,10240,0,32,0.000181542,176268,1804981767,0.000000,0.000000
+compiler/static_array,10240,0,32,0.000170208,188005,1925173905,1.000000,16.000000
+compiler/constant_membership,10240,0,32,0.000340917,93864,961172367,1.000000,16.000000
+compiler/lookup_record,10240,0,32,0.000170375,187821,1923286867,0.000000,0.000000
+rust/repeated_fields,10240,0,32,0.000170834,187316,1918119344,0.000000,0.000000
+compiler/constant_scalar,1048576,0,32,0.017304625,1849,1939044157,0.000000,0.000000
+compiler/repeated_fields,1048576,0,32,0.017232750,1857,1947131595,0.000000,0.000000
+compiler/dynamic_leaves,1048576,0,32,0.017360708,1843,1932780161,3.000000,152.000000
+compiler/filtered_sum,1048576,0,32,0.017219167,1858,1948667552,0.000000,0.000000
+compiler/invariant_aggregate,1048576,0,32,0.033856291,945,991084109,0.000000,0.000000
+compiler/builtin_reference,1048576,0,32,0.017258708,1854,1944203008,0.000000,0.000000
+compiler/static_array,1048576,0,32,0.017248417,1855,1945362986,1.000000,16.000000
+compiler/constant_membership,1048576,0,32,0.033910875,944,989488829,1.000000,16.000000
+compiler/lookup_record,1048576,0,32,0.016656917,1921,2014444330,0.000000,0.000000
+rust/repeated_fields,1048576,0,32,0.017226125,1858,1947880443,0.000000,0.000000
+compile/execution,0,0,32,0.000131708,242962,0,148.000000,7464.000000
+execution/arithmetic,100,0,32,0.000005042,6346688,634668782,0.000000,0.000000
+execution/comparison,100,0,32,0.000005375,5953488,595348837,0.000000,0.000000
+execution/conditional,100,0,32,0.000005375,5953488,595348837,0.000000,0.000000
+execution/constructor,100,0,32,0.000006542,4891470,489147050,3.000000,152.000000
+rust/execution_arithmetic,100,0,32,0.000003375,9481481,948148148,0.000000,0.000000
+rust/execution_constructor,100,0,32,0.000003375,9481481,948148148,0.000000,0.000000
+execution/arithmetic,500,0,32,0.000011958,2676033,1338016391,0.000000,0.000000
+execution/comparison,500,0,32,0.000012083,2648349,1324174460,0.000000,0.000000
+execution/conditional,500,0,32,0.000012167,2630065,1315032465,0.000000,0.000000
+execution/constructor,500,0,32,0.000013417,2385034,1192516956,3.000000,152.000000
+rust/execution_arithmetic,500,0,32,0.000010250,3121951,1560975610,0.000000,0.000000
+rust/execution_constructor,500,0,32,0.000010208,3134796,1567398119,0.000000,0.000000
+execution/arithmetic,1024,0,32,0.000020500,1560976,1598439024,0.000000,0.000000
+execution/comparison,1024,0,32,0.000020750,1542169,1579180723,0.000000,0.000000
+execution/conditional,1024,0,32,0.000020667,1548362,1585522814,0.000000,0.000000
+execution/constructor,1024,0,32,0.000022000,1454545,1489454545,3.000000,152.000000
+rust/execution_arithmetic,1024,0,32,0.000018917,1691600,1732198552,0.000000,0.000000
+rust/execution_constructor,1024,0,32,0.000018875,1695364,1736052980,0.000000,0.000000
+execution/arithmetic,10240,0,32,0.000171750,186317,1907889374,0.000000,0.000000
+execution/comparison,10240,0,32,0.000171917,186136,1906036052,0.000000,0.000000
+execution/conditional,10240,0,32,0.000171916,186137,1906047139,0.000000,0.000000
+execution/constructor,10240,0,32,0.000173416,184527,1889560364,3.000000,152.000000
+rust/execution_arithmetic,10240,0,32,0.000170208,188005,1925173905,0.000000,0.000000
+rust/execution_constructor,10240,0,32,0.000170208,188005,1925173905,0.000000,0.000000
+execution/arithmetic,1048576,0,32,0.017261542,1854,1943883808,0.000000,0.000000
+execution/comparison,1048576,0,32,0.017253500,1855,1944789869,0.000000,0.000000
+execution/conditional,1048576,0,32,0.017237125,1856,1946637389,0.000000,0.000000
+execution/constructor,1048576,0,32,0.017279958,1852,1941812127,3.000000,152.000000
+rust/execution_arithmetic,1048576,0,32,0.017284375,1851,1941315899,0.000000,0.000000
+rust/execution_constructor,1048576,0,32,0.017247167,1855,1945503978,0.000000,0.000000
+execution/filtered_sum,74,0,32,0.000019250,1662338,123012987,0.000000,0.000000
+execution/mapped_sum,74,0,32,0.000019125,1673203,123816993,0.000000,0.000000
+rust/execution_filtered_sum,74,0,32,0.000007792,4106776,303901437,0.000000,0.000000
+execution/filtered_sum,1082,0,32,0.000272708,117342,126963639,0.000000,0.000000
+execution/mapped_sum,1082,0,32,0.000288000,111111,120222222,0.000000,0.000000
+rust/execution_filtered_sum,1082,0,32,0.000108208,295727,319976342,0.000000,0.000000
+execution/filtered_sum,8586,0,32,0.002146292,14909,128012405,0.000000,0.000000
+execution/mapped_sum,8586,0,32,0.002282375,14020,120379867,0.000000,0.000000
+rust/execution_filtered_sum,8586,0,32,0.000826917,38698,332260674,0.000000,0.000000
+execution/filtered_sum,137226,0,32,0.034623625,924,126827621,0.000000,0.000000
+execution/mapped_sum,137226,0,32,0.035516250,901,123640080,0.000000,0.000000
+rust/execution_filtered_sum,137226,0,32,0.013170791,2430,333406855,0.000000,0.000000
+execution/lookup_8192,501,0,32,0.000011000,2909091,1457454545,0.000000,0.000000
+rust/execution_lookup_8192,501,0,32,0.000009708,3296251,1651421508,0.000000,0.000000
+execution/type_fallback,16,0,32,0.000004875,6564103,105025641,0.000000,0.000000
+native_metadata,arithmetic,5333,596375,1,716,0
+jit/compile_arithmetic,0,0,32,0.000132667,241205,0,148.000000,7464.000000
+native_region,jit/arithmetic,100,336209,1,716
+jit/arithmetic,100,0,32,0.000005166,6194348,619434766,0.000000,0.000000
+jit/rust_arithmetic,100,0,32,0.000003750,8533333,853333333,0.000000,0.000000
+native_region,jit/arithmetic,500,293375,1,716
+jit/arithmetic,500,0,32,0.000011917,2685240,1342619787,0.000000,0.000000
+jit/rust_arithmetic,500,0,32,0.000010709,2988141,1494070408,0.000000,0.000000
+native_region,jit/arithmetic,1024,270917,1,716
+jit/arithmetic,1024,0,32,0.000020458,1564180,1601720598,0.000000,0.000000
+jit/rust_arithmetic,1024,0,32,0.000019292,1658719,1698527887,0.000000,0.000000
+native_region,jit/arithmetic,10240,266416,1,716
+jit/arithmetic,10240,0,32,0.000171792,186272,1907422930,0.000000,0.000000
+jit/rust_arithmetic,10240,0,32,0.000170625,187546,1920468864,0.000000,0.000000
+native_region,jit/arithmetic,1048576,270959,1,716
+jit/arithmetic,1048576,0,32,0.017246084,1855,1945626149,0.000000,0.000000
+jit/rust_arithmetic,1048576,0,32,0.017195750,1861,1951321228,0.000000,0.000000
+native_metadata,dense,9500,495666,1,1144,0
+jit/compile_dense,0,0,32,0.000205416,155781,0,238.000000,11885.000000
+native_region,jit/dense,100,429959,1,1144
+jit/dense,100,0,32,0.000005875,5446809,544680851,0.000000,0.000000
+jit/rust_dense,100,0,32,0.000003750,8533333,853333333,0.000000,0.000000
+native_region,jit/dense,500,405708,1,1144
+jit/dense,500,0,32,0.000012459,2568424,1284212216,0.000000,0.000000
+jit/rust_dense,500,0,32,0.000010792,2965159,1482579689,0.000000,0.000000
+native_region,jit/dense,1024,399750,1,1144
+jit/dense,1024,0,32,0.000021292,1502912,1538981777,0.000000,0.000000
+jit/rust_dense,1024,0,32,0.000019416,1648125,1687680264,0.000000,0.000000
+native_region,jit/dense,10240,393458,1,1144
+jit/dense,10240,0,32,0.000172666,185329,1897767945,0.000000,0.000000
+jit/rust_dense,10240,0,32,0.000170583,187592,1920941712,0.000000,0.000000
+native_region,jit/dense,1048576,396292,1,1144
+jit/dense,1048576,0,32,0.017220542,1858,1948511957,0.000000,0.000000
+jit/rust_dense,1048576,0,32,0.017205167,1860,1950253200,0.000000,0.000000
+native_metadata,branch,13041,554750,1,1056,0
+jit/compile_branch,0,0,32,0.000190083,168348,0,219.000000,10602.000000
+native_region,jit/branch,100,436209,1,1056
+jit/branch,100,0,32,0.000005292,6046863,604686319,0.000000,0.000000
+jit/rust_branch,100,0,32,0.000003750,8533333,853333333,0.000000,0.000000
+native_region,jit/branch,500,394625,1,1056
+jit/branch,500,0,32,0.000011958,2676033,1338016391,0.000000,0.000000
+jit/rust_branch,500,0,32,0.000010791,2965434,1482717079,0.000000,0.000000
+native_region,jit/branch,1024,369833,1,1056
+jit/branch,1024,0,32,0.000020584,1554606,1591916051,0.000000,0.000000
+jit/rust_branch,1024,0,32,0.000019166,1669623,1709694250,0.000000,0.000000
+native_region,jit/branch,10240,359167,1,1056
+jit/branch,10240,0,32,0.000171916,186137,1906047139,0.000000,0.000000
+jit/rust_branch,10240,0,32,0.000170542,187637,1921403525,0.000000,0.000000
+native_region,jit/branch,1048576,360041,1,1056
+jit/branch,1048576,0,32,0.017228459,1857,1947616557,0.000000,0.000000
+jit/rust_branch,1048576,0,32,0.017299291,1850,1939642035,0.000000,0.000000
+jit/varying_branch,500,0,32,0.000012125,2639175,1319587629,0.000000,0.000000
+native_region,jit/tiny,13,338709,1,716
+jit/tiny,13,0,32,0.000003667,8726479,113444232,0.000000,0.000000
+native_region,jit/fold,122,456292,1,1144
+jit/fold,122,0,32,0.000036042,887853,108318073,0.000000,0.000000
+native_region,jit/filter_map_fold,122,584167,1,1368
+jit/filter_map_fold,122,0,32,0.000033500,955224,116537313,0.000000,0.000000
+jit/rust_fold,122,0,32,0.000025041,1277904,155904317,0.000000,0.000000
+native_region,jit/numeric_fold,26,269875,1,504
+jit/numeric_fold,26,0,32,0.000016792,1905669,49547404,0.000000,0.000000
+native_region,jit/fold,472,473125,1,1144
+jit/fold,472,0,32,0.000146500,218430,103098976,0.000000,0.000000
+native_region,jit/filter_map_fold,472,538083,1,1368
+jit/filter_map_fold,472,0,32,0.000138500,231047,109054152,0.000000,0.000000
+jit/rust_fold,472,0,32,0.000092959,344238,162480233,0.000000,0.000000
+native_region,jit/numeric_fold,88,243167,1,504
+jit/numeric_fold,88,0,32,0.000065250,490421,43157088,0.000000,0.000000
+native_region,jit/fold,1858,435084,1,1144
+jit/fold,1858,0,32,0.000578375,55327,102798357,0.000000,0.000000
+native_region,jit/filter_map_fold,1858,533375,1,1368
+jit/filter_map_fold,1858,0,32,0.000541792,59063,109739531,0.000000,0.000000
+jit/rust_fold,1858,0,32,0.000377166,84843,157638812,0.000000,0.000000
+native_region,jit/numeric_fold,322,244583,1,504
+jit/numeric_fold,322,0,32,0.000258709,123691,39828533,0.000000,0.000000
+native_region,jit/fold,14794,427291,1,1144
+jit/fold,14794,0,32,0.004797625,6670,98675490,0.000000,0.000000
+native_region,jit/filter_map_fold,14794,626375,1,1368
+jit/filter_map_fold,14794,0,32,0.004355792,7347,108684712,0.000000,0.000000
+jit/rust_fold,14794,0,32,0.002845916,11244,166346442,0.000000,0.000000
+native_region,jit/numeric_fold,2506,311333,1,504
+jit/numeric_fold,2506,0,32,0.001901833,16826,42165637,0.000000,0.000000
+native_region,jit/fold,236554,491291,1,1144
+jit/fold,236554,0,32,0.073408417,436,103117984,0.000000,0.000000
+native_region,jit/filter_map_fold,236554,607709,1,1368
+jit/filter_map_fold,236554,0,32,0.069764000,459,108504788,0.000000,0.000000
+jit/rust_fold,236554,0,32,0.045585083,702,166057129,0.000000,0.000000
+native_region,jit/numeric_fold,39946,355834,1,504
+jit/numeric_fold,39946,0,32,0.032553166,983,39267210,0.000000,0.000000
+plan/branch,100,0,32,0.000004959,6452914,645291389,0.000000,0.000000
+plan/boolean,100,0,32,0.000006208,5154639,515463918,0.000000,0.000000
+plan/object,100,0,32,0.000006292,5085823,508582327,3.000000,248.000000
+plan/branch,500,0,32,0.000011625,2752688,1376344086,0.000000,0.000000
+plan/boolean,500,0,32,0.000013250,2415094,1207547170,0.000000,0.000000
+plan/object,500,0,32,0.000013125,2438095,1219047619,3.000000,248.000000
+plan/branch,1024,0,32,0.000020167,1586751,1624832647,0.000000,0.000000
+plan/boolean,1024,0,32,0.000021583,1482648,1518231942,0.000000,0.000000
+plan/object,1024,0,32,0.000021709,1474043,1509420056,3.000000,248.000000
+plan/branch,10240,0,32,0.000155208,206175,2111231380,0.000000,0.000000
+plan/boolean,10240,0,32,0.000172958,185016,1894563998,0.000000,0.000000
+plan/object,10240,0,32,0.000156792,204092,2089902546,3.000000,248.000000
+plan/branch,1048576,0,32,0.017279209,1852,1941896299,0.000000,0.000000
+plan/boolean,1048576,0,32,0.017237792,1856,1946562065,0.000000,0.000000
+plan/object,1048576,0,32,0.017266500,1853,1943325631,3.000000,248.000000
+plan/lookup_branch,490,0,32,0.000014542,2200523,1078256086,0.000000,0.000000
+plan/lookup_quote,490,0,32,0.000014583,2194336,1075224577,0.000000,0.000000
+plan/invoice_sum,58,0,32,0.000006000,5333333,309333333,0.000000,0.000000
+rust/plan_invoice,58,0,32,0.000005417,5907329,342625069,0.000000,0.000000
+plan/invoice_object,58,0,32,0.000011833,2704302,156849489,3.000000,296.000000
+plan/mapped_objects,58,0,32,0.000013542,2363019,137055088,2.000000,136.000000
+plan/invoice_sum,300,0,32,0.000037709,848604,254581134,0.000000,0.000000
+rust/plan_invoice,300,0,32,0.000032000,1000000,300000000,0.000000,0.000000
+plan/invoice_object,300,0,32,0.000049917,641064,192319250,3.000000,296.000000
+plan/mapped_objects,300,0,32,0.000074291,430739,129221575,16.000000,1088.000000
+plan/invoice_sum,4488,0,32,0.000566042,56533,253719689,0.000000,0.000000
+rust/plan_invoice,4488,0,32,0.000483084,66241,297289912,0.000000,0.000000
+plan/invoice_object,4488,0,32,0.000696291,45958,206258590,3.000000,296.000000
+plan/mapped_objects,4488,0,32,0.001114167,28721,128899887,256.000000,17408.000000
+plan/invoice_sum,35736,0,32,0.004429333,7225,258177021,0.000000,0.000000
+rust/plan_invoice,35736,0,32,0.003848750,8314,297122962,0.000000,0.000000
+plan/invoice_object,35736,0,32,0.005308709,6028,215410564,3.000000,296.000000
+plan/mapped_objects,35736,0,32,0.008878292,3604,128803153,2048.000000,139264.000000
+plan/invoice_sum,571416,0,32,0.070006292,457,261195265,0.000000,0.000000
+rust/plan_invoice,571416,0,32,0.061821750,518,295774739,0.000000,0.000000
+plan/invoice_object,571416,0,32,0.085062875,376,214962309,3.000000,296.000000
+plan/mapped_objects,571416,0,32,0.137611125,233,132876699,32768.000000,2228224.000000
+plan/wide_fields,7583,0,32,0.000293416,109060,827003299,0.000000,0.000000
+plan/untaken_branch,496,0,32,0.000011167,2865586,1421330707,0.000000,0.000000
+compile/plan_branch,0,0,32,0.000070083,456601,0,96.000000,3826.000000
+demand/nested,100,0,32,0.000005000,6400000,640000000,0.000000,0.000000
+demand/branch,100,0,32,0.000005458,5862953,586295346,0.000000,0.000000
+demand/repeated,100,0,32,0.000004459,7176497,717649697,0.000000,0.000000
+demand/untaken_nested,101,0,32,0.000004458,7178107,724988784,0.000000,0.000000
+demand/nested,500,0,32,0.000011750,2723404,1361702128,0.000000,0.000000
+demand/branch,500,0,32,0.000012208,2621232,1310615990,0.000000,0.000000
+demand/repeated,500,0,32,0.000011167,2865586,1432793051,0.000000,0.000000
+demand/untaken_nested,501,0,32,0.000011417,2802838,1404221775,0.000000,0.000000
+demand/nested,1024,0,32,0.000020167,1586751,1624832647,0.000000,0.000000
+demand/branch,1024,0,32,0.000020584,1554606,1591916051,0.000000,0.000000
+demand/repeated,1024,0,32,0.000019584,1633987,1673202614,0.000000,0.000000
+demand/untaken_nested,1025,0,32,0.000019792,1616815,1657235247,0.000000,0.000000
+demand/nested,10240,0,32,0.000171417,186679,1911595699,0.000000,0.000000
+demand/branch,10240,0,32,0.000171958,186092,1905581596,0.000000,0.000000
+demand/repeated,10240,0,32,0.000170917,187225,1917187875,0.000000,0.000000
+demand/untaken_nested,10241,0,32,0.000171125,186998,1915044558,0.000000,0.000000
+demand/nested,1048576,0,32,0.017052500,1877,1967713356,0.000000,0.000000
+demand/branch,1048576,0,32,0.017235666,1857,1946802172,0.000000,0.000000
+demand/repeated,1048576,0,32,0.017289625,1851,1940726418,0.000000,0.000000
+demand/untaken_nested,1048577,0,32,0.017248667,1855,1945336645,0.000000,0.000000
+demand/nested_fold,546,0,32,0.000117250,272921,149014925,0.000000,0.000000
+demand/nested_fold_plan,546,0,32,0.000053708,595814,325314664,0.000000,0.000000
+demand/nested_fold,8454,0,32,0.001858917,17214,145529897,0.000000,0.000000
+demand/nested_fold_plan,8454,0,32,0.000869500,36803,311130535,0.000000,0.000000
+demand/nested_fold,67478,0,32,0.014413292,2220,149812826,0.000000,0.000000
+demand/nested_fold_plan,67478,0,32,0.006947000,4606,310824241,0.000000,0.000000
+demand/wide_nested,1137,0,32,0.000037458,854290,971327887,0.000000,0.000000
+demand/wide_nested,38497,0,32,0.001109250,28848,1110573811,0.000000,0.000000
+demand/wide_nested,323265,0,32,0.009070333,3528,1140474115,0.000000,0.000000
+demand/repeated_lookup,100,0,32,0.000007500,4266667,426666667,0.000000,0.000000
+demand/repeated_lookup,500,0,32,0.000014084,2272082,1136040897,0.000000,0.000000
+demand/repeated_lookup,10240,0,32,0.000173833,184085,1885027584,0.000000,0.000000
+demand/repeated_lookup,1048576,0,32,0.017273500,1853,1942538108,0.000000,0.000000
+compile/scoped_path,0,0,32,0.000059375,538947,0,41.000000,3773.000000
+tuple/index,100,0,32,0.000019625,1630573,163057325,9.000000,864.000000
+tuple/filter_sum,100,0,32,0.000029167,1097130,109713032,10.000000,1312.000000
+tuple/plan_leaves,100,0,32,0.000036542,875705,87570467,15.000000,1456.000000
+tuple/kept,100,0,32,0.000024917,1284264,128426376,11.000000,1008.000000
+tuple/ordered,100,0,32,0.000038583,829381,82938082,19.000000,1688.000000
+tuple/index,500,0,32,0.000032167,994808,497404172,9.000000,864.000000
+tuple/filter_sum,500,0,32,0.000041917,763413,381706706,10.000000,1312.000000
+tuple/plan_leaves,500,0,32,0.000049250,649746,324873096,15.000000,1456.000000
+tuple/kept,500,0,32,0.000038083,840270,420134968,11.000000,1008.000000
+tuple/ordered,500,0,32,0.000051375,622871,311435523,19.000000,1688.000000
+tuple/index,1024,0,32,0.000048958,653621,669308387,9.000000,864.000000
+tuple/filter_sum,1024,0,32,0.000058750,544681,557753191,10.000000,1312.000000
+tuple/plan_leaves,1024,0,32,0.000066375,482109,493679849,15.000000,1456.000000
+tuple/kept,1024,0,32,0.000055000,581818,595781818,11.000000,1008.000000
+tuple/ordered,1024,0,32,0.000069000,463768,474898551,19.000000,1688.000000
+tuple/index,10240,0,32,0.000346042,92474,946937077,9.000000,864.000000
+tuple/filter_sum,10240,0,32,0.000356834,89678,918298144,10.000000,1312.000000
+tuple/plan_leaves,10240,0,32,0.000369667,86564,886419399,15.000000,1456.000000
+tuple/kept,10240,0,32,0.000353292,90577,927504727,11.000000,1008.000000
+tuple/ordered,10240,0,32,0.000380833,84026,860429637,19.000000,1688.000000
+tuple/index,1048576,0,32,0.033941875,943,988585103,9.000000,864.000000
+tuple/filter_sum,1048576,0,32,0.034044375,940,985608695,10.000000,1312.000000
+tuple/plan_leaves,1048576,0,32,0.033991958,941,987128544,15.000000,1456.000000
+tuple/kept,1048576,0,32,0.033905792,944,989637169,11.000000,1008.000000
+tuple/ordered,1048576,0,32,0.034047917,940,985506162,19.000000,1688.000000
+tuple/wide_sum,440,0,32,0.000106208,301296,132570051,22.000000,2512.000000
+tuple/nested_sum,440,0,32,0.000209334,152866,67260932,70.000000,6352.000000
+tuple/join_sum,440,0,32,0.000423167,75620,33272916,46.000000,4816.000000
+tuple/join_bound,440,0,32,0.000327292,97772,43019689,55.000000,5744.000000
+tuple/group,440,0,32,0.000158459,201945,88855792,57.000000,5528.000000
+tuple/negative_index,440,0,32,0.000073042,438104,192765806,23.000000,2544.000000
+tuple/wide_sum,6666,0,32,0.001545917,20700,137984122,262.000000,26512.000000
+tuple/nested_sum,6666,0,32,0.003098292,10328,68848256,1030.000000,87952.000000
+tuple/join_sum,6666,0,32,0.030194333,1060,7064637,646.000000,63376.000000
+tuple/join_bound,6666,0,32,0.004906583,6522,43474654,775.000000,75824.000000
+tuple/group,6666,0,32,0.001993833,16049,106985891,337.000000,67928.000000
+tuple/negative_index,6666,0,32,0.000920791,34753,231661691,267.000000,36144.000000
+tuple/wide_sum,56043,0,32,0.011985083,2670,149634008,2054.000000,205712.000000
+tuple/nested_sum,56043,0,32,0.022927292,1396,78220140,8198.000000,697232.000000
+tuple/join_sum,56043,0,32,1.645420709,19,1089919,5126.000000,500624.000000
+tuple/join_bound,56043,0,32,0.038888542,823,46115794,6151.000000,599088.000000
+tuple/group,56043,0,32,0.015231584,2101,117740611,2159.000000,533848.000000
+tuple/negative_index,56043,0,32,0.006991750,4577,256498874,2062.000000,287024.000000
+compile/builtins,0,0,32,0.000069333,461541,0,55.000000,3865.000000
+builtin/length,100,0,32,0.000009875,3240506,324050633,0.000000,0.000000
+builtin/normalize,100,0,32,0.000025333,1263175,126317452,19.000000,363.000000
+builtin/split_join,100,0,32,0.000037000,864865,86486486,32.000000,749.000000
+builtin/numeric,100,0,32,0.000010167,3147438,314743779,0.000000,0.000000
+builtin/average,100,0,32,0.000009709,3295911,329591101,0.000000,0.000000
+builtin/type,100,0,32,0.000009292,3443823,344382264,0.000000,0.000000
+builtin/keys,100,0,32,0.000017833,1794426,179442606,8.000000,468.000000
+builtin/map_builtin,100,0,32,0.000016709,1915136,191513556,3.000000,208.000000
+builtin/map_closure,100,0,32,0.000031041,1030895,103089462,9.000000,952.000000
+builtin/reduce,100,0,32,0.000020875,1532934,153293413,4.000000,264.000000
+builtin/sift,100,0,32,0.000024667,1297280,129727977,12.000000,820.000000
+builtin/length,500,0,32,0.000022791,1404063,702031504,0.000000,0.000000
+builtin/normalize,500,0,32,0.000038417,832965,416482286,19.000000,363.000000
+builtin/split_join,500,0,32,0.000049917,641064,320532083,32.000000,749.000000
+builtin/numeric,500,0,32,0.000023542,1359273,679636395,0.000000,0.000000
+builtin/average,500,0,32,0.000022958,1393850,696924819,0.000000,0.000000
+builtin/type,500,0,32,0.000022708,1409195,704597499,0.000000,0.000000
+builtin/keys,500,0,32,0.000031291,1022658,511329136,8.000000,468.000000
+builtin/map_builtin,500,0,32,0.000029959,1068126,534063220,3.000000,208.000000
+builtin/map_closure,500,0,32,0.000051459,621854,310927146,9.000000,952.000000
+builtin/reduce,500,0,32,0.000034625,924188,462093863,4.000000,264.000000
+builtin/sift,500,0,32,0.000038166,838443,419221296,12.000000,820.000000
+builtin/length,1024,0,32,0.000039833,803354,822634499,0.000000,0.000000
+builtin/normalize,1024,0,32,0.000055542,576141,589967952,19.000000,363.000000
+builtin/split_join,1024,0,32,0.000067166,476432,487865885,32.000000,749.000000
+builtin/numeric,1024,0,32,0.000040584,788488,807411788,0.000000,0.000000
+builtin/average,1024,0,32,0.000040041,799181,818361180,0.000000,0.000000
+builtin/type,1024,0,32,0.000039417,811832,831316437,0.000000,0.000000
+builtin/keys,1024,0,32,0.000047833,668994,685050070,8.000000,468.000000
+builtin/map_builtin,1024,0,32,0.000047000,680851,697191489,3.000000,208.000000
+builtin/map_closure,1024,0,32,0.000076125,420361,430449918,9.000000,952.000000
+builtin/reduce,1024,0,32,0.000051458,621866,636791169,4.000000,264.000000
+builtin/sift,1024,0,32,0.000055083,580941,594884084,12.000000,820.000000
+builtin/length,10240,0,32,0.000337500,94815,970903704,0.000000,0.000000
+builtin/normalize,10240,0,32,0.000352875,90684,928600779,19.000000,363.000000
+builtin/split_join,10240,0,32,0.000363750,87973,900838488,32.000000,749.000000
+builtin/numeric,10240,0,32,0.000350084,91407,936003930,0.000000,0.000000
+builtin/average,10240,0,32,0.000337666,94768,970426398,0.000000,0.000000
+builtin/type,10240,0,32,0.000336917,94979,972583752,0.000000,0.000000
+builtin/keys,10240,0,32,0.000345584,92597,948192046,8.000000,468.000000
+builtin/map_builtin,10240,0,32,0.000344542,92877,951059668,3.000000,208.000000
+builtin/map_closure,10240,0,32,0.000523791,61093,625593032,9.000000,952.000000
+builtin/reduce,10240,0,32,0.000348334,91866,940706334,4.000000,264.000000
+builtin/sift,10240,0,32,0.000356667,89720,918728113,12.000000,820.000000
+builtin/length,1048576,0,32,0.033824416,946,992018074,0.000000,0.000000
+builtin/normalize,1048576,0,32,0.033806541,947,992542597,19.000000,363.000000
+builtin/split_join,1048576,0,32,0.034025958,940,986142168,32.000000,749.000000
+builtin/numeric,1048576,0,32,0.033662083,951,996802010,0.000000,0.000000
+builtin/average,1048576,0,32,0.033945000,943,988494093,0.000000,0.000000
+builtin/type,1048576,0,32,0.033946750,943,988443135,0.000000,0.000000
+builtin/keys,1048576,0,32,0.034002875,941,986811615,8.000000,468.000000
+builtin/map_builtin,1048576,0,32,0.033944875,943,988497733,3.000000,208.000000
+builtin/map_closure,1048576,0,32,0.050709375,631,661700760,9.000000,952.000000
+builtin/reduce,1048576,0,32,0.033863250,945,990880438,4.000000,264.000000
+builtin/sift,1048576,0,32,0.033972292,942,987699976,12.000000,820.000000
+builtin/filter_reduce,285,0,32,0.000078041,410041,116861650,7.000000,472.000000
+builtin/planned_average,285,0,32,0.000028458,1124464,320472275,0.000000,0.000000
+builtin/grouped_average,285,0,32,0.000070166,456061,129977482,10.000000,1016.000000
+builtin/ordered_labels,285,0,32,0.000190625,167869,47842623,113.000000,3705.000000
+builtin/merged_objects,285,0,32,0.000216209,148005,42181408,116.000000,7200.000000
+builtin/each_group,285,0,32,0.000103750,308434,87903614,30.000000,2724.000000
+builtin/distinct,285,0,32,0.000055125,580499,165442177,5.000000,480.000000
+builtin/filter_reduce,4537,0,32,0.001053500,30375,137811106,11.000000,3352.000000
+builtin/planned_average,4537,0,32,0.000430750,74289,337049333,0.000000,0.000000
+builtin/grouped_average,4537,0,32,0.000928292,34472,156399064,18.000000,9656.000000
+builtin/ordered_labels,4537,0,32,0.002794916,11449,51945747,1564.000000,53489.000000
+builtin/merged_objects,4537,0,32,0.004916916,6508,29527452,1921.000000,117602.000000
+builtin/each_group,4537,0,32,0.000932958,34300,155616866,38.000000,11364.000000
+builtin/distinct,4537,0,32,0.000708792,45147,204833012,9.000000,6240.000000
+builtin/filter_reduce,37737,0,32,0.008467375,3779,142616100,14.000000,24856.000000
+builtin/planned_average,37737,0,32,0.003420250,9356,353068928,0.000000,0.000000
+builtin/grouped_average,37737,0,32,0.007287834,4391,165698615,24.000000,74168.000000
+builtin/ordered_labels,37737,0,32,0.022918625,1396,52690072,12397.000000,429289.000000
+builtin/merged_objects,37737,0,32,0.158797667,202,7604545,15391.000000,940538.000000
+builtin/each_group,37737,0,32,0.007065458,4529,170913761,44.000000,75876.000000
+builtin/distinct,37737,0,32,0.005499916,5818,219564081,12.000000,49248.000000
+compile/helpers,0,0,32,0.000097917,326807,0,72.000000,6457.000000
+helper/round,100,0,32,0.000008375,3820896,382089552,0.000000,0.000000
+helper/static_round,100,0,32,0.000003375,9481481,948148148,0.000000,0.000000
+helper/decimal_round,100,0,32,0.000013000,2461538,246153846,0.000000,0.000000
+helper/pad,100,0,32,0.000013542,2363019,236301876,5.000000,83.000000
+helper/pad_unchanged,100,0,32,0.000008416,3802281,380228137,0.000000,0.000000
+helper/uri_unchanged,100,0,32,0.000007958,4021111,402111083,0.000000,0.000000
+helper/base64,100,0,32,0.000010708,2988420,298841987,5.000000,48.000000
+helper/sort,100,0,32,0.000014708,2175687,217568670,5.000000,264.000000
+helper/zip,100,0,32,0.000020083,1593387,159338744,11.000000,816.000000
+helper/single,100,0,32,0.000018333,1745486,174548628,4.000000,264.000000
+helper/assert,100,0,32,0.000008667,3692166,369216569,0.000000,0.000000
+helper/static_sort,100,0,32,0.000003750,8533333,853333333,1.000000,16.000000
+helper/round,500,0,32,0.000021709,1474043,737021512,0.000000,0.000000
+helper/static_round,500,0,32,0.000010292,3109211,1554605519,0.000000,0.000000
+helper/decimal_round,500,0,32,0.000026542,1205636,602818175,0.000000,0.000000
+helper/pad,500,0,32,0.000026708,1198143,599071439,5.000000,83.000000
+helper/pad_unchanged,500,0,32,0.000021792,1468429,734214391,0.000000,0.000000
+helper/uri_unchanged,500,0,32,0.000021416,1494210,747104968,0.000000,0.000000
+helper/base64,500,0,32,0.000024167,1324120,662059834,5.000000,48.000000
+helper/sort,500,0,32,0.000028125,1137778,568888889,5.000000,264.000000
+helper/zip,500,0,32,0.000040292,794202,397101162,11.000000,816.000000
+helper/single,500,0,32,0.000031541,1014552,507276244,4.000000,264.000000
+helper/assert,500,0,32,0.000021916,1460120,730060230,0.000000,0.000000
+helper/static_sort,500,0,32,0.000010834,2953664,1476832195,1.000000,16.000000
+helper/round,1024,0,32,0.000038875,823151,842906752,0.000000,0.000000
+helper/static_round,1024,0,32,0.000019000,1684211,1724631579,0.000000,0.000000
+helper/decimal_round,1024,0,32,0.000043709,732115,749685419,0.000000,0.000000
+helper/pad,1024,0,32,0.000043708,732131,749702572,5.000000,83.000000
+helper/pad_unchanged,1024,0,32,0.000038834,824020,843796673,0.000000,0.000000
+helper/uri_unchanged,1024,0,32,0.000038500,831169,851116883,0.000000,0.000000
+helper/base64,1024,0,32,0.000041125,778116,796790274,5.000000,48.000000
+helper/sort,1024,0,32,0.000044917,712425,729523343,5.000000,264.000000
+helper/zip,1024,0,32,0.000065375,489484,501231358,11.000000,816.000000
+helper/single,1024,0,32,0.000048625,658098,673892031,4.000000,264.000000
+helper/assert,1024,0,32,0.000039000,820513,840205128,0.000000,0.000000
+helper/static_sort,1024,0,32,0.000019458,1644568,1684037414,1.000000,16.000000
+helper/round,10240,0,32,0.000345083,92731,949568654,0.000000,0.000000
+helper/static_round,10240,0,32,0.000170167,188051,1925637756,0.000000,0.000000
+helper/decimal_round,10240,0,32,0.000343959,93034,952671685,0.000000,0.000000
+helper/pad,10240,0,32,0.000341209,93784,960349815,5.000000,83.000000
+helper/pad_unchanged,10240,0,32,0.000338708,94477,967440982,0.000000,0.000000
+helper/uri_unchanged,10240,0,32,0.000340792,93899,961524918,0.000000,0.000000
+helper/base64,10240,0,32,0.000341250,93773,960234432,5.000000,48.000000
+helper/sort,10240,0,32,0.000342625,93397,956380883,5.000000,264.000000
+helper/zip,10240,0,32,0.000509334,62827,643349943,11.000000,816.000000
+helper/single,10240,0,32,0.000345583,92597,948194790,4.000000,264.000000
+helper/assert,10240,0,32,0.000336250,95167,974513011,0.000000,0.000000
+helper/static_sort,10240,0,32,0.000185167,172817,1769645779,1.000000,16.000000
+helper/round,1048576,0,32,0.033922500,943,989149738,0.000000,0.000000
+helper/static_round,1048576,0,32,0.017225042,1858,1948002913,0.000000,0.000000
+helper/decimal_round,1048576,0,32,0.034007666,941,986672593,0.000000,0.000000
+helper/pad,1048576,0,32,0.033977917,942,987536464,5.000000,83.000000
+helper/pad_unchanged,1048576,0,32,0.033983125,942,987385121,0.000000,0.000000
+helper/uri_unchanged,1048576,0,32,0.033962250,942,987992021,0.000000,0.000000
+helper/base64,1048576,0,32,0.033565000,953,999685148,5.000000,48.000000
+helper/sort,1048576,0,32,0.033904250,944,989682178,5.000000,264.000000
+helper/zip,1048576,0,32,0.050651834,632,662452459,11.000000,816.000000
+helper/single,1048576,0,32,0.033909375,944,989532600,4.000000,264.000000
+helper/assert,1048576,0,32,0.033941542,943,988594802,0.000000,0.000000
+helper/static_sort,1048576,0,32,0.017330791,1846,1936116592,1.000000,16.000000
+helper/sort_sequence,162,0,32,0.000045208,707839,114669970,9.000000,992.000000
+helper/zip_sequence,162,0,32,0.000076750,416938,67543974,28.000000,2160.000000
+helper/sort_callback,162,0,32,0.000095208,336106,54449206,15.000000,1544.000000
+helper/single_sequence,162,0,32,0.000048584,658653,106701795,7.000000,600.000000
+helper/group_round,162,0,32,0.000064000,500000,81000000,10.000000,1016.000000
+helper/filtered_sorted,162,0,32,0.000136166,235007,38071178,53.000000,2452.000000
+helper/sort_sequence,2588,0,32,0.000674750,47425,122735828,17.000000,17312.000000
+helper/zip_sequence,2588,0,32,0.000870417,36764,95145201,280.000000,30960.000000
+helper/sort_callback,2588,0,32,0.002088875,15319,39646221,27.000000,23624.000000
+helper/single_sequence,2588,0,32,0.000611500,52330,135430908,11.000000,6360.000000
+helper/group_round,2588,0,32,0.000677500,47232,122237638,18.000000,9656.000000
+helper/filtered_sorted,2588,0,32,0.002472042,12945,33501049,787.000000,39953.000000
+helper/sort_sequence,21428,0,32,0.005957083,5372,115106001,23.000000,139168.000000
+helper/zip_sequence,21428,0,32,0.006725250,4758,101958440,2081.000000,246000.000000
+helper/sort_callback,21428,0,32,0.021731083,1473,31553697,36.000000,188488.000000
+helper/single_sequence,21428,0,32,0.004820417,6638,142248274,14.000000,49368.000000
+helper/group_round,21428,0,32,0.005249750,6096,130614982,24.000000,74168.000000
+helper/filtered_sorted,21428,0,32,0.021640583,1479,31685653,6127.000000,318541.000000
+helper/uri_roundtrip,136,0,32,0.000147167,217440,29571847,24.000000,5422.000000
+helper/base64_roundtrip,136,0,32,0.000055916,572287,77831032,19.000000,2097.000000
+helper/uri_roundtrip,1031,0,32,0.000987334,32411,33415237,30.000000,43363.000000
+helper/base64_roundtrip,1031,0,32,0.000299709,106770,110080111,22.000000,16434.000000
+helper/uri_roundtrip,10251,0,32,0.009657250,3314,33967434,36.000000,409675.000000
+helper/base64_roundtrip,10251,0,32,0.002774042,11536,118250553,25.000000,156066.000000
+helper/uri_roundtrip,1048586,0,32,1.025740458,31,32712712,50.000000,44459678.000000
+helper/base64_roundtrip,1048586,0,32,0.264721542,121,126754898,32.000000,16812233.000000
+compile/formatting,0,0,32,0.000216084,148091,0,172.000000,15773.000000
+format/number_static,200,0,32,0.000019250,1662338,332467532,2.000000,54.000000
+format/number_context,200,0,32,0.000021166,1511859,302371728,2.000000,54.000000
+format/number_dynamic,200,0,32,0.000041000,780488,156097561,20.000000,569.000000
+format/integer_static,200,0,32,0.000013583,2355886,471177207,2.000000,32.000000
+format/integer_dynamic,200,0,32,0.000023833,1342676,268535224,5.000000,120.000000
+format/integer_parse_static,200,0,32,0.000011583,2762669,552533886,1.000000,8.000000
+format/words_static,200,0,32,0.000020291,1577054,315410773,5.000000,184.000000
+format/date_static,200,0,32,0.000019334,1655115,331023068,2.000000,51.000000
+format/date_context,200,0,32,0.000018166,1761533,352306507,2.000000,51.000000
+format/date_dynamic,200,0,32,0.000035000,914286,182857143,15.000000,2005.000000
+format/date_iso,200,0,32,0.000019208,1665973,333194502,2.000000,101.000000
+format/date_parse_iso,200,0,32,0.000010667,2999906,599981251,0.000000,0.000000
+format/date_parse_constant,200,0,32,0.000004500,7111111,1422222222,0.000000,0.000000
+format/date_parse_static,200,0,32,0.000019292,1658719,331743728,6.000000,1360.000000
+format/date_parse_dynamic,200,0,32,0.000141542,226081,45216261,89.000000,10609.000000
+format/mixed,200,0,32,0.000054084,591672,118334443,13.000000,1889.000000
+format/number_static,500,0,32,0.000029291,1092486,546242873,2.000000,54.000000
+format/number_context,500,0,32,0.000031291,1022658,511329136,2.000000,54.000000
+format/number_dynamic,500,0,32,0.000056416,567215,283607487,20.000000,569.000000
+format/integer_static,500,0,32,0.000023708,1349755,674877678,2.000000,32.000000
+format/integer_dynamic,500,0,32,0.000038667,827579,413789536,5.000000,120.000000
+format/integer_parse_static,500,0,32,0.000021750,1471264,735632184,1.000000,8.000000
+format/words_static,500,0,32,0.000027708,1154901,577450556,5.000000,184.000000
+format/date_static,500,0,32,0.000026375,1213270,606635071,2.000000,51.000000
+format/date_context,500,0,32,0.000028292,1131062,565530892,2.000000,51.000000
+format/date_dynamic,500,0,32,0.000050708,631064,315532066,15.000000,2005.000000
+format/date_iso,500,0,32,0.000029375,1089362,544680851,2.000000,101.000000
+format/date_parse_iso,500,0,32,0.000020833,1536025,768012288,0.000000,0.000000
+format/date_parse_constant,500,0,32,0.000009750,3282051,1641025641,0.000000,0.000000
+format/date_parse_static,500,0,32,0.000029792,1074114,537056928,6.000000,1360.000000
+format/date_parse_dynamic,500,0,32,0.000157125,203660,101829753,89.000000,10609.000000
+format/mixed,500,0,32,0.000074708,428334,214167157,13.000000,1889.000000
+format/number_static,1024,0,32,0.000046500,688172,704688172,2.000000,54.000000
+format/number_context,1024,0,32,0.000048542,659223,675044292,2.000000,54.000000
+format/number_dynamic,1024,0,32,0.000080666,396697,406218233,20.000000,569.000000
+format/integer_static,1024,0,32,0.000040875,782875,801663609,2.000000,32.000000
+format/integer_dynamic,1024,0,32,0.000063708,502292,514346707,5.000000,120.000000
+format/integer_parse_static,1024,0,32,0.000038666,827600,847462887,1.000000,8.000000
+format/words_static,1024,0,32,0.000044542,718423,735665215,5.000000,184.000000
+format/date_static,1024,0,32,0.000043125,742029,759837681,2.000000,51.000000
+format/date_context,1024,0,32,0.000045125,709141,726160665,2.000000,51.000000
+format/date_dynamic,1024,0,32,0.000074958,426906,437151471,15.000000,2005.000000
+format/date_iso,1024,0,32,0.000046375,690027,706587601,2.000000,101.000000
+format/date_parse_iso,1024,0,32,0.000037750,847682,868026490,0.000000,0.000000
+format/date_parse_constant,1024,0,32,0.000018334,1745391,1787280463,0.000000,0.000000
+format/date_parse_static,1024,0,32,0.000046584,686931,703417482,6.000000,1360.000000
+format/date_parse_dynamic,1024,0,32,0.000182292,175543,179755557,89.000000,10609.000000
+format/mixed,1024,0,32,0.000108875,293915,300969001,13.000000,1889.000000
+format/number_static,10240,0,32,0.000344084,93001,952325595,2.000000,54.000000
+format/number_context,10240,0,32,0.000350375,91331,935226543,2.000000,54.000000
+format/number_dynamic,10240,0,32,0.000515042,62131,636219959,20.000000,569.000000
+format/integer_static,10240,0,32,0.000338083,94651,969229450,2.000000,32.000000
+format/integer_dynamic,10240,0,32,0.000505542,63298,648175621,5.000000,120.000000
+format/integer_parse_static,10240,0,32,0.000319209,100248,1026537472,1.000000,8.000000
+format/words_static,10240,0,32,0.000347459,92097,943075298,5.000000,184.000000
+format/date_static,10240,0,32,0.000343292,93215,954522680,2.000000,51.000000
+format/date_context,10240,0,32,0.000345542,92608,948307297,2.000000,51.000000
+format/date_dynamic,10240,0,32,0.000523917,61078,625442580,15.000000,2005.000000
+format/date_iso,10240,0,32,0.000343750,93091,953250909,2.000000,101.000000
+format/date_parse_iso,10240,0,32,0.000335041,95511,978029555,0.000000,0.000000
+format/date_parse_constant,10240,0,32,0.000169625,188651,1931790715,0.000000,0.000000
+format/date_parse_static,10240,0,32,0.000343709,93102,953364619,6.000000,1360.000000
+format/date_parse_dynamic,10240,0,32,0.000626292,51094,523206428,89.000000,10609.000000
+format/mixed,10240,0,32,0.000697792,45859,469595524,13.000000,1889.000000
+format/number_static,1048576,0,32,0.033917500,943,989295555,2.000000,54.000000
+format/number_context,1048576,0,32,0.033924709,943,989085330,2.000000,54.000000
+format/number_dynamic,1048576,0,32,0.050765708,630,660966493,20.000000,569.000000
+format/integer_static,1048576,0,32,0.033971542,942,987721782,2.000000,32.000000
+format/integer_dynamic,1048576,0,32,0.050608875,632,663014778,5.000000,120.000000
+format/integer_parse_static,1048576,0,32,0.033921333,943,989183768,1.000000,8.000000
+format/words_static,1048576,0,32,0.033985209,942,987324574,5.000000,184.000000
+format/date_static,1048576,0,32,0.033807500,947,992514442,2.000000,51.000000
+format/date_context,1048576,0,32,0.033953250,942,988253908,2.000000,51.000000
+format/date_dynamic,1048576,0,32,0.050668041,632,662240563,15.000000,2005.000000
+format/date_iso,1048576,0,32,0.033957667,942,988125362,2.000000,101.000000
+format/date_parse_iso,1048576,0,32,0.033707709,949,995452761,0.000000,0.000000
+format/date_parse_constant,1048576,0,32,0.017352250,1844,1933722255,0.000000,0.000000
+format/date_parse_static,1048576,0,32,0.033995500,941,987025695,6.000000,1360.000000
+format/date_parse_dynamic,1048576,0,32,0.050913541,629,659047305,89.000000,10609.000000
+format/mixed,1048576,0,32,0.067432250,475,497602141,13.000000,1889.000000
+format/filtered_rows,218,0,32,0.000148958,214826,46831993,28.000000,1604.000000
+format/filtered_date_sum,234,0,32,0.000098083,326254,76343505,24.000000,5440.000000
+format/filtered_rows,3484,0,32,0.002465417,12980,45220748,448.000000,25664.000000
+format/filtered_date_sum,3740,0,32,0.001536916,20821,77870228,384.000000,87040.000000
+format/filtered_rows,28596,0,32,0.019969208,1602,45824151,3584.000000,205312.000000
+format/filtered_date_sum,30644,0,32,0.012050917,2655,81372065,3072.000000,696320.000000
+compile/function_signature,0,0,32,0.000054583,586263,0,49.000000,3284.000000
+compile/function_tail,0,0,32,0.000071833,445478,0,54.000000,3431.000000
+function/builtin,100,0,32,0.000007667,4173732,417373158,0.000000,0.000000
+function/direct,100,0,32,0.000007083,4517860,451785966,3.000000,200.000000
+function/signed,100,0,32,0.000008209,3898161,389816056,3.000000,200.000000
+function/named,100,0,32,0.000015125,2115702,211570248,6.000000,648.000000
+function/signed_named,100,0,32,0.000016208,1974334,197433366,6.000000,648.000000
+function/signature_context,100,0,32,0.000019417,1648040,164804038,6.000000,648.000000
+function/signature_array,100,0,32,0.000010958,2920241,292024092,5.000000,584.000000
+function/signature_promote,100,0,32,0.000010541,3035765,303576511,7.000000,656.000000
+function/signature_optional,100,0,32,0.000008709,3674360,367435986,3.000000,200.000000
+function/signature_variadic,100,0,32,0.000010750,2976744,297674419,3.000000,200.000000
+function/closure,100,0,32,0.000021417,1494140,149414017,7.000000,808.000000
+function/partial,100,0,32,0.000022292,1435493,143549255,8.000000,760.000000
+function/callback,100,0,32,0.000019292,1658719,165871864,6.000000,408.000000
+function/signed_callback,100,0,32,0.000023333,1371448,137144816,6.000000,408.000000
+function/partial_callback,100,0,32,0.000027333,1170746,117074598,8.000000,520.000000
+function/mixed,100,0,32,0.000042834,747070,74707008,11.000000,1216.000000
+rust/function_scalar,100,0,32,0.000003667,8726479,872647941,0.000000,0.000000
+function/builtin,500,0,32,0.000021167,1511787,755893608,0.000000,0.000000
+function/direct,500,0,32,0.000013917,2299346,1149673062,3.000000,200.000000
+function/signed,500,0,32,0.000015125,2115702,1057851240,3.000000,200.000000
+function/named,500,0,32,0.000028709,1114633,557316521,6.000000,648.000000
+function/signed_named,500,0,32,0.000030042,1065175,532587711,6.000000,648.000000
+function/signature_context,500,0,32,0.000033000,969697,484848485,6.000000,648.000000
+function/signature_array,500,0,32,0.000018042,1773639,886819643,5.000000,584.000000
+function/signature_promote,500,0,32,0.000017958,1781936,890967814,7.000000,656.000000
+function/signature_optional,500,0,32,0.000015583,2053520,1026759931,3.000000,200.000000
+function/signature_variadic,500,0,32,0.000017833,1794426,897213032,3.000000,200.000000
+function/closure,500,0,32,0.000041875,764179,382089552,7.000000,808.000000
+function/partial,500,0,32,0.000042333,755911,377955732,8.000000,760.000000
+function/callback,500,0,32,0.000032667,979582,489790921,6.000000,408.000000
+function/signed_callback,500,0,32,0.000036833,868786,434393071,6.000000,408.000000
+function/partial_callback,500,0,32,0.000047833,668994,334497105,8.000000,520.000000
+function/mixed,500,0,32,0.000070084,456595,228297472,11.000000,1216.000000
+rust/function_scalar,500,0,32,0.000010625,3011765,1505882353,0.000000,0.000000
+function/builtin,1024,0,32,0.000038375,833876,853889251,0.000000,0.000000
+function/direct,1024,0,32,0.000022667,1411744,1445625800,3.000000,200.000000
+function/signed,1024,0,32,0.000023625,1354497,1387005291,3.000000,200.000000
+function/named,1024,0,32,0.000045375,705234,722159780,6.000000,648.000000
+function/signed_named,1024,0,32,0.000046833,683279,699677578,6.000000,648.000000
+function/signature_context,1024,0,32,0.000049666,644304,659767245,6.000000,648.000000
+function/signature_array,1024,0,32,0.000026417,1211341,1240413370,5.000000,584.000000
+function/signature_promote,1024,0,32,0.000026083,1226853,1256297205,7.000000,656.000000
+function/signature_optional,1024,0,32,0.000024083,1328738,1360627829,3.000000,200.000000
+function/signature_variadic,1024,0,32,0.000026625,1201878,1230723005,3.000000,200.000000
+function/closure,1024,0,32,0.000067167,476424,487858621,7.000000,808.000000
+function/partial,1024,0,32,0.000067375,474954,486352505,8.000000,760.000000
+function/callback,1024,0,32,0.000049584,645369,660858341,6.000000,408.000000
+function/signed_callback,1024,0,32,0.000053584,597193,611525829,6.000000,408.000000
+function/partial_callback,1024,0,32,0.000072916,438861,449393823,8.000000,520.000000
+function/mixed,1024,0,32,0.000103166,310180,317624023,11.000000,1216.000000
+rust/function_scalar,1024,0,32,0.000019250,1662338,1702233766,0.000000,0.000000
+function/builtin,10240,0,32,0.000335417,95404,976933191,0.000000,0.000000
+function/direct,10240,0,32,0.000174125,183776,1881866475,3.000000,200.000000
+function/signed,10240,0,32,0.000175042,182813,1872007861,3.000000,200.000000
+function/named,10240,0,32,0.000352125,90877,930578630,6.000000,648.000000
+function/signed_named,10240,0,32,0.000344417,92911,951404838,6.000000,648.000000
+function/signature_context,10240,0,32,0.000347166,92175,943871232,6.000000,648.000000
+function/signature_array,10240,0,32,0.000177792,179986,1843052556,5.000000,584.000000
+function/signature_promote,10240,0,32,0.000177709,180070,1843913364,7.000000,656.000000
+function/signature_optional,10240,0,32,0.000175333,182510,1868900891,3.000000,200.000000
+function/signature_variadic,10240,0,32,0.000178375,179397,1837028732,3.000000,200.000000
+function/closure,10240,0,32,0.000511083,62612,641148307,7.000000,808.000000
+function/partial,10240,0,32,0.000511125,62607,641095622,8.000000,760.000000
+function/callback,10240,0,32,0.000349208,91636,938351928,6.000000,408.000000
+function/signed_callback,10240,0,32,0.000353417,90545,927176678,6.000000,408.000000
+function/partial_callback,10240,0,32,0.000515833,62036,635244352,8.000000,520.000000
+function/mixed,10240,0,32,0.000723917,44204,452648577,11.000000,1216.000000
+rust/function_scalar,10240,0,32,0.000170750,187408,1919062958,0.000000,0.000000
+function/builtin,1048576,0,32,0.034037583,940,985805367,0.000000,0.000000
+function/direct,1048576,0,32,0.017259542,1854,1944109062,3.000000,200.000000
+function/signed,1048576,0,32,0.017252291,1855,1944926155,3.000000,200.000000
+function/named,1048576,0,32,0.033989416,941,987202369,6.000000,648.000000
+function/signed_named,1048576,0,32,0.033967542,942,987838096,6.000000,648.000000
+function/signature_context,1048576,0,32,0.034021834,941,986261705,6.000000,648.000000
+function/signature_array,1048576,0,32,0.017254417,1855,1944686511,5.000000,584.000000
+function/signature_promote,1048576,0,32,0.017286250,1851,1941105329,7.000000,656.000000
+function/signature_optional,1048576,0,32,0.017254833,1855,1944639626,3.000000,200.000000
+function/signature_variadic,1048576,0,32,0.017075833,1874,1965024605,3.000000,200.000000
+function/closure,1048576,0,32,0.050625333,632,662799235,7.000000,808.000000
+function/partial,1048576,0,32,0.050715542,631,661620298,8.000000,760.000000
+function/callback,1048576,0,32,0.033946958,943,988437079,6.000000,408.000000
+function/signed_callback,1048576,0,32,0.033541542,954,1000384300,6.000000,408.000000
+function/partial_callback,1048576,0,32,0.050706083,631,661743720,8.000000,520.000000
+function/mixed,1048576,0,32,0.067407625,475,497783923,11.000000,1216.000000
+rust/function_scalar,1048576,0,32,0.017269083,1853,1943034960,0.000000,0.000000
+function/tail_8,34,0,32,0.000049416,647564,22017160,7.000000,808.000000
+function/signed_tail_8,34,0,32,0.000062125,515091,17513078,7.000000,808.000000
+function/tail_block_8,34,0,32,0.000064542,495801,16857240,8.000000,968.000000
+function/tail_borrow_8,34,0,32,0.000047917,667821,22705929,7.000000,808.000000
+function/tail_escape_once_8,34,0,32,0.000059542,537436,18272816,10.000000,1096.000000
+function/recursion_8,34,0,32,0.000063792,501630,17055430,17.000000,3432.000000
+rust/function_tail_8,34,0,32,0.000001625,19692308,669538462,0.000000,0.000000
+function/tail_32,35,0,32,0.000152500,209836,7344262,7.000000,808.000000
+function/signed_tail_32,35,0,32,0.000195083,164033,5741146,7.000000,808.000000
+function/tail_block_32,35,0,32,0.000206083,155277,5434703,8.000000,968.000000
+function/tail_borrow_32,35,0,32,0.000140333,228029,7981017,7.000000,808.000000
+function/tail_escape_once_32,35,0,32,0.000178375,179397,6278907,10.000000,1096.000000
+function/recursion_32,35,0,32,0.000209375,152836,5349254,43.000000,12648.000000
+rust/function_tail_32,35,0,32,0.000001875,17066667,597333333,0.000000,0.000000
+function/tail_64,35,0,32,0.000295875,108154,3785382,7.000000,808.000000
+function/signed_tail_64,35,0,32,0.000378375,84572,2960026,7.000000,808.000000
+function/tail_block_64,35,0,32,0.000392417,81546,2854107,8.000000,968.000000
+function/tail_borrow_64,35,0,32,0.000261375,122429,4285031,7.000000,808.000000
+function/tail_escape_once_64,35,0,32,0.000339125,94360,3302617,10.000000,1096.000000
+rust/function_tail_64,35,0,32,0.000002375,13473684,471578947,0.000000,0.000000
+function/tail_1024,37,0,32,0.004368958,7324,271003,7.000000,808.000000
+function/signed_tail_1024,37,0,32,0.005709917,5604,207359,7.000000,808.000000
+function/tail_block_1024,37,0,32,0.006203292,5159,190866,8.000000,968.000000
+function/tail_borrow_1024,37,0,32,0.004006875,7986,295492,7.000000,808.000000
+function/tail_escape_once_1024,37,0,32,0.005140875,6225,230311,10.000000,1096.000000
+rust/function_tail_1024,37,0,32,0.000021084,1517739,56156327,0.000000,0.000000
+function/tail_100000,39,0,32,0.424652417,75,2939,7.000000,808.000000
+function/signed_tail_100000,39,0,32,0.555396917,58,2247,7.000000,808.000000
+function/tail_block_100000,39,0,32,0.584090625,55,2137,8.000000,968.000000
+function/tail_borrow_100000,39,0,32,0.383081584,84,3258,7.000000,808.000000
+function/tail_escape_once_100000,39,0,32,0.495319375,65,2520,10.000000,1096.000000
+rust/function_tail_100000,39,0,32,0.001835750,17432,679831,0.000000,0.000000
+function/tail_capture_each_8,7,0,32,0.000060375,530021,3710145,26.000000,4008.000000
+function/tail_capture_each_128,9,0,32,0.000677792,47212,424909,270.000000,57768.000000
+function/tail_capture_each_1024,10,0,32,0.005079750,6300,62995,2065.000000,459176.000000
+compile/eval_static,0,0,32,0.000024417,1310562,0,25.000000,1182.000000
+compile/eval_dynamic,0,0,32,0.000009583,3339247,0,9.000000,664.000000
+compile/eval_nested,0,0,32,0.000039500,810127,0,37.000000,1875.000000
+eval/static_scalar,100,0,32,0.000012500,2560000,256000000,0.000000,0.000000
+eval/dynamic_scalar,100,0,32,0.000036375,879725,87972509,21.000000,924.000000
+eval/static_literal,100,0,32,0.000004916,6509357,650935720,1.000000,16.000000
+eval/context,100,0,32,0.000011417,2802838,280283787,0.000000,0.000000
+eval/nested,100,0,32,0.000013833,2313309,231330875,0.000000,0.000000
+eval/inherited,100,0,32,0.000018500,1729730,172972973,5.000000,584.000000
+eval/static_closure,100,0,32,0.000021042,1520768,152076799,6.000000,648.000000
+eval/folded_literal,100,0,32,0.000004833,6621146,662114629,1.000000,16.000000
+eval/mixed,100,0,32,0.000026333,1215205,121520526,9.000000,784.000000
+effect/random,100,0,32,0.000006416,4987531,498753117,4.000000,232.000000
+effect/random_injected,100,0,32,0.000005750,5565217,556521739,3.000000,200.000000
+effect/shuffle,100,0,32,0.000012917,2477355,247735542,6.000000,376.000000
+effect/shuffle_empty,100,0,32,0.000006500,4923077,492307692,4.000000,216.000000
+effect/shuffle_single,100,0,32,0.000006542,4891470,489147050,4.000000,216.000000
+eval/static_scalar,500,0,32,0.000032542,983345,491672300,0.000000,0.000000
+eval/dynamic_scalar,500,0,32,0.000062750,509960,254980080,21.000000,924.000000
+eval/static_literal,500,0,32,0.000011625,2752688,1376344086,1.000000,16.000000
+eval/context,500,0,32,0.000024916,1284315,642157650,0.000000,0.000000
+eval/nested,500,0,32,0.000033459,956394,478197197,0.000000,0.000000
+eval/inherited,500,0,32,0.000038542,830263,415131545,5.000000,584.000000
+eval/static_closure,500,0,32,0.000041375,773414,386706949,6.000000,648.000000
+eval/folded_literal,500,0,32,0.000011584,2762431,1381215470,1.000000,16.000000
+eval/mixed,500,0,32,0.000046833,683279,341639442,9.000000,784.000000
+effect/random,500,0,32,0.000013000,2461538,1230769231,4.000000,232.000000
+effect/random_injected,500,0,32,0.000012542,2551427,1275713602,3.000000,200.000000
+effect/shuffle,500,0,32,0.000026500,1207547,603773585,6.000000,376.000000
+effect/shuffle_empty,500,0,32,0.000013167,2430318,1215159110,4.000000,216.000000
+effect/shuffle_single,500,0,32,0.000013334,2399880,1199940003,4.000000,216.000000
+eval/static_scalar,1024,0,32,0.000058042,551325,564556700,0.000000,0.000000
+eval/dynamic_scalar,1024,0,32,0.000096333,332181,340153426,21.000000,924.000000
+eval/static_literal,1024,0,32,0.000020208,1583531,1621536025,1.000000,16.000000
+eval/context,1024,0,32,0.000041792,765697,784073507,0.000000,0.000000
+eval/nested,1024,0,32,0.000059166,540851,553831592,0.000000,0.000000
+eval/inherited,1024,0,32,0.000063792,501630,513669426,5.000000,584.000000
+eval/static_closure,1024,0,32,0.000066500,481203,492751880,6.000000,648.000000
+eval/folded_literal,1024,0,32,0.000020250,1580247,1618172840,1.000000,16.000000
+eval/mixed,1024,0,32,0.000071875,445217,455902609,9.000000,784.000000
+effect/random,1024,0,32,0.000021584,1482580,1518161601,4.000000,232.000000
+effect/random_injected,1024,0,32,0.000021167,1511787,1548070109,3.000000,200.000000
+effect/shuffle,1024,0,32,0.000043500,735632,753287356,6.000000,376.000000
+effect/shuffle_empty,1024,0,32,0.000022000,1454545,1489454545,4.000000,216.000000
+effect/shuffle_single,1024,0,32,0.000021916,1460120,1495163351,4.000000,216.000000
+eval/static_scalar,10240,0,32,0.000504250,63461,649836391,0.000000,0.000000
+eval/dynamic_scalar,10240,0,32,0.000685625,46673,477928897,21.000000,924.000000
+eval/static_literal,10240,0,32,0.000171542,186543,1910202749,1.000000,16.000000
+eval/context,10240,0,32,0.000341666,93659,959065286,0.000000,0.000000
+eval/nested,10240,0,32,0.000502417,63692,652207230,0.000000,0.000000
+eval/inherited,10240,0,32,0.000521041,61416,628894847,5.000000,584.000000
+eval/static_closure,10240,0,32,0.000522958,61190,626589516,6.000000,648.000000
+eval/folded_literal,10240,0,32,0.000171583,186499,1909746304,1.000000,16.000000
+eval/mixed,10240,0,32,0.000515292,62101,635911289,9.000000,784.000000
+effect/random,10240,0,32,0.000178000,179775,1840898876,4.000000,232.000000
+effect/random_injected,10240,0,32,0.000178250,179523,1838316971,3.000000,200.000000
+effect/shuffle,10240,0,32,0.000340792,93899,961524918,6.000000,376.000000
+effect/shuffle_empty,10240,0,32,0.000173166,184794,1892288324,4.000000,216.000000
+effect/shuffle_single,10240,0,32,0.000173375,184571,1890007210,4.000000,216.000000
+eval/static_scalar,1048576,0,32,0.050632917,632,662699959,0.000000,0.000000
+eval/dynamic_scalar,1048576,0,32,0.067291708,476,498641408,21.000000,924.000000
+eval/static_literal,1048576,0,32,0.017264791,1853,1943517996,1.000000,16.000000
+eval/context,1048576,0,32,0.033922750,943,989142449,0.000000,0.000000
+eval/nested,1048576,0,32,0.050574666,633,663463245,0.000000,0.000000
+eval/inherited,1048576,0,32,0.050710666,631,661683915,5.000000,584.000000
+eval/static_closure,1048576,0,32,0.050731625,631,661410550,6.000000,648.000000
+eval/folded_literal,1048576,0,32,0.017014667,1881,1972088669,1.000000,16.000000
+eval/mixed,1048576,0,32,0.050688042,631,661979249,9.000000,784.000000
+effect/random,1048576,0,32,0.017316167,1848,1937751698,4.000000,232.000000
+effect/random_injected,1048576,0,32,0.017244375,1856,1945818970,3.000000,200.000000
+effect/shuffle,1048576,0,32,0.033992042,941,987126104,6.000000,376.000000
+effect/shuffle_empty,1048576,0,32,0.017318750,1848,1937462692,4.000000,216.000000
+effect/shuffle_single,1048576,0,32,0.017271000,1853,1942819292,4.000000,216.000000
+eval/dynamic_closure_map,61,0,32,0.000078375,408293,24905901,46.000000,3323.000000
+eval/static_map,61,0,32,0.000031167,1026727,62630346,3.000000,336.000000
+effect/shuffle_sum,61,0,32,0.000017416,1837391,112080845,7.000000,568.000000
+eval/dynamic_closure_map,447,0,32,0.000422334,75769,33868928,50.000000,9083.000000
+eval/static_map,447,0,32,0.000362792,88205,39427551,7.000000,6096.000000
+effect/shuffle_sum,447,0,32,0.000132709,241129,107784702,11.000000,6328.000000
+eval/dynamic_closure_map,4055,0,32,0.002895625,11051,44812433,53.000000,52091.000000
+eval/static_map,4055,0,32,0.002785417,11488,46585484,10.000000,49104.000000
+effect/shuffle_sum,4055,0,32,0.000934625,34238,138836432,14.000000,49336.000000
+compile/conversion,0,0,32,0.000120666,265195,0,105.000000,6865.000000
+compile/composition,0,0,32,0.000045667,700725,0,36.000000,2529.000000
+conversion/string_identity,100,0,32,0.000004208,7604563,760456274,0.000000,0.000000
+conversion/number_text,100,0,32,0.000009042,3539040,353904004,0.000000,0.000000
+conversion/number_value,100,0,32,0.000004833,6621146,662114629,0.000000,0.000000
+conversion/string_number,100,0,32,0.000013334,2399880,239988001,8.000000,108.000000
+conversion/string_object,100,0,32,0.000016542,1934470,193446983,12.000000,423.000000
+conversion/string_pretty,100,0,32,0.000022083,1449078,144907848,12.000000,453.000000
+conversion/concat,100,0,32,0.000025708,1244749,124474872,14.000000,254.000000
+conversion/folded,100,0,32,0.000003250,9846154,984615385,0.000000,0.000000
+conversion/constructor,100,0,32,0.000032625,980843,98084291,13.000000,564.000000
+conversion/chain_direct,100,0,32,0.000018791,1702943,170294290,12.000000,214.000000
+conversion/chain_values,100,0,32,0.000031917,1002600,100260050,27.000000,1184.000000
+conversion/partial,100,0,32,0.000030792,1039231,103923097,24.000000,1214.000000
+conversion/partial_reused,100,0,32,0.000045166,708498,70849754,31.000000,2196.000000
+conversion/sum_direct,100,0,32,0.000008667,3692166,369216569,0.000000,0.000000
+conversion/sum_chain,100,0,32,0.000008542,3746195,374619527,0.000000,0.000000
+conversion/sum_function,100,0,32,0.000011750,2723404,272340426,4.000000,264.000000
+conversion/sum_partial,100,0,32,0.000013208,2422774,242277408,6.000000,352.000000
+rust/number_text,100,0,32,0.000004000,8000000,800000000,0.000000,0.000000
+conversion/string_identity,500,0,32,0.000011125,2876404,1438202247,0.000000,0.000000
+conversion/number_text,500,0,32,0.000012042,2657366,1328682943,0.000000,0.000000
+conversion/number_value,500,0,32,0.000011959,2675809,1337904507,0.000000,0.000000
+conversion/string_number,500,0,32,0.000026208,1221001,610500611,8.000000,108.000000
+conversion/string_object,500,0,32,0.000023791,1345046,672523223,12.000000,423.000000
+conversion/string_pretty,500,0,32,0.000035250,907801,453900709,12.000000,453.000000
+conversion/concat,500,0,32,0.000046292,691264,345632075,14.000000,254.000000
+conversion/folded,500,0,32,0.000010291,3109513,1554756583,0.000000,0.000000
+conversion/constructor,500,0,32,0.000059750,535565,267782427,13.000000,564.000000
+conversion/chain_direct,500,0,32,0.000032417,987136,493568190,12.000000,214.000000
+conversion/chain_values,500,0,32,0.000045208,707839,353919660,27.000000,1184.000000
+conversion/partial,500,0,32,0.000044125,725212,362606232,24.000000,1214.000000
+conversion/partial_reused,500,0,32,0.000066042,484540,242270071,31.000000,2196.000000
+conversion/sum_direct,500,0,32,0.000022250,1438202,719101124,0.000000,0.000000
+conversion/sum_chain,500,0,32,0.000022334,1432793,716396525,0.000000,0.000000
+conversion/sum_function,500,0,32,0.000025125,1273632,636815920,4.000000,264.000000
+conversion/sum_partial,500,0,32,0.000026750,1196262,598130841,6.000000,352.000000
+rust/number_text,500,0,32,0.000010958,2920241,1460120460,0.000000,0.000000
+conversion/string_identity,1024,0,32,0.000019791,1616897,1655702087,0.000000,0.000000
+conversion/number_text,1024,0,32,0.000020542,1557784,1595170869,0.000000,0.000000
+conversion/number_value,1024,0,32,0.000020458,1564180,1601720598,0.000000,0.000000
+conversion/string_number,1024,0,32,0.000028875,1108225,1134822511,8.000000,108.000000
+conversion/string_object,1024,0,32,0.000031959,1001283,1025313683,12.000000,423.000000
+conversion/string_pretty,1024,0,32,0.000052417,610489,625140699,12.000000,453.000000
+conversion/concat,1024,0,32,0.000070958,450971,461794301,14.000000,254.000000
+conversion/folded,1024,0,32,0.000018916,1691690,1732290125,0.000000,0.000000
+conversion/constructor,1024,0,32,0.000093125,343624,351871141,13.000000,564.000000
+conversion/chain_direct,1024,0,32,0.000049083,651957,667603855,12.000000,214.000000
+conversion/chain_values,1024,0,32,0.000062458,512344,524640558,27.000000,1184.000000
+conversion/partial,1024,0,32,0.000061209,522799,535346109,24.000000,1214.000000
+conversion/partial_reused,1024,0,32,0.000091250,350685,359101370,31.000000,2196.000000
+conversion/sum_direct,1024,0,32,0.000039167,817014,836622667,0.000000,0.000000
+conversion/sum_chain,1024,0,32,0.000039166,817035,836644028,0.000000,0.000000
+conversion/sum_function,1024,0,32,0.000042167,758887,777100576,4.000000,264.000000
+conversion/sum_partial,1024,0,32,0.000044042,726579,744017075,6.000000,352.000000
+rust/number_text,1024,0,32,0.000019583,1634070,1673288056,0.000000,0.000000
+conversion/string_identity,10240,0,32,0.000173667,184261,1886829392,0.000000,0.000000
+conversion/number_text,10240,0,32,0.000171791,186273,1907434033,0.000000,0.000000
+conversion/number_value,10240,0,32,0.000171750,186317,1907889374,0.000000,0.000000
+conversion/string_number,10240,0,32,0.000180084,177695,1819595300,8.000000,108.000000
+conversion/string_object,10240,0,32,0.000183125,174744,1789378840,12.000000,423.000000
+conversion/string_pretty,10240,0,32,0.000357875,89417,915626965,12.000000,453.000000
+conversion/concat,10240,0,32,0.000521458,61366,628391932,14.000000,254.000000
+conversion/folded,10240,0,32,0.000170250,187959,1924698972,0.000000,0.000000
+conversion/constructor,10240,0,32,0.000682917,46858,479824049,13.000000,564.000000
+conversion/chain_direct,10240,0,32,0.000349500,91559,937567954,12.000000,214.000000
+conversion/chain_values,10240,0,32,0.000371875,86050,881156303,27.000000,1184.000000
+conversion/partial,10240,0,32,0.000358792,89188,913286807,24.000000,1214.000000
+conversion/partial_reused,10240,0,32,0.000534083,59916,613537596,31.000000,2196.000000
+conversion/sum_direct,10240,0,32,0.000336625,95061,973427404,0.000000,0.000000
+conversion/sum_chain,10240,0,32,0.000341375,93739,959882827,0.000000,0.000000
+conversion/sum_function,10240,0,32,0.000339000,94395,966607670,4.000000,264.000000
+conversion/sum_partial,10240,0,32,0.000340750,93910,961643434,6.000000,352.000000
+rust/number_text,10240,0,32,0.000181666,176147,1803749739,0.000000,0.000000
+conversion/string_identity,1048576,0,32,0.017023208,1880,1971099219,0.000000,0.000000
+conversion/number_text,1048576,0,32,0.017284666,1851,1941283216,0.000000,0.000000
+conversion/number_value,1048576,0,32,0.017262542,1854,1943771201,0.000000,0.000000
+conversion/string_number,1048576,0,32,0.017230875,1857,1947343475,8.000000,108.000000
+conversion/string_object,1048576,0,32,0.017258583,1854,1944217089,12.000000,423.000000
+conversion/string_pretty,1048576,0,32,0.033897375,944,989882904,12.000000,453.000000
+conversion/concat,1048576,0,32,0.050723708,631,661513784,14.000000,254.000000
+conversion/folded,1048576,0,32,0.017215792,1859,1949049570,0.000000,0.000000
+conversion/constructor,1048576,0,32,0.067346000,475,498239420,13.000000,564.000000
+conversion/chain_direct,1048576,0,32,0.033966667,942,987863543,12.000000,214.000000
+conversion/chain_values,1048576,0,32,0.034005250,941,986742694,27.000000,1184.000000
+conversion/partial,1048576,0,32,0.034033667,940,985918796,24.000000,1214.000000
+conversion/partial_reused,1048576,0,32,0.050719125,631,661573558,31.000000,2196.000000
+conversion/sum_direct,1048576,0,32,0.033874375,945,990555014,0.000000,0.000000
+conversion/sum_chain,1048576,0,32,0.033963083,942,987967788,0.000000,0.000000
+conversion/sum_function,1048576,0,32,0.033977250,942,987555850,4.000000,264.000000
+conversion/sum_partial,1048576,0,32,0.033985209,942,987324574,6.000000,352.000000
+rust/number_text,1048576,0,32,0.017295083,1850,1940113962,0.000000,0.000000
+composition/numeric_pipeline,234,0,32,0.000102750,311436,72875912,14.000000,1320.000000
+composition/labels,234,0,32,0.000158417,201999,47267654,46.000000,2409.000000
+composition/grouping,234,0,32,0.000112250,285078,66708241,38.000000,1328.000000
+composition/static_lookup,234,0,32,0.000115125,277959,65042345,45.000000,2064.000000
+composition/direct_fold,74,0,32,0.000018042,1773639,131249307,0.000000,0.000000
+composition/chained_fold,74,0,32,0.000017875,1790210,132475524,0.000000,0.000000
+composition/numeric_pipeline,3886,0,32,0.001452125,22037,85634501,82.000000,12840.000000
+composition/labels,3886,0,32,0.002296625,13933,54145540,418.000000,30461.000000
+composition/grouping,3886,0,32,0.001555791,20568,79928474,466.000000,14648.000000
+composition/static_lookup,3886,0,32,0.001699417,18830,73173329,589.000000,24024.000000
+composition/direct_fold,1180,0,32,0.000252000,126984,149841270,0.000000,0.000000
+composition/chained_fold,1180,0,32,0.000251833,127068,149940635,0.000000,0.000000
+composition/numeric_pipeline,32606,0,32,0.011229500,2850,92915268,536.000000,98856.000000
+composition/labels,32606,0,32,0.018168042,1761,57430074,3116.000000,260353.000000
+composition/grouping,32606,0,32,0.011972458,2673,87149356,3608.000000,114104.000000
+composition/static_lookup,32606,0,32,0.013592667,2354,76761389,4624.000000,187992.000000
+composition/direct_fold,10164,0,32,0.002017417,15862,161220015,0.000000,0.000000
+composition/chained_fold,10164,0,32,0.002056000,15564,158194553,0.000000,0.000000
+compile/regex,0,0,32,0.000173625,184305,0,86.000000,7488.000000
+compile/regex_callback,0,0,32,0.000108125,295954,0,83.000000,6062.000000
+matcher/contains,100,0,32,0.000009208,3475239,347523892,3.000000,144.000000
+matcher/no_match,100,0,32,0.000010625,3011765,301176471,3.000000,144.000000
+matcher/literal_contains,100,0,32,0.000012458,2568631,256863060,5.000000,158.000000
+matcher/captures,100,0,32,0.000031959,1001283,100128289,30.000000,1368.000000
+matcher/replace,100,0,32,0.000019291,1658805,165880462,12.000000,439.000000
+matcher/replace_captures,100,0,32,0.000026292,1217100,121710026,16.000000,781.000000
+matcher/replace_callback,100,0,32,0.000075750,422442,42244224,57.000000,2841.000000
+matcher/split,100,0,32,0.000031875,1003922,100392157,30.000000,1056.000000
+matcher/closure,100,0,32,0.000018375,1741497,174149660,10.000000,952.000000
+matcher/next,100,0,32,0.000041458,771866,77186550,30.000000,2136.000000
+matcher/lookaround,100,0,32,0.000022375,1430168,143016760,23.000000,944.000000
+matcher/literal_replace,100,0,32,0.000011416,2803083,280308339,5.000000,191.000000
+rust/matcher_contains,100,0,32,0.000003625,8827586,882758621,1.000000,40.000000
+matcher/contains,500,0,32,0.000022417,1427488,713744034,3.000000,144.000000
+matcher/no_match,500,0,32,0.000024041,1331059,665529720,3.000000,144.000000
+matcher/literal_contains,500,0,32,0.000030792,1039231,519615485,5.000000,158.000000
+matcher/captures,500,0,32,0.000045167,708482,354240928,30.000000,1368.000000
+matcher/replace,500,0,32,0.000032792,975848,487923884,12.000000,439.000000
+matcher/replace_captures,500,0,32,0.000038459,832055,416027458,16.000000,781.000000
+matcher/replace_callback,500,0,32,0.000086792,368698,184348788,57.000000,2841.000000
+matcher/split,500,0,32,0.000045250,707182,353591160,30.000000,1056.000000
+matcher/closure,500,0,32,0.000032250,992248,496124031,10.000000,952.000000
+matcher/next,500,0,32,0.000054625,585812,292906178,30.000000,2136.000000
+matcher/lookaround,500,0,32,0.000035833,893032,446515782,23.000000,944.000000
+matcher/literal_replace,500,0,32,0.000025000,1280000,640000000,5.000000,191.000000
+rust/matcher_contains,500,0,32,0.000010375,3084337,1542168675,1.000000,40.000000
+matcher/contains,1024,0,32,0.000042083,760402,778651712,3.000000,144.000000
+matcher/no_match,1024,0,32,0.000041500,771084,789590361,3.000000,144.000000
+matcher/literal_contains,1024,0,32,0.000043125,742029,759837681,5.000000,158.000000
+matcher/captures,1024,0,32,0.000061375,521385,533898167,30.000000,1368.000000
+matcher/replace,1024,0,32,0.000049917,641064,656449707,12.000000,439.000000
+matcher/replace_captures,1024,0,32,0.000056416,567215,580828134,16.000000,781.000000
+matcher/replace_callback,1024,0,32,0.000105042,304640,311951410,57.000000,2841.000000
+matcher/split,1024,0,32,0.000061875,517172,529583838,30.000000,1056.000000
+matcher/closure,1024,0,32,0.000049167,650843,666463278,10.000000,952.000000
+matcher/next,1024,0,32,0.000071625,446771,457493892,30.000000,2136.000000
+matcher/lookaround,1024,0,32,0.000053000,603774,618264151,23.000000,944.000000
+matcher/literal_replace,1024,0,32,0.000041833,764946,783305046,5.000000,191.000000
+rust/matcher_contains,1024,0,32,0.000018958,1687942,1728452368,1.000000,40.000000
+matcher/contains,10240,0,32,0.000359000,89136,912757660,3.000000,144.000000
+matcher/no_match,10240,0,32,0.000338625,94500,967678110,3.000000,144.000000
+matcher/literal_contains,10240,0,32,0.000340375,94014,962702901,5.000000,158.000000
+matcher/captures,10240,0,32,0.000359542,89002,911381702,30.000000,1368.000000
+matcher/replace,10240,0,32,0.000347834,91998,942058568,12.000000,439.000000
+matcher/replace_captures,10240,0,32,0.000353833,90438,926086600,16.000000,781.000000
+matcher/replace_callback,10240,0,32,0.000401209,79759,816731429,57.000000,2841.000000
+matcher/split,10240,0,32,0.000359833,88930,910644660,30.000000,1056.000000
+matcher/closure,10240,0,32,0.000347042,92208,944208482,10.000000,952.000000
+matcher/next,10240,0,32,0.000369208,86672,887521397,30.000000,2136.000000
+matcher/lookaround,10240,0,32,0.000350292,91352,935448140,23.000000,944.000000
+matcher/literal_replace,10240,0,32,0.000339416,94280,965422962,5.000000,191.000000
+rust/matcher_contains,10240,0,32,0.000170375,187821,1923286867,1.000000,40.000000
+matcher/contains,1048576,0,32,0.033953417,942,988249047,3.000000,144.000000
+matcher/no_match,1048576,0,32,0.033990125,941,987181777,3.000000,144.000000
+matcher/literal_contains,1048576,0,32,0.033972583,942,987691516,5.000000,158.000000
+matcher/captures,1048576,0,32,0.033922250,943,989157028,30.000000,1368.000000
+matcher/replace,1048576,0,32,0.033878959,945,990420987,12.000000,439.000000
+matcher/replace_captures,1048576,0,32,0.033973167,942,987674537,16.000000,781.000000
+matcher/replace_callback,1048576,0,32,0.033770667,948,993596958,57.000000,2841.000000
+matcher/split,1048576,0,32,0.034030708,940,986004523,30.000000,1056.000000
+matcher/closure,1048576,0,32,0.033992791,941,987104354,10.000000,952.000000
+matcher/next,1048576,0,32,0.034104250,938,983878314,30.000000,2136.000000
+matcher/lookaround,1048576,0,32,0.033985750,942,987308857,23.000000,944.000000
+matcher/literal_replace,1048576,0,32,0.033974333,942,987640640,5.000000,191.000000
+rust/matcher_contains,1048576,0,32,0.017277333,1852,1942107153,1.000000,40.000000
+matcher/long_contains,149,0,32,0.000023208,1378835,205446398,4.000000,304.000000
+matcher/long_no_match,149,0,32,0.000021417,1494140,222626885,3.000000,144.000000
+matcher/long_replace,149,0,32,0.000036125,885813,131986159,12.000000,1439.000000
+matcher/repeated_replace,171,0,32,0.000146541,218369,37341085,142.000000,9210.000000
+matcher/limited_captures,171,0,32,0.000052875,605201,103489362,60.000000,2728.000000
+matcher/long_contains,4117,0,32,0.000443125,72214,297306629,4.000000,304.000000
+matcher/long_no_match,4117,0,32,0.000443333,72181,297167141,3.000000,144.000000
+matcher/long_replace,4117,0,32,0.000619959,51616,212504375,12.000000,33183.000000
+matcher/repeated_replace,5131,0,32,0.003805375,8409,43147390,4115.000000,288954.000000
+matcher/limited_captures,5131,0,32,0.000223083,143444,736013053,60.000000,2728.000000
+matcher/long_contains,65557,0,32,0.006961125,4597,301362783,4.000000,304.000000
+matcher/long_no_match,65557,0,32,0.006969833,4591,300986265,3.000000,144.000000
+matcher/long_replace,65557,0,32,0.009642667,3319,217556408,12.000000,524703.000000
+matcher/repeated_replace,81931,0,32,0.064353750,497,40740314,65559.000000,4620474.000000
+matcher/limited_captures,81931,0,32,0.002854667,11210,918423060,60.000000,2728.000000
+matcher/unicode_contains,139,0,32,0.000021209,1508793,209722288,7.000000,628.000000
+matcher/unicode_replace,139,0,32,0.000034583,925310,128618107,17.000000,1330.000000
+matcher/unicode_captures,139,0,32,0.000048291,662649,92108260,42.000000,2202.000000
+matcher/unicode_zero_limit,139,0,32,0.000011458,2792809,388200384,2.000000,104.000000
+matcher/unicode_contains,2059,0,32,0.000180875,176918,364273670,7.000000,7508.000000
+matcher/unicode_replace,2059,0,32,0.000241542,132482,272780717,17.000000,16130.000000
+matcher/unicode_captures,2059,0,32,0.000205458,155750,320688413,42.000000,9082.000000
+matcher/unicode_zero_limit,2059,0,32,0.000100208,319336,657512374,2.000000,104.000000
+matcher/unicode_contains,32779,0,32,0.002640834,12117,397195734,7.000000,117588.000000
+matcher/unicode_replace,32779,0,32,0.003590458,8913,292143231,17.000000,252930.000000
+matcher/unicode_captures,32779,0,32,0.002676875,11954,391847957,42.000000,119162.000000
+matcher/unicode_zero_limit,32779,0,32,0.001524541,20990,688028725,2.000000,104.000000
+matcher/filtered_sum,206,0,32,0.000105792,302480,62310950,63.000000,3656.000000
+matcher/mixed,206,0,32,0.000244792,130723,26928985,130.000000,6852.000000
+matcher/grouped,206,0,32,0.000121958,262385,54051395,54.000000,2460.000000
+matcher/filtered_sum,3292,0,32,0.001439125,22236,73200035,915.000000,59096.000000
+matcher/mixed,3292,0,32,0.003176667,10073,33161801,1882.000000,98352.000000
+matcher/grouped,3292,0,32,0.001530958,20902,68809203,722.000000,32760.000000
+matcher/filtered_sum,27060,0,32,0.010703667,2990,80899378,7196.000000,473048.000000
+matcher/mixed,27060,0,32,0.024393959,1312,35497313,14883.000000,781552.000000
+matcher/grouped,27060,0,32,0.011978125,2672,72291782,5656.000000,259000.000000
+compile/parent,0,0,32,0.000069875,457961,0,58.000000,4829.000000
+compile/transform,0,0,32,0.000067625,473198,0,62.000000,4205.000000
+parent/filter,150,0,32,0.000049708,643760,96563933,9.000000,864.000000
+parent/nested,150,0,32,0.000054458,587609,88141320,16.000000,1792.000000
+parent/sort,150,0,32,0.000038291,835706,125355828,14.000000,1200.000000
+parent/constructor,150,0,32,0.000047916,667835,100175307,15.000000,1456.000000
+parent/closure,150,0,32,0.000051708,618860,92828963,16.000000,1952.000000
+parent/group,150,0,32,0.000047291,676662,101499228,20.000000,2144.000000
+parent/tuple,150,0,32,0.000053916,593516,89027376,17.000000,1648.000000
+parent/focus_control,150,0,32,0.000053292,600465,90069804,10.000000,1304.000000
+transform/clone,150,0,32,0.000033375,958801,143820225,10.000000,1136.000000
+transform/update,150,0,32,0.000117709,271857,40778530,57.000000,5460.000000
+transform/no_match,150,0,32,0.000060458,529293,79393959,21.000000,1704.000000
+transform/update_write,150,0,32,0.000130416,245369,36805300,59.000000,5728.000000
+parent/filter,500,0,32,0.000055792,573559,286779467,9.000000,864.000000
+parent/nested,500,0,32,0.000064709,494522,247260814,16.000000,1792.000000
+parent/sort,500,0,32,0.000050333,635766,317882900,14.000000,1200.000000
+parent/constructor,500,0,32,0.000062958,508275,254137679,15.000000,1456.000000
+parent/closure,500,0,32,0.000064625,495164,247582205,16.000000,1952.000000
+parent/group,500,0,32,0.000058833,543912,271956215,20.000000,2144.000000
+parent/tuple,500,0,32,0.000066791,479106,239553233,17.000000,1648.000000
+parent/focus_control,500,0,32,0.000065500,488550,244274809,10.000000,1304.000000
+transform/clone,500,0,32,0.000045334,705872,352935986,10.000000,1136.000000
+transform/update,500,0,32,0.000140459,227824,113912245,57.000000,5460.000000
+transform/no_match,500,0,32,0.000077459,413122,206560890,21.000000,1704.000000
+transform/update_write,500,0,32,0.000162834,196519,98259577,59.000000,5728.000000
+parent/filter,1024,0,32,0.000072000,444444,455111111,9.000000,864.000000
+parent/nested,1024,0,32,0.000082791,386515,395791813,16.000000,1792.000000
+parent/sort,1024,0,32,0.000067166,476432,487865885,14.000000,1200.000000
+parent/constructor,1024,0,32,0.000077208,414465,424411978,15.000000,1456.000000
+parent/closure,1024,0,32,0.000079833,400837,410456829,16.000000,1952.000000
+parent/group,1024,0,32,0.000075958,421285,431396298,20.000000,2144.000000
+parent/tuple,1024,0,32,0.000082333,388666,397993514,17.000000,1648.000000
+parent/focus_control,1024,0,32,0.000081500,392638,402061350,10.000000,1304.000000
+transform/clone,1024,0,32,0.000062083,515439,527809545,10.000000,1136.000000
+transform/update,1024,0,32,0.000173292,184659,189091245,57.000000,5460.000000
+transform/no_match,1024,0,32,0.000102500,312195,319687805,21.000000,1704.000000
+transform/update_write,1024,0,32,0.000206583,154901,158619054,59.000000,5728.000000
+parent/filter,10240,0,32,0.000369500,86604,886820027,9.000000,864.000000
+parent/nested,10240,0,32,0.000379166,84396,864212509,16.000000,1792.000000
+parent/sort,10240,0,32,0.000364292,87842,899498205,14.000000,1200.000000
+parent/constructor,10240,0,32,0.000374167,85523,875758685,15.000000,1456.000000
+parent/closure,10240,0,32,0.000377250,84824,868601723,16.000000,1952.000000
+parent/group,10240,0,32,0.000373291,85724,877813824,20.000000,2144.000000
+parent/tuple,10240,0,32,0.000379333,84359,863832042,17.000000,1648.000000
+parent/focus_control,10240,0,32,0.000378375,84572,866019161,10.000000,1304.000000
+transform/clone,10240,0,32,0.000359042,89126,912650888,10.000000,1136.000000
+transform/update,10240,0,32,0.000762250,41981,429885208,57.000000,5460.000000
+transform/no_match,10240,0,32,0.000545750,58635,600421438,21.000000,1704.000000
+transform/update_write,10240,0,32,0.001000250,31992,327598100,59.000000,5728.000000
+parent/filter,65536,0,32,0.002178958,14686,962456367,9.000000,864.000000
+parent/nested,65536,0,32,0.002161791,14803,970099330,16.000000,1792.000000
+parent/sort,65536,0,32,0.002158458,14825,971597316,14.000000,1200.000000
+parent/constructor,65536,0,32,0.002155625,14845,972874224,15.000000,1456.000000
+parent/closure,65536,0,32,0.002161417,14805,970267190,16.000000,1952.000000
+parent/group,65536,0,32,0.002201541,14535,952583668,20.000000,2144.000000
+parent/tuple,65536,0,32,0.002175833,14707,963838677,17.000000,1648.000000
+parent/focus_control,65536,0,32,0.002170584,14743,966169473,10.000000,1304.000000
+transform/clone,65536,0,32,0.002150583,14880,975155109,10.000000,1136.000000
+transform/update,65536,0,32,0.004296333,7448,488126037,57.000000,5460.000000
+transform/no_match,65536,0,32,0.003208375,9974,653649277,21.000000,1704.000000
+transform/update_write,65536,0,32,0.005782875,5534,362648683,59.000000,5728.000000
+parent/filter,1048576,0,32,0.034175917,936,981815119,9.000000,864.000000
+parent/nested,1048576,0,32,0.034036375,940,985840355,16.000000,1792.000000
+parent/sort,1048576,0,32,0.034023708,941,986207382,14.000000,1200.000000
+parent/constructor,1048576,0,32,0.033861500,945,990931648,15.000000,1456.000000
+parent/closure,1048576,0,32,0.033994375,941,987058359,16.000000,1952.000000
+parent/group,1048576,0,32,0.034018000,941,986372861,20.000000,2144.000000
+parent/tuple,1048576,0,32,0.034052750,940,985366292,17.000000,1648.000000
+parent/focus_control,1048576,0,32,0.034051625,940,985398847,10.000000,1304.000000
+transform/clone,1048576,0,32,0.033930500,943,988916521,10.000000,1136.000000
+transform/update,1048576,0,32,0.067474167,474,497293016,57.000000,5460.000000
+transform/no_match,1048576,0,32,0.050761958,630,661015322,21.000000,1704.000000
+transform/update_write,1048576,0,32,0.091199209,351,367924595,59.000000,5728.000000
+parent/wide_filter_sum,73,0,32,0.000040167,796674,58157194,9.000000,864.000000
+parent/wide_sort,73,0,32,0.000055041,581385,42441089,34.000000,2040.000000
+transform/wide_update,73,0,32,0.000078334,408507,29821023,46.000000,4916.000000
+transform/wide_write,73,0,32,0.000095792,334057,24386170,54.000000,5816.000000
+parent/wide_filter_sum,2048,0,32,0.000885208,36150,74034577,133.000000,13264.000000
+parent/wide_sort,2048,0,32,0.001615125,19813,40576426,846.000000,52296.000000
+transform/wide_update,2048,0,32,0.001906166,16788,34381056,804.000000,90576.000000
+transform/wide_write,2048,0,32,0.002440292,13113,26855803,1060.000000,119376.000000
+parent/wide_filter_sum,33180,0,32,0.013855083,2310,76633247,2053.000000,205264.000000
+parent/wide_sort,33180,0,32,0.028096459,1139,37789815,13330.000000,831816.000000
+transform/wide_update,33180,0,32,0.031084292,1029,34157445,12490.000000,1434392.000000
+transform/wide_write,33180,0,32,0.039124083,818,27138272,16586.000000,1895192.000000
+consolidation/unplanned_prefix,100,0,32,0.000015708,2037179,203717851,4.000000,192.000000
+consolidation/callback_prefix,100,0,32,0.000016584,1929571,192957067,8.000000,480.000000
+consolidation/unplanned_prefix,500,0,32,0.000051375,622871,311435523,4.000000,192.000000
+consolidation/callback_prefix,500,0,32,0.000036875,867797,433898305,8.000000,480.000000
+consolidation/unplanned_prefix,1024,0,32,0.000076125,420361,430449918,4.000000,192.000000
+consolidation/callback_prefix,1024,0,32,0.000064666,494850,506726873,8.000000,480.000000
+consolidation/unplanned_prefix,10240,0,32,0.000665208,48105,492597804,4.000000,192.000000
+consolidation/callback_prefix,10240,0,32,0.000505292,63330,648496315,8.000000,480.000000
+consolidation/unplanned_prefix,1048576,0,32,0.067129750,477,499844436,4.000000,192.000000
+consolidation/callback_prefix,1048576,0,32,0.050644333,632,662550576,8.000000,480.000000
+consolidation/nested_path,43,0,32,0.000005459,5861879,252060817,0.000000,0.000000
+consolidation/nested_sum,43,0,32,0.000006417,4986754,214430419,0.000000,0.000000
+consolidation/nested_path,871,0,32,0.000119750,267223,232751566,0.000000,0.000000
+consolidation/nested_sum,871,0,32,0.000122500,261224,227526531,0.000000,0.000000
+consolidation/nested_path,91,0,32,0.000009167,3490782,317661176,0.000000,0.000000
+consolidation/nested_sum,91,0,32,0.000010083,3173659,288802936,0.000000,0.000000
+consolidation/nested_path,919,0,32,0.000122709,260780,239656423,0.000000,0.000000
+consolidation/nested_sum,919,0,32,0.000127542,250898,230575026,0.000000,0.000000
+consolidation/nested_path,155,0,32,0.000023458,1364140,211441726,0.000000,0.000000
+consolidation/nested_sum,155,0,32,0.000024292,1317306,204182447,0.000000,0.000000
+consolidation/nested_path,983,0,32,0.000136417,234575,230587097,0.000000,0.000000
+consolidation/nested_sum,983,0,32,0.000143875,222415,218634231,0.000000,0.000000
+consolidation/sort_path,426,0,32,0.000113667,281524,119929267,9.000000,968.000000
+consolidation/sort_scalar,426,0,32,0.000134125,238583,101636533,9.000000,968.000000
+consolidation/sort_tuple,426,0,32,0.000128708,248625,105914162,28.000000,2928.000000
+consolidation/callback_projection,426,0,32,0.000092041,347671,148107908,7.000000,600.000000
+consolidation/transient_capture,426,0,32,0.000134792,237403,101133598,17.000000,1752.000000
+consolidation/distinct_groups,426,0,32,0.000110542,289483,123319643,5.000000,1464.000000
+consolidation/sort_path,7254,0,32,0.001805917,17720,128537469,13.000000,14408.000000
+consolidation/sort_scalar,7254,0,32,0.002333833,13711,99462129,13.000000,14408.000000
+consolidation/sort_tuple,7254,0,32,0.002167208,14766,107109239,272.000000,41328.000000
+consolidation/callback_projection,7254,0,32,0.001359417,23540,170755552,11.000000,6360.000000
+consolidation/transient_capture,7254,0,32,0.002070833,15453,112094022,141.000000,19032.000000
+consolidation/distinct_groups,7254,0,32,0.001872250,17092,123983442,13.000000,51472.000000
+consolidation/sort_path,61112,0,32,0.014940625,2142,130890374,16.000000,114760.000000
+consolidation/sort_scalar,61112,0,32,0.019516666,1640,100200721,16.000000,114760.000000
+consolidation/sort_tuple,61112,0,32,0.019089250,1676,102444255,2067.000000,328048.000000
+consolidation/callback_projection,61112,0,32,0.010654541,3003,183544650,14.000000,49368.000000
+consolidation/transient_capture,61112,0,32,0.016026208,1997,122024124,1040.000000,148056.000000
+consolidation/distinct_groups,61112,0,32,0.014312125,2236,136638270,19.000000,427816.000000
+regions/map,47,0,32,0.000015417,2075631,97554647,6.000000,408.000000
+regions/nested_map,47,0,32,0.000015375,2081301,97821138,6.000000,408.000000
+regions/indexed,47,0,32,0.000015833,2021095,94991474,6.000000,408.000000
+regions/reduce,47,0,32,0.000014791,2163478,101683456,4.000000,264.000000
+regions/filtered_sum,47,0,32,0.000005542,5774089,271382173,0.000000,0.000000
+regions/object,47,0,32,0.000016792,1905669,89566460,8.000000,592.000000
+regions/sort,47,0,32,0.000010666,3000188,141008813,2.000000,192.000000
+regions/groups,47,0,32,0.000023625,1354497,63661376,6.000000,203.000000
+regions/map,306,0,32,0.000078500,407643,124738854,7.000000,600.000000
+regions/nested_map,306,0,32,0.000078083,409820,125405018,7.000000,600.000000
+regions/indexed,306,0,32,0.000081542,392436,120085355,7.000000,600.000000
+regions/reduce,306,0,32,0.000077583,412461,126213217,4.000000,264.000000
+regions/filtered_sum,306,0,32,0.000043292,739167,226184976,0.000000,0.000000
+regions/object,306,0,32,0.000089875,356050,108951321,23.000000,2072.000000
+regions/sort,306,0,32,0.000112708,283920,86879370,9.000000,968.000000
+regions/groups,306,0,32,0.000179000,178771,54703911,38.000000,1936.000000
+regions/map,5042,0,32,0.001115250,28693,144670702,11.000000,6360.000000
+regions/nested_map,5042,0,32,0.001126125,28416,143273615,11.000000,6360.000000
+regions/indexed,5042,0,32,0.001173083,27279,137538435,11.000000,6360.000000
+regions/reduce,5042,0,32,0.001151708,27785,140091065,4.000000,264.000000
+regions/filtered_sum,5042,0,32,0.000676542,47299,238483346,0.000000,0.000000
+regions/object,5042,0,32,0.001325834,24136,121692459,267.000000,29912.000000
+regions/sort,5042,0,32,0.001725333,18547,93514701,13.000000,14408.000000
+regions/groups,5042,0,32,0.002539792,12599,63526462,540.000000,20256.000000
+regions/map,41828,0,32,0.008673500,3689,154320171,14.000000,49368.000000
+regions/nested_map,41828,0,32,0.008734958,3663,153234394,14.000000,49368.000000
+regions/indexed,41828,0,32,0.009062000,3531,147704260,14.000000,49368.000000
+regions/reduce,41828,0,32,0.008889375,3600,150572566,4.000000,264.000000
+regions/filtered_sum,41828,0,32,0.005345958,5986,250375330,0.000000,0.000000
+regions/object,41828,0,32,0.010387375,3081,128857965,2062.000000,237784.000000
+regions/sort,41828,0,32,0.014118625,2267,94803566,16.000000,114760.000000
+regions/groups,41828,0,32,0.019389625,1650,69031557,4017.000000,154528.000000
+regions/sparse_callback,100,0,32,0.000010083,3173659,317365863,3.000000,200.000000
+regions/wide_members,100,0,32,0.000007875,4063492,406349206,2.000000,424.000000
+regions/reusable_members,100,0,32,0.000005959,5370029,537002853,2.000000,136.000000
+regions/sparse_callback,500,0,32,0.000023459,1364082,682041008,3.000000,200.000000
+regions/wide_members,500,0,32,0.000014666,2181917,1090958680,2.000000,424.000000
+regions/reusable_members,500,0,32,0.000012791,2501759,1250879525,2.000000,136.000000
+regions/sparse_callback,1024,0,32,0.000040667,786879,805763887,3.000000,200.000000
+regions/wide_members,1024,0,32,0.000023083,1386302,1419572846,2.000000,424.000000
+regions/reusable_members,1024,0,32,0.000021291,1502982,1539054060,2.000000,136.000000
+regions/sparse_callback,10240,0,32,0.000339833,94164,964238317,3.000000,200.000000
+regions/wide_members,10240,0,32,0.000174375,183513,1879168459,2.000000,424.000000
+regions/reusable_members,10240,0,32,0.000172625,185373,1898218682,2.000000,136.000000
+regions/sparse_callback,1048576,0,32,0.033912750,944,989434121,3.000000,200.000000
+regions/wide_members,1048576,0,32,0.017150167,1866,1956507596,2.000000,424.000000
+regions/reusable_members,1048576,0,32,0.017263250,1854,1943691483,2.000000,136.000000
+acquisition/call_one,100,0,32,0.000006875,4654545,465454545,3.000000,200.000000
+acquisition/call_three,100,0,32,0.000009250,3459459,345945946,3.000000,200.000000
+acquisition/call_six,100,0,32,0.000013458,2377768,237776787,4.000000,344.000000
+acquisition/call_nested,100,0,32,0.000008917,3588651,358865089,3.000000,200.000000
+acquisition/call_repeated,100,0,32,0.000008334,3839693,383969282,3.000000,200.000000
+acquisition/call_one,500,0,32,0.000013916,2299511,1149755677,3.000000,200.000000
+acquisition/call_three,500,0,32,0.000016083,1989679,994839271,3.000000,200.000000
+acquisition/call_six,500,0,32,0.000020541,1557860,778929945,4.000000,344.000000
+acquisition/call_nested,500,0,32,0.000015750,2031746,1015873016,3.000000,200.000000
+acquisition/call_repeated,500,0,32,0.000015166,2109983,1054991428,3.000000,200.000000
+acquisition/call_one,1024,0,32,0.000022542,1419572,1453642090,3.000000,200.000000
+acquisition/call_three,1024,0,32,0.000024875,1286432,1317306533,3.000000,200.000000
+acquisition/call_six,1024,0,32,0.000028750,1113043,1139756522,4.000000,344.000000
+acquisition/call_nested,1024,0,32,0.000024417,1310562,1342015809,3.000000,200.000000
+acquisition/call_repeated,1024,0,32,0.000023667,1352094,1384543880,3.000000,200.000000
+acquisition/call_one,10240,0,32,0.000173791,184129,1885483138,3.000000,200.000000
+acquisition/call_three,10240,0,32,0.000175958,181862,1862262585,3.000000,200.000000
+acquisition/call_six,10240,0,32,0.000180292,177490,1817496062,4.000000,344.000000
+acquisition/call_nested,10240,0,32,0.000175708,182120,1864912241,3.000000,200.000000
+acquisition/call_repeated,10240,0,32,0.000175125,182727,1871120628,3.000000,200.000000
+acquisition/call_one,1048576,0,32,0.017315250,1848,1937854319,3.000000,200.000000
+acquisition/call_three,1048576,0,32,0.017243958,1856,1945866024,3.000000,200.000000
+acquisition/call_six,1048576,0,32,0.017291542,1851,1940511263,4.000000,344.000000
+acquisition/call_nested,1048576,0,32,0.017282875,1852,1941484388,3.000000,200.000000
+acquisition/call_repeated,1048576,0,32,0.017253750,1855,1944761689,3.000000,200.000000
+acquisition/lookup_1_short_raw,500,0,32,0.000009750,3282051,1641025641,0.000000,0.000000
+acquisition/lookup_1_short_escaped,500,0,32,0.000010333,3096874,1548437046,0.000000,0.000000
+acquisition/lookup_1_short_varying,500,0,32,0.000009834,3254017,1627008338,0.000000,0.000000
+acquisition/lookup_1_ascii_raw,500,0,32,0.000009792,3267974,1633986928,0.000000,0.000000
+acquisition/lookup_1_ascii_escaped,500,0,32,0.000012042,2657366,1328682943,0.000000,0.000000
+acquisition/lookup_1_ascii_varying,500,0,32,0.000009916,3227108,1613553852,0.000000,0.000000
+acquisition/lookup_1_unicode_raw,500,0,32,0.000010334,3096574,1548287207,0.000000,0.000000
+acquisition/lookup_1_unicode_escaped,500,0,32,0.000011083,2887305,1443652441,0.000000,0.000000
+acquisition/lookup_1_unicode_varying,500,0,32,0.000010292,3109211,1554605519,0.000000,0.000000
+acquisition/lookup_4_short_raw,500,0,32,0.000010500,3047619,1523809524,0.000000,0.000000
+acquisition/lookup_4_short_escaped,500,0,32,0.000011542,2772483,1386241553,0.000000,0.000000
+acquisition/lookup_4_short_varying,500,0,32,0.000010625,3011765,1505882353,0.000000,0.000000
+acquisition/lookup_4_ascii_raw,500,0,32,0.000012458,2568631,1284315299,0.000000,0.000000
+acquisition/lookup_4_ascii_escaped,500,0,32,0.000016542,1934470,967234917,0.000000,0.000000
+acquisition/lookup_4_ascii_varying,500,0,32,0.000012666,2526449,1263224380,0.000000,0.000000
+acquisition/lookup_4_unicode_raw,500,0,32,0.000011625,2752688,1376344086,0.000000,0.000000
+acquisition/lookup_4_unicode_escaped,500,0,32,0.000012875,2485437,1242718447,0.000000,0.000000
+acquisition/lookup_4_unicode_varying,500,0,32,0.000011542,2772483,1386241553,0.000000,0.000000
+acquisition/lookup_32_short_raw,500,0,32,0.000010583,3023717,1511858641,0.000000,0.000000
+acquisition/lookup_32_short_escaped,500,0,32,0.000011584,2762431,1381215470,0.000000,0.000000
+acquisition/lookup_32_short_varying,500,0,32,0.000010667,2999906,1499953126,0.000000,0.000000
+acquisition/lookup_32_ascii_raw,500,0,32,0.000012666,2526449,1263224380,0.000000,0.000000
+acquisition/lookup_32_ascii_escaped,500,0,32,0.000016334,1959104,979551855,0.000000,0.000000
+acquisition/lookup_32_ascii_varying,500,0,32,0.000012708,2518099,1259049418,0.000000,0.000000
+acquisition/lookup_32_unicode_raw,500,0,32,0.000011834,2704073,1352036505,0.000000,0.000000
+acquisition/lookup_32_unicode_escaped,500,0,32,0.000012916,2477547,1238773614,0.000000,0.000000
+acquisition/lookup_32_unicode_varying,500,0,32,0.000011792,2713704,1356852103,0.000000,0.000000
+acquisition/lookup_128_short_raw,500,0,32,0.000010667,2999906,1499953126,0.000000,0.000000
+acquisition/lookup_128_short_escaped,500,0,32,0.000011542,2772483,1386241553,0.000000,0.000000
+acquisition/lookup_128_short_varying,500,0,32,0.000010875,2942529,1471264368,0.000000,0.000000
+acquisition/lookup_128_ascii_raw,500,0,32,0.000012750,2509804,1254901961,0.000000,0.000000
+acquisition/lookup_128_ascii_escaped,500,0,32,0.000016542,1934470,967234917,0.000000,0.000000
+acquisition/lookup_128_ascii_varying,500,0,32,0.000012834,2493377,1246688484,0.000000,0.000000
+acquisition/lookup_128_unicode_raw,500,0,32,0.000012042,2657366,1328682943,0.000000,0.000000
+acquisition/lookup_128_unicode_escaped,500,0,32,0.000012958,2469517,1234758450,0.000000,0.000000
+acquisition/lookup_128_unicode_varying,500,0,32,0.000012083,2648349,1324174460,0.000000,0.000000
+acquisition/lookup_4096_short_raw,500,0,32,0.000011042,2898026,1449012860,0.000000,0.000000
+acquisition/lookup_4096_short_escaped,500,0,32,0.000012208,2621232,1310615990,0.000000,0.000000
+acquisition/lookup_4096_short_varying,500,0,32,0.000011125,2876404,1438202247,0.000000,0.000000
+acquisition/lookup_4096_ascii_raw,500,0,32,0.000013125,2438095,1219047619,0.000000,0.000000
+acquisition/lookup_4096_ascii_escaped,500,0,32,0.000016792,1905669,952834683,0.000000,0.000000
+acquisition/lookup_4096_ascii_varying,500,0,32,0.000013291,2407644,1203822135,0.000000,0.000000
+acquisition/lookup_repeated,500,0,32,0.000022125,1446328,723163842,0.000000,0.000000
+acquisition/lookup_mixed,500,0,32,0.000020916,1529929,764964620,2.000000,136.000000
+acquisition/lookup_4096_unicode_raw,500,0,32,0.000012291,2603531,1301765519,0.000000,0.000000
+acquisition/lookup_4096_unicode_escaped,500,0,32,0.000013250,2415094,1207547170,0.000000,0.000000
+acquisition/lookup_4096_unicode_varying,500,0,32,0.000012459,2568424,1284212216,0.000000,0.000000
+acquisition/lookup_8192_short_raw,500,0,32,0.000011125,2876404,1438202247,0.000000,0.000000
+acquisition/lookup_8192_short_escaped,500,0,32,0.000012084,2648130,1324064879,0.000000,0.000000
+acquisition/lookup_8192_short_varying,500,0,32,0.000011625,2752688,1376344086,0.000000,0.000000
+acquisition/lookup_8192_ascii_raw,500,0,32,0.000013208,2422774,1211387038,0.000000,0.000000
+acquisition/lookup_8192_ascii_escaped,500,0,32,0.000016833,1901028,950513872,0.000000,0.000000
+acquisition/lookup_8192_ascii_varying,500,0,32,0.000013708,2334403,1167201634,0.000000,0.000000
+acquisition/lookup_8192_unicode_raw,500,0,32,0.000012667,2526249,1263124655,0.000000,0.000000
+acquisition/lookup_8192_unicode_escaped,500,0,32,0.000013583,2355886,1177943017,0.000000,0.000000
+acquisition/lookup_8192_unicode_varying,500,0,32,0.000012875,2485437,1242718447,0.000000,0.000000
+acquisition/lookup_32768_short_raw,500,0,32,0.000011291,2834116,1417057834,0.000000,0.000000
+acquisition/lookup_32768_short_escaped,500,0,32,0.000012416,2577320,1288659794,0.000000,0.000000
+acquisition/lookup_32768_short_varying,500,0,32,0.000012125,2639175,1319587629,0.000000,0.000000
+acquisition/lookup_32768_ascii_raw,500,0,32,0.000013291,2407644,1203822135,0.000000,0.000000
+acquisition/lookup_32768_ascii_escaped,500,0,32,0.000017083,1873207,936603641,0.000000,0.000000
+acquisition/lookup_32768_ascii_varying,500,0,32,0.000014375,2226087,1113043478,0.000000,0.000000
+acquisition/lookup_32768_unicode_raw,500,0,32,0.000012500,2560000,1280000000,0.000000,0.000000
+acquisition/lookup_32768_unicode_escaped,500,0,32,0.000013625,2348624,1174311927,0.000000,0.000000
+acquisition/lookup_32768_unicode_varying,500,0,32,0.000013208,2422774,1211387038,0.000000,0.000000
+acquisition/string_borrowed,100,0,32,0.000003167,10104200,1010419956,0.000000,0.000000
+acquisition/string_compare,100,0,32,0.000006167,5188909,518890871,0.000000,0.000000
+acquisition/string_unicode_compare,100,0,32,0.000009125,3506849,350684932,0.000000,0.000000
+acquisition/string_concat,100,0,32,0.000009916,3227108,322710770,2.000000,45.000000
+acquisition/string_owned_compare,100,0,32,0.000012292,2603319,260331923,2.000000,45.000000
+acquisition/string_construct,100,0,32,0.000029959,1068126,106812644,9.000000,417.000000
+acquisition/string_callback,100,0,32,0.000024416,1310616,131061599,14.000000,961.000000
+acquisition/string_borrowed,500,0,32,0.000012584,2542912,1271455817,0.000000,0.000000
+acquisition/string_compare,500,0,32,0.000019833,1613472,806736248,0.000000,0.000000
+acquisition/string_unicode_compare,500,0,32,0.000029542,1083204,541601787,0.000000,0.000000
+acquisition/string_concat,500,0,32,0.000030125,1062241,531120332,2.000000,45.000000
+acquisition/string_owned_compare,500,0,32,0.000032333,989701,494850462,2.000000,45.000000
+acquisition/string_construct,500,0,32,0.000056916,562232,281116031,9.000000,417.000000
+acquisition/string_callback,500,0,32,0.000044542,718423,359211531,14.000000,961.000000
+acquisition/string_borrowed,10240,0,32,0.000169875,188374,1928947756,0.000000,0.000000
+acquisition/string_compare,10240,0,32,0.000333833,95856,981568629,0.000000,0.000000
+acquisition/string_unicode_compare,10240,0,32,0.000497917,64268,658101651,0.000000,0.000000
+acquisition/string_concat,10240,0,32,0.000500459,63941,654758931,2.000000,45.000000
+acquisition/string_owned_compare,10240,0,32,0.000500750,63904,654378432,2.000000,45.000000
+acquisition/string_construct,10240,0,32,0.000843417,37941,388514815,9.000000,417.000000
+acquisition/string_callback,10240,0,32,0.000512958,62383,638804736,14.000000,961.000000
+string storage control: shared 16 B, inline 24 B, current Value 24 B
+rust/string_shared,12,0,32,0.000001041,30739673,368876081,2.000000,46.000000
+rust/string_stack,12,0,32,0.000000875,36571429,438857143,1.000000,32.000000
+rust/string_inline,12,0,32,0.000000292,109589041,1315068493,0.000000,0.000000
+rust/string_shared,22,0,32,0.000001041,30739673,676272815,2.000000,64.000000
+rust/string_stack,22,0,32,0.000000833,38415366,845138055,1.000000,40.000000
+rust/string_inline,22,0,32,0.000001083,29547553,650046168,2.000000,64.000000
+rust/string_shared,62,0,32,0.000000959,33368092,2068821689,2.000000,144.000000
+rust/string_stack,62,0,32,0.000000708,45197740,2802259887,1.000000,80.000000
+rust/string_inline,62,0,32,0.000001000,32000000,1984000000,2.000000,144.000000
+rust/string_shared,63,0,32,0.000001458,21947874,1382716049,2.000000,153.000000
+rust/string_stack,63,0,32,0.000001458,21947874,1382716049,2.000000,153.000000
+rust/string_inline,63,0,32,0.000001458,21947874,1382716049,2.000000,153.000000
+rust/string_shared,128,0,32,0.000001208,26490066,3390728477,2.000000,282.000000
+rust/string_stack,128,0,32,0.000001250,25600000,3276800000,2.000000,282.000000
+rust/string_inline,128,0,32,0.000001166,27444254,3512864494,2.000000,282.000000
+runtime/transient,455,0,32,0.000184833,173129,78773812,41.000000,4312.000000
+runtime/tail_transient,455,0,32,0.000181208,176593,80349653,41.000000,4312.000000
+runtime/recursive_local,455,0,32,0.000263291,121539,55300029,49.000000,5592.000000
+runtime/escaping,455,0,32,0.000193875,165055,75099936,48.000000,6216.000000
+runtime/mixed_escape,455,0,32,0.000369625,86574,39391275,84.000000,9944.000000
+runtime/filter,455,0,32,0.000197042,162402,73892876,39.000000,3976.000000
+runtime/reduce,455,0,32,0.000187041,171085,77843895,38.000000,3976.000000
+runtime/sort,455,0,32,0.000300000,106667,48533333,45.000000,5064.000000
+runtime/partial,455,0,32,0.000093583,341942,155583813,9.000000,712.000000
+runtime/strings,455,0,32,0.000244750,130746,59489275,65.000000,3888.000000
+runtime/dynamic_scalar,455,0,32,0.000183542,174347,79327892,87.000000,6268.000000
+runtime/dynamic_object,455,0,32,0.000233625,136972,62322097,139.000000,9463.000000
+runtime/planned,455,0,32,0.000084875,377025,171546392,7.000000,600.000000
+runtime/dynamic_reduce,97,0,32,0.000079458,402728,39064663,49.000000,3112.000000
+runtime/dynamic_sort,97,0,32,0.000096625,331177,32124191,55.000000,3768.000000
+runtime/transient,6149,0,32,0.002805417,11407,70138593,525.000000,59992.000000
+runtime/tail_transient,6149,0,32,0.002767875,11561,71089916,525.000000,59992.000000
+runtime/recursive_local,6149,0,32,0.004084250,7835,48177266,653.000000,80472.000000
+runtime/escaping,6149,0,32,0.002755917,11611,71398377,540.000000,94536.000000
+runtime/mixed_escape,6149,0,32,0.005398375,5928,36449487,1060.000000,153944.000000
+runtime/filter,6149,0,32,0.003011875,10625,65330733,482.000000,66760.000000
+runtime/reduce,6149,0,32,0.002867333,11160,68624049,518.000000,53896.000000
+runtime/sort,6149,0,32,0.009052208,3535,21737017,1083.000000,142056.000000
+runtime/partial,6149,0,32,0.001301584,24585,151175798,13.000000,6472.000000
+runtime/strings,6149,0,32,0.003724500,8592,52830716,909.000000,53208.000000
+runtime/dynamic_scalar,6149,0,32,0.001457041,21962,135046303,91.000000,12028.000000
+runtime/dynamic_object,6149,0,32,0.002221458,14405,88576061,983.000000,64183.000000
+runtime/planned,6149,0,32,0.001153291,27747,170614355,11.000000,6360.000000
+runtime/dynamic_reduce,483,0,32,0.000432916,73917,35702076,49.000000,3112.000000
+runtime/dynamic_sort,483,0,32,0.001248625,25628,12378416,59.000000,14328.000000
+runtime/transient,50102,0,32,0.022162625,1444,72340889,4112.000000,475736.000000
+runtime/tail_transient,50102,0,32,0.021732958,1472,73771090,4112.000000,475736.000000
+runtime/recursive_local,50102,0,32,0.032602042,982,49176797,5136.000000,639576.000000
+runtime/escaping,50102,0,32,0.021754709,1471,73697331,4133.000000,753992.000000
+runtime/mixed_escape,50102,0,32,0.042547042,752,37682150,8240.000000,1229144.000000
+runtime/filter,50102,0,32,0.023725750,1349,67574850,3691.000000,531656.000000
+runtime/reduce,50102,0,32,0.022695333,1410,70642894,4102.000000,426632.000000
+runtime/sort,50102,0,32,0.096711833,331,16577744,11620.000000,1486056.000000
+runtime/partial,50102,0,32,0.009827625,3256,163138500,16.000000,49480.000000
+runtime/strings,50102,0,32,0.029699208,1077,53983392,7184.000000,421464.000000
+runtime/dynamic_scalar,50102,0,32,0.010883375,2940,147313127,94.000000,55036.000000
+runtime/dynamic_object,50102,0,32,0.016945709,1888,94611798,7258.000000,472759.000000
+runtime/planned,50102,0,32,0.009129042,3505,175622371,14.000000,49368.000000
+runtime/dynamic_reduce,4091,0,32,0.003147917,10165,41586865,49.000000,3112.000000
+runtime/dynamic_sort,4091,0,32,0.013008833,2460,10063316,62.000000,93176.000000
+runtime/transient,846231,0,32,0.355831417,90,76101746,65556.000000,7602776.000000
+runtime/tail_transient,846231,0,32,0.349193833,92,77548311,65556.000000,7602776.000000
+runtime/recursive_local,846231,0,32,0.521470416,61,51928913,81940.000000,10224216.000000
+runtime/escaping,846231,0,32,0.347356750,92,77958445,65585.000000,12058952.000000
+runtime/mixed_escape,846231,0,32,0.681198041,47,39752598,131136.000000,19661144.000000
+runtime/filter,846231,0,32,0.382416292,84,70811293,58560.000000,8501288.000000
+runtime/reduce,846231,0,32,0.366108375,87,73965508,65542.000000,6816392.000000
+runtime/sort,846231,0,32,2.037916959,16,13287780,251062.000000,31128456.000000
+runtime/partial,846231,0,32,0.159422042,201,169859774,20.000000,786760.000000
+runtime/strings,846231,0,32,0.478253417,67,56621429,114708.000000,6734424.000000
+runtime/dynamic_scalar,846231,0,32,0.173571166,184,156013194,98.000000,792316.000000
+runtime/dynamic_object,846231,0,32,0.268349583,119,100910878,114782.000000,7476919.000000
+runtime/planned,846231,0,32,0.145203750,220,186492374,18.000000,786648.000000
+runtime/dynamic_reduce,87275,0,32,0.051244917,624,54499064,49.000000,3112.000000
+runtime/dynamic_sort,87275,0,32,0.288948542,111,9665389,66.000000,1444856.000000
+embedding/direct,100,0,32,0.000010084,3173344,317334391,0.000000,0.000000
+embedding/default_options,100,0,32,0.000010167,3147438,314743779,0.000000,0.000000
+embedding/bindings,100,0,32,0.000013875,2306306,230630631,5.000000,400.000000
+embedding/host,100,0,32,0.000017083,1873207,187320728,5.000000,400.000000
+embedding/limits,100,0,32,0.000013375,2392523,239252336,5.000000,392.000000
+embedding/string_borrowed,100,0,32,0.000003708,8629989,862998921,0.000000,0.000000
+embedding/string_decoded,100,0,32,0.000004375,7314286,731428571,1.000000,8.000000
+embedding/owned_scalar,100,0,32,0.000003875,8258065,825806452,0.000000,0.000000
+embedding/owned_object,100,0,32,0.000023750,1347368,134736842,13.000000,930.000000
+embedding/direct,500,0,32,0.000030083,1063724,531861849,0.000000,0.000000
+embedding/default_options,500,0,32,0.000030208,1059322,529661017,0.000000,0.000000
+embedding/bindings,500,0,32,0.000033792,946970,473484848,5.000000,400.000000
+embedding/host,500,0,32,0.000037208,860030,430015051,5.000000,400.000000
+embedding/limits,500,0,32,0.000033375,958801,479400749,5.000000,392.000000
+embedding/string_borrowed,500,0,32,0.000010584,3023432,1511715797,0.000000,0.000000
+embedding/string_decoded,500,0,32,0.000011292,2833865,1416932341,1.000000,8.000000
+embedding/owned_scalar,500,0,32,0.000010667,2999906,1499953126,0.000000,0.000000
+embedding/owned_object,500,0,32,0.000043958,727968,363983803,13.000000,930.000000
+embedding/direct,1024,0,32,0.000055583,575716,589532771,0.000000,0.000000
+embedding/default_options,1024,0,32,0.000055584,575705,589522165,0.000000,0.000000
+embedding/bindings,1024,0,32,0.000059292,539702,552654658,5.000000,400.000000
+embedding/host,1024,0,32,0.000062667,510636,522890836,5.000000,400.000000
+embedding/limits,1024,0,32,0.000058708,545071,558152211,5.000000,392.000000
+embedding/string_borrowed,1024,0,32,0.000019375,1651613,1691251613,0.000000,0.000000
+embedding/string_decoded,1024,0,32,0.000020000,1600000,1638400000,1.000000,8.000000
+embedding/owned_scalar,1024,0,32,0.000025000,1280000,1310720000,0.000000,0.000000
+embedding/owned_object,1024,0,32,0.000075750,422442,432580858,13.000000,930.000000
+embedding/direct,10240,0,32,0.000501375,63824,653562703,0.000000,0.000000
+embedding/default_options,10240,0,32,0.000499000,64128,656673347,0.000000,0.000000
+embedding/bindings,10240,0,32,0.000502750,63650,651775236,5.000000,400.000000
+embedding/host,10240,0,32,0.000505959,63246,647641410,5.000000,400.000000
+embedding/limits,10240,0,32,0.000502125,63729,652586507,5.000000,392.000000
+embedding/string_borrowed,10240,0,32,0.000170667,187500,1919996250,0.000000,0.000000
+embedding/string_decoded,10240,0,32,0.000171250,186861,1913459854,1.000000,8.000000
+embedding/owned_scalar,10240,0,32,0.000173292,184659,1890912448,0.000000,0.000000
+embedding/owned_object,10240,0,32,0.000512667,62419,639167335,13.000000,930.000000
+embedding/host_map_sum,74,0,32,0.000030750,1040650,77008130,8.000000,736.000000
+embedding/controlled_filter_sum,74,0,32,0.000048041,666098,49291230,5.000000,392.000000
+embedding/host_map_sum,1180,0,32,0.000313583,102046,120414691,12.000000,6496.000000
+embedding/controlled_filter_sum,1180,0,32,0.000740916,43190,50963942,5.000000,392.000000
+embedding/host_map_sum,10164,0,32,0.002450292,13060,132738465,15.000000,49504.000000
+embedding/controlled_filter_sum,10164,0,32,0.005999958,5333,54208379,5.000000,392.000000
+compatibility/unicode_icase,500,0,32,0.000025792,1240695,620347395,7.000000,240.000000
+compatibility/unicode_replace,500,0,32,0.000033709,949301,474650687,16.000000,442.000000
+compatibility/unicode_date_static,500,0,32,0.000031125,1028112,514056225,6.000000,1400.000000
+compatibility/numeric_partial,500,0,32,0.000029750,1075630,537815126,8.000000,736.000000
+compatibility/unicode_icase,10240,0,32,0.000340208,94060,963175469,7.000000,240.000000
+compatibility/unicode_replace,10240,0,32,0.000348208,91899,941046731,16.000000,442.000000
+compatibility/unicode_date_static,10240,0,32,0.000344917,92776,950025658,6.000000,1400.000000
+compatibility/numeric_partial,10240,0,32,0.000344333,92933,951636933,8.000000,736.000000
+compatibility/sorted_tuple_filter,74,0,32,0.000116750,274090,20282655,68.000000,4280.000000
+compatibility/sorted_tuple_group,74,0,32,0.000173375,184571,13658255,137.000000,7244.000000
+compatibility/sorted_tuple_filter,1182,0,32,0.001954458,16373,19352680,912.000000,62960.000000
+compatibility/sorted_tuple_group,1182,0,32,0.002575500,12425,14686080,1897.000000,111704.000000
+compatibility/sorted_tuple_filter,10167,0,32,0.017406750,1838,18690680,7187.000000,501104.000000
+compatibility/sorted_tuple_group,10167,0,32,0.022540625,1420,14433673,14904.000000,891672.000000
+JX_BENCH_NATIVE_ONLY=1 JX_BENCH_NATIVE=1 cargo bench -p jx --features jit --bench throughput --locked -- --smoke
+    Finished `bench` profile [optimized] target(s) in 0.02s
+     Running benches/throughput.rs (target/release/deps/throughput-c4f4d8c7339efca9)
+workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record
+native_metadata,arithmetic,33000,559083,1,716,0
+jit/compile_arithmetic,0,0,32,0.008297250,3857,0,1284.000000,649170.000000
+native_region,jit/arithmetic,100,253583,1,716
+jit/arithmetic,100,0,32,0.000004292,7455732,745573159,0.000000,0.000000
+jit/rust_arithmetic,100,0,32,0.000003833,8348552,834855205,0.000000,0.000000
+native_region,jit/arithmetic,500,252750,1,716
+jit/arithmetic,500,0,32,0.000011167,2865586,1432793051,0.000000,0.000000
+jit/rust_arithmetic,500,0,32,0.000011208,2855103,1427551749,0.000000,0.000000
+native_region,jit/arithmetic,1024,259750,1,716
+jit/arithmetic,1024,0,32,0.000019709,1623624,1662590695,0.000000,0.000000
+jit/rust_arithmetic,1024,0,32,0.000019666,1627174,1666225974,0.000000,0.000000
+native_region,jit/arithmetic,10240,255959,1,716
+jit/arithmetic,10240,0,32,0.000170791,187364,1918602268,0.000000,0.000000
+jit/rust_arithmetic,10240,0,32,0.000170542,187637,1921403525,0.000000,0.000000
+native_region,jit/arithmetic,1048576,256291,1,716
+jit/arithmetic,1048576,0,32,0.017399875,1839,1928429486,0.000000,0.000000
+jit/rust_arithmetic,1048576,0,32,0.017437166,1835,1924305360,0.000000,0.000000
+native_metadata,dense,18083,551333,1,1144,0
+jit/compile_dense,0,0,32,0.012512583,2557,0,1705.000000,1024824.000000
+native_region,jit/dense,100,380833,1,1144
+jit/dense,100,0,32,0.000004292,7455732,745573159,0.000000,0.000000
+jit/rust_dense,100,0,32,0.000003791,8441045,844104458,0.000000,0.000000
+native_region,jit/dense,500,388208,1,1144
+jit/dense,500,0,32,0.000011000,2909091,1454545455,0.000000,0.000000
+jit/rust_dense,500,0,32,0.000010542,3035477,1517738570,0.000000,0.000000
+native_region,jit/dense,1024,381125,1,1144
+jit/dense,1024,0,32,0.000019625,1630573,1669707006,0.000000,0.000000
+jit/rust_dense,1024,0,32,0.000019292,1658719,1698527887,0.000000,0.000000
+native_region,jit/dense,10240,379208,1,1144
+jit/dense,10240,0,32,0.000175791,182034,1864031719,0.000000,0.000000
+jit/rust_dense,10240,0,32,0.000170583,187592,1920941712,0.000000,0.000000
+native_region,jit/dense,1048576,394959,1,1144
+jit/dense,1048576,0,32,0.017244958,1856,1945753188,0.000000,0.000000
+jit/rust_dense,1048576,0,32,0.017220666,1858,1948497927,0.000000,0.000000
+native_metadata,branch,8792,441208,1,1056,0
+jit/compile_branch,0,0,32,0.011309000,2830,0,1644.000000,918234.000000
+native_region,jit/branch,100,343834,1,1056
+jit/branch,100,0,32,0.000004166,7681229,768122900,0.000000,0.000000
+jit/rust_branch,100,0,32,0.000003833,8348552,834855205,0.000000,0.000000
+native_region,jit/branch,500,344375,1,1056
+jit/branch,500,0,32,0.000010916,2931477,1465738366,0.000000,0.000000
+jit/rust_branch,500,0,32,0.000010583,3023717,1511858641,0.000000,0.000000
+native_region,jit/branch,1024,344875,1,1056
+jit/branch,1024,0,32,0.000019625,1630573,1669707006,0.000000,0.000000
+jit/rust_branch,1024,0,32,0.000019125,1673203,1713359477,0.000000,0.000000
+native_region,jit/branch,10240,352542,1,1056
+jit/branch,10240,0,32,0.000179083,178688,1829766086,0.000000,0.000000
+jit/rust_branch,10240,0,32,0.000173083,184882,1893195750,0.000000,0.000000
+native_region,jit/branch,1048576,346375,1,1056
+jit/branch,1048576,0,32,0.017230208,1857,1947418859,0.000000,0.000000
+jit/rust_branch,1048576,0,32,0.017264209,1854,1943583514,0.000000,0.000000
+jit/varying_branch,500,0,32,0.000011625,2752688,1376344086,0.000000,0.000000
+native_region,jit/tiny,13,267291,1,716
+jit/tiny,13,0,32,0.000002708,11816839,153618907,0.000000,0.000000
+native_region,jit/fold,122,397208,1,1144
+jit/fold,122,0,32,0.000024791,1290791,157476504,0.000000,0.000000
+native_region,jit/filter_map_fold,122,495458,1,1368
+jit/filter_map_fold,122,0,32,0.000025833,1238726,151124531,0.000000,0.000000
+jit/rust_fold,122,0,32,0.000023625,1354497,165248677,0.000000,0.000000
+native_region,jit/numeric_fold,26,217000,1,504
+jit/numeric_fold,26,0,32,0.000010791,2965434,77101288,0.000000,0.000000
+native_region,jit/fold,472,396500,1,1144
+jit/fold,472,0,32,0.000093250,343164,161973190,0.000000,0.000000
+native_region,jit/filter_map_fold,472,473334,1,1368
+jit/filter_map_fold,472,0,32,0.000097875,326948,154319285,0.000000,0.000000
+jit/rust_fold,472,0,32,0.000095042,336693,158919215,0.000000,0.000000
+native_region,jit/numeric_fold,88,218708,1,504
+jit/numeric_fold,88,0,32,0.000041375,773414,68060423,0.000000,0.000000
+native_region,jit/fold,1858,392083,1,1144
+jit/fold,1858,0,32,0.000377666,84731,157430110,0.000000,0.000000
+native_region,jit/filter_map_fold,1858,466708,1,1368
+jit/filter_map_fold,1858,0,32,0.000388750,82315,152941479,0.000000,0.000000
+jit/rust_fold,1858,0,32,0.000362250,88337,164129745,0.000000,0.000000
+native_region,jit/numeric_fold,322,212584,1,504
+jit/numeric_fold,322,0,32,0.000160292,199636,64282684,0.000000,0.000000
+native_region,jit/fold,14794,388500,1,1144
+jit/fold,14794,0,32,0.002873041,11138,164775929,0.000000,0.000000
+native_region,jit/filter_map_fold,14794,475083,1,1368
+jit/filter_map_fold,14794,0,32,0.003049291,10494,155251827,0.000000,0.000000
+jit/rust_fold,14794,0,32,0.002880500,11109,164349245,0.000000,0.000000
+native_region,jit/numeric_fold,2506,212041,1,504
+jit/numeric_fold,2506,0,32,0.001185208,26999,67660698,0.000000,0.000000
+native_region,jit/fold,236554,392375,1,1144
+jit/fold,236554,0,32,0.048498375,660,156082096,0.000000,0.000000
+native_region,jit/filter_map_fold,236554,473000,1,1368
+jit/filter_map_fold,236554,0,32,0.050275375,636,150565321,0.000000,0.000000
+jit/rust_fold,236554,0,32,0.045338916,706,166958734,0.000000,0.000000
+native_region,jit/numeric_fold,39946,259042,1,504
+jit/numeric_fold,39946,0,32,0.018393583,1740,69495541,0.000000,0.000000

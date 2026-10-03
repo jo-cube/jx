@@ -1,0 +1,14 @@
+[
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 100
+  },
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "function/partial_callback",
+    "bytes": 500
+  }
+]

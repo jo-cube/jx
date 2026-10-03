@@ -1,0 +1,16 @@
+profile-dynamic_object {'scanner': 49.58, 'function/callback boundary': 19.16, 'allocation/drop/clone': 22.97, 'fingerprint': 3.0, 'frame/bridge': 5.24, 'other': 0.05}
+profile-group {'scanner': 46.88, 'other': 39.07, 'function/callback boundary': 0.58, 'allocation/drop/clone': 11.84, 'utf16/string decoding': 1.63}
+profile-lookup {'scanner': 86.82, 'fingerprint': 6.6, 'other': 4.54, 'lookup/search': 1.66, 'allocation/drop/clone': 0.38}
+profile-map {'scanner': 76.57, 'function/callback boundary': 16.02, 'allocation/drop/clone': 2.17, 'frame/bridge': 5.01, 'other': 0.24}
+profile-partial {'scanner': 62.6, 'other': 14.72, 'allocation/drop/clone': 9.99, 'function/callback boundary': 12.08, 'frame/bridge': 0.62}
+profile-path {'scanner': 98.07, 'other': 1.7, 'allocation/drop/clone': 0.24}
+profile-pipeline {'scanner': 68.61, 'other': 8.54, 'allocation/drop/clone': 2.77, 'plan': 20.08}
+profile-reduce {'scanner': 77.02, 'function/callback boundary': 17.6, 'allocation/drop/clone': 2.74, 'other': 2.64}
+profile-scalar {'scanner': 83.08, 'other': 5.13, 'plan': 10.42, 'allocation/drop/clone': 1.37}
+profile-sort {'other': 28.04, 'scanner': 58.07, 'plan': 6.83, 'allocation/drop/clone': 7.05}
+profile-string_small {'allocation/drop/clone': 28.64, 'function/callback boundary': 18.16, 'other': 26.69, 'scanner': 24.48, 'frame/bridge': 2.02}
+profile-string_typical {'scanner': 58.63, 'other': 15.71, 'function/callback boundary': 9.55, 'allocation/drop/clone': 15.04, 'frame/bridge': 1.07}
+profile-strings {'scanner': 33.41, 'function/callback boundary': 49.92, 'allocation/drop/clone': 14.57, 'frame/bridge': 1.91, 'other': 0.19}
+profile-transform {'allocation/drop/clone': 19.61, 'function/callback boundary': 33.37, 'utf16/string decoding': 5.65, 'scanner': 35.84, 'fingerprint': 5.1, 'other': 0.43}
+profile-transient {'scanner': 33.2, 'function/callback boundary': 50.33, 'allocation/drop/clone': 14.72, 'frame/bridge': 1.69, 'other': 0.07}
+profile-traversal {'scanner': 99.98, 'other': 0.02}

@@ -1,0 +1,287 @@
+{
+  "method": "Five-second, one-millisecond samples after the first timed sample; disjoint approximate self attribution. Inlined helpers can be attributed to their caller; see full traces.",
+  "profiles": {
+    "profile-fold": {
+      "samples": 4214,
+      "percent": {
+        "plan": 39.63,
+        "allocation/drop/clone": 3.65,
+        "other": 7.07,
+        "scanner": 49.64
+      },
+      "scanner_phases_percent": {
+        "beneath plan/callback": 23.92,
+        "unassigned scanner/traversal": 25.72
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 204  [0x10266bbc0]",
+          "samples": 165,
+          "percent": 3.92
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 744,764,...  [0x10265cc9c,0x10265ccb0,...]",
+          "samples": 100,
+          "percent": 2.37
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 80,120,...  [0x10266bb44,0x10266bb6c,...]",
+          "samples": 100,
+          "percent": 2.37
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,80,...  [0x10266bb84,0x10266bb44,...]",
+          "samples": 94,
+          "percent": 2.23
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1168,1652,...  [0x1025dfe14,0x1025dfff8,...]",
+          "samples": 92,
+          "percent": 2.18
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2448,2484,...  [0x1025e0314,0x1025e0338,...]",
+          "samples": 89,
+          "percent": 2.11
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1652,2484,...  [0x1025dfff8,0x1025e0338,...]",
+          "samples": 80,
+          "percent": 1.9
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2484,1168,...  [0x1025e0338,0x1025dfe14,...]",
+          "samples": 75,
+          "percent": 1.78
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 144,4,...  [0x10266bb84,0x10266baf8,...]",
+          "samples": 63,
+          "percent": 1.5
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 120,4,...  [0x10266bb6c,0x10266baf8,...]",
+          "samples": 62,
+          "percent": 1.47
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNCNvMNtB5_8pipelineNtB1p_8Pipeline7consume00E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2484,2448,...  [0x1025e0338,0x1025e0314,...]",
+          "samples": 51,
+          "percent": 1.21
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner5value  (in throughput-c4f4d8c7339efca9) + 744,48,...  [0x10265cc9c,0x10265c9e4,...]",
+          "samples": 50,
+          "percent": 1.19
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592  [0x102682408]",
+          "samples": 47,
+          "percent": 1.12
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 204,208  [0x10266bbc0,0x10266bbc4]",
+          "samples": 40,
+          "percent": 0.95
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 4,80,...  [0x10266baf8,0x10266bb44,...]",
+          "samples": 38,
+          "percent": 0.9
+        },
+        {
+          "symbol": "_RINvNtCs8Mbv00yxnRz_4core3ptr9drop_glueNtNtCs2KsVCmuPpbZ_2jx5value5ValueEBF_  (in throughput-c4f4d8c7339efca9) + 0  [0x1025f7e9c]",
+          "samples": 38,
+          "percent": 0.9
+        }
+      ]
+    },
+    "profile-scalar": {
+      "samples": 4221,
+      "percent": {
+        "scanner": 83.25,
+        "other": 4.29,
+        "plan": 10.8,
+        "allocation/drop/clone": 1.07,
+        "native ABI/input acquisition": 0.59
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 83.25
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,88,...  [0x104c95458,0x104c95444,...]",
+          "samples": 1467,
+          "percent": 34.75
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108,...  [0x104c95444,0x104c95458,...]",
+          "samples": 1115,
+          "percent": 26.42
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108  [0x104c95444,0x104c95458]",
+          "samples": 111,
+          "percent": 2.63
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,88  [0x104c95458,0x104c95444]",
+          "samples": 84,
+          "percent": 1.99
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 204  [0x104ca3bc0]",
+          "samples": 39,
+          "percent": 0.92
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 4,28,...  [0x104ca3af8,0x104ca3b10,...]",
+          "samples": 35,
+          "percent": 0.83
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 592  [0x104cba408]",
+          "samples": 31,
+          "percent": 0.73
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 696,712,...  [0x104c94654,0x104c94664,...]",
+          "samples": 30,
+          "percent": 0.71
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,0,...  [0x104ab2778,0x104ab2728,...]",
+          "samples": 24,
+          "percent": 0.57
+        },
+        {
+          "symbol": "_RNvNtCs2KsVCmuPpbZ_2jx4plan6binary  (in throughput-c4f4d8c7339efca9) + 4,120,...  [0x104ca3af8,0x104ca3b6c,...]",
+          "samples": 23,
+          "percent": 0.54
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNvMs0_B5_NtB5_4Plan8evaluate0E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1148,2568,...  [0x104c19528,0x104c19ab4,...]",
+          "samples": 22,
+          "percent": 0.52
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80  [0x104ab2778]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RNvNtNtCs2KsVCmuPpbZ_2jx4json6string7matches  (in throughput-c4f4d8c7339efca9) + 64,16,...  [0x104cba1f8,0x104cba1c8,...]",
+          "samples": 20,
+          "percent": 0.47
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNvMs0_B5_NtB5_4Plan8evaluate0E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 2568,1472,...  [0x104c19ab4,0x104c1966c,...]",
+          "samples": 19,
+          "percent": 0.45
+        },
+        {
+          "symbol": "_RINvMs_NtCs2KsVCmuPpbZ_2jx4planNtB5_7Program8dispatchNtB5_4CellNCINvB2_7executeBP_NCNvMs0_B5_NtB5_4Plan8evaluate0E0B1i_EB7_  (in throughput-c4f4d8c7339efca9) + 1148,1660,...  [0x104c19528,0x104c19728,...]",
+          "samples": 18,
+          "percent": 0.43
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,96  [0x104ab2778,0x104ab2788]",
+          "samples": 16,
+          "percent": 0.38
+        }
+      ]
+    },
+    "profile-scan": {
+      "samples": 4221,
+      "percent": {
+        "scanner": 99.98,
+        "other": 0.02
+      },
+      "scanner_phases_percent": {
+        "unassigned scanner/traversal": 99.98
+      },
+      "top_self": [
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,88,...  [0x104bf5458,0x104bf5444,...]",
+          "samples": 629,
+          "percent": 14.9
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,88,...  [0x104bf5438,0x104bf5444,...]",
+          "samples": 624,
+          "percent": 14.78
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,100,...  [0x104bf5438,0x104bf5450,...]",
+          "samples": 506,
+          "percent": 11.99
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,108,...  [0x104bf5444,0x104bf5458,...]",
+          "samples": 390,
+          "percent": 9.24
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,76,...  [0x104bf5458,0x104bf5438,...]",
+          "samples": 387,
+          "percent": 9.17
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,76,...  [0x104bf5450,0x104bf5438,...]",
+          "samples": 376,
+          "percent": 8.91
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,88,...  [0x104bf5450,0x104bf5444,...]",
+          "samples": 263,
+          "percent": 6.23
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 88,100,...  [0x104bf5444,0x104bf5450,...]",
+          "samples": 256,
+          "percent": 6.06
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 76,108,...  [0x104bf5438,0x104bf5458,...]",
+          "samples": 254,
+          "percent": 6.02
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 108,100,...  [0x104bf5458,0x104bf5450,...]",
+          "samples": 250,
+          "percent": 5.92
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner6string  (in throughput-c4f4d8c7339efca9) + 100,108,...  [0x104bf5450,0x104bf5458,...]",
+          "samples": 133,
+          "percent": 3.15
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80,96  [0x104a12778,0x104a12788]",
+          "samples": 76,
+          "percent": 1.8
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 96,80  [0x104a12788,0x104a12778]",
+          "samples": 48,
+          "percent": 1.14
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 80  [0x104a12778]",
+          "samples": 21,
+          "percent": 0.5
+        },
+        {
+          "symbol": "_RNvNtNtCs8Mbv00yxnRz_4core3str8converts9from_utf8  (in throughput-c4f4d8c7339efca9) + 96  [0x104a12788]",
+          "samples": 6,
+          "percent": 0.14
+        },
+        {
+          "symbol": "_RNvMs_NtNtCs2KsVCmuPpbZ_2jx4json4scanNtB4_7Scanner13capture_value  (in throughput-c4f4d8c7339efca9) + 464  [0x104bf456c]",
+          "samples": 1,
+          "percent": 0.02
+        }
+      ]
+    }
+  }
+}

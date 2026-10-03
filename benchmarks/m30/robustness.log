@@ -1,0 +1,30 @@
+cargo test -p jx --test robustness --all-features --locked
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running tests/robustness.rs (target/debug/deps/robustness-4352f8c677ecb676)
+
+running 5 tests
+test host_failure_deadline_and_cancellation_do_not_leak_into_later_evaluations ... ok
+test escaping_dynamic_literals_retain_their_program_after_the_call_returns ... ok
+test fallback_and_shared_expression_ownership_survive_adversarial_shapes ... ok
+test adversarial_dynamic_pictures_fail_without_panicking_or_losing_validation ... ok
+test seeded_parser_scanner_and_serialization_mutations ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
+
+cargo test -p jx-native --locked
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/jx_native-5c789b6c39b7f09b)
+
+running 3 tests
+test tests::invalid_programs_fail_without_invocation ... ok
+test tests::guards_and_shared_code_lifetime ... ok
+test tests::invalid_operands_and_forward_branches_keep_the_executable_boundary_bounded ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests jx_native
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
