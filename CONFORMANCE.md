@@ -33,7 +33,7 @@ beyond that inventory remain explicit. Errors use local
 | Lexical runtime | Variables, bindings, blocks, conditionals, lambdas (`function` / `λ`), calls, closures, compiled signatures and tail execution |
 | Builtins | Aggregates, boolean helpers, lookup, string/numeric/collection helpers and higher-order functions; see library table below |
 | Dynamic evaluation / effects | `$eval` with inherited environment and optional focus; lazy `$random` / `$shuffle` with deterministic injection |
-| Deferred runtime/integration | Native host coercions, embedding and non-tail recursion beyond resource guards |
+| Deferred runtime/integration | Native host coercions, asynchronous integration and non-tail recursion beyond resource guards |
 | Quoted selectors | Single/double quoted strings become field names in dotted paths; escapes decoded; lone-surrogate field names deferred |
 | Comments / names | Non-nesting `/* … */` comments; Unicode field/variable names supported |
 | Keyword field names | `and`/`or`/`in` can be names in operand/field positions; `true`, `false`, `null` require backticks; bare `function` / `λ` are names outside lambda syntax |
@@ -492,12 +492,12 @@ symbol. This deliberate difference has a local semantic test, not a differential
 
 Direct tail calls through conditional branches and final block expressions run with
 bounded Rust stack and reusable uncaptured frames, including mutual recursion and
-partial/composed callable targets. Captured frames remain live until record completion.
+partial/composed callable targets. Captures remain live while reachable; completed retained regions retire temporary captures.
 Arguments use lexical focus; tail signature/context defaults use the original caller's
 focus, including contextual builtins. A pipeline expression or postfix result processing
 is not a tail position in the pinned parser. Non-tail recursion retains its stack guard.
 [Readable cases](tests/semantics/functions.json) and borrowing/frame/limit regressions
-cover these boundaries. No public host invocation or JIT is added.
+cover these boundaries. Synchronous host invocation and optional bounded native plans preserve these rules.
 
 ## Standard library
 
@@ -543,7 +543,7 @@ without a callback. These raise local `TypeError`. The readable
 CLI tests freeze supported boundaries. [Official function documentation](https://docs.jsonata.org/string-functions)
 and complete imported groups remain the authority.
 
-Still deferred: untyped native partial coercions and host-function embedding. Known deferred calls raise
+Still deferred: untyped native partial coercions and asynchronous host integration. Known deferred calls raise
 `UnsupportedExpression`; existing order-by syntax remains available.
 
 ## Dynamic evaluation and randomness
@@ -574,7 +574,7 @@ Random values need not match another engine's PRNG, but permutation and draw ord
 Boundaries outside the corpus: isolated UTF-16 surrogates in dynamic source return
 `EvalSyntax` because Rust source is UTF-8; surrogate string values remain supported.
 Untyped native shuffle partials with non-array inputs remain `UnsupportedExpression`.
-Host invocation, asynchronous evaluation and non-tail stack expansion stay deferred.
+Synchronous host invocation is supported; asynchronous evaluation and non-tail stack expansion stay deferred.
 [Readable cases](tests/semantics/effects.json) and deterministic Rust tests freeze
 context, ownership, error wrapping, borrowed output and effect ordering.
 
@@ -910,3 +910,29 @@ borrowed leaves, signatures, guard fallback, validation and effect order. Intern
 regressions exercise older-frame writes and closure focus as escape roots. Optional
 `check-runtime.cjs` adds **173** pinned-upstream comparisons of these and width/shape
 variants. All 23 differential suites now cover **54,222** comparisons.
+
+## Embedding and resource policy
+
+External lexical names are declared with `CompileOptions` before builtin resolution;
+`evaluate_with` retains supplied values once, including borrowed JSON. Missing bindings
+can fall back to builtins; explicit undefined/null/scalar bindings shadow them. Undeclared
+injection and cross-evaluation JSONata closures raise `BindingError`. Local scopes/parameters
+shadow external values. Absent input differs from null; optional focus replaces current
+context while root retains the input. Host functions are synchronous/effectful and use
+existing call/partial/closure/eval semantics with optional compiled argument signatures.
+Host callback re-entry shares the arena and guards. Errors retain typed causes.
+
+[Embedding corpus](tests/semantics/embedding.json) contains 41 pinned-upstream external
+binding outcomes; Rust API tests assert those outcomes without lexical source adaptation.
+Optional `check-embedding.cjs` verifies the oracle and explicit lexical equivalents.
+Together with the 23 existing suites this gives 54,263 comparisons. The 1,679 language
+classifications remain unchanged; asynchronous API/parser-recovery/V8 host coercion
+compatibility is still outside that language inventory.
+
+Result access is independent of storage. Explicit owned snapshots preserve missing,
+array/sequence shape and isolated UTF-16 units; functions cannot detach from their arena.
+Decoded Rust strings reject isolated surrogates rather than replacing them. Default hard
+resource ceilings remain. Opt-in work/item/result/byte/stack/tail limits, deadlines and
+cancellation are cooperative; configured plans use their tree source. Validation precedes
+control failures/effects. Regex/host calls cannot be interrupted mid-call; output preflight
+cannot undo already completed construction. See [embedding contracts](docs/embedding.md).
