@@ -51,3 +51,8 @@ bench-runtime-memory:
 # Public API overhead, decoding, ownership and cooperative controls.
 bench-embedding:
     JX_BENCH_EMBEDDING_ONLY=1 cargo bench -p jx --bench throughput --locked
+
+# Seeded mutation properties, fallbacks and embedding failure boundaries.
+robustness:
+    cargo test -p jx --test robustness --all-features --locked
+    cargo test -p jx-native --locked

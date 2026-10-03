@@ -79,4 +79,37 @@ mod tests {
         assert!(Kernel::compile(&[Operation::Number(1.0)], 1).is_err());
         assert!(Kernel::compile(&[Operation::Missing; SLOTS + 1], 0).is_err());
     }
+    #[test]
+    fn invalid_operands_and_forward_branches_keep_the_executable_boundary_bounded() {
+        for operand in [0, 1, 31, 32, 255] {
+            for operation in [
+                Operation::Negate(operand),
+                Operation::Copy(operand),
+                Operation::Truth(operand),
+                Operation::Binary(Binary::Add, operand, 0),
+                Operation::Merge(operand, 0),
+            ] {
+                let result = Kernel::compile(&[Operation::Input, operation], 1);
+                assert_eq!(result.is_ok(), operand == 0, "{operation:?}");
+            }
+        }
+        for target in [0, 1, 2, 3, 31, 32, 255] {
+            let ops = [
+                Operation::Input,
+                Operation::Branch(0, true, target),
+                Operation::Number(7.0),
+            ];
+            let result = Kernel::compile(&ops, 2);
+            assert_eq!(result.is_ok(), matches!(target, 2 | 3));
+            if let Ok(kernel) = result {
+                for tag in [0, 1, 2, 3, 255] {
+                    let mut numbers = [0.0; SLOTS];
+                    let mut tags = [0; SLOTS];
+                    numbers[0] = 1.0;
+                    tags[0] = tag;
+                    let _ = kernel.run(&numbers, &tags);
+                }
+            }
+        }
+    }
 }

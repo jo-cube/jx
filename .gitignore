@@ -24,3 +24,8 @@ target
 .codegraph/
 
 .DS_Store
+
+# Local coverage-guided fuzz discoveries; minimal regressions belong in tests.
+fuzz/artifacts/
+fuzz/corpus/
+fuzz/coverage/
