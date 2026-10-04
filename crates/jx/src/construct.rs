@@ -8,16 +8,29 @@ pub(crate) fn array<'e, 'i>(
     preserve: bool,
     context: &Context<'e, 'i>,
 ) -> Result<Value<'e, 'i>, Error> {
+    array_with(
+        items,
+        preserve,
+        |n| materialize(n, context),
+        |n, emit| visit(n, context, emit),
+    )
+}
+pub(crate) fn array_with<'e, 'i>(
+    items: &'e [Node],
+    preserve: bool,
+    mut materialize: impl FnMut(&'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
+    mut visit: impl FnMut(&'e Node, &mut dyn FnMut(Value<'e, 'i>)) -> Result<(), Error>,
+) -> Result<Value<'e, 'i>, Error> {
     let mut values = Vec::with_capacity(items.len());
     for item in items {
         if item.is_array_constructor() {
-            if let Some(value) = materialize(item, context)? {
+            if let Some(value) = materialize(item)? {
                 values.push(value);
             }
             continue;
         }
         let start = values.len();
-        visit(item, context, &mut |value| values.push(value))?;
+        visit(item, &mut |value| values.push(value))?;
         if values.len() == start + 1 {
             let value = values.pop().unwrap();
             if value.is_array() {
@@ -35,21 +48,35 @@ pub(crate) fn object<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Value<'e, 'i>, Error> {
-    grouped(pairs, context, offset, |add| {
-        if !context.wrapped && context.value.is_array() {
-            let mut empty = true;
-            for item in context.value.elements() {
-                empty = false;
-                add(item)?;
+    object_with(pairs, context, offset, materialize)
+}
+pub(crate) fn object_with<'e, 'i>(
+    pairs: &'e [(Node, Node)],
+    context: &Context<'e, 'i>,
+    offset: usize,
+    materialize: impl FnMut(&'e Node, &Context<'e, 'i>) -> Result<Option<Value<'e, 'i>>, Error>,
+) -> Result<Value<'e, 'i>, Error> {
+    grouped_with(
+        pairs,
+        context,
+        offset,
+        |add| {
+            if !context.wrapped && context.value.is_array() {
+                let mut empty = true;
+                for item in context.value.elements() {
+                    empty = false;
+                    add(item)?;
+                }
+                if empty {
+                    add(Value::Undefined)?;
+                }
+            } else {
+                add(context.value.clone())?;
             }
-            if empty {
-                add(Value::Undefined)?;
-            }
-        } else {
-            add(context.value.clone())?;
-        }
-        Ok(())
-    })
+            Ok(())
+        },
+        materialize,
+    )
 }
 
 pub(crate) fn reduce<'e, 'i>(
@@ -108,6 +135,15 @@ fn grouped<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
     input: impl FnOnce(&mut dyn FnMut(Value<'e, 'i>) -> Result<(), Error>) -> Result<(), Error>,
+) -> Result<Value<'e, 'i>, Error> {
+    grouped_with(pairs, context, offset, input, materialize)
+}
+fn grouped_with<'e, 'i>(
+    pairs: &'e [(Node, Node)],
+    context: &Context<'e, 'i>,
+    offset: usize,
+    input: impl FnOnce(&mut dyn FnMut(Value<'e, 'i>) -> Result<(), Error>) -> Result<(), Error>,
+    mut materialize: impl FnMut(&'e Node, &Context<'e, 'i>) -> Result<Option<Value<'e, 'i>>, Error>,
 ) -> Result<Value<'e, 'i>, Error> {
     let mut groups = Groups::new(pairs.len());
     input(&mut |value| {

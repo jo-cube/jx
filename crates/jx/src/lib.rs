@@ -10,6 +10,7 @@
 //! ```
 
 mod access;
+mod acquire;
 mod aggregate;
 mod analysis;
 mod builtin;
@@ -66,6 +67,7 @@ pub struct Expression {
     root: expression::Node,
     runtime: bool,
     acquisition: Option<json::Demand>,
+    region: Option<Box<acquire::Region>>,
     bindings: Box<[Box<str>]>,
 }
 
@@ -112,6 +114,9 @@ impl Expression {
     /// traversal; scalar operations and lexical retention finish before returning.
     #[inline]
     pub fn evaluate<'e, 'i>(&'e self, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
+        if let Some(region) = &self.region {
+            return region.evaluate(&self.root, input);
+        }
         match &self.root.kind {
             expression::Kind::Path(path) => Ok(Evaluation {
                 result: evaluate::Results::Path(path.select(input)?),

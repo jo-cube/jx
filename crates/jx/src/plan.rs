@@ -226,6 +226,21 @@ fn binary(op: Op, a: Cell, b: Cell) -> Option<Cell> {
     })
 }
 impl Plan {
+    pub(crate) fn scalar(&self) -> bool {
+        matches!(self.execution, Execution::Scalar(_))
+    }
+    pub(crate) fn run_acquired<'e, 'i>(
+        &'e self,
+        mut load: impl FnMut(&'e Path) -> Option<Operand<'e, 'i>>,
+    ) -> Option<Operand<'e, 'i>> {
+        let Execution::Scalar(program) = &self.execution else {
+            return None;
+        };
+        program
+            .dispatch(|_, path| load(path), |s| s[usize::from(program.result)])
+            .map(Cell::operand)
+    }
+
     pub(crate) fn evaluate<'e, 'i>(
         &'e self,
         input: &'i [u8],

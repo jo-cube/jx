@@ -1,23 +1,23 @@
 use super::*;
 
-pub(super) fn binary<'e, 'i>(
+pub(crate) fn binary<'e, 'i>(
     op: &Op,
     lhs: &'e Node,
     rhs: &'e Node,
-    input: &Context<'e, 'i>,
     offset: usize,
+    run: impl Fn(&'e Node) -> Result<Operand<'e, 'i>, Error>,
 ) -> Result<Operand<'e, 'i>, Error> {
-    let left = lhs.run(input)?;
+    let left = run(lhs)?;
     if matches!(op, Op::And | Op::Or) {
         let truth = left.truth(offset)?;
         let value = match op {
-            Op::And => truth && rhs.run(input)?.truth(offset)?,
-            Op::Or => truth || rhs.run(input)?.truth(offset)?,
+            Op::And => truth && run(rhs)?.truth(offset)?,
+            Op::Or => truth || run(rhs)?.truth(offset)?,
             _ => unreachable!(),
         };
         return Ok(Operand::One(Value::Boolean(value)));
     }
-    let right = rhs.run(input)?;
+    let right = run(rhs)?;
     let value = match op {
         Op::In => Value::Boolean(crate::compare::includes(left, right)?),
         Op::Equal | Op::NotEqual => Value::Boolean(crate::compare::equal(

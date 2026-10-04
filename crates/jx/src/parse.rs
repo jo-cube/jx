@@ -40,10 +40,16 @@ fn parse(source: &str, dynamic: bool, bindings: &[Box<str>]) -> Result<Expressio
     crate::plan::prepare(&mut root);
     let runtime = crate::analysis::requires_runtime(&mut root);
     let acquisition = crate::function::acquire::prepare(&root);
+    let region = if runtime {
+        None
+    } else {
+        crate::acquire::Region::prepare(&root)
+    };
     Ok(Expression {
         root,
         runtime,
         acquisition,
+        region,
         bindings: bindings.into(),
     })
 }

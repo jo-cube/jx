@@ -1,4 +1,5 @@
-mod operators;
+pub(crate) mod operators;
+pub(crate) mod pure;
 use crate::{
     Error, RawJson, Value,
     expression::{Kind, Node, Op},
@@ -420,13 +421,7 @@ impl Node {
                 return Ok(value.map_or(Operand::Missing, Operand::One));
             }
             Kind::Conditional(test, yes, no) => {
-                return if test.run(input)?.truth(self.offset)? {
-                    yes.run(input)
-                } else if let Some(no) = no {
-                    no.run(input)
-                } else {
-                    Ok(Operand::Missing)
-                };
+                return pure::conditional(test, yes, no.as_deref(), self.offset, |n| n.run(input));
             }
             Kind::Lambda(d) => crate::Function::lambda(d, input),
             Kind::Call(target, args) => {
@@ -450,12 +445,9 @@ impl Node {
                     }
                 });
             }
-            Kind::Binary(Op::Concat, left, right) => {
-                // Complete both operands before conversion; neither may be replayed.
-                let left = crate::retain::materialize(left, input)?;
-                let right = crate::retain::materialize(right, input)?;
-                crate::convert::concat(left, right, self.offset)?
-            }
+            Kind::Binary(Op::Concat, left, right) => pure::concat(left, right, self.offset, |n| {
+                crate::retain::materialize(n, input)
+            })?,
             Kind::Array(items, preserve) => crate::construct::array(items, *preserve, input)?,
             Kind::Object(pairs) => crate::construct::object(pairs, input, self.offset)?,
             Kind::Missing => return Ok(Operand::Missing),
@@ -463,14 +455,7 @@ impl Node {
             Kind::Boolean(value) => Value::Boolean(*value),
             Kind::Null => Value::Null,
             Kind::String(value) => Value::StringLiteral(RawJson(value)),
-            Kind::Negate(child) => {
-                return Ok(child
-                    .run(input)?
-                    .number(self.offset)?
-                    .map_or(Operand::Missing, |value| {
-                        Operand::One(Value::Number(-value))
-                    }));
-            }
+            Kind::Negate(child) => return pure::negate(child.run(input)?, self.offset),
             Kind::Binary(op @ (Op::Default | Op::Coalesce), test, no) => {
                 return if test.run(input)?.truth(self.offset)? {
                     // Coalescing stores its left expression once, as the argument
@@ -490,7 +475,7 @@ impl Node {
                 };
             }
             Kind::Binary(op, lhs, rhs) => {
-                return operators::binary(op, lhs, rhs, input, self.offset);
+                return operators::binary(op, lhs, rhs, self.offset, |n| n.run(input));
             }
         };
         Ok(Operand::One(value))
