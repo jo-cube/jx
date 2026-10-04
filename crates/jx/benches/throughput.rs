@@ -46,6 +46,8 @@ mod navigation;
 mod plans;
 #[path = "workloads/regions.rs"]
 mod regions;
+#[path = "workloads/root_regions.rs"]
+mod root_regions;
 #[path = "workloads/runtime.rs"]
 mod runtime;
 #[path = "workloads/scalars.rs"]
@@ -306,6 +308,10 @@ fn main() {
         runtime::run(smoke);
         return;
     }
+    if std::env::var_os("JX_BENCH_ROOT_ONLY").is_some() {
+        root_regions::run(smoke);
+        return;
+    }
     measure_allocations("compile", 0, smoke, None, || {
         black_box(jx::compile(black_box("customer.id")).unwrap());
     });
@@ -360,4 +366,5 @@ fn main() {
     runtime::run(smoke);
     embedding::run(smoke);
     compatibility::run(smoke);
+    root_regions::run(smoke);
 }

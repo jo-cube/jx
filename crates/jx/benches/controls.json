@@ -158,5 +158,41 @@
   {
     "filter": "transform/update",
     "bytes": 1024
+  },
+  {
+    "filter": "root_regions/string",
+    "bytes": 500
+  },
+  {
+    "filter": "root_regions/constructor",
+    "bytes": 1024
+  },
+  {
+    "filter": "root_regions/sparse_string",
+    "bytes": 190328
+  },
+  {
+    "filter": "root_regions/mapped",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/callback",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/sort",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/group",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/fold",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/dense_fold",
+    "bytes": 76641
   }
 ]

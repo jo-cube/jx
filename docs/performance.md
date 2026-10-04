@@ -45,8 +45,10 @@ There is no universal comparison with other query engines.
 
 - Constants, constructors, regexes, pictures and static lookup tables are prepared once.
   Static object lookup uses a compact fingerprint index with exact UTF-16 equality checks.
-- Validation captures demanded fields/paths where possible. Repeated planned loads and
-  pure call arguments can reuse spans instead of scanning the object again.
+- Validation captures demanded fields/paths where possible. Repeated planned loads,
+  pure call arguments and bounded pure root string/constructor regions reuse spans
+  instead of scanning the object again. Root capture is stack-scoped with no added heap
+  allocation; callbacks and dynamic contexts retain their existing execution paths.
   Traversal of validated input skips subtree boundaries without parsing their grammar
   again, reducing work for callbacks, navigation, sorting/grouping and transforms.
 - Raw input and unescaped strings stay borrowed. Primitive scalar operations do not need
@@ -114,6 +116,7 @@ do not implement all JSONata shape/error rules.
 ```sh
 just bench
 JX_BENCH_FILTER=arithmetic JX_BENCH_BYTES=500 JX_BENCH_SAMPLE_MS=300 just bench
+JX_BENCH_ROOT_ONLY=1 JX_BENCH_FILTER=root_regions/string JX_BENCH_BYTES=500 just bench
 just bench-runtime
 just bench-runtime-memory
 just bench-embedding

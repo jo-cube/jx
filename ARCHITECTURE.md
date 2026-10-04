@@ -30,8 +30,13 @@ into unselected branches or bypass input validation.
 
 Every input byte is validated, including undemanded fields and untaken branches.
 Compact demand metadata captures required raw spans during validation where possible.
-Repeated planned loads and pure call arguments reuse those captures. Nested demanded
-objects can share a scan; arrays and dynamic navigation use ordinary traversal.
+Repeated planned loads, pure call arguments and bounded pure root regions reuse those
+captures. Root string/conversion and fixed constructor regions use one stack capture
+frame, sharing scalar/constructor operations with tree execution and existing numeric
+plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
+arrays fall back before region execution. Runtime contexts and values carry no capture
+metadata. Nested demanded objects can share a scan; arrays and dynamic navigation
+use ordinary traversal.
 Traversal of validated spans locates token boundaries without repeating grammar
 validation. The validator and traversal cursor share path/demand handling; only the
 validator accepts unchecked input. There is no universal input index or per-record cache.
