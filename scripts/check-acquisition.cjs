@@ -6,6 +6,10 @@ async function main(){
     for(const test of JSON.parse(fs.readFileSync(path.join(root,'tests/semantics/acquisition.json')))) await check(test);
     const atoms=[undefined,null,false,true,0,2,-3.5,"x",[],[1],[1,2],{}, {x:2}];
     for(const a of atoms) for(const b of atoms) for(const expr of [
+        "a&':'&$string(b)&':'&a",
+        "{'name':a&':'&a,'n':$string(b+b),'raw':b}",
+        "a?($string(a)&b&b):($string(b)&a&a)",
+        '[a,b,a,[a,b]]',
         'function($a,$b){$a+$b}(a,b)',
         'function($a,$b)<nn:n>{$a+$b}(a,b)',
         'function($a,$b){[$a,$b]}(a,b)',

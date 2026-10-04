@@ -327,5 +327,142 @@
     "items": [
       true
     ]
+  },
+  {
+    "expr": "name&':'&$string(id)&':'&name",
+    "data": {
+      "name": "Ada",
+      "id": 7
+    },
+    "items": [
+      "Ada:7:Ada"
+    ]
+  },
+  {
+    "expr": "name&$number(n)&name",
+    "data": {
+      "name": "x",
+      "n": "2.5"
+    },
+    "items": [
+      "x2.5x"
+    ]
+  },
+  {
+    "expr": "{'label':name&name,'value':$string(a+b),'raw':nested}",
+    "data": {
+      "name": "x",
+      "a": 2,
+      "b": 3,
+      "nested": {
+        "keep": true
+      }
+    },
+    "items": [
+      {
+        "label": "xx",
+        "value": "5",
+        "raw": {
+          "keep": true
+        }
+      }
+    ]
+  },
+  {
+    "expr": "{'name':name,'missing':absent,'null':nil,'again':name}",
+    "data": {
+      "name": "Ada",
+      "nil": null
+    },
+    "items": [
+      {
+        "name": "Ada",
+        "null": null,
+        "again": "Ada"
+      }
+    ]
+  },
+  {
+    "expr": "[a,b,a,[a,b]]",
+    "data": {
+      "a": [
+        1,
+        2
+      ],
+      "b": 3
+    },
+    "items": [
+      [
+        1,
+        2,
+        3,
+        1,
+        2,
+        [
+          1,
+          2,
+          3
+        ]
+      ]
+    ]
+  },
+  {
+    "expr": "a.x&$string(b.x)&a.x",
+    "data": {
+      "a": [
+        {
+          "x": "y"
+        },
+        {
+          "x": "z"
+        }
+      ],
+      "b": {
+        "x": 2
+      }
+    },
+    "items": [
+      "[\"y\",\"z\"]2[\"y\",\"z\"]"
+    ]
+  },
+  {
+    "expr": "a?($string(a)&b&b):($number(b)&a&a)",
+    "data": {
+      "a": true,
+      "b": "x"
+    },
+    "items": [
+      "truexx"
+    ]
+  },
+  {
+    "expr": "name&$number(n)&name",
+    "data": {
+      "name": "x",
+      "n": "bad"
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "{'x':a&b,'x':a}",
+    "data": {
+      "a": "x",
+      "b": "y"
+    },
+    "error": "DuplicateKey"
+  },
+  {
+    "expr": "a.x&$string(b.x)&a.x",
+    "input": "{\"a\":{\"x\":\"first\"},\"b\":{\"x\":2},\"a\":{}}",
+    "items": [
+      "2"
+    ]
+  },
+  {
+    "expr": "a&$string(b)&a",
+    "input": "{\"a\":\"first\",\"b\":2,\"\\u0061\":\"last\"}",
+    "items": [
+      "last2last"
+    ]
   }
 ]

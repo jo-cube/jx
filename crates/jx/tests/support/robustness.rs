@@ -17,6 +17,8 @@ pub const EXPRESSIONS: &[&str] = &[
     "$formatNumber(a,picture)",
     "($f:=$eval('function(){' & $string({'value':a}) & '}');$f())",
     r#"($f:=$eval('function($r){{"n":$r.n+1,"keep":' & $string({'value':a}) & '}}');$map(rows,$f))"#,
+    "a&':'&$string(b)&':'&a",
+    "{'text':a&a,'value':$string(b+b),'raw':a}",
 ];
 
 pub fn snapshot(expression: &jx::Expression, input: &[u8]) -> (Vec<Vec<u8>>, Option<Error>) {
