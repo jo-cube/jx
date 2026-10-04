@@ -1,0 +1,22 @@
+[package]
+name = "jx-native"
+description = "Bounded native numeric kernels for the jx JSONata engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["jsonata", "jit", "cranelift"]
+categories = ["compilers"]
+include = ["src/**", "examples/**", "README.md", "LICENSE"]
+
+[lints]
+workspace = true
+
+[dependencies]
+cranelift-codegen = { version = "=0.136.1", default-features = false, features = ["std", "host-arch"] }
+cranelift-frontend = "=0.136.1"
+cranelift-jit = "=0.136.1"
+cranelift-module = "=0.136.1"

@@ -1,0 +1,1016 @@
+[
+  {
+    "expr": "$length(text)",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      16
+    ]
+  },
+  {
+    "expr": "$uppercase(text)",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      "  STRASSE 😀 ΣΟΣ  "
+    ]
+  },
+  {
+    "expr": "$lowercase(text)",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      "  straße 😀 σος  "
+    ]
+  },
+  {
+    "expr": "$trim(text)",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      "Straße 😀 ΣΟΣ"
+    ]
+  },
+  {
+    "expr": "$substring(text,1,3)",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      " St"
+    ]
+  },
+  {
+    "expr": "$substringBefore(text,\" \")",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$substringAfter(text,\" \")",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      " Straße 😀 ΣΟΣ  "
+    ]
+  },
+  {
+    "expr": "$contains(text,\"ß\")",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "$split(text,\" \",3)",
+    "data": {
+      "text": "  Straße 😀 ΣΟΣ  "
+    },
+    "items": [
+      [
+        "",
+        "",
+        "Straße"
+      ]
+    ]
+  },
+  {
+    "expr": "$length(missing)",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$length(null)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$length([\"a\"])",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$substring(\"abcdef\",-2.8,1.2)",
+    "data": {},
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$substring(\"abc\",-100,2)",
+    "data": {},
+    "items": [
+      "ab"
+    ]
+  },
+  {
+    "expr": "$substring(\"abc\",1,0)",
+    "data": {},
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$split(\"a,,b,\",\",\")",
+    "data": {},
+    "items": [
+      [
+        "a",
+        "",
+        "b",
+        ""
+      ]
+    ]
+  },
+  {
+    "expr": "$split(\"a,b\",\",\",0)",
+    "data": {},
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$split(\"a,b\",\",\",-1)",
+    "data": {},
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$join([],\"-\")",
+    "data": {},
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$join([\"a\",\"b\"],\"-\")",
+    "data": {},
+    "items": [
+      "a-b"
+    ]
+  },
+  {
+    "expr": "$join([\"a\",null])",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$join(missing)",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$length()",
+    "data": "ab-cd",
+    "items": [
+      5
+    ]
+  },
+  {
+    "expr": "$substring(1,2)",
+    "data": "ab-cd",
+    "items": [
+      "b-"
+    ]
+  },
+  {
+    "expr": "$substringAfter(\"-\")",
+    "data": "ab-cd",
+    "items": [
+      "cd"
+    ]
+  },
+  {
+    "expr": "$contains(\"-\")",
+    "data": "ab-cd",
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "$split(\"-\")",
+    "data": "ab-cd",
+    "items": [
+      [
+        "ab",
+        "cd"
+      ]
+    ]
+  },
+  {
+    "expr": "$abs(n)",
+    "data": {
+      "n": -3.5
+    },
+    "items": [
+      3.5
+    ]
+  },
+  {
+    "expr": "$floor(n)",
+    "data": {
+      "n": -3.5
+    },
+    "items": [
+      -4
+    ]
+  },
+  {
+    "expr": "$ceil(n)",
+    "data": {
+      "n": -3.5
+    },
+    "items": [
+      -3
+    ]
+  },
+  {
+    "expr": "$sqrt($abs(n))",
+    "data": {
+      "n": -3.5
+    },
+    "items": [
+      1.8708286933869707
+    ]
+  },
+  {
+    "expr": "$power(n,2)",
+    "data": {
+      "n": -3.5
+    },
+    "items": [
+      12.25
+    ]
+  },
+  {
+    "expr": "$sqrt(-1)",
+    "data": {},
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$power(10,1000)",
+    "data": {},
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$power(null,2)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$floor(missing)",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$average([])",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$average(missing)",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$average(null)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$average(4)",
+    "data": {},
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$average([1,2,6])",
+    "data": {},
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$average([1,\"2\"])",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$append(missing,1)",
+    "data": {},
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$append(null,[])",
+    "data": {},
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "expr": "$append([1],[2])",
+    "data": {},
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "$reverse(1)",
+    "data": {},
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$reverse([])",
+    "data": {},
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$reverse([1,2])",
+    "data": {},
+    "items": [
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$distinct([1,1])",
+    "data": {},
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$distinct([{\"a\":1},{\"a\":1}])",
+    "data": {},
+    "items": [
+      [
+        {
+          "a": 1
+        }
+      ]
+    ]
+  },
+  {
+    "expr": "$distinct(missing)",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$keys({})",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$keys({\"a\":1})",
+    "data": {},
+    "items": [
+      "a"
+    ]
+  },
+  {
+    "expr": "$keys([{\"a\":1,\"2\":2},{\"a\":3,\"1\":4}])",
+    "data": {},
+    "items": [
+      "1",
+      "2",
+      "a"
+    ]
+  },
+  {
+    "expr": "$spread({\"a\":1,\"b\":2})",
+    "data": {},
+    "items": [
+      {
+        "a": 1
+      },
+      {
+        "b": 2
+      }
+    ]
+  },
+  {
+    "expr": "$spread([{\"a\":1}])",
+    "data": {},
+    "items": [
+      [
+        {
+          "a": 1
+        }
+      ]
+    ]
+  },
+  {
+    "expr": "$spread([[],{}])",
+    "data": {},
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$merge([{\"a\":1},{\"a\":2,\"b\":null}])",
+    "data": {},
+    "items": [
+      {
+        "a": 2,
+        "b": null
+      }
+    ]
+  },
+  {
+    "expr": "$merge([{} ,null])",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$merge([])",
+    "data": {},
+    "items": [
+      {}
+    ]
+  },
+  {
+    "expr": "$type(missing)",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$type(null)",
+    "data": {},
+    "items": [
+      "null"
+    ]
+  },
+  {
+    "expr": "$type(1)",
+    "data": {},
+    "items": [
+      "number"
+    ]
+  },
+  {
+    "expr": "$type(true)",
+    "data": {},
+    "items": [
+      "boolean"
+    ]
+  },
+  {
+    "expr": "$type(\"x\")",
+    "data": {},
+    "items": [
+      "string"
+    ]
+  },
+  {
+    "expr": "$type([])",
+    "data": {},
+    "items": [
+      "array"
+    ]
+  },
+  {
+    "expr": "$type({})",
+    "data": {},
+    "items": [
+      "object"
+    ]
+  },
+  {
+    "expr": "$type(function(){1})",
+    "data": {},
+    "items": [
+      "function"
+    ]
+  },
+  {
+    "expr": "$type($map)",
+    "data": {},
+    "items": [
+      "function"
+    ]
+  },
+  {
+    "expr": "$map(a,function($v){$v*2})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      2,
+      4,
+      6
+    ]
+  },
+  {
+    "expr": "$map(a,function($v,$i,$a){[$v,$i,$count($a)]})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      [
+        1,
+        0,
+        3
+      ],
+      [
+        2,
+        1,
+        3
+      ],
+      [
+        3,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "$filter(a,function($v){$v>1})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "$filter(a,function($v){1})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "$reduce(a,function($a,$b){$a+$b})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      6
+    ]
+  },
+  {
+    "expr": "$reduce(a,function($a,$b,$i,$all){$a+$b+$i+$count($all)},0)",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      18
+    ]
+  },
+  {
+    "expr": "$map(a,$abs)",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "$map(a,function($v){$v>1?$v})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      2,
+      3
+    ]
+  },
+  {
+    "expr": "$map(a,function($v){[$v]})",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "($n:=10;$map(a,function($v){$n+$v}))",
+    "data": {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    },
+    "items": [
+      11,
+      12,
+      13
+    ]
+  },
+  {
+    "expr": "$map([],function($v){$v})",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$map(1,function($v){$v})",
+    "data": {},
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$filter([1],function(){false})",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$reduce([],function($a,$b){$a+$b},7)",
+    "data": {},
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "$reduce(missing,function($a,$b){$a+$b},7)",
+    "data": {},
+    "items": []
+  },
+  {
+    "expr": "$reduce([1],function($a){$a})",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$map([1],null)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "($f:=$uppercase;$f(\"hello\"))",
+    "data": {},
+    "items": [
+      "HELLO"
+    ]
+  },
+  {
+    "expr": "($map:=function($a,$f){42};$map([],function(){()}))",
+    "data": {},
+    "items": [
+      42
+    ]
+  },
+  {
+    "expr": "$each(o,function($v,$k){[$k,$v]})",
+    "data": {
+      "o": {
+        "a": 1,
+        "b": 2
+      }
+    },
+    "items": [
+      [
+        "a",
+        1
+      ],
+      [
+        "b",
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "$sift(o,function($v){$v>1})",
+    "data": {
+      "o": {
+        "a": 1,
+        "b": 2
+      }
+    },
+    "items": [
+      {
+        "b": 2
+      }
+    ]
+  },
+  {
+    "expr": "$sift(o,function(){false})",
+    "data": {
+      "o": {
+        "a": 1,
+        "b": 2
+      }
+    },
+    "items": []
+  },
+  {
+    "expr": "$each(o,function($v,$k,$o){$count($keys($o))})",
+    "data": {
+      "o": {
+        "a": 1,
+        "b": 2
+      }
+    },
+    "items": [
+      2,
+      2
+    ]
+  },
+  {
+    "expr": "($f:=$map(a,function($v){function(){$v}});$map($f,function($g){$g()}))",
+    "data": {
+      "a": [
+        10,
+        20
+      ]
+    },
+    "items": [
+      10,
+      20
+    ]
+  },
+  {
+    "expr": "$join($map(rows[price>2]^(>price),function($r){$uppercase($r.name)}),\",\")",
+    "data": {
+      "rows": [
+        {
+          "name": "a",
+          "price": 3
+        },
+        {
+          "name": "b",
+          "price": 4
+        }
+      ]
+    },
+    "items": [
+      "B,A"
+    ]
+  },
+  {
+    "expr": "$filter($,function($v){$v!=0})[]",
+    "data": [
+      0,
+      5,
+      0
+    ],
+    "items": [
+      [
+        5
+      ]
+    ]
+  },
+  {
+    "expr": "($f:=$map;$f([1],function($v){$v})[])",
+    "data": null,
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$keys({\"a\":1})[]",
+    "data": null,
+    "items": [
+      [
+        "a"
+      ]
+    ]
+  },
+  {
+    "expr": "($keys({\"a\":1}))[]",
+    "data": null,
+    "items": [
+      "a"
+    ]
+  },
+  {
+    "expr": "$substringBefore(\"abc\",missing)",
+    "data": null,
+    "items": [
+      "abc"
+    ]
+  },
+  {
+    "expr": "$substringAfter(\"abc\",missing)",
+    "data": null,
+    "items": [
+      "abc"
+    ]
+  },
+  {
+    "expr": "$substringBefore(\"xundefinedy\",missing)",
+    "data": null,
+    "items": [
+      "x"
+    ]
+  },
+  {
+    "expr": "$map([1,2],function($v){$map([$v],function($x){$x})})",
+    "data": null,
+    "items": [
+      [
+        1
+      ],
+      [
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "$map([1,2],function($v){($map([$v],function($x){$x}))})",
+    "data": null,
+    "items": [
+      [
+        1
+      ],
+      [
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "$map([1,2],function($v){$v>0?$map([$v],function($x){$x}):0})",
+    "data": null,
+    "items": [
+      [
+        1
+      ],
+      [
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "$map([{},{}],$keys)",
+    "data": null,
+    "items": [
+      [],
+      []
+    ]
+  },
+  {
+    "expr": "$map([{},{}],function($v){$keys($v)})",
+    "data": null,
+    "items": [
+      [],
+      []
+    ]
+  },
+  {
+    "expr": "$map([[],[]],function($v){$map($v,function($x){$x})})",
+    "data": null,
+    "items": [
+      [],
+      []
+    ]
+  },
+  {
+    "expr": "$keys({})[]",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$map([],function($v){$v})[]",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$abs(1/0)",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$floor(-1/0)",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$ceil(0/0)",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$sqrt(1/0)",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$append(1/0,[])",
+    "data": null,
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "expr": "$sift({})",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$filter(missing[true][],function(){true})",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$filter(missing[true][],function(){true})[]",
+    "data": null,
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "expr": "$spread(missing[true][])",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$spread($append(missing[true][],[]))",
+    "data": null,
+    "items": []
+  }
+]

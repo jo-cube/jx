@@ -1,0 +1,22 @@
+[package]
+name = "jx-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+jx = { path = "../crates/jx" }
+
+[[bin]]
+name = "boundaries"
+path = "fuzz_targets/boundaries.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

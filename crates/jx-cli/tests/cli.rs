@@ -1,0 +1,562 @@
+use std::{
+    io::Write,
+    process::{Command, Output, Stdio},
+};
+
+fn run(args: &[&str], input: &[u8]) -> Output {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_jx"))
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    if let Err(error) = child.stdin.take().unwrap().write_all(input) {
+        // A usage/compile error can close stdin before this test writes its input.
+        assert_eq!(error.kind(), std::io::ErrorKind::BrokenPipe);
+    }
+    child.wait_with_output().unwrap()
+}
+
+#[test]
+fn ndjson_missing_null_arrays_and_final_unterminated_record() {
+    let output = run(&["a"], b"\n {}\r\n{\"a\":null}\n{\"a\":[1, 2]}\n{\"a\":3}");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"null\n[1,2]\n3\n");
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn errors_have_distinct_exit_codes_and_record_context() {
+    let output = run(&["a["], b"");
+    assert_eq!(output.status.code(), Some(2));
+    let output = run(&["$"], b"1\n[0,]\n2\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("-: line 2:")
+    );
+}
+
+#[test]
+fn exact_record_limit_including_cr_but_excluding_lf() {
+    for input in [&b"1234\n"[..], &b"1234"[..]] {
+        assert!(
+            run(&["--max-record-bytes", "4", "$"], input)
+                .status
+                .success()
+        );
+    }
+    for input in [&b"12345\n"[..], &b"12345"[..], &b"1234\r\n"[..]] {
+        let output = run(&["--max-record-bytes", "4", "$"], input);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(output.stdout.is_empty());
+    }
+    assert_eq!(
+        run(&["--max-record-bytes", "0", "$"], b"").status.code(),
+        Some(2)
+    );
+}
+
+#[test]
+fn streams_multiple_files_and_stdin_in_order() {
+    let path = std::env::temp_dir().join(format!("jx-cli-{}.ndjson", std::process::id()));
+    std::fs::write(&path, b"{\"a\":1}\n{\"a\":2}").unwrap();
+    let output = run(
+        &["a", path.to_str().unwrap(), "-", path.to_str().unwrap()],
+        b"{\"a\":3}\n",
+    );
+    std::fs::remove_file(path).unwrap();
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"1\n2\n3\n1\n2\n");
+}
+
+#[test]
+fn help_empty_input_options_and_invalid_utf8() {
+    assert!(run(&["--help"], b"").status.success());
+    assert!(run(&["--", "$"], b"").status.success());
+    assert_eq!(run(&[], b"").status.code(), Some(2));
+    assert_eq!(run(&["--unknown"], b"").status.code(), Some(2));
+    assert_eq!(run(&["$"], b"\"\xff\"\n").status.code(), Some(1));
+}
+
+#[test]
+fn sequences_are_separate_lines_and_raw_arrays_stay_values() {
+    let input = b"{\"a\":[{\"b\":1},{\"b\":2}]}\n{\"a\":[{\"b\":[3]}]}\n{\"a\":[{\"b\":[]},{\"b\":[]}]}\n{\"a\":[{\"b\":null}]}\n";
+    let output = run(&["a.b"], input);
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"1\n2\n[3]\nnull\n");
+    let output = run(&["a"], b"[{\"a\":[1]}]\n");
+    assert_eq!(output.stdout, b"1\n");
+    let output = run(&["$.a"], b"[{\"a\":[1]}]\n");
+    assert_eq!(output.stdout, b"[1]\n");
+}
+
+#[test]
+fn invalid_record_never_emits_a_partial_sequence() {
+    let output = run(
+        &["a.b"],
+        b"{\"a\":[{\"b\":0}]}\n{\"a\":[{\"b\":1},{\"b\":2}],\"bad\":[0,]}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"0\n");
+}
+
+#[test]
+fn scalar_results_and_runtime_errors_are_framed_per_record() {
+    let output = run(&["a + 1"], b"{\"a\":2}\n{}\n{\"a\":null}\n{\"a\":4}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"3\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 3:") && error.contains("TypeError"));
+    let output = run(&["--", "-a"], b"{\"a\":2}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"-2\n");
+    let output = run(&["a / 0"], b"{\"a\":1}\n{\"a\":0}\n");
+    assert_eq!(output.stdout, b"null\nnull\n");
+    let output = run(&["'hello'"], b"null\ntrue\n");
+    assert_eq!(output.stdout, b"\"hello\"\n\"hello\"\n");
+}
+
+#[test]
+fn filters_frame_values_and_report_streamed_errors() {
+    let output = run(&["a[$ > 1]"], b"{\"a\":[0,2,3]}\n{\"a\":[]}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"2\n3\n");
+    let output = run(&["a[$+1 > 1]"], b"{\"a\":[1,null,3]}\n{\"a\":[4]}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 1:") && error.contains("TypeError"));
+    let output = run(&["a[true]"], b"{\"a\":[1,2],\"unused\":[0,]}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+}
+
+#[test]
+fn aggregates_distinguish_missing_empty_and_failed_records() {
+    let output = run(
+        &["$sum(a)"],
+        b"{}\n{\"a\":[]}\n{\"a\":[1,2]}\n{\"a\":null}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"0\n3\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 4:") && error.contains("TypeError"));
+    let output = run(&["$count(a[$ > 1])"], b"{\"a\":[0,2,3]}\n{}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"2\n0\n");
+    let output = run(&["$sum(a[$ + 1 > 0])"], b"{\"a\":[1,null]}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+}
+
+#[test]
+fn constructors_frame_complete_outputs_and_mapped_failures() {
+    let output = run(
+        &[r#"{"sum":$sum(a[$>1]),"values":[a[$>1]],"missing":absent,"null":null}"#],
+        b"{\"a\":[1,2,3]}\n{}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"sum\":5,\"values\":[2,3],\"null\":null}\n{\"values\":[],\"null\":null}\n"
+    );
+    let output = run(&["a.[b,b+1]"], br#"{"a":[{"b":1},{"b":3}]}"#);
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"[1,2]\n[3,4]\n");
+    let output = run(&[r#"a.{"x":b+1}"#], br#"{"a":[{"b":1},{"b":null}]}"#);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"{\"x\":2}\n");
+    let output = run(&[r#"[a.{"x":b+1}]"#], br#"{"a":[{"b":1},{"b":null}]}"#);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    let output = run(&[r#"{"x":1,"\u0078":2}"#], b"{}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("DuplicateKey")
+    );
+}
+
+#[test]
+fn lexical_runtime_is_fresh_for_each_record() {
+    let output = run(
+        &["($x:=a;$f:=function(){$x? $x+1 : $$.fallback};$f())"],
+        b"{\"a\":2}\n{\"fallback\":9}\n{\"a\":4}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"3\n9\n5\n");
+    let output = run(&["function(){1}"], b"null\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("functions have no JSON encoding")
+    );
+}
+
+#[test]
+fn kept_sequences_and_reductions_preserve_record_framing() {
+    let output = run(&["a[]"], b"{}\n{\"a\":null}\n{\"a\":1}\n{\"a\":[1,2]}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"[null]\n[1]\n[1,2]\n");
+    let output = run(
+        &["a^(>v){k:v[]}"],
+        br#"{"a":[{"k":"x","v":1},{"k":"x","v":2}]}"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"{\"x\":[2,1]}\n");
+}
+
+#[test]
+fn scoped_paths_reset_bindings_and_preserve_sequence_framing() {
+    let input = b"{\"a\":[10,20]}\n{\"a\":[30]}\n{\"a\":[]}\n";
+    let output = run(&["a#$i.{\"value\":$,\"index\":$i}"], input);
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"value\":10,\"index\":0}\n{\"value\":20,\"index\":1}\n{\"value\":30,\"index\":0}\n"
+    );
+    assert_eq!(run(&["a#$i.$i[]"], input).stdout, b"[0,1]\n[0]\n");
+}
+
+#[test]
+fn builtins_frame_sequences_and_escape_computed_strings() {
+    let input = b"{\"a\":[1,2]}\n{\"a\":[3]}\n{\"a\":[]}\n{}\n";
+    assert_eq!(
+        run(&["$map(a,function($v){$v*2})"], input).stdout,
+        b"2\n4\n6\n"
+    );
+    assert_eq!(
+        run(&["$map(a,function($v){$v*2})[]"], input).stdout,
+        b"[2,4]\n[6]\n"
+    );
+    let output = run(
+        &["$uppercase(text)"],
+        b"{\"text\":\"a\\\"b\\nc\"}\n{\"text\":null}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"\"A\\\"B\\u000aC\"\n");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("line 2:")
+    );
+}
+
+#[test]
+fn conversion_and_chaining_preserve_ndjson_boundaries() {
+    let output = run(
+        &[r#"{"label":"n=" & $number(n),"json":$string(obj)}"#],
+        b"{\"n\":\"03\",\"obj\":{\"v\":1.200}}\n{\"n\":true}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"label\":\"n=3\",\"json\":\"{\\\"v\\\":1.2}\"}\n{\"label\":\"n=1\"}\n"
+    );
+    let input = b"{\"a\":[1,2]}\n{\"a\":[3]}\n{}\n";
+    assert_eq!(
+        run(&["a ~> $map($string)"], input).stdout,
+        b"\"1\"\n\"2\"\n\"3\"\n"
+    );
+    assert_eq!(
+        run(&["a ~> $map($string)[]"], input).stdout,
+        b"[\"1\",\"2\"]\n[\"3\"]\n"
+    );
+    let output = run(
+        &["($p:=$number(?);$p(n))"],
+        b"{\"n\":\"2\"}\n{\"n\":null}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"2\n");
+}
+
+#[test]
+fn matcher_results_keep_ndjson_framing_and_record_isolation() {
+    let output = run(
+        &["{'matches':$match(text,/(a)(b)?/),'clean':$replace(text,/a/,'X')}"],
+        br#"{"text":"ab a"}
+{"text":"zzz"}
+{"text":"a"}
+"#,
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout, br#"{"matches":[{"match":"ab","index":0,"groups":["a","b"]},{"match":"a","index":3,"groups":["a",null]}],"clean":"Xb X"}
+{"clean":"zzz"}
+{"matches":{"match":"a","index":0,"groups":["a",null]},"clean":"X"}
+"#);
+    let output = run(&["$match(text,/a*/)"], b"{\"text\":\"ab\"}\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("(RegexError)"));
+}
+
+#[test]
+fn parent_navigation_and_transforms_preserve_record_boundaries() {
+    let input = br#"{"orders":[{"id":"A","items":[{"n":1},{"n":2}]}]}
+{"orders":[{"id":"B","items":[{"n":3}]}]}
+"#;
+    let output = run(&["orders.items.{ 'order':%.id,'n':n }"], input);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        output.stdout,
+        b"{\"order\":\"A\",\"n\":1}\n{\"order\":\"A\",\"n\":2}\n{\"order\":\"B\",\"n\":3}\n"
+    );
+    let output = run(&["$ ~> |orders.items[n>1]|{'n':n+1}|"], input);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout,b"{\"orders\":[{\"id\":\"A\",\"items\":[{\"n\":1},{\"n\":3}]}]}\n{\"orders\":[{\"id\":\"B\",\"items\":[{\"n\":4}]}]}\n");
+    let output = run(&["$ ~> |orders.items|5|"], input);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("(TypeError)"));
+}
+
+#[test]
+fn everyday_helpers_and_user_errors_stream_records() {
+    let output = run(
+        &["{'n':$round(n,2),'id':$pad(id,-3,'0')}"],
+        br#"{"n":4.525,"id":"a"}
+{"n":2.345,"id":"b"}
+"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"n\":4.52,\"id\":\"00a\"}\n{\"n\":2.34,\"id\":\"00b\"}\n"
+    );
+    let output = run(
+        &["($assert(n>0,'positive required');n)"],
+        b"{\"n\":1}\n{\"n\":0}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 2"));
+    assert!(error.contains("positive required"));
+    assert!(error.contains("(AssertionFailed)"));
+}
+
+#[test]
+fn formatting_is_compiled_once_and_streams_records() {
+    let output = run(
+        &["{'n':$formatNumber(n,'0.00'),'date':$fromMillis(t,'[Y0001]-[M01]-[D01]')}"],
+        br#"{"n":4.525,"t":0}
+{"n":2.345,"t":1526947200000}
+"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        output.stdout,
+        b"{\"n\":\"4.52\",\"date\":\"1970-01-01\"}\n{\"n\":\"2.34\",\"date\":\"2018-05-22\"}\n"
+    );
+    let output = run(
+        &["$toMillis(date)"],
+        b"{\"date\":\"2018-05-22\"}\n{\"date\":\"bad\"}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1526947200000\n");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("(DateTimeError)")
+    );
+}
+
+#[test]
+fn signed_tail_functions_stream_and_report_record_errors() {
+    let output = run(
+        &["($f:=function($n,$a)<nn:n>{$n=0?$a:$f($n-1,$a+1)};{'id':id,'steps':$f(n,0)})"],
+        b"{\"id\":1,\"n\":1000}\n{\"id\":2,\"n\":64}\n{\"id\":3,\"n\":\"bad\"}\n",
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        output.stdout,
+        b"{\"id\":1,\"steps\":1000}\n{\"id\":2,\"steps\":64}\n"
+    );
+    let error = String::from_utf8(output.stderr).unwrap();
+    assert!(error.contains("line 3"));
+    assert!(error.contains("(TypeError)"));
+    let output = run(&["function($x)<n<n>>{$x}(1)"], b"null\n");
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("(SignatureError)")
+    );
+}
+
+#[test]
+fn dynamic_eval_streams_records_and_wraps_errors() {
+    let output = run(
+        &["$eval(code)"],
+        br#"{"code":"[1,2].$"}
+{"code":"missing"}
+{"code":"null"}
+{"code":"{\"n\":3}"}
+"#,
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"1\n2\nnull\n{\"n\":3}\n");
+    for (source, input, kind) in [
+        ("$eval(code)", &br##"{"code":"#"}"##[..], "EvalSyntax"),
+        ("$eval(code)", &br#"{"code":"1+null"}"#[..], "EvalError"),
+        ("$eval(\"#\")", &b"{\"bad\":[0,]}"[..], "InvalidJson"),
+    ] {
+        let output = run(&[source], input);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(output.stdout.is_empty());
+        assert!(String::from_utf8(output.stderr).unwrap().contains(kind));
+    }
+    let output = run(&["$sort($shuffle(a))"], b"{\"a\":[2,1]}\n{\"a\":[3]}\n{}\n");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"[1,2]\n[3]\n");
+}
+
+#[cfg(feature = "jit")]
+#[test]
+fn native_plans_preserve_record_framing_and_failure_output() {
+    for source in [
+        "(x+y)*(x-y)+x*x+y*y",
+        "$sum(rows[x>0].(x*x+x+1))",
+        "$map(rows,function($r){$r.x*$r.x+$r.x+1})",
+        "($f:=function($a){function($b){$a+$b}};$f(x)(y))",
+    ] {
+        let input = br#"{"x":7,"y":3,"rows":[{"x":1},{"x":2}]}
+{"x":null,"y":3,"rows":[{"x":null}]}
+{"x":4,"y":2}
+"#;
+        let normal = run(&["--", source], input);
+        let native = run(&["--jit", "--", source], input);
+        assert_eq!(native.status.code(), normal.status.code(), "{source}");
+        assert_eq!(native.stdout, normal.stdout, "{source}");
+        assert_eq!(native.stderr, normal.stderr, "{source}");
+    }
+    let output = run(
+        &["--jit", "x*x+x+1"],
+        br#"{"x":2,"bad":[0,]}
+"#,
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+}
+
+#[test]
+fn serialization_failure_never_publishes_an_incomplete_result() {
+    let output = run(&["[1,function(){2}]"], b"null\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty(), "{:?}", output.stdout);
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("line 1: serialization:")
+    );
+    let output = run(&["(1; [1, function(){2}])"], b"null\n");
+    assert!(output.stdout.is_empty());
+}
+
+#[test]
+fn output_limits_and_expression_files() {
+    let output = run(&["--max-output-bytes", "3", "$"], b"1\n[1,2]\n");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"1\n");
+    let path = std::env::temp_dir().join(format!("jx-expression-{}.jsonata", std::process::id()));
+    std::fs::write(&path, "/* expression file */\na+1\n").unwrap();
+    let output = run(&["-f", path.to_str().unwrap()], br#"{"a":2}"#);
+    std::fs::remove_file(path).unwrap();
+    assert!(output.status.success(), "{:?}", output.stderr);
+    assert_eq!(output.stdout, b"3\n");
+    let version = run(&["--version"], b"");
+    assert!(version.status.success());
+    assert_eq!(
+        version.stdout,
+        format!("jx {}\n", env!("CARGO_PKG_VERSION")).as_bytes()
+    );
+    assert_eq!(
+        run(&["--max-work", "2", "[1..100]"], b"null").status.code(),
+        Some(1)
+    );
+}
+#[test]
+fn expression_file_streams_typical_records_in_order() {
+    let root = std::env::temp_dir().join(format!("jx-stream-é-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("expression with spaces.jsonata");
+    let records = root.join("records with spaces.ndjson");
+    std::fs::write(
+        &source,
+        "/* reusable program */\n{'id':id,'total':$sum(items[price>10].price)}\n",
+    )
+    .unwrap();
+    let mut input = String::new();
+    let mut expected = Vec::new();
+    for id in 0..4096 {
+        input.push_str(&format!(
+            "{{\"id\":{id},\"items\":[{{\"price\":5}},{{\"price\":12}}],\"padding\":\"{}\"}}\r\n",
+            "x".repeat(440)
+        ));
+        expected.extend_from_slice(format!("{{\"id\":{id},\"total\":12}}\n").as_bytes());
+    }
+    std::fs::write(&records, input).unwrap();
+    let output = run(
+        &["-f", source.to_str().unwrap(), records.to_str().unwrap()],
+        b"",
+    );
+    std::fs::remove_dir_all(root).unwrap();
+    assert!(output.status.success(), "{:?}", output.stderr);
+    assert_eq!(output.stdout, expected);
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn expression_file_failures_keep_usage_exit_and_empty_stdout() {
+    let path =
+        std::env::temp_dir().join(format!("jx-source-errors-{}.jsonata", std::process::id()));
+    std::fs::write(&path, b"1+\xff").unwrap();
+    let invalid_utf8 = run(&["-f", path.to_str().unwrap()], b"null\n");
+    std::fs::write(&path, "1+\n").unwrap();
+    let invalid_expression = run(&["--expression-file", path.to_str().unwrap()], b"null\n");
+    std::fs::remove_file(&path).unwrap();
+    let missing_file = run(&["-f", path.to_str().unwrap()], b"null\n");
+    for output in [invalid_utf8, invalid_expression, missing_file] {
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        assert!(!output.stderr.is_empty());
+    }
+}
+
+#[test]
+fn help_describes_limits_exit_policy_and_native_feature() {
+    let output = run(&["--help"], b"");
+    assert!(output.status.success());
+    let help = String::from_utf8(output.stdout).unwrap();
+    for option in [
+        "--expression-file",
+        "--max-record-bytes",
+        "--max-output-bytes",
+        "--max-work",
+        "--version",
+        "Exit codes:",
+    ] {
+        assert!(help.contains(option), "{option}");
+    }
+    assert_eq!(help.contains("--jit"), cfg!(feature = "jit"));
+    #[cfg(not(feature = "jit"))]
+    assert_eq!(run(&["--jit", "$"], b"null\n").status.code(), Some(2));
+}

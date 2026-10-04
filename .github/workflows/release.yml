@@ -1,0 +1,26 @@
+# Builds verified run artifacts only; never creates tags, releases or publications.
+name: Release artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Existing commit, tag or branch to build (version comes from Cargo.toml)'
+        type: string
+        required: true
+        default: dev
+      differential:
+        description: 'Compare both modes with the pinned upstream implementation'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ inputs.ref }}
+      artifacts: true
+      differential: ${{ inputs.differential }}

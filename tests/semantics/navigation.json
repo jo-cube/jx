@@ -1,0 +1,2419 @@
+[
+  {
+    "name": "retention and normalization",
+    "expr": "one.b[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "(one.b)[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "one[].b",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "one[].missing",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": []
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "a.b[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "a[][0].b",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "a.b[][0]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "(a.b)[][0]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "a.[b][]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "a[].b[0]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "nil[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "missing[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": []
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "ar[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "(ar)[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "$[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      {
+        "a": [
+          {
+            "b": 1
+          },
+          {
+            "b": 2
+          }
+        ],
+        "one": {
+          "b": 3
+        },
+        "ar": [
+          1
+        ],
+        "nil": null
+      }
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "1[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "[1][]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "(1)[true][]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "$count(a)[]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "(one.b)[0][]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "($v:=one.b[];[$v,$count($v)])",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        3,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "a[]^($count(b)).b",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "retention and normalization",
+    "expr": "(a^(>b))[0].b",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ],
+      "one": {
+        "b": 3
+      },
+      "ar": [
+        1
+      ],
+      "nil": null
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[0..3]",
+    "data": {},
+    "items": [
+      [
+        0,
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[3..0]",
+    "data": {},
+    "items": [
+      []
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[-2..2]",
+    "data": {},
+    "items": [
+      [
+        -2,
+        -1,
+        0,
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[1..1]",
+    "data": {},
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[0,2..4,7]",
+    "data": {},
+    "items": [
+      [
+        0,
+        2,
+        3,
+        4,
+        7
+      ]
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[missing..2]",
+    "data": {},
+    "items": [
+      []
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[missing..null]",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "name": "ranges",
+    "expr": "[1.2..2]",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "name": "ranges",
+    "expr": "[1..false]",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "name": "ranges",
+    "expr": "[0..4][$%2=0]",
+    "data": {},
+    "items": [
+      0,
+      2,
+      4
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "$sum([1..10])",
+    "data": {},
+    "items": [
+      55
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[1..3].($*$)",
+    "data": {},
+    "items": [
+      1,
+      4,
+      9
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[[1..2],[3..4]]",
+    "data": {},
+    "items": [
+      [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "ranges",
+    "expr": "[0..10000000]",
+    "data": {},
+    "error": "NumericRange"
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "*",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      {
+        "x": 4
+      },
+      null
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "a.*",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      [
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "*.x",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      1,
+      4
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "**",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      {
+        "a": {
+          "x": 1,
+          "y": [
+            2,
+            [
+              3
+            ],
+            []
+          ]
+        },
+        "b": {
+          "x": 4
+        },
+        "c": null
+      },
+      {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      1,
+      2,
+      3,
+      {
+        "x": 4
+      },
+      4,
+      null
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "**.x",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      1,
+      4
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "**.x[0]",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      1,
+      4
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "(**.x)[0]",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "a.*[true]",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "$sum(a.*)",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      6
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "[**.x]",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": [
+      [
+        1,
+        4
+      ]
+    ]
+  },
+  {
+    "name": "wildcards and descendants",
+    "expr": "**[false]",
+    "data": {
+      "a": {
+        "x": 1,
+        "y": [
+          2,
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "b": {
+        "x": 4
+      },
+      "c": null
+    },
+    "items": []
+  },
+  {
+    "name": "array wildcard",
+    "expr": "*",
+    "data": [
+      [
+        1
+      ],
+      [
+        {
+          "a": 2
+        }
+      ],
+      []
+    ],
+    "items": [
+      [
+        1,
+        {
+          "a": 2
+        }
+      ]
+    ]
+  },
+  {
+    "name": "array wildcard",
+    "expr": "**",
+    "data": [
+      [
+        1
+      ],
+      [
+        {
+          "a": 2
+        }
+      ],
+      []
+    ],
+    "items": [
+      1,
+      {
+        "a": 2
+      },
+      2
+    ]
+  },
+  {
+    "name": "array wildcard",
+    "expr": "*.a",
+    "data": [
+      [
+        1
+      ],
+      [
+        {
+          "a": 2
+        }
+      ],
+      []
+    ],
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "array wildcard",
+    "expr": "**.a",
+    "data": [
+      [
+        1
+      ],
+      [
+        {
+          "a": 2
+        }
+      ],
+      []
+    ],
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "array wildcard",
+    "expr": "*[]",
+    "data": [
+      [
+        1
+      ],
+      [
+        {
+          "a": 2
+        }
+      ],
+      []
+    ],
+    "items": [
+      [
+        1,
+        {
+          "a": 2
+        }
+      ]
+    ]
+  },
+  {
+    "name": "array wildcard",
+    "expr": "**[]",
+    "data": [
+      [
+        1
+      ],
+      [
+        {
+          "a": 2
+        }
+      ],
+      []
+    ],
+    "items": [
+      [
+        1,
+        {
+          "a": 2
+        },
+        2
+      ]
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a{k:v}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": [
+          1,
+          3
+        ],
+        "y": 2
+      }
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a{k:$sum(v)}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": 4,
+        "y": 2
+      }
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a{k:{\"sum\":$sum(v),\"count\":$count(v)}}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": {
+          "sum": 4,
+          "count": 2
+        },
+        "y": {
+          "sum": 2,
+          "count": 1
+        }
+      }
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a[v>1]{k:v}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "y": 2,
+        "x": 3
+      }
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "(a{k:v}).x",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      1,
+      3
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a{\"x\":v}.v",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {}
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a{\"x\":v}[0]",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": 1
+      }
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "missing{\"x\":1}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": 1
+      }
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a{\"x\":v,\"x\":v}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "error": "DuplicateKey"
+  },
+  {
+    "name": "grouping",
+    "expr": "a{missing:v}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {}
+    ]
+  },
+  {
+    "name": "grouping",
+    "expr": "a{v:k}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "name": "grouping",
+    "expr": "[] {\"x\":1}",
+    "data": {
+      "a": [
+        {
+          "k": "x",
+          "v": 1
+        },
+        {
+          "k": "y",
+          "v": 2
+        },
+        {
+          "k": "x",
+          "v": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": 1
+      }
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a^(k).id",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      "a",
+      "b",
+      "c",
+      "missing"
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a^(>k).id",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      "b",
+      "c",
+      "a",
+      "missing"
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a^(k,>id).id",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      "a",
+      "c",
+      "b",
+      "missing"
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a^(k)[0].id",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      "a"
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a^(k)[-1].id",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      "missing"
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a^(k){\"ids\":id}",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      {
+        "ids": [
+          "a",
+          "b",
+          "c",
+          "missing"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a[].id^(<$)",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      [
+        "a",
+        "b",
+        "c",
+        "missing"
+      ]
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "(a^(k)).id",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      "a",
+      "b",
+      "c",
+      "missing"
+    ]
+  },
+  {
+    "name": "ordering",
+    "expr": "a^(k)[]",
+    "data": {
+      "a": [
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    },
+    "items": [
+      [
+        {
+          "k": 1,
+          "id": "a"
+        },
+        {
+          "k": 2,
+          "id": "b"
+        },
+        {
+          "k": 2,
+          "id": "c"
+        },
+        {
+          "id": "missing"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[]^($)",
+    "data": {},
+    "items": []
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[1]^($)",
+    "data": {},
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[null]^($)",
+    "data": {},
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[null,null]^($)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[null,missing]^($)",
+    "data": {},
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[true,false]^($)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[1,\"1\"]^($)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[3,1,2]^(>$)",
+    "data": {},
+    "items": [
+      [
+        3,
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[\"b\",\"a\"]^($)",
+    "data": {},
+    "items": [
+      [
+        "a",
+        "b"
+      ]
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[1,2]^(0/0)",
+    "data": {},
+    "items": [
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[1,2]^(missing)",
+    "data": {},
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "ordering edge cases",
+    "expr": "[1,2]^(1/$)",
+    "data": {},
+    "items": [
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "1 in [1,2]",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "[1] in [[1]]",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "a in [a]",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "{\"x\":1} in [a]",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "a.x in a",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "missing in [null]",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "null in [null]",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "in in [1]",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "v ?? 9",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "v ?: 9",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "false ?? 9",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "null ?? 9",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "[] ?? 9",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      []
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "missing ?? 9",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      9
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "[1] ?: 9",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "1+2 ?? 3*4",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "false or missing ?? 2",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "membership and fallback",
+    "expr": "($n:=0;$x:=a[$n:=$n+1] ?? 9;[$x,$n])",
+    "data": {
+      "a": {
+        "x": 1
+      },
+      "v": 0
+    },
+    "items": [
+      [
+        9,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "quoted path names",
+    "expr": "\"a\".b",
+    "data": {
+      "a b": {
+        "x": 2
+      },
+      "a": {
+        "b": 1
+      }
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "quoted path names",
+    "expr": "a.\"b\"",
+    "data": {
+      "a b": {
+        "x": 2
+      },
+      "a": {
+        "b": 1
+      }
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "quoted path names",
+    "expr": "\"a b\".x",
+    "data": {
+      "a b": {
+        "x": 2
+      },
+      "a": {
+        "b": 1
+      }
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "quoted path names",
+    "expr": "a.\"\\u0062\"",
+    "data": {
+      "a b": {
+        "x": 2
+      },
+      "a": {
+        "b": 1
+      }
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "quoted path names",
+    "expr": "a.\"b\"[]",
+    "data": {
+      "a b": {
+        "x": 2
+      },
+      "a": {
+        "b": 1
+      }
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "keep precedes singleton normalization",
+    "expr": "a[true][]",
+    "data": null,
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "name": "keep precedes singleton normalization",
+    "expr": "a[true][]",
+    "data": {
+      "a": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "items": [
+      [
+        [
+          1,
+          2
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "keep precedes singleton normalization",
+    "expr": "a[0+0][]",
+    "data": {
+      "a": [
+        []
+      ]
+    },
+    "items": [
+      [
+        []
+      ]
+    ]
+  },
+  {
+    "name": "keep precedes singleton normalization",
+    "expr": "a[0][]",
+    "data": {
+      "a": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "grouping attaches after the complete path",
+    "expr": "a.b{\"x\":$}[0]",
+    "data": {
+      "a": [
+        {
+          "b": 1
+        },
+        {
+          "b": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": [
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ordering before path grouping",
+    "expr": "a{\"x\":b}^(b)",
+    "data": {
+      "a": [
+        {
+          "b": 2
+        },
+        {
+          "b": 1
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": [
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "name": "retention keeps direct nested array construction",
+    "expr": "[[1,2][]]",
+    "data": {},
+    "items": [
+      [
+        [
+          1,
+          2
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "group append ignores undefined candidates",
+    "expr": "a.b{\"x\":$}[true]",
+    "data": {
+      "a": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      {}
+    ]
+  },
+  {
+    "name": "quoted field predicates retain path context",
+    "expr": "\"a\"[true].b",
+    "data": {
+      "a": {
+        "b": 1
+      }
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "call applies to grouped result",
+    "expr": "a{\"x\":1,\"x\":2}()",
+    "data": {
+      "a": 1
+    },
+    "error": "DuplicateKey"
+  },
+  {
+    "name": "coalescing respects a shadowed exists function",
+    "expr": "($exists:=function($x){false};1 ?? 2)",
+    "data": {},
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "shadowed exists can select a missing left branch",
+    "expr": "($exists:=function($x){true};missing ?? 2)",
+    "data": {},
+    "items": []
+  },
+  {
+    "name": "coalescing calls the rebound exists value",
+    "expr": "($exists:=0;1 ?? 2)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "name": "fallback re-evaluates its selected left expression",
+    "expr": "($n:=-1;$x:=a[$n:=$n+1] ?? 9;[$x,$n])",
+    "data": {
+      "a": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "name": "retention on an array-led path",
+    "expr": "[][].a",
+    "data": {},
+    "items": [
+      [
+        []
+      ]
+    ]
+  },
+  {
+    "name": "retention on an array-led path",
+    "expr": "[].a[]",
+    "data": {},
+    "items": [
+      [
+        []
+      ]
+    ]
+  },
+  {
+    "name": "retention on an array-led path",
+    "expr": "[1][0][].$",
+    "data": {},
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "retention on an array-led path",
+    "expr": "[1][true][].$",
+    "data": {},
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "integer group keys determine value error order",
+    "expr": "a{k:1/v+null}",
+    "data": {
+      "a": [
+        {
+          "k": "2",
+          "v": 1
+        },
+        {
+          "k": "1",
+          "v": 0
+        }
+      ]
+    },
+    "error": "NumericRange"
+  }
+]

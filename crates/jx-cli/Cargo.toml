@@ -1,0 +1,27 @@
+[package]
+name = "jx-cli"
+description = "Streaming NDJSON command-line interface for jx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["jsonata", "json", "query"]
+categories = ["command-line-utilities"]
+include = ["src/**", "examples/**", "README.md", "LICENSE"]
+
+[[bin]]
+name = "jx"
+path = "src/main.rs"
+
+[features]
+default = []
+jit = ["jx/jit"]
+
+[dependencies]
+jx = { version = "=0.1.0", path = "../jx" }
+
+[lints]
+workspace = true

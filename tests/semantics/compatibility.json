@@ -1,0 +1,955 @@
+[
+  {
+    "name": "Unicode ignore case é",
+    "expr": "$match(text,/é/i)",
+    "data": {
+      "text": "Éléphant"
+    },
+    "items": [
+      {
+        "match": "É",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "match": "é",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case [éè]",
+    "expr": "$match(text,/[éè]/i)",
+    "data": {
+      "text": "ÈÉ"
+    },
+    "items": [
+      {
+        "match": "È",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "match": "É",
+        "index": 1,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case (σ)\\1",
+    "expr": "$match(text,/(σ)\\1/i)",
+    "data": {
+      "text": "Σς"
+    },
+    "items": [
+      {
+        "match": "Σς",
+        "index": 0,
+        "groups": [
+          "Σ"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case å",
+    "expr": "$match(text,/å/i)",
+    "data": {
+      "text": "Å"
+    },
+    "items": [
+      {
+        "match": "Å",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case \\u0061",
+    "expr": "$match(text,/\\u0061/i)",
+    "data": {
+      "text": "A"
+    },
+    "items": [
+      {
+        "match": "A",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case \\u00e9",
+    "expr": "$match(text,/\\u00e9/i)",
+    "data": {
+      "text": "É"
+    },
+    "items": [
+      {
+        "match": "É",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case [α-ω]",
+    "expr": "$match(text,/[α-ω]/i)",
+    "data": {
+      "text": "Ω"
+    },
+    "items": [
+      {
+        "match": "Ω",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case ß",
+    "expr": "$match(text,/ß/i)",
+    "data": {
+      "text": "SSß"
+    },
+    "items": [
+      {
+        "match": "ß",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case K",
+    "expr": "$match(text,/K/i)",
+    "data": {
+      "text": "KK"
+    },
+    "items": [
+      {
+        "match": "K",
+        "index": 1,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode ignore case İ",
+    "expr": "$match(text,/İ/i)",
+    "data": {
+      "text": "iİ"
+    },
+    "items": [
+      {
+        "match": "İ",
+        "index": 1,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "Unicode replacement capture",
+    "expr": "$replace(text,/(é)/i,function($m){\"<\" & $m.groups[0] & \">\"})",
+    "data": {
+      "text": "Été"
+    },
+    "items": [
+      "<É>t<é>"
+    ]
+  },
+  {
+    "name": "Unicode callback predicate",
+    "expr": "$filter(rows,function($r){$contains($r.s,/é/i)}).n",
+    "data": {
+      "rows": [
+        {
+          "s": "ÉTÉ",
+          "n": 1
+        },
+        {
+          "s": "ete",
+          "n": 2
+        }
+      ]
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "post-sort field predicate",
+    "expr": "a#$i^(v)[v>1].$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": []
+  },
+  {
+    "name": "post-sort tuple predicate",
+    "expr": "a#$i^(v)[`@`.v>1].$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      2,
+      0
+    ]
+  },
+  {
+    "name": "post-sort binding field",
+    "expr": "a#$i^(v)[i=1].$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "post-sort lexical key",
+    "expr": "a#$i^(v)^(>$i).$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      1,
+      2,
+      0
+    ]
+  },
+  {
+    "name": "post-sort tuple key",
+    "expr": "a#$i^(v)^(>`@`.v).$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      0,
+      2,
+      1
+    ]
+  },
+  {
+    "name": "post-sort lexical group",
+    "expr": "a#$i^(v){\"p\":$i}",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {}
+    ]
+  },
+  {
+    "name": "post-sort binding group",
+    "expr": "a#$i^(v){\"p\":i}",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "p": [
+          1,
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "post-sort tuple group",
+    "expr": "a#$i^(v){\"p\":$}",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "p": [
+          {
+            "@": {
+              "v": 1
+            },
+            "i": 1
+          },
+          {
+            "@": {
+              "v": 2
+            },
+            "i": 2
+          },
+          {
+            "@": {
+              "v": 3
+            },
+            "i": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "post-sort filtered tuple group",
+    "expr": "a#$i^(v)[true]{\"p\":$}",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "p": [
+          {
+            "@": {
+              "v": 1
+            },
+            "i": 1
+          },
+          {
+            "@": {
+              "v": 2
+            },
+            "i": 2
+          },
+          {
+            "@": {
+              "v": 3
+            },
+            "i": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "post-sort restore context",
+    "expr": "a#$i^(v).$[v>1].$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      2,
+      0
+    ]
+  },
+  {
+    "name": "post-sort grouping aggregate",
+    "expr": "a#$i^(v){\"total\":$sum(`@`.v)}",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "total": 6
+      }
+    ]
+  },
+  {
+    "name": "date Unicode picture [Y0001]年[M01]月[D01]日",
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970年01月01日",
+      "picture": "[Y0001]年[M01]月[D01]日"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "date Unicode picture é [Y0001]-[M01]-[D01]",
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "É 1970-01-01",
+      "picture": "é [Y0001]-[M01]-[D01]"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "date Unicode picture [Y0001]-[M01]-[D01] 😀",
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970-01-01 😀",
+      "picture": "[Y0001]-[M01]-[D01] 😀"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "date Unicode picture [Y]年[M]月[D]日",
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970年01月01日",
+      "picture": "[Y]年[M]月[D]日"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "date Unicode picture [Y]-[M]-[D] [Pn]",
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970-01-01 pm",
+      "picture": "[Y]-[M]-[D] [Pn]"
+    },
+    "items": [
+      43200000
+    ]
+  },
+  {
+    "name": "date Unicode picture [Y]-[M]-[D] [PN]",
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970-01-01 PM",
+      "picture": "[Y]-[M]-[D] [PN]"
+    },
+    "items": [
+      43200000
+    ]
+  },
+  {
+    "name": "native numeric partial abs \"-2.5\"",
+    "expr": "$abs(?)(value)",
+    "data": {
+      "value": "-2.5"
+    },
+    "items": [
+      2.5
+    ]
+  },
+  {
+    "name": "native numeric partial abs true",
+    "expr": "$abs(?)(value)",
+    "data": {
+      "value": true
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "native numeric partial abs null",
+    "expr": "$abs(?)(value)",
+    "data": {
+      "value": null
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial abs \"bogus\"",
+    "expr": "$abs(?)(value)",
+    "data": {
+      "value": "bogus"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "native numeric partial abs []",
+    "expr": "$abs(?)(value)",
+    "data": {
+      "value": []
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial floor \"-2.5\"",
+    "expr": "$floor(?)(value)",
+    "data": {
+      "value": "-2.5"
+    },
+    "items": [
+      -3
+    ]
+  },
+  {
+    "name": "native numeric partial floor true",
+    "expr": "$floor(?)(value)",
+    "data": {
+      "value": true
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "native numeric partial floor null",
+    "expr": "$floor(?)(value)",
+    "data": {
+      "value": null
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial floor \"bogus\"",
+    "expr": "$floor(?)(value)",
+    "data": {
+      "value": "bogus"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "native numeric partial floor []",
+    "expr": "$floor(?)(value)",
+    "data": {
+      "value": []
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial ceil \"-2.5\"",
+    "expr": "$ceil(?)(value)",
+    "data": {
+      "value": "-2.5"
+    },
+    "items": [
+      -2
+    ]
+  },
+  {
+    "name": "native numeric partial ceil true",
+    "expr": "$ceil(?)(value)",
+    "data": {
+      "value": true
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "native numeric partial ceil null",
+    "expr": "$ceil(?)(value)",
+    "data": {
+      "value": null
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial ceil \"bogus\"",
+    "expr": "$ceil(?)(value)",
+    "data": {
+      "value": "bogus"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "native numeric partial ceil []",
+    "expr": "$ceil(?)(value)",
+    "data": {
+      "value": []
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial sqrt \"-2.5\"",
+    "expr": "$sqrt(?)(value)",
+    "data": {
+      "value": "-2.5"
+    },
+    "error": "NumericRange"
+  },
+  {
+    "name": "native numeric partial sqrt true",
+    "expr": "$sqrt(?)(value)",
+    "data": {
+      "value": true
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "native numeric partial sqrt null",
+    "expr": "$sqrt(?)(value)",
+    "data": {
+      "value": null
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial sqrt \"bogus\"",
+    "expr": "$sqrt(?)(value)",
+    "data": {
+      "value": "bogus"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "native numeric partial sqrt []",
+    "expr": "$sqrt(?)(value)",
+    "data": {
+      "value": []
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial power \"-2.5\"",
+    "expr": "$power(?,2)(value)",
+    "data": {
+      "value": "-2.5"
+    },
+    "items": [
+      6.25
+    ]
+  },
+  {
+    "name": "native numeric partial power true",
+    "expr": "$power(?,2)(value)",
+    "data": {
+      "value": true
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "native numeric partial power null",
+    "expr": "$power(?,2)(value)",
+    "data": {
+      "value": null
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "native numeric partial power \"bogus\"",
+    "expr": "$power(?,2)(value)",
+    "data": {
+      "value": "bogus"
+    },
+    "error": "NumericRange"
+  },
+  {
+    "name": "native numeric partial power []",
+    "expr": "$power(?,2)(value)",
+    "data": {
+      "value": []
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "ECMAScript coercion does not trim NEL",
+    "expr": "$abs(?)(text)",
+    "data": {
+      "text": "\u00852\u0085"
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "ECMAScript coercion trims BOM and NBSP",
+    "expr": "$abs(?)(text)",
+    "data": {
+      "text": "\ufeff2\u00a0"
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "($i:=99;a#$i^(v)[$i=99].$i)",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 2
+        },
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      2,
+      1,
+      0
+    ]
+  },
+  {
+    "expr": "($i:=99;a#$i^(v){'outer':$i,'rows':i[]})",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 2
+        },
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      {
+        "outer": 99,
+        "rows": [
+          2,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "expr": "a#$i^(v)[i].$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 2
+        },
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "a#$i^(v)[$count($keys($))=2].$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 2
+        },
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      2,
+      1,
+      0
+    ]
+  },
+  {
+    "expr": "a#$i^(v)[(function(){i})()>=1].$i",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 2
+        },
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      2,
+      1
+    ]
+  },
+  {
+    "expr": "a#$i^(v)[0]{'p':i}",
+    "data": {
+      "a": [
+        {
+          "v": 3
+        },
+        {
+          "v": 2
+        },
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      {
+        "p": 2
+      }
+    ]
+  },
+  {
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970-[Ā-ƀ]-01-01",
+      "picture": "[Y]-[[Ā-ƀ]]-[M]-[D]"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970 \\u0131 01 01",
+      "picture": "[Y] \\u0131 [M] [D]"
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970𐐀01-01",
+      "picture": "[Y0001]𐐨[M01]-[D01]"
+    },
+    "items": []
+  },
+  {
+    "expr": "$toMillis(text,picture)",
+    "data": {
+      "text": "1970𐐨01-01",
+      "picture": "[Y0001]𐐨[M01]-[D01]"
+    },
+    "items": [
+      0
+    ]
+  }
+]

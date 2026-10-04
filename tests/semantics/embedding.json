@@ -1,0 +1,589 @@
+[
+  {
+    "expr": "$x + a",
+    "bindings": {
+      "x": 7
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      10
+    ]
+  },
+  {
+    "expr": "($x:=2;$x+a)",
+    "bindings": {
+      "x": 7
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      5
+    ]
+  },
+  {
+    "expr": "($f:=function(){$x};($x:=99;$f()))",
+    "bindings": {
+      "x": 7
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "$eval('$x+1')",
+    "bindings": {
+      "x": 7
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      8
+    ]
+  },
+  {
+    "expr": "($eval('$x:=8');$x)",
+    "bindings": {
+      "x": 7
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      8
+    ]
+  },
+  {
+    "expr": "$x ? $x : 2",
+    "bindings": {
+      "x": 7
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "{\"n\":$x,\"s\":$string($x)}",
+    "bindings": {
+      "x": 7
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      {
+        "n": 7,
+        "s": "7"
+      }
+    ]
+  },
+  {
+    "expr": "$v",
+    "bindings": {
+      "v": []
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$v[]",
+    "bindings": {
+      "v": []
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "[$v,$v]",
+    "bindings": {
+      "v": []
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$count($v)",
+    "bindings": {
+      "v": []
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$sum($v)",
+    "bindings": {
+      "v": []
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$v",
+    "bindings": {
+      "v": [
+        1
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$v[]",
+    "bindings": {
+      "v": [
+        1
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "[$v,$v]",
+    "bindings": {
+      "v": [
+        1
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$count($v)",
+    "bindings": {
+      "v": [
+        1
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$sum($v)",
+    "bindings": {
+      "v": [
+        1
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$v",
+    "bindings": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "$v[]",
+    "bindings": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "[$v,$v]",
+    "bindings": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        1,
+        2,
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "expr": "$count($v)",
+    "bindings": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$sum($v)",
+    "bindings": {
+      "v": [
+        1,
+        2
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$v",
+    "bindings": {
+      "v": null
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$v[]",
+    "bindings": {
+      "v": null
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "[$v,$v]",
+    "bindings": {
+      "v": null
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        null,
+        null
+      ]
+    ]
+  },
+  {
+    "expr": "$count($v)",
+    "bindings": {
+      "v": null
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$sum($v)",
+    "bindings": {
+      "v": null
+    },
+    "data": {
+      "a": 3
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$v",
+    "bindings": {
+      "v": 3
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$v[]",
+    "bindings": {
+      "v": 3
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "[$v,$v]",
+    "bindings": {
+      "v": 3
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      [
+        3,
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "$count($v)",
+    "bindings": {
+      "v": 3
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$sum($v)",
+    "bindings": {
+      "v": 3
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$map($v,function($n){$n+$x})",
+    "bindings": {
+      "v": [
+        1,
+        2,
+        3
+      ],
+      "x": 2
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "expr": "$filter($v,function($n){$n>$x})",
+    "bindings": {
+      "v": [
+        1,
+        2,
+        3
+      ],
+      "x": 2
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$reduce($v,function($a,$b){$a+$b},0)",
+    "bindings": {
+      "v": [
+        1,
+        2,
+        3
+      ],
+      "x": 2
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      6
+    ]
+  },
+  {
+    "expr": "$lookup($v,$key)",
+    "bindings": {
+      "v": {
+        "a": 3,
+        "b": 4
+      },
+      "key": "b"
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$v^(>n).n",
+    "bindings": {
+      "v": [
+        {
+          "n": 2
+        },
+        {
+          "n": 3
+        },
+        {
+          "n": 1
+        }
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      3,
+      2,
+      1
+    ]
+  },
+  {
+    "expr": "$v{k:$sum(n)}",
+    "bindings": {
+      "v": [
+        {
+          "k": "a",
+          "n": 2
+        },
+        {
+          "k": "a",
+          "n": 3
+        },
+        {
+          "k": "b",
+          "n": 1
+        }
+      ]
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      {
+        "a": 5,
+        "b": 1
+      }
+    ]
+  },
+  {
+    "expr": "$sum(1)",
+    "bindings": {
+      "sum": null
+    },
+    "data": {
+      "a": 3
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$sum",
+    "bindings": {
+      "sum": 4
+    },
+    "data": {
+      "a": 3
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$string(1)",
+    "bindings": {
+      "string": 4
+    },
+    "data": {
+      "a": 3
+    },
+    "error": "TypeError"
+  }
+]

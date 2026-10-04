@@ -1,0 +1,24 @@
+{
+  "revision": "dc21541aa3ce1ce88f2562e15bf1bf2ef6727b5f",
+  "source_state": "working tree; engine and benchmark Rust sources unchanged from revision",
+  "measured_at": "2026-10-03T11:55:37Z",
+  "target": "aarch64-apple-darwin",
+  "os": "macOS-26.5.1-arm64-arm-64bit",
+  "cpu": "Apple M4",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "release_profile": {
+    "lto": "thin",
+    "codegen_units": 1
+  },
+  "method": "Two sequential passes in opposite workload order; seven 300 ms samples per workload after 64 warmup evaluations. Complete validation and result consumption; excludes compilation, serialization and I/O.",
+  "binaries": {
+    "normal": {
+      "sha256": "850b1cc042221441d639c4c1bed91323bbaa9814c84c6458327516fd760c86d8",
+      "cargo_command": "cargo bench -p jx --bench throughput --locked --no-run --message-format=json"
+    },
+    "native": {
+      "sha256": "04f7cf78039af95c3246de2808b292b036bba4fbb2b056dea99f2770607a42db",
+      "cargo_command": "cargo bench -p jx --bench throughput --features jit --locked --no-run --message-format=json"
+    }
+  }
+}

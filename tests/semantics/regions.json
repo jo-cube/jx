@@ -1,0 +1,338 @@
+[
+  {
+    "expr": "$map(rows,function($r,$i){$r.a+$r.b+$i})",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        },
+        {
+          "a": 4,
+          "b": 5
+        }
+      ]
+    },
+    "items": [
+      5,
+      10
+    ]
+  },
+  {
+    "expr": "$reduce(rows,function($a,$r){$a+$r.a+$r.b},0)",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        },
+        {
+          "a": 4,
+          "b": 5
+        }
+      ]
+    },
+    "items": [
+      14
+    ]
+  },
+  {
+    "expr": "$sum($map($filter(rows,function($r){$r.a>2 and $r.b>0}),function($v){$v.a*$v.b+$v.a}))",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        },
+        {
+          "a": 4,
+          "b": 5
+        }
+      ]
+    },
+    "items": [
+      24
+    ]
+  },
+  {
+    "expr": "$sum($map($filter(rows,function($r){$r.a>2}),function($v){$v.a*$v.b+$v.a}))",
+    "data": {
+      "rows": [
+        {
+          "a": 1,
+          "b": 3
+        }
+      ]
+    },
+    "items": []
+  },
+  {
+    "expr": "$sum($map($filter(rows,function($r){$r.a>0}),function($v){$v.a*$v.b+$v.a}))",
+    "data": {
+      "rows": [
+        {
+          "a": 1,
+          "b": null
+        },
+        {
+          "a": "bad",
+          "b": 2
+        }
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "$map(rows,function($r){$r.a>0 ? $r.a*$r.a : $r.b+$r.b})",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": null
+        },
+        {
+          "a": 0,
+          "b": 3
+        }
+      ]
+    },
+    "items": [
+      4,
+      6
+    ]
+  },
+  {
+    "expr": "$map(rows,function($r){(($r.a and $r.b) or $r.a) and $r.a})",
+    "data": {
+      "rows": [
+        {
+          "a": true,
+          "b": false
+        },
+        {
+          "a": false,
+          "b": true
+        }
+      ]
+    },
+    "items": [
+      true,
+      false
+    ]
+  },
+  {
+    "expr": "$map(rows,function($r){ {\"v\":$r.a+$r.b,\"s\":($r.a+$r.b)*($r.a+$r.b),\"n\":null} })",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        },
+        {}
+      ]
+    },
+    "items": [
+      {
+        "v": 5,
+        "s": 25,
+        "n": null
+      },
+      {
+        "n": null
+      }
+    ]
+  },
+  {
+    "expr": "$map(rows,function($r)<o:n>{$r.a+$r.b+$r.a})",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        }
+      ]
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "$map(rows,function($r)<n:n>{$r.a+$r.b+$r.a})",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        }
+      ]
+    },
+    "error": "TypeError"
+  },
+  {
+    "expr": "($n:=0;$map(rows,function($r){($n:=$n+1;$r.a+$r.a+$r.a)});$n)",
+    "data": {
+      "rows": [
+        {
+          "a": 2
+        },
+        {
+          "a": 3
+        }
+      ]
+    },
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "function($r){$r.a+$r.a+$r.a}()",
+    "data": {
+      "a": 2
+    },
+    "items": []
+  },
+  {
+    "expr": "function($r,$r){$r.a+$r.b+$r.a}(null,$)",
+    "data": {
+      "a": 2,
+      "b": 3
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "function($r){a+a+$r.b}($)",
+    "data": {
+      "a": 2,
+      "b": 3
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "$sum($map(rows,function($r){$eval(\"$r.a\")+$r.a+$r.a}))",
+    "data": {
+      "rows": [
+        {
+          "a": 2
+        },
+        {
+          "a": 3
+        }
+      ]
+    },
+    "items": [
+      15
+    ]
+  },
+  {
+    "expr": "($f:=function($r){$r.a+$r.a+$r.a};$map(rows,$f))",
+    "data": {
+      "rows": [
+        {
+          "a": 2
+        },
+        {
+          "a": 3
+        }
+      ]
+    },
+    "items": [
+      6,
+      9
+    ]
+  },
+  {
+    "expr": "$map(rows,function($r){$lookup({\"x\":2,\"y\":3},$r.key)*$r.a+$r.a})",
+    "data": {
+      "rows": [
+        {
+          "key": "x",
+          "a": 2
+        },
+        {
+          "key": "y",
+          "a": 3
+        }
+      ]
+    },
+    "items": [
+      6,
+      12
+    ]
+  },
+  {
+    "expr": "rows^(a*a+a+b*b+b).a",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        },
+        {
+          "a": 1,
+          "b": 1
+        }
+      ]
+    },
+    "items": [
+      1,
+      2
+    ]
+  },
+  {
+    "expr": "rows{a&\"\":$sum($.(b*b+b))}",
+    "data": {
+      "rows": [
+        {
+          "a": 1,
+          "b": 2
+        },
+        {
+          "a": 1,
+          "b": 3
+        },
+        {
+          "a": 2,
+          "b": 1
+        }
+      ]
+    },
+    "items": [
+      {
+        "1": 18,
+        "2": 2
+      }
+    ]
+  },
+  {
+    "expr": "{\"total\":$sum($map(rows,function($r){$r.a*$r.b+$r.a}))}",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": 3
+        }
+      ]
+    },
+    "items": [
+      {
+        "total": 8
+      }
+    ]
+  },
+  {
+    "expr": "{\"total\":$sum($map(rows,function($r){$r.a*$r.b+$r.a}))}",
+    "data": {
+      "rows": [
+        {
+          "a": 2,
+          "b": null
+        }
+      ]
+    },
+    "error": "TypeError"
+  }
+]

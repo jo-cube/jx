@@ -1,0 +1,865 @@
+[
+  {
+    "name": "unbound is missing",
+    "expr": "$unknown",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "binding result",
+    "expr": "$x:=3",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "right associative",
+    "expr": "($a:=$b:=5;[$a,$b])",
+    "data": null,
+    "items": [
+      [
+        5,
+        5
+      ]
+    ]
+  },
+  {
+    "name": "sequential blocks",
+    "expr": "(1;2;3;)",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "shadowing",
+    "expr": "($x:=1;[$x,($x:=2;$x),$x])",
+    "data": null,
+    "items": [
+      [
+        1,
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "single group scope",
+    "expr": "($x:=1;($x:=2);$x)",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "missing shadows",
+    "expr": "($x:=1;($x:=absent;$x))",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "null binding",
+    "expr": "($x:=null;[$exists($x),$x])",
+    "data": null,
+    "items": [
+      [
+        true,
+        null
+      ]
+    ]
+  },
+  {
+    "name": "empty array binding",
+    "expr": "($x:=[];[$count($x),[$x]])",
+    "data": null,
+    "items": [
+      [
+        0,
+        []
+      ]
+    ]
+  },
+  {
+    "name": "root within mapping",
+    "expr": "rows.{\"local\":n,\"root\":$$.base}",
+    "data": {
+      "base": 10,
+      "rows": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "local": 1,
+        "root": 10
+      },
+      {
+        "local": 2,
+        "root": 10
+      }
+    ]
+  },
+  {
+    "name": "root in filter",
+    "expr": "rows[n>$$.base].n",
+    "data": {
+      "base": 1,
+      "rows": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "root array",
+    "expr": "$.{\"root\":$$,\"current\":$}",
+    "data": [
+      1,
+      2
+    ],
+    "items": [
+      {
+        "root": [
+          1,
+          2
+        ],
+        "current": 1
+      },
+      {
+        "root": [
+          1,
+          2
+        ],
+        "current": 2
+      }
+    ]
+  },
+  {
+    "name": "root rebinding",
+    "expr": "($$:=2;$$)",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "current is not bound",
+    "expr": "($:=2;$)",
+    "data": 1,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "conditional true",
+    "expr": "true ? 1 : 2",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "conditional false",
+    "expr": "false ? 1 : 2",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "conditional missing",
+    "expr": "absent ? 1",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "conditional branch lazy",
+    "expr": "true ? 1 : null+1",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "conditional nested",
+    "expr": "false ? 0 : true ? 2 : 3",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "conditional array truth",
+    "expr": "[false,1] ? 2 : 3",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "conditional binding precedence",
+    "expr": "($x:=true?2:3;$x)",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "conditional sequence",
+    "expr": "true ? rows.n : absent",
+    "data": {
+      "rows": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    "items": [
+      1,
+      2
+    ]
+  },
+  {
+    "name": "lambda direct",
+    "expr": "function($x){$x*$x}(5)",
+    "data": null,
+    "items": [
+      25
+    ]
+  },
+  {
+    "name": "lambda alias",
+    "expr": "λ($x){$x+1}(2)",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "missing argument",
+    "expr": "function($a,$b){[$a,$b]}(1)",
+    "data": null,
+    "items": [
+      [
+        1
+      ]
+    ]
+  },
+  {
+    "name": "extra argument",
+    "expr": "function($x){$x}(1,2)",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "extra argument errors",
+    "expr": "function($x){$x}(1,null+1)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "parameter shadow",
+    "expr": "($x:=1;$f:=function($x){$x+1};[$f(3),$x])",
+    "data": null,
+    "items": [
+      [
+        4,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "parameter rebinding",
+    "expr": "function($x){($x:=$x+1;$x)}(3)",
+    "data": null,
+    "items": [
+      4
+    ]
+  },
+  {
+    "name": "duplicate parameter last wins",
+    "expr": "function($x,$x){$x}(1,2)",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "lexical scope",
+    "expr": "($x:=2;$f:=function(){$x};($x:=3;$f()))",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "later rebinding",
+    "expr": "($x:=1;$f:=function(){$x};$x:=2;$f())",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "forward binding",
+    "expr": "($f:=function(){$x};$x:=2;$f())",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "escaping closure",
+    "expr": "($f:=($x:=7;function($y){$x+$y});$f(3))",
+    "data": null,
+    "items": [
+      10
+    ]
+  },
+  {
+    "name": "independent closures",
+    "expr": "($make:=function($x){function(){$x}};$a:=$make(1);$b:=$make(2);[$a(),$b(),$a()])",
+    "data": null,
+    "items": [
+      [
+        1,
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "higher order",
+    "expr": "($twice:=function($f){function($x){$f($f($x))}};$f:=$twice(function($x){$x+3});$f(7))",
+    "data": null,
+    "items": [
+      13
+    ]
+  },
+  {
+    "name": "captured current",
+    "expr": "($f:=rows[0].(function(){n});rows[1].$f())",
+    "data": {
+      "rows": [
+        {
+          "n": 2
+        },
+        {
+          "n": 9
+        }
+      ]
+    },
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "captured root",
+    "expr": "($f:=rows[0].(function(){$$.base+n});rows[1].$f())",
+    "data": {
+      "base": 10,
+      "rows": [
+        {
+          "n": 2
+        },
+        {
+          "n": 9
+        }
+      ]
+    },
+    "items": [
+      12
+    ]
+  },
+  {
+    "name": "argument current",
+    "expr": "($f:=function($x){$x};rows.$f(n))",
+    "data": {
+      "rows": [
+        {
+          "n": 2
+        },
+        {
+          "n": 9
+        }
+      ]
+    },
+    "items": [
+      2,
+      9
+    ]
+  },
+  {
+    "name": "argument root array",
+    "expr": "function($x){$x}($)",
+    "data": [
+      1,
+      2
+    ],
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "factorial",
+    "expr": "($f:=function($n){$n<=1?1:$n*$f($n-1)};$f(6))",
+    "data": null,
+    "items": [
+      720
+    ]
+  },
+  {
+    "name": "mutual recursion",
+    "expr": "($even:=function($n){$n=0?true:$odd($n-1)};$odd:=function($n){$n=0?false:$even($n-1)};$even(10))",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "call returned function",
+    "expr": "function($x){function($y){$x+$y}}(2)(3)",
+    "data": null,
+    "items": [
+      5
+    ]
+  },
+  {
+    "name": "function array call",
+    "expr": "([function($x){$x+1}][0])(4)",
+    "data": null,
+    "items": [
+      5
+    ]
+  },
+  {
+    "name": "function postfix call",
+    "expr": "[function($x){$x+1}][0](4)",
+    "data": null,
+    "items": [
+      5
+    ]
+  },
+  {
+    "name": "function object call",
+    "expr": "{\"f\":function($x){$x+1}}.f(4)",
+    "data": null,
+    "items": [
+      5
+    ]
+  },
+  {
+    "name": "function truth",
+    "expr": "function(){1}?1:2",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "name": "function equality",
+    "expr": "($f:=function(){1};[$f=$f,$f=function(){1},$sum=$sum,$sum=$max])",
+    "data": null,
+    "items": [
+      [
+        true,
+        false,
+        true,
+        false
+      ]
+    ]
+  },
+  {
+    "name": "builtin alias",
+    "expr": "($f:=$sum;$f([1,2]))",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "builtin higher order",
+    "expr": "function($f){$f([1,2])}($sum)",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "builtin shadow",
+    "expr": "($sum:=function($x){42};$sum([1,2]))",
+    "data": null,
+    "items": [
+      42
+    ]
+  },
+  {
+    "name": "builtin parameter",
+    "expr": "function($sum){$sum(3)}(function($x){$x+1})",
+    "data": null,
+    "items": [
+      4
+    ]
+  },
+  {
+    "name": "builtin missing shadow",
+    "expr": "($sum:=absent;$sum([1,2]))",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "unknown call",
+    "expr": "$unknown(1)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "scalar call",
+    "expr": "1(2)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "boolean context",
+    "expr": "$boolean()",
+    "data": 1,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "not context",
+    "expr": "$not()",
+    "data": 0,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "aliased builtin context",
+    "expr": "($f:=$not;[0,1].$f())",
+    "data": null,
+    "items": [
+      true,
+      false
+    ]
+  },
+  {
+    "name": "boolean missing",
+    "expr": "$boolean(absent)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "not missing",
+    "expr": "$not(absent)",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "exists missing",
+    "expr": "$exists(absent)",
+    "data": null,
+    "items": [
+      false
+    ]
+  },
+  {
+    "name": "exists null",
+    "expr": "$exists(null)",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "exists function",
+    "expr": "$exists(function(){1})",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "name": "bound sequence twice",
+    "expr": "($x:=rows.n;{\"first\":$x,\"again\":$x,\"sum\":$sum($x)})",
+    "data": {
+      "rows": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "first": [
+          1,
+          2
+        ],
+        "again": [
+          1,
+          2
+        ],
+        "sum": 3
+      }
+    ]
+  },
+  {
+    "name": "bound raw array",
+    "expr": "($x:=rows;$x)",
+    "data": {
+      "rows": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "bound singleton array",
+    "expr": "($x:=rows.n;$x)",
+    "data": {
+      "rows": [
+        {
+          "n": [
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    "items": [
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "bound missing slots",
+    "expr": "($x:=rows.n[true];{\"x\":$x,\"count\":$count($x)})",
+    "data": {
+      "rows": [
+        {},
+        {
+          "n": null
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": [
+          null,
+          null
+        ],
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "evaluate bound predicate once",
+    "expr": "($n:=0;$x:=[1,2,3][$n:=$n+1];[$n,$count($x),$count($x),$n])",
+    "data": null,
+    "items": [
+      [
+        3,
+        0,
+        0,
+        3
+      ]
+    ]
+  },
+  {
+    "name": "negative index no replay",
+    "expr": "($n:=0;$x:=[1,2,3][$n:=$n+1][-1];[$n,$x])",
+    "data": null,
+    "items": [
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "name": "argument evaluates once",
+    "expr": "($n:=0;$f:=function($x){[$x,$x]};$f([1,2,3][$n:=$n+1]);$n)",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "block mapping isolates",
+    "expr": "($n:=0;[1,2,3].($n:=$n+1);$n)",
+    "data": null,
+    "items": [
+      0
+    ]
+  },
+  {
+    "name": "filter later reads",
+    "expr": "($n:=0;[1,2,3][$n:=$n+1][$n=3];$n)",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "left operand before mutation",
+    "expr": "($x:=1;$x+($x:=2))",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "name": "returned sequence retained",
+    "expr": "($f:=function(){rows.n};{\"a\":$f(),\"b\":$f()})",
+    "data": {
+      "rows": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "a": [
+          1,
+          2
+        ],
+        "b": [
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "name": "mixed pipeline",
+    "expr": "($limit:=2;$total:=function($xs){$sum($xs.price)};{\"count\":$count(rows[price>$limit]),\"total\":$total(rows[price>$limit]),\"root\":$$.id})",
+    "data": {
+      "id": 7,
+      "rows": [
+        {
+          "price": 1
+        },
+        {
+          "price": 3
+        },
+        {
+          "price": 4
+        }
+      ]
+    },
+    "items": [
+      {
+        "count": 2,
+        "total": 7,
+        "root": 7
+      }
+    ]
+  },
+  {
+    "name": "argument order",
+    "expr": "($x:=0;function($a,$b){[$a,$b]}($x:=1,$x))",
+    "data": null,
+    "items": [
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "callee before arguments",
+    "expr": "($f:=function($x){1};$g:=function($x){2};$f($f:=$g))",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "binding in chosen branch",
+    "expr": "($x:=0;true ? $x:=1 : $x:=2;$x)",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "earlier block errors",
+    "expr": "(null+1;2)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "name": "captured context returned",
+    "expr": "($f:=function(){$};[1].$f())",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "name": "scoped constructor assignment",
+    "expr": "($x:=0;{($x:=\"a\"):$x})",
+    "data": null,
+    "items": [
+      {
+        "a": 0
+      }
+    ]
+  },
+  {
+    "name": "single member assignment",
+    "expr": "($x:=0;[$x:=1];$x)",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "name": "boolean missing context",
+    "expr": "a[true].$boolean()",
+    "data": null,
+    "items": []
+  },
+  {
+    "name": "not missing context",
+    "expr": "a[true].$not()",
+    "data": null,
+    "items": []
+  }
+]

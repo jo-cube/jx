@@ -1,0 +1,198 @@
+[
+  {
+    "filter": "ascii/shallow",
+    "bytes": 500
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 100
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/call_three",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/lookup_8192_short_raw",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 100
+  },
+  {
+    "filter": "regions/groups",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/nested_map",
+    "bytes": 41828
+  },
+  {
+    "filter": "function/direct",
+    "bytes": 500
+  },
+  {
+    "filter": "function/partial_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "lexical/closure",
+    "bytes": 500
+  },
+  {
+    "filter": "eval/dynamic_closure_map",
+    "bytes": 4055
+  },
+  {
+    "filter": "runtime/transient",
+    "bytes": 50102
+  },
+  {
+    "filter": "runtime/planned",
+    "bytes": 50102
+  },
+  {
+    "filter": "matcher/contains",
+    "bytes": 500
+  },
+  {
+    "filter": "matcher/replace_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "format/date_parse_static",
+    "bytes": 500
+  },
+  {
+    "filter": "format/date_parse_dynamic",
+    "bytes": 500
+  },
+  {
+    "filter": "tuple/ordered",
+    "bytes": 500
+  },
+  {
+    "filter": "tuple/group",
+    "bytes": 6666
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 1024
+  },
+  {
+    "filter": "execution/arithmetic",
+    "bytes": 1048576
+  },
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 500
+  },
+  {
+    "filter": "acquisition/string_callback",
+    "bytes": 10240
+  },
+  {
+    "filter": "function/partial_callback",
+    "bytes": 1024
+  },
+  {
+    "filter": "runtime/partial",
+    "bytes": 455
+  },
+  {
+    "filter": "runtime/partial",
+    "bytes": 6149
+  },
+  {
+    "filter": "runtime/partial",
+    "bytes": 50102
+  },
+  {
+    "filter": "runtime/partial",
+    "bytes": 846231
+  },
+  {
+    "filter": "runtime/dynamic_object",
+    "bytes": 455
+  },
+  {
+    "filter": "runtime/dynamic_object",
+    "bytes": 6149
+  },
+  {
+    "filter": "runtime/dynamic_object",
+    "bytes": 50102
+  },
+  {
+    "filter": "runtime/dynamic_object",
+    "bytes": 846231
+  },
+  {
+    "filter": "runtime/strings",
+    "bytes": 50102
+  },
+  {
+    "filter": "regions/filtered_sum",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/reduce",
+    "bytes": 41828
+  },
+  {
+    "filter": "regions/sort",
+    "bytes": 41828
+  },
+  {
+    "filter": "transform/wide_update",
+    "bytes": 33180
+  },
+  {
+    "filter": "transform/update",
+    "bytes": 500
+  },
+  {
+    "filter": "transform/update",
+    "bytes": 1024
+  },
+  {
+    "filter": "root_regions/string",
+    "bytes": 500
+  },
+  {
+    "filter": "root_regions/constructor",
+    "bytes": 1024
+  },
+  {
+    "filter": "root_regions/sparse_string",
+    "bytes": 190328
+  },
+  {
+    "filter": "root_regions/mapped",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/callback",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/sort",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/group",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/fold",
+    "bytes": 76641
+  },
+  {
+    "filter": "root_regions/dense_fold",
+    "bytes": 76641
+  }
+]

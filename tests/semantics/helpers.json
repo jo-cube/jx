@@ -1,0 +1,967 @@
+[
+  {
+    "expr": "$round(2.5)",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$round(3.5)",
+    "data": null,
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$round(-7.5)",
+    "data": null,
+    "items": [
+      -8
+    ]
+  },
+  {
+    "expr": "$round(-0.5)",
+    "data": null,
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$round(4.525,2)",
+    "data": null,
+    "items": [
+      4.52
+    ]
+  },
+  {
+    "expr": "$round(4.515,2)",
+    "data": null,
+    "items": [
+      4.52
+    ]
+  },
+  {
+    "expr": "$round(12450,-2)",
+    "data": null,
+    "items": [
+      12400
+    ]
+  },
+  {
+    "expr": "$round(6.022e-23,24)",
+    "data": null,
+    "items": [
+      6e-23
+    ]
+  },
+  {
+    "expr": "$round(1.25,1)",
+    "data": null,
+    "items": [
+      1.2
+    ]
+  },
+  {
+    "expr": "$round(1.35,1)",
+    "data": null,
+    "items": [
+      1.4
+    ]
+  },
+  {
+    "expr": "$round(1,0.5)",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$round(0,10001)",
+    "data": null,
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$round(1,-10001)",
+    "data": null,
+    "items": [
+      0
+    ]
+  },
+  {
+    "expr": "$round(1,10001)",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$round()",
+    "data": 3.5,
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$round(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$round(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$round(1,null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$pad('foo',5)",
+    "data": null,
+    "items": [
+      "foo  "
+    ]
+  },
+  {
+    "expr": "$pad('foo',-5,'#')",
+    "data": null,
+    "items": [
+      "##foo"
+    ]
+  },
+  {
+    "expr": "$pad('foo',8,'-+')",
+    "data": null,
+    "items": [
+      "foo-+-+-"
+    ]
+  },
+  {
+    "expr": "$pad('foo',5,'')",
+    "data": null,
+    "items": [
+      "foo  "
+    ]
+  },
+  {
+    "expr": "$pad('a𝄞💩',6,'💩')",
+    "data": null,
+    "items": [
+      "a𝄞💩💩💩💩"
+    ]
+  },
+  {
+    "expr": "$pad('foo',-5.7)",
+    "data": null,
+    "items": [
+      "  foo"
+    ]
+  },
+  {
+    "expr": "$pad('foo',missing)",
+    "data": null,
+    "items": [
+      "foo"
+    ]
+  },
+  {
+    "expr": "$pad('foo',2)",
+    "data": null,
+    "items": [
+      "foo"
+    ]
+  },
+  {
+    "expr": "$pad(5)",
+    "data": "ab",
+    "items": [
+      "ab   "
+    ]
+  },
+  {
+    "expr": "$pad(missing,5)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$pad(null,5)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$pad('x',1000002)",
+    "data": null,
+    "error": "NumericRange",
+    "localOnly": "construction guard"
+  },
+  {
+    "expr": "$sort([3,1,2,1])",
+    "data": null,
+    "items": [
+      [
+        1,
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "$sort([])",
+    "data": null,
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$sort([null])",
+    "data": null,
+    "items": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "expr": "$sort(3)",
+    "data": null,
+    "items": [
+      [
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "$sort(['z','a','😀','￿'])",
+    "data": null,
+    "items": [
+      [
+        "a",
+        "z",
+        "😀",
+        "￿"
+      ]
+    ]
+  },
+  {
+    "expr": "$sort([3,1,2],function($a,$b){$a<$b})",
+    "data": null,
+    "items": [
+      [
+        3,
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$sort([1,2,3],function(){[]})",
+    "data": null,
+    "items": [
+      [
+        3,
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$sort([1,2,3],function(){missing})",
+    "data": null,
+    "items": [
+      [
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "$sort([{\"k\":1,\"id\":\"a\"},{\"k\":0,\"id\":\"b\"},{\"k\":1,\"id\":\"c\"}],function($a,$b){$a.k>$b.k}).id",
+    "data": null,
+    "items": [
+      "b",
+      "a",
+      "c"
+    ]
+  },
+  {
+    "expr": "$sort(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$sort([1,\"2\"])",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$sort([],null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$sort([1,2],function(){$error(\"stop\")})",
+    "data": null,
+    "error": "UserError"
+  },
+  {
+    "expr": "$zip([1,2],[3])",
+    "data": null,
+    "items": [
+      [
+        [
+          1,
+          3
+        ]
+      ]
+    ]
+  },
+  {
+    "expr": "$zip(1,2,3,4)",
+    "data": null,
+    "items": [
+      [
+        [
+          1,
+          2,
+          3,
+          4
+        ]
+      ]
+    ]
+  },
+  {
+    "expr": "$zip([null],[[1,2]])",
+    "data": null,
+    "items": [
+      [
+        [
+          null,
+          [
+            1,
+            2
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "expr": "$zip([1],missing)",
+    "data": null,
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$zip([],[1])",
+    "data": null,
+    "items": [
+      []
+    ]
+  },
+  {
+    "expr": "$zip([1])",
+    "data": null,
+    "items": [
+      [
+        [
+          1
+        ]
+      ]
+    ]
+  },
+  {
+    "expr": "$string($zip([1],function(){1}))",
+    "data": null,
+    "items": [
+      "[[1,\"\"]]"
+    ]
+  },
+  {
+    "expr": "$zip()",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$single([null])",
+    "data": null,
+    "items": [
+      null
+    ]
+  },
+  {
+    "expr": "$single(3)",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "$single([0,1,2],function($v){$v=1})",
+    "data": null,
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$single([0,1,2],function($v,$i,$a){$i=$count($a)-1})",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$single([false,true],$not)",
+    "data": null,
+    "items": [
+      false
+    ]
+  },
+  {
+    "expr": "$single(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$single([])",
+    "data": null,
+    "error": "CardinalityError"
+  },
+  {
+    "expr": "$single([1,2])",
+    "data": null,
+    "error": "CardinalityError"
+  },
+  {
+    "expr": "$single([1],function(){false})",
+    "data": null,
+    "error": "CardinalityError"
+  },
+  {
+    "expr": "$single([1],null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$encodeUrl('https://x/a b?q=é#c')",
+    "data": null,
+    "items": [
+      "https://x/a%20b?q=%C3%A9#c"
+    ]
+  },
+  {
+    "expr": "$encodeUrlComponent('a/b?é😀')",
+    "data": null,
+    "items": [
+      "a%2Fb%3F%C3%A9%F0%9F%98%80"
+    ]
+  },
+  {
+    "expr": "$decodeUrl('%2f%3F%23%20%C3%A9')",
+    "data": null,
+    "items": [
+      "%2f%3F%23 é"
+    ]
+  },
+  {
+    "expr": "$decodeUrlComponent('%2f%3F%23%20%C3%A9')",
+    "data": null,
+    "items": [
+      "/?# é"
+    ]
+  },
+  {
+    "expr": "$base64encode('hello:world')",
+    "data": null,
+    "items": [
+      "aGVsbG86d29ybGQ="
+    ]
+  },
+  {
+    "expr": "$base64encode('é😀')",
+    "data": null,
+    "items": [
+      "6T0A"
+    ]
+  },
+  {
+    "expr": "$base64decode('6T0A')",
+    "data": null,
+    "items": [
+      "é=\u0000"
+    ]
+  },
+  {
+    "expr": "$base64decode(' Z g ! ') ",
+    "data": null,
+    "items": [
+      "f"
+    ]
+  },
+  {
+    "expr": "$base64decode('Zh')",
+    "data": null,
+    "items": [
+      "f"
+    ]
+  },
+  {
+    "expr": "$base64decode('_w')",
+    "data": null,
+    "items": [
+      "ÿ"
+    ]
+  },
+  {
+    "expr": "$base64decode('A')",
+    "data": null,
+    "items": [
+      ""
+    ]
+  },
+  {
+    "expr": "$base64decode('YQ==Yg==')",
+    "data": null,
+    "items": [
+      "a"
+    ]
+  },
+  {
+    "expr": "$encodeUrl('\\ud800')",
+    "data": null,
+    "error": "EncodingError"
+  },
+  {
+    "expr": "$encodeUrlComponent('\\udc00')",
+    "data": null,
+    "error": "EncodingError"
+  },
+  {
+    "expr": "$decodeUrl('%')",
+    "data": null,
+    "error": "EncodingError"
+  },
+  {
+    "expr": "$decodeUrlComponent('%C0%AF')",
+    "data": null,
+    "error": "EncodingError"
+  },
+  {
+    "expr": "$decodeUrlComponent('%ED%A0%80')",
+    "data": null,
+    "error": "EncodingError"
+  },
+  {
+    "expr": "$decodeUrl('%F0%9F')",
+    "data": null,
+    "error": "EncodingError"
+  },
+  {
+    "expr": "$encodeUrl(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$encodeUrl(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$encodeUrlComponent(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$encodeUrlComponent(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$decodeUrl(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$decodeUrl(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$decodeUrlComponent(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$decodeUrlComponent(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$base64encode(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$base64encode(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$base64decode(missing)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$base64decode(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$assert(true)",
+    "data": null,
+    "items": []
+  },
+  {
+    "expr": "$assert(false)",
+    "data": null,
+    "error": "AssertionFailed"
+  },
+  {
+    "expr": "$assert(missing)",
+    "data": null,
+    "error": "AssertionFailed"
+  },
+  {
+    "expr": "$assert(1)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$error()",
+    "data": null,
+    "error": "UserError"
+  },
+  {
+    "expr": "$error(\"a\\n😀\")",
+    "data": null,
+    "error": "UserError"
+  },
+  {
+    "expr": "$error(null)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "/* first */ 1 /* middle */ + 1 /* last */",
+    "data": null,
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$contains('/* x */',/x/)",
+    "data": null,
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "($日本:=3;$日本+Español)",
+    "data": {
+      "Español": 4
+    },
+    "items": [
+      7
+    ]
+  },
+  {
+    "expr": "敷",
+    "data": {
+      "敷": true
+    },
+    "items": [
+      true
+    ]
+  },
+  {
+    "expr": "λfoo",
+    "data": {
+      "λfoo": 1
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "($f:=λ($x){$x+1};$f(2))",
+    "data": null,
+    "items": [
+      3
+    ]
+  },
+  {
+    "expr": "($a$b:=4;$a$b)",
+    "data": null,
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "($x:=3;$$.a+$x)",
+    "data": {
+      "a": 1
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$map($zip(a,b),function($r){{\"label\":$pad($string($r[0]),-3,\"0\"),\"n\":$round($r[1],2)}})",
+    "data": {
+      "a": [
+        1,
+        2
+      ],
+      "b": [
+        4.525,
+        2.345
+      ]
+    },
+    "items": [
+      {
+        "label": "001",
+        "n": 4.52
+      },
+      {
+        "label": "002",
+        "n": 2.34
+      }
+    ]
+  },
+  {
+    "expr": "rows{kind:$round($average(n),1)}",
+    "data": {
+      "rows": [
+        {
+          "kind": "a",
+          "n": 1.25
+        },
+        {
+          "kind": "b",
+          "n": 2.35
+        }
+      ]
+    },
+    "items": [
+      {
+        "a": 1.2,
+        "b": 2.4
+      }
+    ]
+  },
+  {
+    "expr": "unknown(function)",
+    "data": {},
+    "error": "TypeError"
+  },
+  {
+    "expr": "$sort([1/0,0])",
+    "data": null,
+    "error": "NumericRange"
+  },
+  {
+    "expr": "λ",
+    "data": {
+      "λ": 4
+    },
+    "items": [
+      4
+    ]
+  },
+  {
+    "expr": "$base64decode('💩YQ')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": "host-dependent non-Latin1 decoder"
+  },
+  {
+    "expr": "$base64decode('ＡYQ')",
+    "data": null,
+    "error": "UnsupportedExpression",
+    "localOnly": "host-dependent non-Latin1 decoder"
+  },
+  {
+    "expr": "($f:=$pad(?,-3,'0');$map(a,function($n){$f($string($n))}))",
+    "data": {
+      "a": [
+        1,
+        2
+      ]
+    },
+    "items": [
+      "001",
+      "002"
+    ]
+  },
+  {
+    "expr": "$single([1,2],missing)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$sort([1,2],missing)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$single(missing,missing)",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "($f:=$sort(?);$f(a))",
+    "data": {
+      "a": [
+        3,
+        1,
+        2
+      ]
+    },
+    "items": [
+      [
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "expr": "($f:=$single(?);$f(a))",
+    "data": {
+      "a": [
+        1
+      ]
+    },
+    "items": [
+      1
+    ]
+  },
+  {
+    "expr": "$sort([0/0,0])",
+    "data": null,
+    "error": "TypeError"
+  },
+  {
+    "expr": "$sort([1,2,3],function(){[1/0]})",
+    "data": null,
+    "items": [
+      [
+        3,
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "expr": "$sort(['x',1/0])",
+    "data": null,
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$sort([1/0,'x'])",
+    "data": null,
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$sort([0/0,1/0])",
+    "data": null,
+    "error": "NumericRange"
+  },
+  {
+    "expr": "$sort([1/0,0/0])",
+    "data": null,
+    "error": "NumericRange"
+  },
+  {
+    "expr": "a{'x':v}[0]",
+    "data": {
+      "a": [
+        {
+          "v": 1
+        },
+        {
+          "v": 2
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": 1
+      }
+    ]
+  },
+  {
+    "expr": "[1,2,3]{'num':$}[]",
+    "data": null,
+    "items": [
+      {
+        "num": [
+          1,
+          2,
+          3
+        ]
+      }
+    ]
+  },
+  {
+    "expr": "a^(v){'x':v}[0]",
+    "data": {
+      "a": [
+        {
+          "v": 2
+        },
+        {
+          "v": 1
+        }
+      ]
+    },
+    "items": [
+      {
+        "x": 1
+      }
+    ]
+  },
+  {
+    "expr": "$round(2.5)",
+    "data": {},
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$round()",
+    "data": 2.5,
+    "items": [
+      2
+    ]
+  },
+  {
+    "expr": "$round(())",
+    "data": 2.5,
+    "items": []
+  },
+  {
+    "expr": "\fabc",
+    "data": {
+      "\fabc": 1
+    },
+    "items": [
+      1
+    ]
+  }
+]
