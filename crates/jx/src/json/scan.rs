@@ -235,12 +235,24 @@ impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
         Ok(())
     }
 
+    #[inline(always)]
     fn string(&mut self) -> Result<(), ScanError> {
         if VALIDATED {
             self.skip_string();
+            Ok(())
+        } else {
+            self.validate_string()
+        }
+    }
+
+    fn validate_string(&mut self) -> Result<(), ScanError> {
+        self.at += 1;
+        if self.text.len() >= 64
+            && let Some(end) = short_string_end::<false>(&self.text.as_bytes()[self.at..])
+        {
+            self.at += end + 1;
             return Ok(());
         }
-        self.at += 1;
         loop {
             match self.byte() {
                 Some(b'"') => {
@@ -268,7 +280,13 @@ impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
                     }
                 }
                 Some(0..=31) => return Err(self.error("unescaped control byte in string")),
-                Some(_) => self.at += 1,
+                Some(_) => {
+                    self.at += if self.text.len() >= 64 {
+                        string_run::<false>(&self.text.as_bytes()[self.at..])
+                    } else {
+                        1
+                    };
+                }
                 None => return Err(self.error("unterminated JSON string")),
             }
         }
@@ -346,20 +364,72 @@ impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
     }
 }
 
+// Unescaped strings ending in the first word need neither scanning loop.
+#[inline]
+fn short_string_end<const VALIDATED: bool>(bytes: &[u8]) -> Option<usize> {
+    let head = bytes.first_chunk::<8>()?;
+    let at = head
+        .iter()
+        .position(|&byte| byte == b'"' || byte == b'\\' || (!VALIDATED && byte < 32))?;
+    (head[at] == b'"').then_some(at)
+}
+
+// Skip only words containing ordinary string bytes. Scalar search in the first
+// special word preserves exact escape/error positions. Inlining penalizes escapes.
+#[inline(never)]
+fn string_run<const VALIDATED: bool>(bytes: &[u8]) -> usize {
+    const ONES: u64 = 0x0101_0101_0101_0101;
+    const HIGHS: u64 = 0x8080_8080_8080_8080;
+    let has_zero = |word: u64| word.wrapping_sub(ONES) & !word & HIGHS != 0;
+    let mut at = 0;
+    while let Some(chunk) = bytes[at..].first_chunk::<8>() {
+        let word = u64::from_ne_bytes(*chunk);
+        if has_zero(word ^ (ONES * u64::from(b'"')))
+            || has_zero(word ^ (ONES * u64::from(b'\\')))
+            || (!VALIDATED && has_zero(word & 0xe0e0_e0e0_e0e0_e0e0))
+        {
+            break;
+        }
+        at += 8;
+    }
+    at + bytes[at..]
+        .iter()
+        .position(|&byte| byte == b'"' || byte == b'\\' || (!VALIDATED && byte < 32))
+        .unwrap_or(bytes.len() - at)
+}
+
 // The validation and traversal modes share path/demand handling. Only RawJson
 // cursors use VALIDATED: they locate boundaries without rechecking JSON grammar.
 impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
+    #[inline(always)]
     fn skip_string(&mut self) {
         debug_assert!(VALIDATED);
         self.at += 1;
         let bytes = self.text.as_bytes();
-        while bytes[self.at] != b'"' {
-            if bytes[self.at] == b'\\' {
+        if self.text.len() < 64 {
+            while bytes[self.at] != b'"' {
+                if bytes[self.at] == b'\\' {
+                    self.at += 1;
+                }
                 self.at += 1;
             }
             self.at += 1;
+            return;
         }
-        self.at += 1;
+        if let Some(end) = short_string_end::<true>(&bytes[self.at..]) {
+            self.at += end + 1;
+            return;
+        }
+        loop {
+            match bytes[self.at] {
+                b'"' => {
+                    self.at += 1;
+                    return;
+                }
+                b'\\' => self.at += 2,
+                _ => self.at += string_run::<true>(&bytes[self.at..]),
+            }
+        }
     }
 
     fn raw_value(&mut self) -> RawJson<'a> {
