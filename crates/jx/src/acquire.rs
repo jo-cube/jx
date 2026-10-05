@@ -100,6 +100,27 @@ impl Region {
     ) -> Result<Evaluation<'e, 'i>, Error> {
         let mut captures = Captures::default();
         let raw = crate::json::capture(input, &self.demand, &mut captures)?;
+        self.captured(root, raw, &captures)
+    }
+
+    #[inline(never)]
+    pub(crate) fn evaluate_validated<'e, 'i>(
+        &'e self,
+        root: &'e Node,
+        input: crate::RawJson<'i>,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        let mut captures = Captures::default();
+        input.capture(&self.demand, &mut captures);
+        self.captured(root, input, &captures)
+    }
+
+    #[inline]
+    fn captured<'e, 'i>(
+        &'e self,
+        root: &'e Node,
+        raw: crate::RawJson<'i>,
+        captures: &Captures<'i>,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
         let context = Context {
             value: Value::Raw(raw),
             wrapped: true,
@@ -114,7 +135,7 @@ impl Region {
         } else {
             Acquired {
                 region: self,
-                captures: &captures,
+                captures,
             }
             .run(root, &context)?
         };

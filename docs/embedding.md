@@ -60,6 +60,12 @@ fn main() -> Result<(), jx::Error> {
 }
 ```
 
+When several expressions share one input, call `jx::validate` once and pass its
+`RawJson` to `Expression::evaluate_validated`. `evaluate_validated_with` accepts
+`Option<RawJson>` and the same `EvaluationOptions` as `evaluate_with`. These methods
+skip validation, retain specialized capture/execution, and preserve result borrowing
+and lazy failures. For a single expression, `evaluate` can fuse validation with capture.
+
 Ordinary results may borrow both the input and compiled expression. Do not recycle the
 input buffer while results remain borrowed. New containers own their structure but can
 retain borrowed leaves. `OwnedValue` is independent of both lifetimes and `Send + Sync`;

@@ -230,6 +230,20 @@ impl Path {
         Ok(self.selection(selection))
     }
 
+    pub(crate) fn select_validated<'e, 'i>(
+        &'e self,
+        input: json::RawJson<'i>,
+    ) -> PathEvaluation<'e, 'i> {
+        if self.fields.is_empty() {
+            return self.selection(Selection::Value(Value::Raw(input)));
+        }
+        self.selection(match input.select(&self.fields) {
+            json::Selection::Missing => Selection::Missing,
+            json::Selection::Value(value) => Selection::Value(Value::Raw(value)),
+            json::Selection::Array(value, fields) => Selection::Array(Value::Raw(value), fields),
+        })
+    }
+
     pub(crate) fn select_context<'e, 'i>(
         &'e self,
         context: &Context<'e, 'i>,

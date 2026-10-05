@@ -187,7 +187,15 @@ pub(crate) fn path_conversion<'e, 'i>(
     input: &'i [u8],
     offset: usize,
 ) -> Result<Evaluation<'e, 'i>, Error> {
-    let selected = path.select(input)?;
+    selected_conversion(builtin, path.select(input)?, offset)
+}
+
+#[inline]
+pub(crate) fn selected_conversion<'e, 'i>(
+    builtin: crate::builtin::Builtin,
+    selected: crate::path::PathEvaluation<'e, 'i>,
+    offset: usize,
+) -> Result<Evaluation<'e, 'i>, Error> {
     let value = crate::retain::collect(|emit| {
         selected.try_for_each(|value| {
             emit(value);
@@ -215,7 +223,31 @@ pub(crate) fn scalar<'e, 'i>(
             result: results(plan.evaluate(input)?),
         });
     }
-    let value = Value::Raw(crate::validate(input)?);
+    scalar_value(node, crate::validate(input)?, random, runtime)
+}
+
+pub(crate) fn scalar_validated<'e, 'i>(
+    node: &'e Node,
+    input: crate::RawJson<'i>,
+    random: Option<&crate::Random>,
+    runtime: bool,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    if let Kind::Plan(plan) = &node.kind {
+        return Ok(Evaluation {
+            result: results(plan.evaluate_validated(input)?),
+        });
+    }
+    scalar_value(node, input, random, runtime)
+}
+
+#[inline]
+fn scalar_value<'e, 'i>(
+    node: &'e Node,
+    input: crate::RawJson<'i>,
+    random: Option<&crate::Random>,
+    runtime: bool,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    let value = Value::Raw(input);
     let scope =
         runtime.then(|| crate::runtime::Scope::with_random(value.clone(), node.clock, random));
     let context = Context {

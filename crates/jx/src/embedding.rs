@@ -77,6 +77,37 @@ impl<'e, 'i> Expression {
             .map(crate::validate)
             .transpose()?
             .map_or(Value::Undefined, Value::Raw);
+        self.evaluate_options(root, options)
+    }
+
+    /// Evaluate already validated input with the settings of [`Self::evaluate_with`].
+    /// `None` denotes absent input; `Some` retains its borrowed encoding without
+    /// validating it again. Empty options preserve specialized execution paths.
+    pub fn evaluate_validated_with(
+        &'e self,
+        input: Option<crate::RawJson<'i>>,
+        options: EvaluationOptions<'e, 'i>,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        if options.bindings.is_empty()
+            && options.focus.is_none()
+            && options.limits.is_none()
+            && options.cancellation.is_none()
+            && options.deadline.is_none()
+            && let Some(input) = input
+        {
+            return match options.random.as_ref() {
+                Some(random) => self.evaluate_validated_with_random(input, random),
+                None => self.evaluate_validated(input),
+            };
+        }
+        self.evaluate_options(input.map_or(Value::Undefined, Value::Raw), options)
+    }
+
+    fn evaluate_options(
+        &'e self,
+        root: Value<'e, 'i>,
+        options: EvaluationOptions<'e, 'i>,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
         for (name, value) in &options.bindings {
             if !self.bindings.iter().any(|n| n.as_ref() == *name) {
                 return Err(Error::new(
