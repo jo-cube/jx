@@ -9,7 +9,7 @@ pub(super) struct Object {
 #[derive(Clone, Debug)]
 enum Member {
     Slot(u8),
-    Constant(Data),
+    Constant(crate::constant::Storage),
 }
 impl Object {
     pub(super) fn run<'e, 'i>(&'e self, input: &Context<'e, 'i>) -> Option<Operand<'e, 'i>> {
@@ -61,7 +61,7 @@ pub(super) fn lower_parameters(node: &Node, parameters: &[Box<str>]) -> Option<O
         .map(|(key, value)| {
             let key = match &key.kind {
                 Kind::String(s) => s.as_ref(),
-                Kind::Prepared(p) => match &p.data {
+                Kind::Prepared(p) => match &*p.data {
                     Data::String(s) => s.as_ref(),
                     _ => return None,
                 },
@@ -84,8 +84,8 @@ pub(super) fn lower_parameters(node: &Node, parameters: &[Box<str>]) -> Option<O
     for (key, value) in pairs {
         let member = match &value.kind {
             Kind::Prepared(p) => Member::Constant(p.data.clone()),
-            Kind::Null => Member::Constant(Data::Null),
-            Kind::String(s) => Member::Constant(Data::String(s.clone())),
+            Kind::Null => Member::Constant(Data::Null.into()),
+            Kind::String(s) => Member::Constant(Data::String(s.clone()).into()),
             _ if lower::computed(value) => Member::Slot(lower.node(value)?),
             _ => return None,
         };

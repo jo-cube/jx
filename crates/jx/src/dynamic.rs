@@ -122,7 +122,7 @@ impl Call {
                 source(&Value::StringLiteral(crate::RawJson(s)), n.offset)
                     .and_then(|s| crate::parse::dynamic(&s)),
             ),
-            Kind::Prepared(p) if matches!(p.data, crate::constant::Data::String(_)) => {
+            Kind::Prepared(p) if matches!(*p.data, crate::constant::Data::String(_)) => {
                 Some(source(&p.data.value(), n.offset).and_then(|s| crate::parse::dynamic(&s)))
             }
             _ => None,

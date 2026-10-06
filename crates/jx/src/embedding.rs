@@ -2,7 +2,8 @@ use crate::{Error, ErrorKind, Evaluation, Expression, Value, evaluate, sequence:
 use std::{rc::Rc, sync::Arc};
 
 /// Declare external lexical names before compilation so specialization respects
-/// possible builtin shadowing. Per-record values arrive through evaluate_with.
+/// possible builtin shadowing. Supply per-record values through evaluate_with or
+/// immutable owned data through constant_binding.
 ///
 /// ```
 /// let expression = jx::CompileOptions::default().binding("scale")
@@ -22,14 +23,41 @@ use std::{rc::Rc, sync::Arc};
 #[derive(Clone, Debug, Default)]
 pub struct CompileOptions {
     bindings: Vec<Box<str>>,
+    constants: Vec<(Box<str>, Arc<crate::OwnedValue>)>,
 }
 impl CompileOptions {
     pub fn binding(mut self, name: impl Into<Box<str>>) -> Self {
         self.bindings.push(name.into());
         self
     }
+    /// Bind immutable owned data before optimization. Compile options and
+    /// expressions share its storage; pass an Arc to share across options.
+    /// Evaluation needs no binding setup.
+    /// Local assignments/parameters may shadow the name. Runtime injection cannot
+    /// replace it, and a name cannot also be declared with [`Self::binding`].
+    ///
+    /// ```
+    /// let config = jx::OwnedValue::from_json(br#"{"scale":3}"#)?;
+    /// let expression = jx::CompileOptions::default()
+    ///     .constant_binding("config", config)
+    ///     .compile("price * $config.scale")?;
+    /// assert_eq!(expression.evaluate(br#"{"price":2}"#)?.single()?.unwrap().as_number(), Some(6.0));
+    /// # Ok::<(), jx::Error>(())
+    /// ```
+    pub fn constant_binding(
+        mut self,
+        name: impl Into<Box<str>>,
+        value: impl Into<Arc<crate::OwnedValue>>,
+    ) -> Self {
+        self.constants.push((name.into(), value.into()));
+        self
+    }
     pub fn compile(&self, source: &str) -> Result<Expression, Error> {
-        for name in &self.bindings {
+        for name in self
+            .bindings
+            .iter()
+            .chain(self.constants.iter().map(|(name, _)| name))
+        {
             if name.is_empty() || name.starts_with('$') || name.starts_with('\0') {
                 return Err(Error::new(
                     ErrorKind::BindingError,
@@ -39,7 +67,20 @@ impl CompileOptions {
                 .compilation());
             }
         }
-        crate::parse::configured(source, &self.bindings).map_err(Error::compilation)
+        for (index, (name, _)) in self.constants.iter().enumerate() {
+            if self.bindings.contains(name)
+                || self.constants[..index].iter().any(|(n, _)| n == name)
+            {
+                return Err(Error::new(
+                    ErrorKind::BindingError,
+                    0,
+                    "constant binding names must be unique and cannot also be runtime bindings",
+                )
+                .compilation());
+            }
+        }
+        crate::parse::configured(source, &self.bindings, &self.constants)
+            .map_err(Error::compilation)
     }
 }
 
@@ -103,7 +144,7 @@ impl<'e, 'i> Expression {
         self.evaluate_options(input.map_or(Value::Undefined, Value::Raw), options)
     }
 
-    fn evaluate_options(
+    pub(crate) fn evaluate_options(
         &'e self,
         root: Value<'e, 'i>,
         options: EvaluationOptions<'e, 'i>,
@@ -129,6 +170,7 @@ impl<'e, 'i> Expression {
                 self.root.clock,
                 options.random.as_ref(),
             )
+            .constants(&self.constants)
             .configure(options.bindings, control.clone());
             scope.checkpoint(self.root.offset)?;
             Some(scope)

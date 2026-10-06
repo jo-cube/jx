@@ -91,7 +91,11 @@ detach JSON-compatible results; JSONata functions remain evaluation-local.
 
 ## Runtime boundaries
 
-External names are declared before optimization. Host functions are always effectful,
+External names are declared before optimization. Immutable owned external data is shared
+by compile options/expressions and substituted only when scope analysis proves the name
+unchanged. Static navigation folds through ordinary semantics; dynamic evaluation,
+rebinding and identity-sensitive transforms retain a borrowed immutable environment
+beneath evaluation-local frames. Host functions are always effectful,
 synchronous and excluded from pure plans/replay. Randomness initializes lazily;
 timestamps are fixed within an evaluation. Optional controls live in evaluation state,
 not on each value. Diagnostics carry phase, source, offset and nested causes.

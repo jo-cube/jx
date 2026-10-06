@@ -2,7 +2,7 @@ mod bridge;
 mod region;
 use crate::{Error, ErrorKind, Value, expression::Node, sequence::Context};
 use std::{
-    cell::{Cell, RefCell},
+    cell::{Cell, OnceCell, RefCell},
     rc::Rc,
 };
 
@@ -85,6 +85,8 @@ pub(crate) struct Runtime<'e, 'i> {
     timestamp: Cell<i64>,
     random: RefCell<Option<crate::Random>>,
     control: Option<crate::controls::Control>,
+    constants: &'e crate::constant::Bindings,
+    constant_identity: OnceCell<Rc<()>>,
 }
 #[derive(Clone, Debug)]
 pub(crate) struct Scope<'e, 'i> {
@@ -106,6 +108,12 @@ impl<'e, 'i> Scope<'e, 'i> {
             frames[0].bindings = Bindings::Owned(values);
         }
         runtime.control = control;
+        self
+    }
+    pub fn constants(mut self, constants: &'e crate::constant::Bindings) -> Self {
+        Rc::get_mut(&mut self.runtime)
+            .expect("configure before sharing the scope")
+            .constants = constants;
         self
     }
     pub fn controlled(&self) -> bool {
@@ -153,6 +161,8 @@ impl<'e, 'i> Scope<'e, 'i> {
                 timestamp: Cell::new(if clock { timestamp() } else { i64::MIN }),
                 random: RefCell::new(random.cloned()),
                 control: None,
+                constants: &[],
+                constant_identity: OnceCell::new(),
             }),
             frame: 0,
         }
@@ -182,7 +192,19 @@ impl<'e, 'i> Scope<'e, 'i> {
             }
             at = frame.parent;
         }
-        None
+        let (_, value) = self
+            .runtime
+            .constants
+            .iter()
+            .find(|(n, _)| n.as_ref() == name)?;
+        Some(match &value.data {
+            crate::constant::Data::Array(..) | crate::constant::Data::Object { .. } => {
+                value.data.with_identity(Some(
+                    self.runtime.constant_identity.get_or_init(|| Rc::new(())),
+                ))
+            }
+            _ => value.as_value(),
+        })
     }
     pub fn bind(&self, name: &'e str, value: Value<'e, 'i>) {
         let mut frames = self.runtime.frames.borrow_mut();

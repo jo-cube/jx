@@ -22,7 +22,7 @@ pub(crate) enum Kind {
     Plan(Box<crate::plan::Plan>),
     Path(Path),
     Prepared(Box<crate::constant::Prepared>),
-    StaticLookup(Box<crate::constant::Data>, Box<Node>),
+    StaticLookup(Box<crate::constant::Storage>, Box<Node>),
     BuiltinReference(crate::builtin::Builtin),
     Route(Box<[Step]>, bool), // A leading array constructor fixes the input focus.
     Tuples(Box<[Step]>, bool),

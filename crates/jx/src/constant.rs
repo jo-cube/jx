@@ -6,6 +6,7 @@ use crate::{
 use std::{
     io::{self, Write},
     rc::Rc,
+    sync::Arc,
 };
 
 #[derive(Clone, Debug)]
@@ -32,8 +33,32 @@ pub struct ConstantValue<'e> {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Prepared {
-    pub data: Data,
+    pub data: Storage,
     pub array_syntax: bool,
+}
+
+pub(crate) type Bindings = [(Box<str>, Arc<crate::OwnedValue>)];
+
+// Ordinary compiled constants keep their existing owned representation. External
+// snapshots are shared across references and expressions without copying data.
+#[derive(Clone, Debug)]
+pub(crate) enum Storage {
+    Owned(Data),
+    Shared(Arc<crate::OwnedValue>),
+}
+impl From<Data> for Storage {
+    fn from(data: Data) -> Self {
+        Self::Owned(data)
+    }
+}
+impl std::ops::Deref for Storage {
+    type Target = Data;
+    fn deref(&self) -> &Data {
+        match self {
+            Self::Owned(data) => data,
+            Self::Shared(value) => &value.data,
+        }
+    }
 }
 
 impl Data {
@@ -76,7 +101,7 @@ impl Data {
     pub(crate) fn value<'e, 'i>(&'e self) -> Value<'e, 'i> {
         self.with_identity(None)
     }
-    fn with_identity<'e, 'i>(&'e self, identity: Option<&Rc<()>>) -> Value<'e, 'i> {
+    pub(crate) fn with_identity<'e, 'i>(&'e self, identity: Option<&Rc<()>>) -> Value<'e, 'i> {
         match self {
             Self::Missing => Value::Undefined,
             Self::Null => Value::Null,

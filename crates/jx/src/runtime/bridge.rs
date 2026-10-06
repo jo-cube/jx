@@ -49,6 +49,20 @@ impl<'e, 'i> Scope<'e, 'i> {
     where
         'e: 'd,
     {
+        let mut retain = crate::dynamic::Retention::default();
+        for (_, value) in self.runtime.constants {
+            if matches!(
+                value.data,
+                crate::constant::Data::Array(..) | crate::constant::Data::Object { .. }
+            ) {
+                self.runtime.constant_identity.get_or_init(|| Rc::new(()));
+            }
+            retain.seed(
+                &value
+                    .data
+                    .with_identity(self.runtime.constant_identity.get()),
+            );
+        }
         let frames: Vec<Frame<'d, 'i>> = self.runtime.frames.borrow().clone();
         let fork = Scope {
             runtime: Rc::new(Runtime {
@@ -59,6 +73,8 @@ impl<'e, 'i> Scope<'e, 'i> {
                 timestamp: Cell::new(self.runtime.timestamp.get()),
                 random: RefCell::new(self.runtime.random.borrow().clone()),
                 control: self.runtime.control.clone(),
+                constants: self.runtime.constants,
+                constant_identity: self.runtime.constant_identity.clone(),
             }),
             frame: self.frame,
         };
@@ -73,7 +89,6 @@ impl<'e, 'i> Scope<'e, 'i> {
             .writes
             .set(self.runtime.writes.get().min(fork.runtime.writes.get()));
         let mut original = self.runtime.frames.borrow_mut();
-        let mut retain = crate::dynamic::Retention::default();
         for frame in original.iter() {
             for (_, value) in frame.bindings.entries() {
                 retain.seed(value);

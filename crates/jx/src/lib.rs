@@ -71,6 +71,7 @@ pub struct Expression {
     acquisition: Option<json::Demand>,
     region: Option<Box<acquire::Region>>,
     bindings: Box<[Box<str>]>,
+    constants: Box<constant::Bindings>,
 }
 
 pub fn compile(source: &str) -> Result<Expression, Error> {
@@ -103,9 +104,20 @@ impl Expression {
         input: &'i [u8],
         random: &Random,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        if let Some(demand) = &self.acquisition {
+        if let Some(demand) = &self.acquisition
+            && self.constants.is_empty()
+        {
             function::acquire::evaluate(&self.root, demand, input, Some(random))
         } else if self.runtime {
+            if !self.constants.is_empty() {
+                return self.evaluate_options(
+                    Value::Raw(validate(input)?),
+                    EvaluationOptions {
+                        random: Some(random.clone()),
+                        ..Default::default()
+                    },
+                );
+            }
             evaluate::scalar(&self.root, input, Some(random), true)
         } else {
             self.evaluate(input)
@@ -141,13 +153,18 @@ impl Expression {
                 };
                 evaluate::path_conversion(*builtin, path, input, self.root.offset)
             }
-            expression::Kind::Call(..) if self.acquisition.is_some() => {
+            expression::Kind::Call(..)
+                if self.acquisition.is_some() && self.constants.is_empty() =>
+            {
                 function::acquire::evaluate(
                     &self.root,
                     self.acquisition.as_ref().unwrap(),
                     input,
                     None,
                 )
+            }
+            _ if self.runtime && !self.constants.is_empty() => {
+                self.evaluate_options(Value::Raw(validate(input)?), EvaluationOptions::default())
             }
             _ => evaluate::scalar(&self.root, input, None, self.runtime),
         }
@@ -199,13 +216,18 @@ impl Expression {
                     self.root.offset,
                 )
             }
-            expression::Kind::Call(..) if self.acquisition.is_some() => {
+            expression::Kind::Call(..)
+                if self.acquisition.is_some() && self.constants.is_empty() =>
+            {
                 function::acquire::evaluate_validated(
                     &self.root,
                     self.acquisition.as_ref().unwrap(),
                     input,
                     None,
                 )
+            }
+            _ if self.runtime && !self.constants.is_empty() => {
+                self.evaluate_options(Value::Raw(input), EvaluationOptions::default())
             }
             _ => evaluate::scalar_validated(&self.root, input, None, self.runtime),
         }
@@ -216,9 +238,20 @@ impl Expression {
         input: RawJson<'i>,
         random: &Random,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        if let Some(demand) = &self.acquisition {
+        if let Some(demand) = &self.acquisition
+            && self.constants.is_empty()
+        {
             function::acquire::evaluate_validated(&self.root, demand, input, Some(random))
         } else if self.runtime {
+            if !self.constants.is_empty() {
+                return self.evaluate_options(
+                    Value::Raw(input),
+                    EvaluationOptions {
+                        random: Some(random.clone()),
+                        ..Default::default()
+                    },
+                );
+            }
             evaluate::scalar_validated(&self.root, input, Some(random), true)
         } else {
             self.evaluate_validated(input)

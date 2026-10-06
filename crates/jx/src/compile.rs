@@ -37,6 +37,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
         });
     }
     specialize(node);
+    constant |= constant_route(node);
     constant &= eligible(node);
     if constant
         && !matches!(
@@ -59,7 +60,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
             && let Some(data) = Data::capture(&value.unwrap_or(Value::Undefined))
         {
             let prepared = Prepared {
-                data,
+                data: data.into(),
                 array_syntax: node.is_array_constructor(),
             };
             node.kind = Kind::Prepared(Box::new(prepared));
@@ -71,7 +72,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
     }
     if let Kind::Builtin(Builtin::Lookup, args) = &mut node.kind
         && args.len() == 2
-        && matches!(&args[0].kind,Kind::Prepared(p) if matches!(p.data,Data::Object {..}))
+        && matches!(&args[0].kind,Kind::Prepared(p) if matches!(*p.data,Data::Object {..}))
     {
         let mut args = std::mem::take(args).into_vec();
         let key = args.pop().unwrap();
@@ -100,10 +101,27 @@ fn eligible(node: &Node) -> bool {
         | Kind::Negate(_)
         | Kind::Binary(..)
         | Kind::Conditional(..) => true,
+        Kind::Route(..) => constant_route(node),
         Kind::Builtin(builtin, args) => builtin.constant(args),
         Kind::Formatted(call) => call.constant(),
         _ => false,
     }
+}
+
+// A bound variable is an absolute path head even in unwrapped array contexts.
+// Fold only its relative static navigation, using ordinary sequence semantics.
+fn constant_route(node: &Node) -> bool {
+    let Kind::Route(steps, _) = &node.kind else {
+        return false;
+    };
+    steps.first().is_some_and(|head| {
+        matches!(&head.node.kind, Kind::Prepared(p) if matches!(p.data, crate::constant::Storage::Shared(_)))
+    }) && steps
+        .iter()
+        .all(|step| step.bindings.is_none() && step.predicates.is_empty())
+        && steps[1..]
+            .iter()
+            .all(|step| matches!(&step.node.kind, Kind::Path(path) if !path.rooted))
 }
 
 fn specialize(node: &mut Node) {

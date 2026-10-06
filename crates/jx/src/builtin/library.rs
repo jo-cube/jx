@@ -108,7 +108,7 @@ impl Library {
         match self {
             Self::ToMillis => args.get(1).is_some_and(|n| match &n.kind {
                 Kind::Missing => false,
-                Kind::Prepared(p) => !matches!(p.data, crate::constant::Data::Missing),
+                Kind::Prepared(p) => !matches!(*p.data, crate::constant::Data::Missing),
                 _ => true,
             }),
             _ => self.uses_clock(),
@@ -317,7 +317,7 @@ impl Library {
         ) && args.first().is_some_and(|n| match &n.kind {
             Kind::Number(_) | Kind::Missing => true,
             Kind::Prepared(p) => matches!(
-                p.data,
+                *p.data,
                 crate::constant::Data::Number(_) | crate::constant::Data::Missing
             ),
             _ => false,

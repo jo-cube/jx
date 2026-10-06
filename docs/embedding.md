@@ -116,6 +116,15 @@ fn main() -> Result<(), jx::Error> {
 }
 ```
 
+Fixed JSON-compatible data can be bound before compilation with
+`CompileOptions::constant_binding(name, owned_value)`. It accepts an `OwnedValue` or
+`Arc<OwnedValue>`; reuse the Arc or compile options across expressions to share storage.
+No per-record binding injection is needed. Static reads fold into existing constants,
+lookups and plans where safe. Local assignments/parameters still shadow the name;
+`$eval` inherits the constant environment. Rebinding and dynamic semantics conservatively
+retain ordinary lexical evaluation. A constant name cannot also be declared for runtime
+binding or overridden through `EvaluationOptions`.
+
 `Value::from_json` supplies validated borrowed input; `from_string`, `from_array` and
 `from_object` construct owned structure. Names/values need only live through evaluation.
 

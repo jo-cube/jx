@@ -32,7 +32,7 @@ enum Execution {
 struct Program {
     instructions: Box<[Instruction]>,
     paths: Box<[Path]>,
-    lookups: Box<[(Box<Data>, Path)]>,
+    lookups: Box<[(Box<crate::constant::Storage>, Path)]>,
     result: u8,
     capture: Demand,
     inputs: Box<[Option<u8>]>,
