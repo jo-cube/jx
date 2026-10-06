@@ -52,6 +52,8 @@ mod root_regions;
 mod runtime;
 #[path = "workloads/scalars.rs"]
 mod scalars;
+#[path = "workloads/shared_input.rs"]
+mod shared_input;
 #[path = "workloads/string_storage.rs"]
 mod string_storage;
 #[path = "workloads/structure.rs"]
@@ -300,6 +302,10 @@ fn main() {
         native::run(smoke);
         return;
     }
+    if std::env::var_os("JX_BENCH_SHARED_ONLY").is_some() {
+        shared_input::run(smoke);
+        return;
+    }
     if std::env::var_os("JX_BENCH_EMBEDDING_ONLY").is_some() {
         embedding::run(smoke);
         return;
@@ -365,6 +371,7 @@ fn main() {
     string_storage::run(smoke);
     runtime::run(smoke);
     embedding::run(smoke);
+    shared_input::run(smoke);
     compatibility::run(smoke);
     root_regions::run(smoke);
 }
