@@ -12,82 +12,84 @@ pub(crate) struct Region {
     demand: Demand,
     paths: Box<[Path]>,
 }
+pub(crate) fn paths(node: &Node, minimum_loads: usize) -> Option<Box<[Path]>> {
+    let mut paths = Vec::new();
+    let mut loads = 0;
+    fn collect(node: &Node, paths: &mut Vec<Path>, loads: &mut usize) -> Option<()> {
+        if node.effects || node.clock || node.tail_call {
+            return None;
+        }
+        match &node.kind {
+            Kind::Path(path) if !path.fields.is_empty() && !path.rooted => {
+                *loads += 1;
+                if !paths.iter().any(|p| p.fields == path.fields) {
+                    if paths.len() == crate::json::CAPTURE_SLOTS {
+                        return None;
+                    }
+                    paths.push(path.clone());
+                }
+            }
+            Kind::Plan(plan) if plan.scalar() => collect(&plan.source, paths, loads)?,
+            Kind::Group(n) | Kind::Negate(n) => collect(n, paths, loads)?,
+            Kind::Binary(op, a, b) if !matches!(op, Op::Chain | Op::Default | Op::Coalesce) => {
+                collect(a, paths, loads)?;
+                collect(b, paths, loads)?;
+            }
+            Kind::Conditional(test, yes, no) => {
+                collect(test, paths, loads)?;
+                collect(yes, paths, loads)?;
+                if let Some(no) = no {
+                    collect(no, paths, loads)?;
+                }
+            }
+            Kind::Builtin(builtin, args) if builtin.is_conversion() && !args.is_empty() => {
+                for arg in args {
+                    collect(arg, paths, loads)?;
+                }
+            }
+            Kind::Array(items, _) => {
+                for item in items {
+                    collect(item, paths, loads)?;
+                }
+            }
+            Kind::Object(pairs) => {
+                for (key, value) in pairs {
+                    if !matches!(&key.kind, Kind::String(_) | Kind::Prepared(_)) {
+                        return None;
+                    }
+                    collect(value, paths, loads)?;
+                }
+            }
+            Kind::StaticLookup(_, key) => collect(key, paths, loads)?,
+            Kind::Number(_)
+            | Kind::Boolean(_)
+            | Kind::Null
+            | Kind::String(_)
+            | Kind::Missing
+            | Kind::Prepared(_) => {}
+            _ => return None,
+        }
+        Some(())
+    }
+    collect(node, &mut paths, &mut loads)?;
+    (loads >= minimum_loads).then(|| paths.into_boxed_slice())
+}
+
 impl Region {
     pub(crate) fn prepare(node: &Node) -> Option<Box<Self>> {
         let mut region = Self {
             demand: Demand::default(),
             paths: Box::new([]),
         };
-        let mut paths = Vec::new();
-        let mut loads = 0;
-        fn collect(node: &Node, paths: &mut Vec<Path>, loads: &mut usize) -> Option<()> {
-            if node.effects || node.clock || node.tail_call {
-                return None;
-            }
-            match &node.kind {
-                Kind::Path(path) if !path.fields.is_empty() && !path.rooted => {
-                    *loads += 1;
-                    if !paths.iter().any(|p| p.fields == path.fields) {
-                        if paths.len() == crate::json::CAPTURE_SLOTS {
-                            return None;
-                        }
-                        paths.push(path.clone());
-                    }
-                }
-                Kind::Plan(plan) if plan.scalar() => collect(&plan.source, paths, loads)?,
-                Kind::Group(n) | Kind::Negate(n) => collect(n, paths, loads)?,
-                Kind::Binary(op, a, b) if !matches!(op, Op::Chain | Op::Default | Op::Coalesce) => {
-                    collect(a, paths, loads)?;
-                    collect(b, paths, loads)?;
-                }
-                Kind::Conditional(test, yes, no) => {
-                    collect(test, paths, loads)?;
-                    collect(yes, paths, loads)?;
-                    if let Some(no) = no {
-                        collect(no, paths, loads)?;
-                    }
-                }
-                Kind::Builtin(builtin, args) if builtin.is_conversion() && !args.is_empty() => {
-                    for arg in args {
-                        collect(arg, paths, loads)?;
-                    }
-                }
-                Kind::Array(items, _) => {
-                    for item in items {
-                        collect(item, paths, loads)?;
-                    }
-                }
-                Kind::Object(pairs) => {
-                    for (key, value) in pairs {
-                        if !matches!(&key.kind, Kind::String(_) | Kind::Prepared(_)) {
-                            return None;
-                        }
-                        collect(value, paths, loads)?;
-                    }
-                }
-                Kind::StaticLookup(_, key) => collect(key, paths, loads)?,
-                Kind::Number(_)
-                | Kind::Boolean(_)
-                | Kind::Null
-                | Kind::String(_)
-                | Kind::Missing
-                | Kind::Prepared(_) => {}
-                _ => return None,
-            }
-            Some(())
-        }
         // Plans already acquire their own inputs; simple paths/calls stay lightweight.
         if matches!(node.kind, Kind::Plan(_)) {
             return None;
         }
-        collect(node, &mut paths, &mut loads)?;
-        if loads < 3 {
-            return None;
-        }
+        let paths = paths(node, 3)?;
         for (slot, path) in paths.iter().enumerate() {
             region.demand.insert(&path.fields, slot);
         }
-        region.paths = paths.into_boxed_slice();
+        region.paths = paths;
         Some(Box::new(region))
     }
 
@@ -134,7 +136,7 @@ impl Region {
             root.run(&context)?
         } else {
             Acquired {
-                region: self,
+                paths: &self.paths,
                 captures,
             }
             .run(root, &context)?
@@ -144,10 +146,27 @@ impl Region {
         })
     }
 }
+pub(crate) fn evaluate_captured<'e, 'i>(
+    root: &'e Node,
+    raw: crate::RawJson<'i>,
+    paths: &[Path],
+    captures: &Captures<'i>,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    let context = Context {
+        value: Value::Raw(raw),
+        wrapped: true,
+        scope: None,
+    };
+    let result = Acquired { paths, captures }.run(root, &context)?;
+    Ok(Evaluation {
+        result: crate::evaluate::results(result),
+    })
+}
+
 // Supported nodes keep the same focus on non-array roots; constructor grouping
 // therefore receives one original context. Captures never enter returned values.
 struct Acquired<'a, 'i> {
-    region: &'a Region,
+    paths: &'a [Path],
     captures: &'a Captures<'i>,
 }
 impl<'i> Acquired<'_, 'i> {
@@ -230,7 +249,6 @@ impl<'i> Acquired<'_, 'i> {
     }
     fn path<'e>(&self, path: &Path) -> Operand<'e, 'i> {
         let slot = self
-            .region
             .paths
             .iter()
             .position(|p| p.fields == path.fields)

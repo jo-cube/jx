@@ -66,6 +66,16 @@ When several expressions share one input, call `jx::validate` once and pass its
 skip validation, retain specialized capture/execution, and preserve result borrowing
 and lazy failures. For a single expression, `evaluate` can fuse validation with capture.
 
+For repeated static paths, `InputPlan::new(&expressions)` unions bounded demands from
+independently compiled expressions. `plan.prepare(bytes)` validates and captures in
+one traversal; `prepare_validated(raw)` captures without validating again. The returned
+`PreparedInput` evaluates expressions by their original index, in any order, with
+`evaluate(index)` or `evaluate_with(index, options)`. Results do not borrow the capture
+frame; `as_raw()` exposes the validated root without copying it. Unsupported
+expressions, excess demands and intermediate arrays use ordinary
+validated evaluation. Bindings, focus, randomness and controls retain their existing
+per-expression execution. Preparation never runs expressions or effects.
+
 Ordinary results may borrow both the input and compiled expression. Do not recycle the
 input buffer while results remain borrowed. New containers own their structure but can
 retain borrowed leaves. `OwnedValue` is independent of both lifetimes and `Send + Sync`;

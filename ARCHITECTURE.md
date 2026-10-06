@@ -34,9 +34,13 @@ Repeated planned loads, pure call arguments and bounded pure root regions reuse 
 captures. Root string/conversion and fixed constructor regions use one stack capture
 frame, sharing scalar/constructor operations with tree execution and existing numeric
 plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
-arrays fall back before region execution. Runtime contexts and values carry no capture
-metadata. Nested demanded objects can share a scan; arrays and dynamic navigation
-use ordinary traversal.
+arrays fall back before region execution. An explicit `InputPlan` can union the same
+bounded pure root demands across compiled expressions. Its borrowed `PreparedInput`
+contains only validated spans; each evaluation runs independently, and deferred demands
+fall back per expression. Existing expression
+entry points keep their own acquisition fast paths. Runtime contexts and values carry
+no capture metadata. Nested demanded objects can share a scan; arrays and dynamic
+navigation use ordinary traversal.
 Traversal of validated spans locates token boundaries without repeating grammar
 validation. The validator and traversal cursor share path/demand handling; only the
 validator accepts unchecked input. There is no universal input index or per-record cache.
