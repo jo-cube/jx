@@ -15,6 +15,8 @@ mod compiler;
 mod composition;
 #[path = "workloads/consolidation.rs"]
 mod consolidation;
+#[path = "workloads/constant_bindings.rs"]
+mod constant_bindings;
 #[path = "workloads/constructors.rs"]
 mod constructors;
 #[path = "workloads/demands.rs"]
@@ -302,6 +304,10 @@ fn main() {
         native::run(smoke);
         return;
     }
+    if std::env::var_os("JX_BENCH_CONSTANT_ONLY").is_some() {
+        constant_bindings::run(smoke);
+        return;
+    }
     if std::env::var_os("JX_BENCH_SHARED_ONLY").is_some() {
         shared_input::run(smoke);
         return;
@@ -372,6 +378,7 @@ fn main() {
     runtime::run(smoke);
     embedding::run(smoke);
     shared_input::run(smoke);
+    constant_bindings::run(smoke);
     compatibility::run(smoke);
     root_regions::run(smoke);
 }
