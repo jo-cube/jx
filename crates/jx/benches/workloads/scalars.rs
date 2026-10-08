@@ -60,6 +60,23 @@ pub(super) fn run(smoke: bool) {
                 0,
             );
         }
+        for (name, source, expected) in [
+            ("concat_two", "name & '-' & name", "\"Ada-Ada\""),
+            (
+                "concat_three",
+                "name & '-' & name & '-' & name",
+                "\"Ada-Ada-Ada\"",
+            ),
+        ] {
+            workload(
+                &format!("scalar/{name}"),
+                source,
+                input.as_bytes(),
+                expected.as_bytes(),
+                smoke,
+                2,
+            );
+        }
         let expression = jx::compile("a * b + 1").unwrap();
         let mut output = Vec::with_capacity(32);
         measure("scalar/write", input.len(), smoke, || {

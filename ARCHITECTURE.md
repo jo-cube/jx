@@ -69,7 +69,10 @@ boundary still.
 Values can be raw borrowed JSON, expression-owned constants, primitive scalars,
 encoded strings, constructed containers or functions. Constructed containers own
 member lists and share immutable structure; their leaves can still borrow input.
-Decoded unescaped strings borrow, while escape decoding may allocate. JSONata string
+Decoded unescaped strings borrow, while escape decoding may allocate. Bounded
+left-associated concatenation retains converted components on the stack and constructs
+one exactly sized owned string, preserving each operator's evaluation/conversion order.
+JSONata string
 conversion is separate from token-preserving JSON output.
 
 Missing, null, arrays and result sequences are distinct. Navigation applies JSONata's

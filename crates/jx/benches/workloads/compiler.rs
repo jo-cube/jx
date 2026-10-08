@@ -249,6 +249,50 @@ pub(super) fn run(smoke: bool) {
                 },
             );
         }
+        let options = jx::CompileOptions::default().constant_binding(
+            "config",
+            jx::OwnedValue::from_json(br#"{"map":{"Ada-Ada":7,"Ada-Ada-Ada":8}}"#).unwrap(),
+        );
+        for (name, source, expected, limit) in [
+            ("two", "$lookup($config.map,name&'-'&name)", 7., 2),
+            (
+                "three",
+                "$lookup($config.map,name&'-'&name&'-'&name)",
+                8.,
+                2,
+            ),
+            (
+                "fallback",
+                "$lookup($config.map,name&'-'&name) ?? $lookup($config.map,missing)",
+                7.,
+                4,
+            ),
+        ] {
+            let expression = options.compile(source).unwrap();
+            let plan = jx::InputPlan::new([&expression]);
+            let base = r#"{"name":"Ada","padding":""}"#;
+            let record = base.replace(
+                "\"padding\":\"\"",
+                &format!("\"padding\":\"{}\"", "x".repeat(size - base.len())),
+            );
+            measure_allocations(
+                &format!("compiler/prepared_concat_{name}"),
+                record.len(),
+                smoke,
+                Some(limit),
+                || {
+                    let value = plan
+                        .prepare(black_box(record.as_bytes()))
+                        .unwrap()
+                        .evaluate(0)
+                        .unwrap()
+                        .single()
+                        .unwrap()
+                        .unwrap();
+                    assert_eq!(value.as_number(), Some(expected));
+                },
+            );
+        }
         // Purpose-written control for this fixed ASCII object layout. It still
         // validates the complete record and parses both demanded numeric fields.
         measure_allocations("rust/repeated_fields", input.len(), smoke, Some(0), || {

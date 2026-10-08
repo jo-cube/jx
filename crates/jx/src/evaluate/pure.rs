@@ -53,8 +53,52 @@ pub(crate) fn concat<'e, 'i>(
     offset: usize,
     materialize: impl Fn(&'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
 ) -> Result<Value<'e, 'i>, Error> {
-    // Complete both operands before conversion; neither may be replayed.
-    let left = materialize(left)?;
-    let right = materialize(right)?;
-    crate::convert::concat(left, right, offset)
+    if !matches!(left.kind, Kind::Binary(Op::Concat, ..)) {
+        // Complete both operands before conversion; neither may be replayed.
+        return crate::convert::concat(materialize(left)?, materialize(right)?, offset);
+    }
+    // Retain a bounded left spine without creating its intermediate strings.
+    // Each operator still converts both operands after its right side completes,
+    // and before any later operand runs. Grouped/right branches stay independent.
+    let mut rights = [None; 7];
+    rights[0] = Some((right, offset));
+    let mut count = 1;
+    let mut first = left;
+    while count < rights.len() {
+        let Kind::Binary(Op::Concat, left, right) = &first.kind else {
+            break;
+        };
+        rights[count] = Some((right.as_ref(), first.offset));
+        count += 1;
+        first = left;
+    }
+    let mut first = materialize(first)?;
+    let mut parts: [Option<Value<'e, 'i>>; 8] = std::array::from_fn(|_| None);
+    for (index, &(node, offset)) in rights[..count].iter().rev().flatten().enumerate() {
+        let right = materialize(node)?;
+        if index == 0 {
+            parts[0] = crate::convert::string(first.take(), false, offset)?;
+        }
+        parts[index + 1] = crate::convert::string(right, false, offset)?;
+    }
+    let nonempty = parts
+        .iter()
+        .filter_map(|v| v.as_ref())
+        .filter(|v| !v.string_body().unwrap().is_empty())
+        .count();
+    if nonempty < 2 {
+        // Empty/missing operands must not detach the remaining borrowed value.
+        let value = if nonempty == 0 {
+            parts.into_iter().flatten().next_back()
+        } else {
+            parts
+                .into_iter()
+                .flatten()
+                .find(|v| !v.string_body().unwrap().is_empty())
+        };
+        return Ok(value.unwrap_or(Value::StringLiteral(RawJson(r#""""#))));
+    }
+    Ok(Value::String(crate::OwnedString::concat(
+        parts.iter().flatten().map(|v| v.string_body().unwrap()),
+    )))
 }
