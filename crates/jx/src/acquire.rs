@@ -31,7 +31,7 @@ pub(crate) fn paths(node: &Node, minimum_loads: usize) -> Option<Box<[Path]>> {
             }
             Kind::Plan(plan) if plan.scalar() => collect(&plan.source, paths, loads)?,
             Kind::Group(n) | Kind::Negate(n) => collect(n, paths, loads)?,
-            Kind::Binary(op, a, b) if !matches!(op, Op::Chain | Op::Default | Op::Coalesce) => {
+            Kind::Binary(op, a, b) if !matches!(op, Op::Chain) => {
                 collect(a, paths, loads)?;
                 collect(b, paths, loads)?;
             }
@@ -42,7 +42,10 @@ pub(crate) fn paths(node: &Node, minimum_loads: usize) -> Option<Box<[Path]>> {
                     collect(no, paths, loads)?;
                 }
             }
-            Kind::Builtin(builtin, args) if builtin.is_conversion() && !args.is_empty() => {
+            Kind::Builtin(builtin, args)
+                if (builtin.is_conversion() || *builtin == crate::builtin::Builtin::Exists)
+                    && !args.is_empty() =>
+            {
                 for arg in args {
                     collect(arg, paths, loads)?;
                 }
@@ -208,6 +211,9 @@ impl<'i> Acquired<'_, 'i> {
                 pure::conditional(test, yes, no.as_deref(), node.offset, |n| {
                     self.run(n, context)
                 })
+            }
+            Kind::Binary(op @ (Op::Default | Op::Coalesce), test, no) => {
+                pure::fallback(op, test, no, node.offset, |n| self.run(n, context))
             }
             Kind::Binary(Op::Concat, left, right) => {
                 pure::concat(left, right, node.offset, |n| self.materialize(n, context))

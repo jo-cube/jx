@@ -213,6 +213,42 @@ pub(super) fn run(smoke: bool) {
             0,
             smoke,
         );
+        let expression = jx::compile(&format!(
+            "$lookup({0},key) ?? $lookup({0},fallback)",
+            serde_json::to_string(&table).unwrap(),
+        ))
+        .unwrap();
+        let plan = jx::InputPlan::new([&expression]);
+        for (name, key, fallback, expected) in [
+            ("first", "k00127", "absent", Some(127.)),
+            ("second", "absent", "k00127", Some(127.)),
+            ("missing", "absent", "absent", None),
+        ] {
+            let base = format!(r#"{{"key":"{key}","fallback":"{fallback}","padding":""}}"#);
+            let record = base.replace(
+                "\"padding\":\"\"",
+                &format!(
+                    "\"padding\":\"{}\"",
+                    "x".repeat(size.saturating_sub(base.len()))
+                ),
+            );
+            measure_allocations(
+                &format!("compiler/prepared_fallback_{name}"),
+                record.len(),
+                smoke,
+                Some(0),
+                || {
+                    let value = plan
+                        .prepare(black_box(record.as_bytes()))
+                        .unwrap()
+                        .evaluate(0)
+                        .unwrap()
+                        .single()
+                        .unwrap();
+                    assert_eq!(value.and_then(|v| v.as_number()), expected);
+                },
+            );
+        }
         // Purpose-written control for this fixed ASCII object layout. It still
         // validates the complete record and parses both demanded numeric fields.
         measure_allocations("rust/repeated_fields", input.len(), smoke, Some(0), || {

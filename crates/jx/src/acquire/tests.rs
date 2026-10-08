@@ -40,6 +40,10 @@ fn acquisition_preserves_values_cardinality_and_exact_errors() {
         "a.x&$string(b.x)&a.x",
         "{'s':a&b,'compare':a=b,'in':a in b,'order':a<b}",
         "a&($lookup({'x':1},b))&a",
+        "(a ?? b)&a",
+        "(a ?: b)&a",
+        "$exists(a) ? (a ?? b) : (b ?? a)",
+        "a.x ?? (b.x ?? a.x)",
     ] {
         let expression = crate::compile(source).unwrap();
         assert!(expression.region.is_some(), "{source}");
@@ -190,4 +194,34 @@ fn captured_numeric_subplans_keep_native_and_tree_guards() {
             "{input}"
         );
     }
+}
+
+#[test]
+fn pure_missing_and_fallback_demands_are_bounded_static_paths() {
+    for source in [
+        "a ?? b",
+        "a ?: b",
+        "$exists(a) ? a : b",
+        "$lookup({'x':1},a&'-'&b) ?? $lookup({'x':1},c)",
+        "flag ? (a ?? b) : (b ?? c)",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        assert!(paths(&expression.root, 1).is_some(), "{source}");
+    }
+    for source in [
+        "a ?? $random()",
+        "a ?? $now()",
+        "a ?? $error('untaken')",
+        "a ?? $eval(b)",
+        "($exists:=function($v){false}; a ?? b)",
+        "flag ? (a ?? b) : $lowercase(c)",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        assert!(paths(&expression.root, 1).is_none(), "{source}");
+    }
+    let source = (0..33)
+        .map(|i| format!("field{i}"))
+        .collect::<Vec<_>>()
+        .join(" ?? ");
+    assert!(paths(&crate::compile(&source).unwrap().root, 1).is_none());
 }

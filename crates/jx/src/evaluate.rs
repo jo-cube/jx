@@ -489,22 +489,7 @@ impl Node {
             Kind::String(value) => Value::StringLiteral(RawJson(value)),
             Kind::Negate(child) => return pure::negate(child.run(input)?, self.offset),
             Kind::Binary(op @ (Op::Default | Op::Coalesce), test, no) => {
-                return if test.run(input)?.truth(self.offset)? {
-                    // Coalescing stores its left expression once, as the argument
-                    // of the shadowable $exists call. Both fallbacks re-evaluate
-                    // the selected branch without duplicating the compiled tree.
-                    let yes = if matches!(op, Op::Coalesce) {
-                        match &test.kind {
-                            Kind::Call(_, args) | Kind::Builtin(_, args) => &args[0],
-                            _ => unreachable!("coalescing test is an exists call"),
-                        }
-                    } else {
-                        test
-                    };
-                    yes.run(input)
-                } else {
-                    no.run(input)
-                };
+                return pure::fallback(op, test, no, self.offset, |n| n.run(input));
             }
             Kind::Binary(op, lhs, rhs) => {
                 return operators::binary(op, lhs, rhs, self.offset, |n| n.run(input));

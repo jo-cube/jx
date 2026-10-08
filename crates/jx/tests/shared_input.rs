@@ -32,6 +32,12 @@ fn shared_paths_preserve_values_cardinality_and_exact_errors() {
         "a ? b : a.x",
         "a and b",
         "a or b",
+        "a ?? b",
+        "$number(a) ?? $number(b)",
+        "a ?: b",
+        "$exists(a) ? a : b",
+        "a.x ?? b.x",
+        "a ?? (b ?? a.x)",
         "{'a':a,'x':a.x,'b':b}",
         "[a,b,a.x]",
         "a&':'&$string(b)&':'&a",
@@ -377,6 +383,148 @@ fn shared_numeric_plans_preserve_native_execution_and_guard_fallback() {
             assert_eq!(
                 outcome(prepared.evaluate(index)),
                 outcome(expression.evaluate(input.as_bytes()))
+            );
+        }
+    }
+}
+
+#[test]
+fn immutable_lookup_fallbacks_preserve_missing_and_lazy_errors() {
+    let options = jx::CompileOptions::default().constant_binding(
+        "config",
+        jx::OwnedValue::from_json(br#"{"map":{"acme-prod":7,"backup":8}}"#).unwrap(),
+    );
+    let expressions = [
+        "$lookup($config.map,key) ?? $lookup($config.map,fallback)",
+        "$lookup($config.map,a&'-'&b) ?? $lookup($config.map,fallback)",
+        "flag ? ($lookup($config.map,key) ?? $lookup($config.map,fallback)) : 9",
+        "$lookup($config.map,key) ?? $number(fallback)",
+        "$lookup($config.map,key) ?? $error('untaken')",
+        "$number(key) ?? $error('fallback')",
+    ]
+    .map(|source| options.compile(source).unwrap());
+    let plan = InputPlan::new(&expressions);
+    for (input, expected) in [
+        (
+            br#"{"key":"acme-prod","a":"acme","b":"prod","fallback":"invalid","flag":true}"#
+                .as_slice(),
+            Some(7.),
+        ),
+        (
+            br#"{"key":"missing","a":"missing","b":"prod","fallback":"backup","flag":true}"#,
+            Some(8.),
+        ),
+        (
+            br#"{"key":"missing","a":"missing","b":"prod","fallback":"absent","flag":true}"#,
+            None,
+        ),
+    ] {
+        let prepared = plan.prepare(input).unwrap();
+        for index in 0..3 {
+            assert_eq!(
+                prepared
+                    .evaluate(index)
+                    .unwrap()
+                    .single()
+                    .unwrap()
+                    .and_then(|v| v.as_number()),
+                expected
+            );
+        }
+        for (index, expression) in expressions.iter().enumerate() {
+            assert_eq!(
+                outcome(prepared.evaluate(index)),
+                outcome(expression.evaluate(input))
+            );
+        }
+    }
+    let input = br#"{"key":"acme-prod","fallback":"invalid","flag":false}"#;
+    let prepared = plan.prepare(input).unwrap();
+    assert_eq!(
+        prepared
+            .evaluate(2)
+            .unwrap()
+            .single()
+            .unwrap()
+            .unwrap()
+            .as_number(),
+        Some(9.)
+    );
+    for index in [3, 4] {
+        assert_eq!(
+            prepared
+                .evaluate(index)
+                .unwrap()
+                .single()
+                .unwrap()
+                .unwrap()
+                .as_number(),
+            Some(7.)
+        );
+    }
+    assert_eq!(
+        outcome(prepared.evaluate(5)).unwrap_err().kind,
+        jx::ErrorKind::TypeError
+    );
+}
+
+#[test]
+fn missing_fallbacks_keep_primary_reexecution_effect_order_and_exists_shadowing() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let count = calls.clone();
+    let next = jx::HostFunction::new(0, move |_, _| {
+        Ok(Some(Value::Number(
+            count.fetch_add(1, Ordering::SeqCst) as f64
+        )))
+    })
+    .value();
+    let expressions = [
+        jx::CompileOptions::default()
+            .binding("next")
+            .compile("$next() ?? $error('untaken')")
+            .unwrap(),
+        jx::compile("($exists:=function($v){false}; a ?? b)").unwrap(),
+        jx::compile("($exists:=function($v){true}; missing ?? b)").unwrap(),
+        jx::compile("($x:=a ?? b; $x)").unwrap(),
+        jx::compile("$x ?? b").unwrap(),
+        jx::compile("a ?? b").unwrap(),
+    ];
+    let plan = InputPlan::new(&expressions);
+    let prepared = plan.prepare(br#"{"a":1,"b":2}"#).unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    for expected in [1., 3.] {
+        let options = EvaluationOptions {
+            bindings: vec![("next", next.clone())],
+            ..Default::default()
+        };
+        assert_eq!(
+            prepared
+                .evaluate_with(0, options)
+                .unwrap()
+                .single()
+                .unwrap()
+                .unwrap()
+                .as_number(),
+            Some(expected)
+        );
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 4);
+    for _ in 0..2 {
+        for (index, expected) in [
+            (1, Some(2.)),
+            (2, None),
+            (3, Some(1.)),
+            (4, Some(2.)),
+            (5, Some(1.)),
+        ] {
+            assert_eq!(
+                prepared
+                    .evaluate(index)
+                    .unwrap()
+                    .single()
+                    .unwrap()
+                    .and_then(|v| v.as_number()),
+                expected
             );
         }
     }

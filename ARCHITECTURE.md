@@ -31,9 +31,10 @@ into unselected branches or bypass input validation.
 Every input byte is validated, including undemanded fields and untaken branches.
 Compact demand metadata captures required raw spans during validation where possible.
 Repeated planned loads, pure call arguments and bounded pure root regions reuse those
-captures. Root string/conversion and fixed constructor regions use one stack capture
-frame, sharing scalar/constructor operations with tree execution and existing numeric
-plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
+captures. Pure missing tests and fallback branches can share input selection without
+evaluating untaken branches or caching expression results. Root string/conversion and
+fixed constructor regions use one stack capture frame, sharing scalar/constructor
+operations with tree execution and existing numeric plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
 arrays fall back before region execution. An explicit `InputPlan` can union the same
 bounded pure root demands across compiled expressions. Its borrowed `PreparedInput`
 contains only validated spans; each evaluation runs independently, and deferred demands
