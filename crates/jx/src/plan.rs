@@ -32,7 +32,7 @@ enum Execution {
 struct Program {
     instructions: Box<[Instruction]>,
     paths: Box<[Path]>,
-    lookups: Box<[(Box<Data>, Path)]>,
+    lookups: Box<[(Box<crate::constant::Storage>, Path)]>,
     result: u8,
     capture: Demand,
     inputs: Box<[Option<u8>]>,
@@ -245,13 +245,35 @@ impl Plan {
         &'e self,
         input: &'i [u8],
     ) -> Result<Operand<'e, 'i>, crate::Error> {
-        let demand = match &self.execution {
+        let mut captured = Captures::default();
+        let raw = crate::json::capture(input, self.demand(), &mut captured)?;
+        self.evaluate_captured(raw, &captured)
+    }
+
+    pub(crate) fn evaluate_validated<'e, 'i>(
+        &'e self,
+        input: crate::RawJson<'i>,
+    ) -> Result<Operand<'e, 'i>, crate::Error> {
+        let mut captured = Captures::default();
+        input.capture(self.demand(), &mut captured);
+        self.evaluate_captured(input, &captured)
+    }
+
+    #[inline]
+    fn demand(&self) -> &Demand {
+        match &self.execution {
             Execution::Scalar(p) => &p.capture,
             Execution::Object(o) => &o.program.capture,
             Execution::Fold(p) => &p.demand,
-        };
-        let mut captured = Captures::default();
-        let raw = crate::json::capture(input, demand, &mut captured)?;
+        }
+    }
+
+    #[inline]
+    fn evaluate_captured<'e, 'i>(
+        &'e self,
+        raw: crate::RawJson<'i>,
+        captured: &Captures<'i>,
+    ) -> Result<Operand<'e, 'i>, crate::Error> {
         let context = Context {
             value: Value::Raw(raw),
             wrapped: true,
@@ -259,10 +281,10 @@ impl Plan {
         };
         let result = match &self.execution {
             Execution::Scalar(p) => p
-                .execute(&context, Some(&captured), |s| s[usize::from(p.result)])
+                .execute(&context, Some(captured), |s| s[usize::from(p.result)])
                 .map(Cell::operand),
             Execution::Object(o) if raw.as_bytes()[0] != b'[' => {
-                o.run_captured(&context, Some(&captured))
+                o.run_captured(&context, Some(captured))
             }
             Execution::Object(_) => None,
             Execution::Fold(p) => p.run_captured(captured.get(0)),

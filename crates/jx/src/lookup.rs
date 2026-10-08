@@ -118,7 +118,16 @@ pub(crate) fn select<'e, 'i>(
     offset: usize,
 ) -> Result<crate::Evaluation<'e, 'i>, Error> {
     // Reuse validating path capture: no second record scan or lexical context.
-    let key = match path.select(input)?.operand()? {
+    selected(data, path.select(input)?, offset)
+}
+
+#[inline]
+pub(crate) fn selected<'e, 'i>(
+    data: &'e crate::constant::Data,
+    selected: crate::path::PathEvaluation<'e, 'i>,
+    offset: usize,
+) -> Result<crate::Evaluation<'e, 'i>, Error> {
+    let key = match selected.operand()? {
         Operand::Missing => None,
         Operand::One(value) => Some(value),
         Operand::Many(_) => return Err(type_error(offset)),

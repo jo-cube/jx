@@ -177,13 +177,15 @@ impl OwnedString {
         json.push('"');
         Self { json: json.into() }
     }
-    // Both bodies are valid JSON string encodings. Joining them preserves UTF-16
+    // Bodies are valid JSON string encodings. Joining them preserves UTF-16
     // units, including a surrogate pair spanning the operand boundary.
-    pub(crate) fn concat(left: &str, right: &str) -> Self {
-        let mut json = String::with_capacity(left.len() + right.len() + 2);
+    pub(crate) fn concat<'a>(bodies: impl Iterator<Item = &'a str> + Clone) -> Self {
+        let size = bodies.clone().map(str::len).sum::<usize>();
+        let mut json = String::with_capacity(size + 2);
         json.push('"');
-        json.push_str(left);
-        json.push_str(right);
+        for body in bodies {
+            json.push_str(body);
+        }
         json.push('"');
         Self { json: json.into() }
     }
@@ -233,7 +235,7 @@ mod tests {
         for len in [0, 1, 20, 60, 61, 62, 63, 64, 128] {
             for tail in ["abc", "é😀", r"\ud800\udc00", r"\n\\"] {
                 let left = "x".repeat(len);
-                let value = OwnedString::concat(&left, tail);
+                let value = OwnedString::concat([left.as_str(), tail].into_iter());
                 let expected = format!("\"{left}{tail}\"");
                 assert_eq!(value.json.as_ref(), expected);
                 crate::validate(value.json.as_bytes()).unwrap();

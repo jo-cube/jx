@@ -31,12 +31,17 @@ into unselected branches or bypass input validation.
 Every input byte is validated, including undemanded fields and untaken branches.
 Compact demand metadata captures required raw spans during validation where possible.
 Repeated planned loads, pure call arguments and bounded pure root regions reuse those
-captures. Root string/conversion and fixed constructor regions use one stack capture
-frame, sharing scalar/constructor operations with tree execution and existing numeric
-plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
-arrays fall back before region execution. Runtime contexts and values carry no capture
-metadata. Nested demanded objects can share a scan; arrays and dynamic navigation
-use ordinary traversal.
+captures. Pure missing tests and fallback branches can share input selection without
+evaluating untaken branches or caching expression results. Root string/conversion and
+fixed constructor regions use one stack capture frame, sharing scalar/constructor
+operations with tree execution and existing numeric plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
+arrays fall back before region execution. An explicit `InputPlan` can union the same
+bounded pure root demands across compiled expressions. Its borrowed `PreparedInput`
+contains only validated spans; each evaluation runs independently, and deferred demands
+fall back per expression. Existing expression
+entry points keep their own acquisition fast paths. Runtime contexts and values carry
+no capture metadata. Nested demanded objects can share a scan; arrays and dynamic
+navigation use ordinary traversal.
 Traversal of validated spans locates token boundaries without repeating grammar
 validation. The validator and traversal cursor share path/demand handling; only the
 validator accepts unchecked input. There is no universal input index or per-record cache.
@@ -64,7 +69,10 @@ boundary still.
 Values can be raw borrowed JSON, expression-owned constants, primitive scalars,
 encoded strings, constructed containers or functions. Constructed containers own
 member lists and share immutable structure; their leaves can still borrow input.
-Decoded unescaped strings borrow, while escape decoding may allocate. JSONata string
+Decoded unescaped strings borrow, while escape decoding may allocate. Bounded
+left-associated concatenation retains converted components on the stack and constructs
+one exactly sized owned string, preserving each operator's evaluation/conversion order.
+JSONata string
 conversion is separate from token-preserving JSON output.
 
 Missing, null, arrays and result sequences are distinct. Navigation applies JSONata's
@@ -87,7 +95,11 @@ detach JSON-compatible results; JSONata functions remain evaluation-local.
 
 ## Runtime boundaries
 
-External names are declared before optimization. Host functions are always effectful,
+External names are declared before optimization. Immutable owned external data is shared
+by compile options/expressions and substituted only when scope analysis proves the name
+unchanged. Static navigation folds through ordinary semantics; dynamic evaluation,
+rebinding and identity-sensitive transforms retain a borrowed immutable environment
+beneath evaluation-local frames. Host functions are always effectful,
 synchronous and excluded from pure plans/replay. Randomness initializes lazily;
 timestamps are fixed within an evaluation. Optional controls live in evaluation state,
 not on each value. Diagnostics carry phase, source, offset and nested causes.

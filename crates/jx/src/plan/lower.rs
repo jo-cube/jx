@@ -5,7 +5,7 @@ pub(super) struct Lower {
     pub(super) instructions: Vec<Instruction>,
     paths: Vec<Path>,
     loaded: Vec<(u8, u8)>,
-    lookups: Vec<(Box<Data>, Path)>,
+    lookups: Vec<(Box<crate::constant::Storage>, Path)>,
     pub(super) operations: usize,
     parameters: Vec<Box<str>>,
     path_sources: Vec<Option<u8>>,
@@ -208,7 +208,7 @@ impl Lower {
             Kind::Boolean(b) => Instruction::Boolean(*b),
             Kind::Number(n) => Instruction::Number(*n),
             Kind::Missing => Instruction::Missing,
-            Kind::Prepared(p) => match p.data {
+            Kind::Prepared(p) => match *p.data {
                 Data::Number(n) => Instruction::Number(n),
                 Data::Boolean(b) => Instruction::Boolean(b),
                 Data::Missing => Instruction::Missing,

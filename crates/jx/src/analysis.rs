@@ -6,11 +6,13 @@ use std::collections::HashSet;
 
 // Resolve only builtins that cannot be rebound anywhere in this expression.
 // Conservative across scopes: compile cost is cheap, observable rebinding is not.
+// Return whether unresolved reads/dynamic code need the constant environment.
 pub(crate) fn prepare(
     root: &mut Node,
     dynamic: bool,
     external: &[Box<str>],
-) -> Result<(), crate::Error> {
+    constants: &crate::constant::Bindings,
+) -> Result<bool, crate::Error> {
     let mut invalid = None;
     let mut transform_binding = None;
     visit(root, &mut |node| {
@@ -47,7 +49,7 @@ pub(crate) fn prepare(
             "unscoped binding in concurrent constructor members is deferred; use a block",
         ));
     }
-    let mut bound: HashSet<String> = external.iter().map(|n| n.to_string()).collect();
+    let mut bound = HashSet::<String>::new();
     visit(root, &mut |node| match &node.kind {
         Kind::Bind(name, _) => {
             bound.insert(name.to_string());
@@ -64,6 +66,30 @@ pub(crate) fn prepare(
     visit(root, &mut |node| {
         eval |= matches!(&node.kind, Kind::Variable(name) if name.as_ref() == "eval");
     });
+    // Scope analysis is deliberately conservative across the whole expression.
+    // Dynamic evaluation can read/rebind any external name; transforms can observe
+    // container identity. Both retain the immutable lexical environment.
+    let mut identity = false;
+    visit(root, &mut |node| {
+        identity |= matches!(node.kind, Kind::Transform(_) | Kind::Parent(_))
+    });
+    let mut environment = eval || identity;
+    visit(root, &mut |node| {
+        if let Kind::Variable(name) = &node.kind
+            && let Some((_, value)) = constants.iter().find(|(n, _)| n == name)
+        {
+            if eval || identity || bound.contains(name.as_ref()) {
+                environment = true;
+            } else {
+                node.kind = Kind::Prepared(Box::new(crate::constant::Prepared {
+                    data: crate::constant::Storage::Shared(value.clone()),
+                    array_syntax: false,
+                }));
+            }
+        }
+    });
+    bound.extend(external.iter().map(|name| name.to_string()));
+    bound.extend(constants.iter().map(|(name, _)| name.to_string()));
     visit(root, &mut |node| {
         if let Kind::Call(target, args) = &mut node.kind {
             let builtin = match &target.kind {
@@ -143,7 +169,7 @@ pub(crate) fn prepare(
             d.tail = crate::function::has_tail_calls(&d.body);
         }
     });
-    Ok(())
+    Ok(environment)
 }
 // The reference returns native sequences through tail calls without normalizing
 // them inside the lambda. This affects nested higher-order results even without TCO.

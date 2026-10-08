@@ -7,6 +7,10 @@ pub(crate) struct Captures<'a> {
     deferred: u32,
 }
 impl<'a> Captures<'a> {
+    pub(crate) fn has_deferred(&self, mask: u32) -> bool {
+        self.deferred & mask != 0
+    }
+
     pub(crate) fn get(&self, slot: usize) -> Captured<'a> {
         if self.deferred & (1 << slot) != 0 {
             Captured::Deferred

@@ -98,5 +98,10 @@
   {"expr": "a = b", "data": {"a": 1, "b": 1.0}, "items": [true]},
   {"expr": "price * quantity + fee", "data": {"price": 2.5, "quantity": 3, "fee": 1}, "items": [8.5]},
   {"expr": "price >= 2 and active", "data": {"price": 2.5, "active": true}, "items": [true]},
-  {"expr": "(a.x)", "data": {"a": [{"x": [1]}, {"x": [2]}]}, "items": [1, 2]}
+  {"expr": "(a.x)", "data": {"a": [{"x": [1]}, {"x": [2]}]}, "items": [1, 2]},
+  {"expr": "a & '-' & b & '-' & c", "data": {"a": "é", "b": "😀", "c": "end"}, "items": ["é-😀-end"]},
+  {"expr": "missing & a & missing", "data": {"a": "x"}, "items": ["x"]},
+  {"expr": "a & '-' & null & '-' & b", "data": {"a": 2, "b": true}, "items": ["2-null-true"]},
+  {"expr": "a & '-' & b & '-' & a", "data": {"a": [1, 2], "b": {"x": 3}}, "items": ["[1,2]-{\"x\":3}-[1,2]"]},
+  {"expr": "a & (b & c) & a", "data": {"a": "x", "b": "y", "c": "z"}, "items": ["xyzx"]}
 ]

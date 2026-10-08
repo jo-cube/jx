@@ -189,3 +189,70 @@ fn planned_capture_preserves_complete_validation_and_exact_diagnostics() {
         );
     }
 }
+
+#[test]
+fn string_errors_preserve_exact_offsets_after_ordinary_runs() {
+    let expressions = ["id", "id*id+id*id+id"].map(|source| jx::compile(source).unwrap());
+    for length in (0..64).chain([127, 128, 129, 1023, 1024, 1025]) {
+        let prefix = format!("\"é{}", "x".repeat(length));
+        let at = prefix.len();
+        let mut cases = vec![
+            (r#"\q""#.to_owned(), 1, "invalid JSON string escape"),
+            (
+                r#"\u12x4""#.to_owned(),
+                4,
+                "expected four hexadecimal escape digits",
+            ),
+            (
+                r#"\u12""#.to_owned(),
+                4,
+                "expected four hexadecimal escape digits",
+            ),
+            ("\\".to_owned(), 1, "invalid JSON string escape"),
+            ("".to_owned(), 0, "unterminated JSON string"),
+        ];
+        for byte in 0..32 {
+            cases.push((
+                format!("{}\"", char::from(byte)),
+                0,
+                "unescaped control byte in string",
+            ));
+        }
+        for (tail, relative, message) in cases {
+            let input = format!("{prefix}{tail}");
+            let error = validate(input.as_bytes()).unwrap_err();
+            assert_eq!(error.kind, ErrorKind::InvalidJson, "{input:?}");
+            assert_eq!(error.offset, at + relative, "{input:?}");
+            assert_eq!(error.message, message, "{input:?}");
+            for expression in &expressions {
+                assert_eq!(expression.evaluate(input.as_bytes()).unwrap_err(), error);
+            }
+            if tail.ends_with('"') {
+                let input = format!(r#"{{"v":{input},"padding":"{}"}}"#, "x".repeat(128));
+                let error = validate(input.as_bytes()).unwrap_err();
+                assert_eq!(error.offset, 5 + at + relative, "{input:?}");
+                assert_eq!(error.message, message, "{input:?}");
+                for expression in &expressions {
+                    assert_eq!(expression.evaluate(input.as_bytes()).unwrap_err(), error);
+                }
+            }
+        }
+        for bytes in [
+            b"\xff".as_slice(),
+            b"\xc0\x80",
+            b"\xed\xa0\x80",
+            b"\xf4\x90\x80\x80",
+            b"\xe2\x82",
+        ] {
+            let mut input = prefix.as_bytes().to_vec();
+            input.extend_from_slice(bytes);
+            input.push(b'"');
+            let error = validate(&input).unwrap_err();
+            assert_eq!(error.offset, at);
+            assert_eq!(error.message, "invalid UTF-8");
+            for expression in &expressions {
+                assert_eq!(expression.evaluate(&input).unwrap_err(), error);
+            }
+        }
+    }
+}

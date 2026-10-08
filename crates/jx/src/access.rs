@@ -19,7 +19,7 @@ pub enum ValueType {
 /// Functions cannot be detached from their evaluation and are rejected.
 #[derive(Clone, Debug)]
 pub struct OwnedValue {
-    data: Data,
+    pub(crate) data: Data,
 }
 impl OwnedValue {
     pub fn as_value(&self) -> Value<'_, 'static> {

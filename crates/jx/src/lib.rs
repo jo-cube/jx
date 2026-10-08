@@ -29,6 +29,7 @@ mod expression;
 mod filter;
 mod format;
 mod function;
+mod input;
 mod json;
 mod lookup;
 mod matcher;
@@ -56,6 +57,7 @@ pub use embedding::{CompileOptions, EvaluationOptions, HostContext, HostFunction
 pub use error::{Error, ErrorKind, Phase, Source, Span};
 pub use evaluate::{ConsumeError, Evaluation};
 pub use function::Function;
+pub use input::{InputPlan, PreparedInput};
 pub use json::{MAX_DEPTH, RawJson, validate};
 pub use random::Random;
 pub use transform::CopiedValue;
@@ -69,6 +71,7 @@ pub struct Expression {
     acquisition: Option<json::Demand>,
     region: Option<Box<acquire::Region>>,
     bindings: Box<[Box<str>]>,
+    constants: Box<constant::Bindings>,
 }
 
 pub fn compile(source: &str) -> Result<Expression, Error> {
@@ -101,9 +104,20 @@ impl Expression {
         input: &'i [u8],
         random: &Random,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        if let Some(demand) = &self.acquisition {
+        if let Some(demand) = &self.acquisition
+            && self.constants.is_empty()
+        {
             function::acquire::evaluate(&self.root, demand, input, Some(random))
         } else if self.runtime {
+            if !self.constants.is_empty() {
+                return self.evaluate_options(
+                    Value::Raw(validate(input)?),
+                    EvaluationOptions {
+                        random: Some(random.clone()),
+                        ..Default::default()
+                    },
+                );
+            }
             evaluate::scalar(&self.root, input, Some(random), true)
         } else {
             self.evaluate(input)
@@ -139,7 +153,9 @@ impl Expression {
                 };
                 evaluate::path_conversion(*builtin, path, input, self.root.offset)
             }
-            expression::Kind::Call(..) if self.acquisition.is_some() => {
+            expression::Kind::Call(..)
+                if self.acquisition.is_some() && self.constants.is_empty() =>
+            {
                 function::acquire::evaluate(
                     &self.root,
                     self.acquisition.as_ref().unwrap(),
@@ -147,7 +163,98 @@ impl Expression {
                     None,
                 )
             }
+            _ if self.runtime && !self.constants.is_empty() => {
+                self.evaluate_options(Value::Raw(validate(input)?), EvaluationOptions::default())
+            }
             _ => evaluate::scalar(&self.root, input, None, self.runtime),
+        }
+    }
+
+    /// Evaluate an already validated value without validating its encoding again.
+    /// Results retain the same borrowing, sequence and lazy-error semantics as
+    /// [`Self::evaluate`]. Reuse the value across expressions to validate input once.
+    ///
+    /// ```
+    /// let input = jx::validate(br#"{"price":2.5,"quantity":3}"#)?;
+    /// let price = jx::compile("price")?;
+    /// let total = jx::compile("price * quantity")?;
+    /// assert_eq!(price.evaluate_validated(input)?.single()?.unwrap().as_number(), Some(2.5));
+    /// assert_eq!(total.evaluate_validated(input)?.single()?.unwrap().as_number(), Some(7.5));
+    /// # Ok::<(), jx::Error>(())
+    /// ```
+    #[inline]
+    pub fn evaluate_validated<'e, 'i>(
+        &'e self,
+        input: RawJson<'i>,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        if let Some(region) = &self.region {
+            return region.evaluate_validated(&self.root, input);
+        }
+        match &self.root.kind {
+            expression::Kind::Path(path) => Ok(Evaluation {
+                result: evaluate::Results::Path(path.select_validated(input)),
+            }),
+            expression::Kind::StaticLookup(data, key)
+                if matches!(key.kind, expression::Kind::Path(_)) =>
+            {
+                let expression::Kind::Path(path) = &key.kind else {
+                    unreachable!()
+                };
+                lookup::selected(data, path.select_validated(input), self.root.offset)
+            }
+            expression::Kind::Builtin(builtin, args)
+                if builtin.is_conversion()
+                    && args.len() == 1
+                    && matches!(args[0].kind, expression::Kind::Path(_)) =>
+            {
+                let expression::Kind::Path(path) = &args[0].kind else {
+                    unreachable!()
+                };
+                evaluate::selected_conversion(
+                    *builtin,
+                    path.select_validated(input),
+                    self.root.offset,
+                )
+            }
+            expression::Kind::Call(..)
+                if self.acquisition.is_some() && self.constants.is_empty() =>
+            {
+                function::acquire::evaluate_validated(
+                    &self.root,
+                    self.acquisition.as_ref().unwrap(),
+                    input,
+                    None,
+                )
+            }
+            _ if self.runtime && !self.constants.is_empty() => {
+                self.evaluate_options(Value::Raw(input), EvaluationOptions::default())
+            }
+            _ => evaluate::scalar_validated(&self.root, input, None, self.runtime),
+        }
+    }
+
+    pub(crate) fn evaluate_validated_with_random<'e, 'i>(
+        &'e self,
+        input: RawJson<'i>,
+        random: &Random,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        if let Some(demand) = &self.acquisition
+            && self.constants.is_empty()
+        {
+            function::acquire::evaluate_validated(&self.root, demand, input, Some(random))
+        } else if self.runtime {
+            if !self.constants.is_empty() {
+                return self.evaluate_options(
+                    Value::Raw(input),
+                    EvaluationOptions {
+                        random: Some(random.clone()),
+                        ..Default::default()
+                    },
+                );
+            }
+            evaluate::scalar_validated(&self.root, input, Some(random), true)
+        } else {
+            self.evaluate_validated(input)
         }
     }
 }

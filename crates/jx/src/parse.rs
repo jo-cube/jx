@@ -10,19 +10,28 @@ use lex::{Lexer, Token, error};
 pub(crate) const MAX_DEPTH: usize = 128;
 
 pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
-    parse(source, false, &[])
+    parse(source, false, &[], &[])
 }
 pub(crate) fn dynamic(source: &str) -> Result<Expression, Error> {
-    parse(source, true, &[]).map_err(|mut e| {
+    parse(source, true, &[], &[]).map_err(|mut e| {
         e.phase = crate::Phase::Compilation;
         e.source = crate::Source::DynamicExpression;
         e
     })
 }
-pub(crate) fn configured(source: &str, bindings: &[Box<str>]) -> Result<Expression, Error> {
-    parse(source, false, bindings)
+pub(crate) fn configured(
+    source: &str,
+    bindings: &[Box<str>],
+    constants: &crate::constant::Bindings,
+) -> Result<Expression, Error> {
+    parse(source, false, bindings, constants)
 }
-fn parse(source: &str, dynamic: bool, bindings: &[Box<str>]) -> Result<Expression, Error> {
+fn parse(
+    source: &str,
+    dynamic: bool,
+    bindings: &[Box<str>],
+    constants: &crate::constant::Bindings,
+) -> Result<Expression, Error> {
     let mut lexer = Lexer { source, at: 0 };
     let (token, offset) = lexer.next()?;
     let mut parser = Parser {
@@ -35,10 +44,15 @@ fn parse(source: &str, dynamic: bool, bindings: &[Box<str>]) -> Result<Expressio
         return Err(error(parser.offset));
     }
     crate::provenance::prepare(&mut root)?;
-    crate::analysis::prepare(&mut root, dynamic, bindings)?;
+    let environment = crate::analysis::prepare(&mut root, dynamic, bindings, constants)?;
+    let constants: Box<crate::constant::Bindings> = if environment {
+        constants.into()
+    } else {
+        Box::default()
+    };
     crate::compile::prepare(&mut root);
     crate::plan::prepare(&mut root);
-    let runtime = crate::analysis::requires_runtime(&mut root);
+    let runtime = !constants.is_empty() || crate::analysis::requires_runtime(&mut root);
     let acquisition = crate::function::acquire::prepare(&root);
     let region = if runtime {
         None
@@ -51,6 +65,7 @@ fn parse(source: &str, dynamic: bool, bindings: &[Box<str>]) -> Result<Expressio
         acquisition,
         region,
         bindings: bindings.into(),
+        constants,
     })
 }
 struct Parser<'a> {

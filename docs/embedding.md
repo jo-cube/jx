@@ -60,6 +60,22 @@ fn main() -> Result<(), jx::Error> {
 }
 ```
 
+When several expressions share one input, call `jx::validate` once and pass its
+`RawJson` to `Expression::evaluate_validated`. `evaluate_validated_with` accepts
+`Option<RawJson>` and the same `EvaluationOptions` as `evaluate_with`. These methods
+skip validation, retain specialized capture/execution, and preserve result borrowing
+and lazy failures. For a single expression, `evaluate` can fuse validation with capture.
+
+For repeated static paths, `InputPlan::new(&expressions)` unions bounded demands from
+independently compiled expressions. `plan.prepare(bytes)` validates and captures in
+one traversal; `prepare_validated(raw)` captures without validating again. The returned
+`PreparedInput` evaluates expressions by their original index, in any order, with
+`evaluate(index)` or `evaluate_with(index, options)`. Results do not borrow the capture
+frame; `as_raw()` exposes the validated root without copying it. Unsupported
+expressions, excess demands and intermediate arrays use ordinary
+validated evaluation. Bindings, focus, randomness and controls retain their existing
+per-expression execution. Preparation never runs expressions or effects.
+
 Ordinary results may borrow both the input and compiled expression. Do not recycle the
 input buffer while results remain borrowed. New containers own their structure but can
 retain borrowed leaves. `OwnedValue` is independent of both lifetimes and `Send + Sync`;
@@ -99,6 +115,15 @@ fn main() -> Result<(), jx::Error> {
     Ok(())
 }
 ```
+
+Fixed JSON-compatible data can be bound before compilation with
+`CompileOptions::constant_binding(name, owned_value)`. It accepts an `OwnedValue` or
+`Arc<OwnedValue>`; reuse the Arc or compile options across expressions to share storage.
+No per-record binding injection is needed. Static reads fold into existing constants,
+lookups and plans where safe. Local assignments/parameters still shadow the name;
+`$eval` inherits the constant environment. Rebinding and dynamic semantics conservatively
+retain ordinary lexical evaluation. A constant name cannot also be declared for runtime
+binding or overridden through `EvaluationOptions`.
 
 `Value::from_json` supplies validated borrowed input; `from_string`, `from_array` and
 `from_object` construct owned structure. Names/values need only live through evaluation.

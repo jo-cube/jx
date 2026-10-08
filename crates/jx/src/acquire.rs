@@ -1,5 +1,6 @@
 use crate::{
     Error, Evaluation, Value,
+    builtin::Builtin,
     evaluate::{Operand, pure},
     expression::{Kind, Node, Op, Path},
     json::{Captured, Captures, Demand},
@@ -12,82 +13,107 @@ pub(crate) struct Region {
     demand: Demand,
     paths: Box<[Path]>,
 }
+pub(crate) fn paths(node: &Node, minimum_loads: usize) -> Option<Box<[Path]>> {
+    let mut paths = Vec::new();
+    let mut loads = 0;
+    fn collect(node: &Node, paths: &mut Vec<Path>, loads: &mut usize) -> Option<()> {
+        if node.effects || node.clock || node.tail_call {
+            return None;
+        }
+        match &node.kind {
+            Kind::Path(path) if !path.fields.is_empty() && !path.rooted => {
+                *loads += 1;
+                if !paths.iter().any(|p| p.fields == path.fields) {
+                    if paths.len() == crate::json::CAPTURE_SLOTS {
+                        return None;
+                    }
+                    paths.push(path.clone());
+                }
+            }
+            Kind::Plan(plan) if plan.scalar() => collect(&plan.source, paths, loads)?,
+            Kind::Group(n) | Kind::Negate(n) => collect(n, paths, loads)?,
+            Kind::Binary(op, a, b) if !matches!(op, Op::Chain) => {
+                collect(a, paths, loads)?;
+                collect(b, paths, loads)?;
+            }
+            Kind::Conditional(test, yes, no) => {
+                collect(test, paths, loads)?;
+                collect(yes, paths, loads)?;
+                if let Some(no) = no {
+                    collect(no, paths, loads)?;
+                }
+            }
+            Kind::Builtin(Builtin::Lookup, args)
+                if args.len() == 2 && immutable_lookup(&args[0]) =>
+            {
+                for arg in args {
+                    collect(arg, paths, loads)?;
+                }
+            }
+            Kind::Builtin(builtin, args)
+                if (builtin.is_conversion() || *builtin == Builtin::Exists) && !args.is_empty() =>
+            {
+                for arg in args {
+                    collect(arg, paths, loads)?;
+                }
+            }
+            Kind::Array(items, _) => {
+                for item in items {
+                    collect(item, paths, loads)?;
+                }
+            }
+            Kind::Object(pairs) => {
+                for (key, value) in pairs {
+                    if !matches!(&key.kind, Kind::String(_) | Kind::Prepared(_)) {
+                        return None;
+                    }
+                    collect(value, paths, loads)?;
+                }
+            }
+            Kind::StaticLookup(_, key) => collect(key, paths, loads)?,
+            Kind::Number(_)
+            | Kind::Boolean(_)
+            | Kind::Null
+            | Kind::String(_)
+            | Kind::Missing
+            | Kind::Prepared(_) => {}
+            _ => return None,
+        }
+        Some(())
+    }
+    collect(node, &mut paths, &mut loads)?;
+    (loads >= minimum_loads).then(|| paths.into_boxed_slice())
+}
+
+// Only lookup chains rooted in compiled immutable data qualify. Keys are checked
+// separately by the ordinary demand analysis; no lookup is performed here.
+fn immutable_lookup(node: &Node) -> bool {
+    match &node.kind {
+        Kind::StaticLookup(..) => true,
+        Kind::Group(child) => immutable_lookup(child),
+        Kind::Plan(plan) if plan.scalar() => immutable_lookup(&plan.source),
+        Kind::Builtin(Builtin::Lookup, args) => {
+            matches!(args.as_ref(), [object, _] if immutable_lookup(object))
+        }
+        _ => false,
+    }
+}
+
 impl Region {
     pub(crate) fn prepare(node: &Node) -> Option<Box<Self>> {
         let mut region = Self {
             demand: Demand::default(),
             paths: Box::new([]),
         };
-        let mut paths = Vec::new();
-        let mut loads = 0;
-        fn collect(node: &Node, paths: &mut Vec<Path>, loads: &mut usize) -> Option<()> {
-            if node.effects || node.clock || node.tail_call {
-                return None;
-            }
-            match &node.kind {
-                Kind::Path(path) if !path.fields.is_empty() && !path.rooted => {
-                    *loads += 1;
-                    if !paths.iter().any(|p| p.fields == path.fields) {
-                        if paths.len() == crate::json::CAPTURE_SLOTS {
-                            return None;
-                        }
-                        paths.push(path.clone());
-                    }
-                }
-                Kind::Plan(plan) if plan.scalar() => collect(&plan.source, paths, loads)?,
-                Kind::Group(n) | Kind::Negate(n) => collect(n, paths, loads)?,
-                Kind::Binary(op, a, b) if !matches!(op, Op::Chain | Op::Default | Op::Coalesce) => {
-                    collect(a, paths, loads)?;
-                    collect(b, paths, loads)?;
-                }
-                Kind::Conditional(test, yes, no) => {
-                    collect(test, paths, loads)?;
-                    collect(yes, paths, loads)?;
-                    if let Some(no) = no {
-                        collect(no, paths, loads)?;
-                    }
-                }
-                Kind::Builtin(builtin, args) if builtin.is_conversion() && !args.is_empty() => {
-                    for arg in args {
-                        collect(arg, paths, loads)?;
-                    }
-                }
-                Kind::Array(items, _) => {
-                    for item in items {
-                        collect(item, paths, loads)?;
-                    }
-                }
-                Kind::Object(pairs) => {
-                    for (key, value) in pairs {
-                        if !matches!(&key.kind, Kind::String(_) | Kind::Prepared(_)) {
-                            return None;
-                        }
-                        collect(value, paths, loads)?;
-                    }
-                }
-                Kind::StaticLookup(_, key) => collect(key, paths, loads)?,
-                Kind::Number(_)
-                | Kind::Boolean(_)
-                | Kind::Null
-                | Kind::String(_)
-                | Kind::Missing
-                | Kind::Prepared(_) => {}
-                _ => return None,
-            }
-            Some(())
-        }
         // Plans already acquire their own inputs; simple paths/calls stay lightweight.
         if matches!(node.kind, Kind::Plan(_)) {
             return None;
         }
-        collect(node, &mut paths, &mut loads)?;
-        if loads < 3 {
-            return None;
-        }
+        let paths = paths(node, 3)?;
         for (slot, path) in paths.iter().enumerate() {
             region.demand.insert(&path.fields, slot);
         }
-        region.paths = paths.into_boxed_slice();
+        region.paths = paths;
         Some(Box::new(region))
     }
 
@@ -100,6 +126,27 @@ impl Region {
     ) -> Result<Evaluation<'e, 'i>, Error> {
         let mut captures = Captures::default();
         let raw = crate::json::capture(input, &self.demand, &mut captures)?;
+        self.captured(root, raw, &captures)
+    }
+
+    #[inline(never)]
+    pub(crate) fn evaluate_validated<'e, 'i>(
+        &'e self,
+        root: &'e Node,
+        input: crate::RawJson<'i>,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        let mut captures = Captures::default();
+        input.capture(&self.demand, &mut captures);
+        self.captured(root, input, &captures)
+    }
+
+    #[inline]
+    fn captured<'e, 'i>(
+        &'e self,
+        root: &'e Node,
+        raw: crate::RawJson<'i>,
+        captures: &Captures<'i>,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
         let context = Context {
             value: Value::Raw(raw),
             wrapped: true,
@@ -113,8 +160,8 @@ impl Region {
             root.run(&context)?
         } else {
             Acquired {
-                region: self,
-                captures: &captures,
+                paths: &self.paths,
+                captures,
             }
             .run(root, &context)?
         };
@@ -123,10 +170,27 @@ impl Region {
         })
     }
 }
+pub(crate) fn evaluate_captured<'e, 'i>(
+    root: &'e Node,
+    raw: crate::RawJson<'i>,
+    paths: &[Path],
+    captures: &Captures<'i>,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    let context = Context {
+        value: Value::Raw(raw),
+        wrapped: true,
+        scope: None,
+    };
+    let result = Acquired { paths, captures }.run(root, &context)?;
+    Ok(Evaluation {
+        result: crate::evaluate::results(result),
+    })
+}
+
 // Supported nodes keep the same focus on non-array roots; constructor grouping
 // therefore receives one original context. Captures never enter returned values.
 struct Acquired<'a, 'i> {
-    region: &'a Region,
+    paths: &'a [Path],
     captures: &'a Captures<'i>,
 }
 impl<'i> Acquired<'_, 'i> {
@@ -169,6 +233,9 @@ impl<'i> Acquired<'_, 'i> {
                     self.run(n, context)
                 })
             }
+            Kind::Binary(op @ (Op::Default | Op::Coalesce), test, no) => {
+                pure::fallback(op, test, no, node.offset, |n| self.run(n, context))
+            }
             Kind::Binary(Op::Concat, left, right) => {
                 pure::concat(left, right, node.offset, |n| self.materialize(n, context))
                     .map(Operand::One)
@@ -209,7 +276,6 @@ impl<'i> Acquired<'_, 'i> {
     }
     fn path<'e>(&self, path: &Path) -> Operand<'e, 'i> {
         let slot = self
-            .region
             .paths
             .iter()
             .position(|p| p.fields == path.fields)

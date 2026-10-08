@@ -40,14 +40,35 @@ pub(crate) fn evaluate<'e, 'i>(
     input: &'i [u8],
     random: Option<&Random>,
 ) -> Result<Evaluation<'e, 'i>, Error> {
+    let mut captured = Captures::default();
+    let raw = crate::json::capture(input, demand, &mut captured)?;
+    evaluate_captured(node, raw, &captured, random)
+}
+
+pub(crate) fn evaluate_validated<'e, 'i>(
+    node: &'e Node,
+    demand: &Demand,
+    input: crate::RawJson<'i>,
+    random: Option<&Random>,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    let mut captured = Captures::default();
+    input.capture(demand, &mut captured);
+    evaluate_captured(node, input, &captured, random)
+}
+
+#[inline]
+fn evaluate_captured<'e, 'i>(
+    node: &'e Node,
+    raw: crate::RawJson<'i>,
+    captured: &Captures<'i>,
+    random: Option<&Random>,
+) -> Result<Evaluation<'e, 'i>, Error> {
     let Kind::Call(target, arguments) = &node.kind else {
         unreachable!()
     };
     let Kind::Lambda(definition) = &target.kind else {
         unreachable!()
     };
-    let mut captured = Captures::default();
-    let raw = crate::json::capture(input, demand, &mut captured)?;
     let value = Value::Raw(raw);
     let context = Context {
         scope: Some(crate::runtime::Scope::with_random(

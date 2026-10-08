@@ -49,7 +49,9 @@ pub(crate) fn concat<'e, 'i>(
             if right_body.is_empty() {
                 return Ok(left);
             }
-            Ok(Value::String(OwnedString::concat(left_body, right_body)))
+            Ok(Value::String(OwnedString::concat(
+                [left_body, right_body].into_iter(),
+            )))
         }
     }
 }

@@ -10,6 +10,7 @@ pub(super) fn run(smoke: bool) {
             &format!("\"pad\":\"{}\"", "x".repeat(size - base.len())),
         );
         let expression = jx::compile("price*quantity").unwrap();
+        let validated = jx::validate(input.as_bytes()).unwrap();
         let options = CompileOptions::default()
             .binding("scale")
             .compile("price*$scale+quantity")
@@ -33,6 +34,11 @@ pub(super) fn run(smoke: bool) {
             ("bindings", 2, 8),
             ("host", 3, 8),
             ("limits", 4, 8),
+            ("validated", 5, 0),
+            ("validated_options", 6, 0),
+            ("validated_bindings", 7, 8),
+            ("validated_host", 8, 8),
+            ("validated_limits", 9, 8),
         ] {
             let evaluate = || match which {
                 0 => expression.evaluate(input.as_bytes()),
@@ -51,8 +57,34 @@ pub(super) fn run(smoke: bool) {
                         ..Default::default()
                     },
                 ),
-                _ => expression.evaluate_with(
+                4 => expression.evaluate_with(
                     Some(input.as_bytes()),
+                    EvaluationOptions {
+                        limits: Some(Limits::default()),
+                        ..Default::default()
+                    },
+                ),
+                5 => expression.evaluate_validated(black_box(validated)),
+                6 => expression.evaluate_validated_with(
+                    Some(black_box(validated)),
+                    EvaluationOptions::default(),
+                ),
+                7 => options.evaluate_validated_with(
+                    Some(black_box(validated)),
+                    EvaluationOptions {
+                        bindings: vec![("scale", Value::Number(2.))],
+                        ..Default::default()
+                    },
+                ),
+                8 => call.evaluate_validated_with(
+                    Some(black_box(validated)),
+                    EvaluationOptions {
+                        bindings: vec![("add", host_value.clone())],
+                        ..Default::default()
+                    },
+                ),
+                _ => expression.evaluate_validated_with(
+                    Some(black_box(validated)),
                     EvaluationOptions {
                         limits: Some(Limits::default()),
                         ..Default::default()
@@ -60,8 +92,8 @@ pub(super) fn run(smoke: bool) {
                 ),
             };
             let expected = match which {
-                2 => 8.,
-                3 => 5.5,
+                2 | 7 => 8.,
+                3 | 8 => 5.5,
                 _ => 7.5,
             };
             assert_eq!(
@@ -80,6 +112,48 @@ pub(super) fn run(smoke: bool) {
                             black_box(v);
                         })
                         .unwrap();
+                },
+            );
+        }
+        for (name, source) in [("validated_identity", "$"), ("validated_path", "label")] {
+            let expression = jx::compile(source).unwrap();
+            measure_allocations(&format!("embedding/{name}"), size, smoke, Some(0), || {
+                expression
+                    .evaluate_validated(black_box(validated))
+                    .unwrap()
+                    .for_each(|v| {
+                        black_box(v);
+                    })
+                    .unwrap();
+            });
+        }
+        let expressions =
+            ["price>2", "quantity>0", "price*quantity"].map(|source| jx::compile(source).unwrap());
+        for validate_once in [false, true] {
+            measure_allocations(
+                if validate_once {
+                    "embedding/multiple_validated"
+                } else {
+                    "embedding/multiple_direct"
+                },
+                size,
+                smoke,
+                Some(0),
+                || {
+                    let input = black_box(input.as_bytes());
+                    let raw = validate_once.then(|| jx::validate(input).unwrap());
+                    for expression in &expressions {
+                        let evaluation = match raw {
+                            Some(raw) => expression.evaluate_validated(raw),
+                            None => expression.evaluate(input),
+                        };
+                        evaluation
+                            .unwrap()
+                            .for_each(|v| {
+                                black_box(v);
+                            })
+                            .unwrap();
+                    }
                 },
             );
         }

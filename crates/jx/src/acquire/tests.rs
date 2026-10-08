@@ -40,6 +40,10 @@ fn acquisition_preserves_values_cardinality_and_exact_errors() {
         "a.x&$string(b.x)&a.x",
         "{'s':a&b,'compare':a=b,'in':a in b,'order':a<b}",
         "a&($lookup({'x':1},b))&a",
+        "(a ?? b)&a",
+        "(a ?: b)&a",
+        "$exists(a) ? (a ?? b) : (b ?? a)",
+        "a.x ?? (b.x ?? a.x)",
     ] {
         let expression = crate::compile(source).unwrap();
         assert!(expression.region.is_some(), "{source}");
@@ -188,6 +192,118 @@ fn captured_numeric_subplans_keep_native_and_tree_guards() {
             outcome(expression.evaluate(input.as_bytes())),
             outcome(original.evaluate(input.as_bytes())),
             "{input}"
+        );
+    }
+}
+
+#[test]
+fn pure_missing_and_fallback_demands_are_bounded_static_paths() {
+    for source in [
+        "a ?? b",
+        "a ?: b",
+        "$exists(a) ? a : b",
+        "$lookup({'x':1},a&'-'&b) ?? $lookup({'x':1},c)",
+        "flag ? (a ?? b) : (b ?? c)",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        assert!(paths(&expression.root, 1).is_some(), "{source}");
+    }
+    for source in [
+        "a ?? $random()",
+        "a ?? $now()",
+        "a ?? $error('untaken')",
+        "a ?? $eval(b)",
+        "($exists:=function($v){false}; a ?? b)",
+        "flag ? (a ?? b) : $lowercase(c)",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        assert!(paths(&expression.root, 1).is_none(), "{source}");
+    }
+    let source = (0..33)
+        .map(|i| format!("field{i}"))
+        .collect::<Vec<_>>()
+        .join(" ?? ");
+    assert!(paths(&crate::compile(&source).unwrap().root, 1).is_none());
+}
+
+#[test]
+fn nested_immutable_lookups_acquire_only_bounded_pure_key_demands() {
+    let options = crate::CompileOptions::default().constant_binding(
+        "config",
+        crate::OwnedValue::from_json(br#"{"map":{"x":{"y":{"z":7}}}}"#).unwrap(),
+    );
+    for (source, fields) in [
+        ("$lookup($lookup($config.map,a),b)", vec!["a", "b"]),
+        (
+            "$lookup($lookup($lookup($config.map,a),b),c)",
+            vec!["a", "b", "c"],
+        ),
+        ("$lookup(($lookup($config.map,a)),b)", vec!["a", "b"]),
+        (
+            "$lookup($lookup($config.map,a.key),b.key)",
+            vec!["a.key", "b.key"],
+        ),
+        (
+            "flag ? $lookup($lookup($config.map,a),b) : $lookup($config.map,c)",
+            vec!["flag", "a", "b", "c"],
+        ),
+        (
+            "$lookup($lookup($config.map,a),b) ?? $lookup($config.map,c)",
+            vec!["a", "b", "c"],
+        ),
+    ] {
+        let expression = options.compile(source).unwrap();
+        let paths = paths(&expression.root, 1).expect(source);
+        let actual = paths
+            .iter()
+            .map(|p| {
+                p.fields
+                    .iter()
+                    .map(|field| field.as_ref())
+                    .collect::<Vec<_>>()
+                    .join(".")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(actual, fields, "{source}");
+    }
+    for source in [
+        "$lookup(object,key)",
+        "$lookup($lookup($config.map,a),$random())",
+        "$lookup($lookup($config.map,a),$error('key'))",
+        "flag ? $lookup($lookup($config.map,a),b) : $eval(code)",
+        "($lookup:=function($o,$k){$k}; $lookup($lookup($config.map,a),b))",
+        "($config:={'map':{'x':{'y':7}}}; $lookup($lookup($config.map,a),b))",
+    ] {
+        assert!(
+            paths(&options.compile(source).unwrap().root, 1).is_none(),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn captured_nested_lookups_preserve_container_identity_without_caching() {
+    let options = crate::CompileOptions::default().constant_binding(
+        "config",
+        crate::OwnedValue::from_json(br#"{"map":{"x":{"y":{"z":7}}}}"#).unwrap(),
+    );
+    for source in [
+        "$lookup($lookup($config.map,a),b) in $lookup($lookup($config.map,a),b)",
+        "[$lookup($lookup($config.map,a),b),$lookup($lookup($config.map,a),b)]",
+        "$lookup($lookup($config.map,a),b) ?? $lookup($lookup($config.map,a),c)",
+    ] {
+        let expression = options.compile(source).unwrap();
+        let input = br#"{"a":"x","b":"y","c":"y"}"#;
+        let plan = crate::InputPlan::new([&expression]);
+        assert_eq!(
+            outcome(plan.prepare(input).unwrap().evaluate(0)),
+            outcome(crate::evaluate::scalar(
+                &expression.root,
+                input,
+                None,
+                false
+            )),
+            "{source}"
         );
     }
 }

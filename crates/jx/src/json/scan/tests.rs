@@ -177,3 +177,54 @@ fn generated_containers_match_decoded_json_after_validation() {
         }
     }
 }
+
+#[test]
+fn long_strings_preserve_escaped_and_nested_subtree_boundaries() {
+    let fields = vec![Box::<str>::from("id")];
+    let mut demand = Demand::default();
+    demand.insert(&fields, 0);
+    for length in (0..40).chain([127, 128, 129, 1023, 1024, 1025]) {
+        let padding = "x".repeat(length);
+        for body in [
+            "",
+            "short",
+            "é",
+            "plain ASCII",
+            "é中😀",
+            r#"\"\\\/\b\f\n\r\t\u0000"#,
+            r#"\ud800\udc00\udfff"#,
+            r#"[}]\"\\\"\\\\"#,
+        ] {
+            let token = format!(r#""{padding}{body}{padding}""#);
+            let subtree = format!(
+                r#"{{"text":{token},"nested":[{token},{{"text":{token}}}],"n":-1.2300e+4}}"#
+            );
+            let input = format!(r#"[{token},{subtree},{token},true,null]"#);
+            let raw = crate::validate(input.as_bytes()).unwrap();
+            assert_eq!(
+                raw.elements().map(RawJson::as_str).collect::<Vec<_>>(),
+                [
+                    token.as_str(),
+                    subtree.as_str(),
+                    token.as_str(),
+                    "true",
+                    "null"
+                ]
+            );
+            let input = format!(r#"{{"id":1,"ignored":{subtree},"\u0069d":2,"tail":{token}}}"#);
+            let raw = crate::validate(input.as_bytes()).unwrap();
+            assert_eq!(raw.field("id").unwrap().as_str(), "2");
+            assert_eq!(raw.field("ignored").unwrap().as_str(), subtree);
+            assert_eq!(raw.field("tail").unwrap().as_str(), token);
+            assert_eq!(
+                raw.select(&fields),
+                select(input.as_bytes(), &fields).unwrap()
+            );
+            let mut expected = Captures::default();
+            capture(input.as_bytes(), &demand, &mut expected).unwrap();
+            let mut actual = Captures::default();
+            raw.capture(&demand, &mut actual);
+            assert_eq!(actual.get(0), expected.get(0));
+        }
+    }
+}

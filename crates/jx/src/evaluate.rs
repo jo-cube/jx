@@ -187,7 +187,15 @@ pub(crate) fn path_conversion<'e, 'i>(
     input: &'i [u8],
     offset: usize,
 ) -> Result<Evaluation<'e, 'i>, Error> {
-    let selected = path.select(input)?;
+    selected_conversion(builtin, path.select(input)?, offset)
+}
+
+#[inline]
+pub(crate) fn selected_conversion<'e, 'i>(
+    builtin: crate::builtin::Builtin,
+    selected: crate::path::PathEvaluation<'e, 'i>,
+    offset: usize,
+) -> Result<Evaluation<'e, 'i>, Error> {
     let value = crate::retain::collect(|emit| {
         selected.try_for_each(|value| {
             emit(value);
@@ -215,7 +223,31 @@ pub(crate) fn scalar<'e, 'i>(
             result: results(plan.evaluate(input)?),
         });
     }
-    let value = Value::Raw(crate::validate(input)?);
+    scalar_value(node, crate::validate(input)?, random, runtime)
+}
+
+pub(crate) fn scalar_validated<'e, 'i>(
+    node: &'e Node,
+    input: crate::RawJson<'i>,
+    random: Option<&crate::Random>,
+    runtime: bool,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    if let Kind::Plan(plan) = &node.kind {
+        return Ok(Evaluation {
+            result: results(plan.evaluate_validated(input)?),
+        });
+    }
+    scalar_value(node, input, random, runtime)
+}
+
+#[inline]
+fn scalar_value<'e, 'i>(
+    node: &'e Node,
+    input: crate::RawJson<'i>,
+    random: Option<&crate::Random>,
+    runtime: bool,
+) -> Result<Evaluation<'e, 'i>, Error> {
+    let value = Value::Raw(input);
     let scope =
         runtime.then(|| crate::runtime::Scope::with_random(value.clone(), node.clock, random));
     let context = Context {
@@ -457,22 +489,7 @@ impl Node {
             Kind::String(value) => Value::StringLiteral(RawJson(value)),
             Kind::Negate(child) => return pure::negate(child.run(input)?, self.offset),
             Kind::Binary(op @ (Op::Default | Op::Coalesce), test, no) => {
-                return if test.run(input)?.truth(self.offset)? {
-                    // Coalescing stores its left expression once, as the argument
-                    // of the shadowable $exists call. Both fallbacks re-evaluate
-                    // the selected branch without duplicating the compiled tree.
-                    let yes = if matches!(op, Op::Coalesce) {
-                        match &test.kind {
-                            Kind::Call(_, args) | Kind::Builtin(_, args) => &args[0],
-                            _ => unreachable!("coalescing test is an exists call"),
-                        }
-                    } else {
-                        test
-                    };
-                    yes.run(input)
-                } else {
-                    no.run(input)
-                };
+                return pure::fallback(op, test, no, self.offset, |n| n.run(input));
             }
             Kind::Binary(op, lhs, rhs) => {
                 return operators::binary(op, lhs, rhs, self.offset, |n| n.run(input));

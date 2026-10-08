@@ -246,6 +246,7 @@ fn route<'e, 'i>(
             Ok(())
         } else {
             let absolute = matches!(&steps[0].node.kind, Kind::Variable(_) | Kind::Sort(..))
+                || matches!(&steps[0].node.kind, Kind::Prepared(p) if matches!(p.data, crate::constant::Storage::Shared(_)))
                 || matches!(&steps[0].node.kind, Kind::Path(p) if p.rooted && p.fields.is_empty());
             if context.wrapped || absolute || focus {
                 emit(Row {

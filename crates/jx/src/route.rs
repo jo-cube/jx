@@ -166,6 +166,7 @@ pub(crate) fn walk<'e, 'i>(
         );
     }
     let variable = matches!(&steps[0].node.kind, Kind::Variable(_) | Kind::Sort(..))
+        || matches!(&steps[0].node.kind, Kind::Prepared(p) if matches!(p.data, crate::constant::Storage::Shared(_)))
         || matches!(&steps[0].node.kind, Kind::Path(path) if path.rooted && path.fields.is_empty());
     if context.wrapped || variable {
         stages(
