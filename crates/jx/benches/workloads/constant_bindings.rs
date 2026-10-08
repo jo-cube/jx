@@ -108,7 +108,7 @@ fn workload(
     }
 }
 pub(super) fn run(smoke: bool) {
-    let config=Arc::new(OwnedValue::from_json(br#"{"skip":"never","deleted":"deleted","label":"retained","nested":{"label":"retained"},"map":{"x":"retained","never":"never"},"n":3}"#).unwrap());
+    let config=Arc::new(OwnedValue::from_json(br#"{"skip":"never","deleted":"deleted","label":"retained","nested":{"label":"retained"},"map":{"x":"retained","never":"never"},"n":3,"tree":{"x":{"label":{"label":"retained"}}}}"#).unwrap());
     for size in [32, 1024] {
         let base = r#"{"id":"x","n":2,"key":"label"}"#;
         let input = if size == 32 {
@@ -160,6 +160,26 @@ pub(super) fn run(smoke: bool) {
                 vec!["$lookup($config.map,id)"],
                 vec!["$lookup({'x':'retained','never':'never'},id)"],
                 0,
+            ),
+            (
+                "lookup_chain_two",
+                vec!["$lookup($lookup($config.tree,id),key)"],
+                vec!["$lookup($lookup({'x':{'label':{'label':'retained'}}},id),key)"],
+                1,
+            ),
+            (
+                "lookup_chain_three",
+                vec!["$lookup($lookup($lookup($config.tree,id),key),key)"],
+                vec!["$lookup($lookup($lookup({'x':{'label':{'label':'retained'}}},id),key),key)"],
+                1,
+            ),
+            (
+                "lookup_chain_conditional",
+                vec!["n>1 ? $lookup($lookup($config.tree,id),key) : $lookup($config,key)"],
+                vec![
+                    "n>1 ? $lookup($lookup({'x':{'label':{'label':'retained'}}},id),key) : 'retained'",
+                ],
+                1,
             ),
             ("numeric_plan", vec!["n*$config.n+n>5"], vec!["n*3+n>5"], 0),
             (

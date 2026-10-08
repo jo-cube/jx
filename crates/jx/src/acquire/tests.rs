@@ -225,3 +225,85 @@ fn pure_missing_and_fallback_demands_are_bounded_static_paths() {
         .join(" ?? ");
     assert!(paths(&crate::compile(&source).unwrap().root, 1).is_none());
 }
+
+#[test]
+fn nested_immutable_lookups_acquire_only_bounded_pure_key_demands() {
+    let options = crate::CompileOptions::default().constant_binding(
+        "config",
+        crate::OwnedValue::from_json(br#"{"map":{"x":{"y":{"z":7}}}}"#).unwrap(),
+    );
+    for (source, fields) in [
+        ("$lookup($lookup($config.map,a),b)", vec!["a", "b"]),
+        (
+            "$lookup($lookup($lookup($config.map,a),b),c)",
+            vec!["a", "b", "c"],
+        ),
+        ("$lookup(($lookup($config.map,a)),b)", vec!["a", "b"]),
+        (
+            "$lookup($lookup($config.map,a.key),b.key)",
+            vec!["a.key", "b.key"],
+        ),
+        (
+            "flag ? $lookup($lookup($config.map,a),b) : $lookup($config.map,c)",
+            vec!["flag", "a", "b", "c"],
+        ),
+        (
+            "$lookup($lookup($config.map,a),b) ?? $lookup($config.map,c)",
+            vec!["a", "b", "c"],
+        ),
+    ] {
+        let expression = options.compile(source).unwrap();
+        let paths = paths(&expression.root, 1).expect(source);
+        let actual = paths
+            .iter()
+            .map(|p| {
+                p.fields
+                    .iter()
+                    .map(|field| field.as_ref())
+                    .collect::<Vec<_>>()
+                    .join(".")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(actual, fields, "{source}");
+    }
+    for source in [
+        "$lookup(object,key)",
+        "$lookup($lookup($config.map,a),$random())",
+        "$lookup($lookup($config.map,a),$error('key'))",
+        "flag ? $lookup($lookup($config.map,a),b) : $eval(code)",
+        "($lookup:=function($o,$k){$k}; $lookup($lookup($config.map,a),b))",
+        "($config:={'map':{'x':{'y':7}}}; $lookup($lookup($config.map,a),b))",
+    ] {
+        assert!(
+            paths(&options.compile(source).unwrap().root, 1).is_none(),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn captured_nested_lookups_preserve_container_identity_without_caching() {
+    let options = crate::CompileOptions::default().constant_binding(
+        "config",
+        crate::OwnedValue::from_json(br#"{"map":{"x":{"y":{"z":7}}}}"#).unwrap(),
+    );
+    for source in [
+        "$lookup($lookup($config.map,a),b) in $lookup($lookup($config.map,a),b)",
+        "[$lookup($lookup($config.map,a),b),$lookup($lookup($config.map,a),b)]",
+        "$lookup($lookup($config.map,a),b) ?? $lookup($lookup($config.map,a),c)",
+    ] {
+        let expression = options.compile(source).unwrap();
+        let input = br#"{"a":"x","b":"y","c":"y"}"#;
+        let plan = crate::InputPlan::new([&expression]);
+        assert_eq!(
+            outcome(plan.prepare(input).unwrap().evaluate(0)),
+            outcome(crate::evaluate::scalar(
+                &expression.root,
+                input,
+                None,
+                false
+            )),
+            "{source}"
+        );
+    }
+}

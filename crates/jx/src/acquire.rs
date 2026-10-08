@@ -1,5 +1,6 @@
 use crate::{
     Error, Evaluation, Value,
+    builtin::Builtin,
     evaluate::{Operand, pure},
     expression::{Kind, Node, Op, Path},
     json::{Captured, Captures, Demand},
@@ -42,9 +43,15 @@ pub(crate) fn paths(node: &Node, minimum_loads: usize) -> Option<Box<[Path]>> {
                     collect(no, paths, loads)?;
                 }
             }
+            Kind::Builtin(Builtin::Lookup, args)
+                if args.len() == 2 && immutable_lookup(&args[0]) =>
+            {
+                for arg in args {
+                    collect(arg, paths, loads)?;
+                }
+            }
             Kind::Builtin(builtin, args)
-                if (builtin.is_conversion() || *builtin == crate::builtin::Builtin::Exists)
-                    && !args.is_empty() =>
+                if (builtin.is_conversion() || *builtin == Builtin::Exists) && !args.is_empty() =>
             {
                 for arg in args {
                     collect(arg, paths, loads)?;
@@ -76,6 +83,20 @@ pub(crate) fn paths(node: &Node, minimum_loads: usize) -> Option<Box<[Path]>> {
     }
     collect(node, &mut paths, &mut loads)?;
     (loads >= minimum_loads).then(|| paths.into_boxed_slice())
+}
+
+// Only lookup chains rooted in compiled immutable data qualify. Keys are checked
+// separately by the ordinary demand analysis; no lookup is performed here.
+fn immutable_lookup(node: &Node) -> bool {
+    match &node.kind {
+        Kind::StaticLookup(..) => true,
+        Kind::Group(child) => immutable_lookup(child),
+        Kind::Plan(plan) if plan.scalar() => immutable_lookup(&plan.source),
+        Kind::Builtin(Builtin::Lookup, args) => {
+            matches!(args.as_ref(), [object, _] if immutable_lookup(object))
+        }
+        _ => false,
+    }
 }
 
 impl Region {
