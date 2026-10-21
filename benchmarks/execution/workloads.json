@@ -1,0 +1,11 @@
+[
+  "scalar/500/8",
+  "numeric_stages/1024/48/map",
+  "numeric_stages/1024/48/path",
+  "project/500/8/late/",
+  "project/1024/40/late/",
+  "select/40/true/",
+  "lookup/direct",
+  "delivery/1024",
+  "compile/"
+]

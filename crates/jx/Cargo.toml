@@ -46,10 +46,15 @@ required-features = ["jit"]
 name = "runtime_memory"
 harness = false
 
-[[example]]
-name = "execution"
+[[bench]]
+name = "architecture"
+harness = false
 required-features = ["experimental"]
 
 [[example]]
 name = "architecture_probe"
+required-features = ["experimental"]
+
+[[example]]
+name = "execution"
 required-features = ["experimental"]
