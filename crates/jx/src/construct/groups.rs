@@ -49,8 +49,17 @@ impl<'e, 'i, T: Clone> Groups<'e, 'i, T> {
         item: Option<T>,
         offset: usize,
     ) -> Result<(), Error> {
-        for (pair, (key, _)) in pairs.iter().enumerate() {
-            let key = match key.run(context)? {
+        self.add_with(pairs.len(), item, offset, |pair| pairs[pair].0.run(context))
+    }
+    pub fn add_with(
+        &mut self,
+        count: usize,
+        item: Option<T>,
+        offset: usize,
+        mut evaluate: impl FnMut(usize) -> Result<Operand<'e, 'i>, Error>,
+    ) -> Result<(), Error> {
+        for pair in 0..count {
+            let key = match evaluate(pair)? {
                 Operand::Missing => continue,
                 Operand::One(key) if key.string_body().is_some() => key,
                 _ => return Err(type_error(offset)),
@@ -103,9 +112,15 @@ impl<'e, 'i, T: Clone> Groups<'e, 'i, T> {
         Ok(())
     }
     pub fn finish(
-        mut self,
+        self,
         pairs: &'e [(Node, Node)],
         mut evaluate: impl FnMut((Option<T>, Vec<T>), &'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
+    ) -> Result<Value<'e, 'i>, Error> {
+        self.finish_with(|values, pair| evaluate(values, &pairs[pair].1))
+    }
+    pub fn finish_with(
+        mut self,
+        mut evaluate: impl FnMut((Option<T>, Vec<T>), usize) -> Result<Option<Value<'e, 'i>>, Error>,
     ) -> Result<Value<'e, 'i>, Error> {
         drop(self.index.take());
         self.groups.sort_by_key(|g| {
@@ -113,7 +128,7 @@ impl<'e, 'i, T: Clone> Groups<'e, 'i, T> {
         });
         let mut members = Vec::with_capacity(self.groups.len());
         for group in self.groups {
-            if let Some(value) = evaluate((group.first, group.rest), &pairs[group.pair].1)? {
+            if let Some(value) = evaluate((group.first, group.rest), group.pair)? {
                 members.push((group.key, value));
             }
         }

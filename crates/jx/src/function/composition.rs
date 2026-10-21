@@ -31,6 +31,14 @@ pub(crate) fn partial<'e, 'i>(
     let Some(Value::Function(target)) = crate::retain::materialize(target, context)? else {
         return Err(type_error(offset));
     };
+    bind_partial(target, arguments, offset)
+}
+
+pub(crate) fn bind_partial<'e, 'i>(
+    target: Rc<Function<'e, 'i>>,
+    mut arguments: Vec<Argument<'e, 'i>>,
+    offset: usize,
+) -> Result<Value<'e, 'i>, Error> {
     let count = match target.kind {
         FunctionKind::Builtin(builtin) => builtin.partial_arity(offset)?,
         _ => arity(&target),
@@ -134,6 +142,8 @@ pub(super) fn apply_partial<'e, 'i>(
             .as_ref()
             .expect("lexical runtime")
             .call(offset, 1, || {
+                #[cfg(feature = "experimental")]
+                crate::execution::call::check(target, context, offset)?;
                 builtin.partial_values(arguments, context, offset)
             })
     } else {

@@ -18,6 +18,8 @@ pub struct Evaluation<'expression, 'input> {
 #[derive(Debug)]
 pub(crate) enum Results<'e, 'i> {
     Controlled(Box<(Results<'e, 'i>, crate::controls::Control)>),
+    #[cfg(feature = "experimental")]
+    Execution(Box<crate::execution::Deferred<'e, 'i>>),
     Path(PathEvaluation<'e, 'i>),
     Expression(&'e Node, Context<'e, 'i>),
     Scalar(Option<Value<'e, 'i>>),
@@ -126,6 +128,8 @@ impl<'e, 'i> Evaluation<'e, 'i> {
         mut output: impl FnMut(Value<'e, 'i>) -> Result<(), E>,
     ) -> Result<(), ConsumeError<E>> {
         match self.result {
+            #[cfg(feature = "experimental")]
+            Results::Execution(deferred) => deferred.walk(output),
             Results::Controlled(_) => unreachable!("controls are applied once by try_for_each"),
             Results::Path(path) => path.try_for_each(output).map_err(ConsumeError::Consumer),
             Results::Scalar(Some(value)) if value.unpacks_sequence() => {

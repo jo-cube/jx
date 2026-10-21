@@ -22,6 +22,7 @@ workspace = true
 
 [features]
 default = []
+experimental = []
 jit = ["dep:jx-native"]
 
 [dependencies]
@@ -44,3 +45,7 @@ required-features = ["jit"]
 [[bench]]
 name = "runtime_memory"
 harness = false
+
+[[example]]
+name = "execution"
+required-features = ["experimental"]

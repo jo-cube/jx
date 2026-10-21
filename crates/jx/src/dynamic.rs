@@ -286,6 +286,8 @@ fn evaluate<'e, 'i>(
 
 #[derive(Debug)]
 pub(crate) enum Definition {
+    #[cfg(feature = "experimental")]
+    Program(crate::execution::call::Definition),
     Lambda(crate::function::Definition),
     Transform(crate::transform::Definition),
 }
@@ -300,6 +302,8 @@ impl<'e, 'i> Callable<'e, 'i> {
     pub fn arity(&self) -> usize {
         match self.definition.as_ref() {
             Definition::Lambda(d) => d.params.len(),
+            #[cfg(feature = "experimental")]
+            Definition::Program(d) => d.params.len(),
             Definition::Transform(_) => 1,
         }
     }
@@ -347,6 +351,13 @@ impl<'e, 'i> Callable<'e, 'i> {
                 arguments.push(v.as_ref().map(|v| borrow::value(v, &definitions)));
             }
             let kind = match self.definition.as_ref() {
+                #[cfg(feature = "experimental")]
+                Definition::Program(definition) => FunctionKind::Program {
+                    definition,
+                    focus: borrow::value(&self.focus, &definitions),
+                    wrapped: self.wrapped,
+                    frame: self.frame,
+                },
                 Definition::Lambda(definition) => FunctionKind::Lambda {
                     definition,
                     focus: borrow::value(&self.focus, &definitions),

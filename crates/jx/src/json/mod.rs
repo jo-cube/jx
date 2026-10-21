@@ -1,5 +1,7 @@
 mod demand;
 mod scan;
+#[cfg(feature = "experimental")]
+pub(crate) use scan::{capture_schema, capture_schema_validated, schema_each};
 pub(crate) mod string;
 
 pub(crate) use demand::{CAPTURE_SLOTS, Captured, Captures, Demand};
@@ -53,3 +55,6 @@ pub fn validate(input: &[u8]) -> Result<RawJson<'_>, crate::Error> {
         _ => unreachable!("identity selects the validated root"),
     }
 }
+
+#[cfg(feature = "experimental")]
+pub(crate) use scan::{ranges_each, schema_ranges_each};

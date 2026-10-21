@@ -280,3 +280,27 @@ fn pinned_upstream_external_binding_cases() {
         }
     }
 }
+
+#[test]
+fn callable_external_focus_initializes_its_runtime() {
+    let expression = jx::compile("$each({'a':1,'b':2},$)").unwrap();
+    let host = jx::HostFunction::new(1, |args, _| Ok(args[0].clone()));
+    let values = expression
+        .evaluate_with(
+            Some(b"{}"),
+            EvaluationOptions {
+                focus: Some(host.value()),
+                ..Default::default()
+            },
+        )
+        .unwrap()
+        .collect_owned()
+        .unwrap();
+    assert_eq!(
+        values
+            .iter()
+            .map(|v| v.as_value().as_number())
+            .collect::<Vec<_>>(),
+        vec![Some(1.0), Some(2.0)]
+    );
+}

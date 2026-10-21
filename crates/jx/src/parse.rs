@@ -10,10 +10,10 @@ use lex::{Lexer, Token, error};
 pub(crate) const MAX_DEPTH: usize = 128;
 
 pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
-    parse(source, false, &[], &[])
+    parse(source, false, &[], &[], true)
 }
 pub(crate) fn dynamic(source: &str) -> Result<Expression, Error> {
-    parse(source, true, &[], &[]).map_err(|mut e| {
+    parse(source, true, &[], &[], true).map_err(|mut e| {
         e.phase = crate::Phase::Compilation;
         e.source = crate::Source::DynamicExpression;
         e
@@ -24,13 +24,22 @@ pub(crate) fn configured(
     bindings: &[Box<str>],
     constants: &crate::constant::Bindings,
 ) -> Result<Expression, Error> {
-    parse(source, false, bindings, constants)
+    parse(source, false, bindings, constants, true)
+}
+#[cfg(feature = "experimental")]
+pub(crate) fn semantic(
+    source: &str,
+    bindings: &[Box<str>],
+    constants: &crate::constant::Bindings,
+) -> Result<Expression, Error> {
+    parse(source, false, bindings, constants, false)
 }
 fn parse(
     source: &str,
     dynamic: bool,
     bindings: &[Box<str>],
     constants: &crate::constant::Bindings,
+    plans: bool,
 ) -> Result<Expression, Error> {
     let mut lexer = Lexer { source, at: 0 };
     let (token, offset) = lexer.next()?;
@@ -51,10 +60,14 @@ fn parse(
         Box::default()
     };
     crate::compile::prepare(&mut root);
-    crate::plan::prepare(&mut root);
+    if plans {
+        crate::plan::prepare(&mut root);
+    }
     let runtime = !constants.is_empty() || crate::analysis::requires_runtime(&mut root);
-    let acquisition = crate::function::acquire::prepare(&root);
-    let region = if runtime {
+    let acquisition = plans
+        .then(|| crate::function::acquire::prepare(&root))
+        .flatten();
+    let region = if runtime || !plans {
         None
     } else {
         crate::acquire::Region::prepare(&root)

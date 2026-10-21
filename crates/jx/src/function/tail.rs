@@ -9,14 +9,14 @@ use crate::{
 };
 use std::rc::Rc;
 
-pub(super) struct Call<'e, 'i> {
+pub(crate) struct Call<'e, 'i> {
     pub function: Rc<Function<'e, 'i>>,
     pub arguments: Arguments<'e, 'i>,
     pub offset: usize,
     pub validate: bool,
     pub null_focus: bool,
 }
-pub(super) enum Outcome<'e, 'i> {
+pub(crate) enum Outcome<'e, 'i> {
     Done(Option<Value<'e, 'i>>),
     Call(Call<'e, 'i>),
 }
@@ -130,6 +130,7 @@ pub(super) fn invoke<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
     validate: bool,
+    #[cfg(feature = "experimental")] input: Option<&crate::execution::input::Input<'_, 'i, '_>>,
 ) -> Result<Operand<'e, 'i>, Error> {
     let scope = context.scope.as_ref().expect("lexical runtime");
     let mut pending: Option<Call<'e, 'i>> = None;
@@ -158,6 +159,8 @@ pub(super) fn invoke<'e, 'i>(
             ),
             None => (initial, arguments, offset, validate),
         };
+        #[cfg(feature = "experimental")]
+        crate::execution::call::check(function, caller, offset)?;
         if let FunctionKind::Partial {
             target,
             arguments: bound,
@@ -196,29 +199,58 @@ pub(super) fn invoke<'e, 'i>(
             });
             continue;
         }
-        let FunctionKind::Lambda {
-            definition,
-            focus,
-            wrapped,
-            frame,
-        } = &function.kind
-        else {
-            if let Some(child) = child.take() {
-                child.release();
+        let (params, signature, body_depth, tail, focus, wrapped, frame) = match &function.kind {
+            FunctionKind::Lambda {
+                definition,
+                focus,
+                wrapped,
+                frame,
+            } => (
+                &definition.params,
+                &definition.signature,
+                definition.body.depth,
+                definition.tail,
+                focus,
+                wrapped,
+                frame,
+            ),
+            #[cfg(feature = "experimental")]
+            FunctionKind::Program {
+                definition,
+                focus,
+                wrapped,
+                frame,
+            } => (
+                &definition.params,
+                &definition.signature,
+                definition.body.call.depth,
+                definition.body.call.tail,
+                focus,
+                wrapped,
+                frame,
+            ),
+            _ => {
+                if let Some(child) = child.take() {
+                    child.release();
+                }
+                return super::invoke_checked(function, arguments, caller, offset, validate);
             }
-            return super::invoke_checked(function, arguments, caller, offset, validate);
         };
-        if steps == max_tail_calls {
-            return Err(crate::Error::new(
-                crate::ErrorKind::EvaluationLimit,
-                offset,
-                "tail-call execution exceeds one million iterations",
-            ));
+        // General compiled functions also enter this loop for the common call
+        // ABI. A non-tail initial call does not consume the tail-call budget.
+        if tail || pending.is_some() {
+            if steps == max_tail_calls {
+                return Err(crate::Error::new(
+                    crate::ErrorKind::EvaluationLimit,
+                    offset,
+                    "tail-call execution exceeds one million iterations",
+                ));
+            }
+            steps += 1;
         }
-        steps += 1;
-        let outcome = scope.call(offset, definition.body.depth, || {
+        let outcome = scope.call(offset, body_depth, || {
             let validated;
-            let arguments = if validate && let Some(signature) = &definition.signature {
+            let arguments = if validate && let Some(signature) = signature {
                 validated = signature.validate(arguments, &caller.value, offset)?;
                 validated.as_slice()
             } else {
@@ -231,16 +263,24 @@ pub(super) fn invoke<'e, 'i>(
                 child = Some(scope.child(*frame));
             }
             let child = child.as_ref().unwrap();
-            child.bind_arguments(&definition.params, arguments);
+            child.bind_arguments(params, arguments);
             let local = Context {
                 value: focus.clone(),
                 wrapped: *wrapped,
                 scope: Some(child.clone()),
             };
-            if definition.tail {
-                evaluate(&definition.body, &local, caller)
-            } else {
-                crate::retain::materialize(&definition.body, &local).map(Outcome::Done)
+            match &function.kind {
+                FunctionKind::Lambda { definition, .. } if definition.tail => {
+                    evaluate(&definition.body, &local, caller)
+                }
+                FunctionKind::Lambda { definition, .. } => {
+                    crate::retain::materialize(&definition.body, &local).map(Outcome::Done)
+                }
+                #[cfg(feature = "experimental")]
+                FunctionKind::Program { definition, .. } => {
+                    definition.body.run_function(&local, arguments, input)
+                }
+                _ => unreachable!("validated lambda definition"),
             }
         })?;
         match outcome {

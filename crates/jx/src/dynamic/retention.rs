@@ -27,6 +27,10 @@ fn loan(v: &Value<'_, '_>) -> Option<(usize, usize)> {
         return None;
     };
     match &f.kind {
+        #[cfg(feature = "experimental")]
+        FunctionKind::Program {
+            definition, frame, ..
+        } => Some((*definition as *const _ as usize, *frame)),
         FunctionKind::Lambda {
             definition, frame, ..
         } => Some((*definition as *const _ as usize, *frame)),
@@ -36,6 +40,8 @@ fn loan(v: &Value<'_, '_>) -> Option<(usize, usize)> {
         FunctionKind::Dynamic(c) => Some((
             match c.definition.as_ref() {
                 Definition::Lambda(d) => d as *const _ as usize,
+                #[cfg(feature = "experimental")]
+                Definition::Program(d) => d as *const _ as usize,
                 Definition::Transform(d) => d as *const _ as usize,
             },
             c.frame,
@@ -53,7 +59,11 @@ fn same_loan(a: &Value<'_, '_>, b: &Value<'_, '_>) -> bool {
         };
         match &f.kind {
             FunctionKind::Lambda { focus, wrapped, .. } => Some((focus, *wrapped)),
-            FunctionKind::Dynamic(c) if matches!(c.definition.as_ref(), Definition::Lambda(_)) => {
+            #[cfg(feature = "experimental")]
+            FunctionKind::Program { focus, wrapped, .. } => Some((focus, *wrapped)),
+            FunctionKind::Dynamic(c)
+                if !matches!(c.definition.as_ref(), Definition::Transform(_)) =>
+            {
                 Some((&c.focus, c.wrapped))
             }
             _ => None,
@@ -110,6 +120,8 @@ impl<'e, 'i> Retention<'e, 'i> {
             Value::Copied(c) => self.seed(&c.source),
             Value::Function(f) => match &f.kind {
                 FunctionKind::Lambda { focus, .. } => self.seed(focus),
+                #[cfg(feature = "experimental")]
+                FunctionKind::Program { focus, .. } => self.seed(focus),
                 FunctionKind::Dynamic(c) => self.seed(&c.focus),
                 FunctionKind::Partial { target, arguments } => {
                     self.seed(&Value::Function(target.clone()));
@@ -187,6 +199,18 @@ impl<'e, 'i> Retention<'e, 'i> {
                 kind: match &f.kind {
                     FunctionKind::Builtin(b) => FunctionKind::Builtin(*b),
                     FunctionKind::Host(f) => FunctionKind::Host(f.clone()),
+                    #[cfg(feature = "experimental")]
+                    FunctionKind::Program {
+                        definition,
+                        focus,
+                        wrapped,
+                        frame,
+                    } => FunctionKind::Dynamic(Box::new(Callable {
+                        definition: Rc::new(Definition::Program((*definition).clone())),
+                        focus: self.value(focus),
+                        wrapped: *wrapped,
+                        frame: *frame,
+                    })),
                     FunctionKind::Lambda {
                         definition,
                         focus,

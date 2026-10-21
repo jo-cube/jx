@@ -61,12 +61,155 @@ pub(crate) fn capture<'a>(
     Ok(raw)
 }
 
+#[cfg(feature = "experimental")]
+pub(crate) fn capture_schema<'a>(
+    input: &'a [u8],
+    schema: &crate::execution::acquisition::Schema,
+    spans: &mut [crate::execution::acquisition::Span],
+) -> Result<&'a str, Error> {
+    let text = std::str::from_utf8(input)
+        .map_err(|e| Error::new(ErrorKind::InvalidJson, e.valid_up_to(), "invalid UTF-8"))?;
+    spans.fill(Default::default());
+    let mut scanner = Scanner::<false> { text, at: 0 };
+    scanner.space();
+    scanner.schema_value(0, 0, schema, spans)?;
+    scanner.space();
+    if scanner.at != text.len() {
+        return Err(scanner.error("trailing content after JSON value").into());
+    }
+    Ok(text)
+}
+#[cfg(feature = "experimental")]
+pub(crate) fn schema_each<'i, E>(
+    raw: RawJson<'i>,
+    schema: &crate::execution::acquisition::Schema,
+    spans: &mut [crate::execution::acquisition::Span],
+    mut emit: impl FnMut(&[crate::execution::acquisition::Span], usize) -> Result<(), E>,
+) -> Result<(), E> {
+    let mut scanner = Scanner::<true> {
+        text: raw.as_str(),
+        at: 1,
+    };
+    scanner.space();
+    let mut index = 0;
+    while scanner.byte() != Some(b']') {
+        scanner
+            .schema_value(0, 0, schema, spans)
+            .expect("validated element");
+        emit(spans, index)?;
+        index += 1;
+        scanner.space();
+        scanner.take(b',');
+        scanner.space();
+    }
+    Ok(())
+}
+
+#[cfg(feature = "experimental")]
+pub(crate) fn ranges_each<'i, E>(
+    raw: RawJson<'i>,
+    ranges: &[crate::execution::acquisition::Span],
+    mut emit: impl FnMut(RawJson<'i>, usize) -> Result<(), E>,
+) -> Result<(), E> {
+    Scanner::<true> {
+        text: raw.as_str(),
+        at: 0,
+    }
+    .ranges(ranges, |scanner, index| emit(scanner.raw_value(), index))
+}
+#[cfg(feature = "experimental")]
+pub(crate) fn schema_ranges_each<'i, E>(
+    raw: RawJson<'i>,
+    ranges: &[crate::execution::acquisition::Span],
+    schema: &crate::execution::acquisition::Schema,
+    spans: &mut [crate::execution::acquisition::Span],
+    mut emit: impl FnMut(&[crate::execution::acquisition::Span], usize) -> Result<(), E>,
+) -> Result<(), E> {
+    Scanner::<true> {
+        text: raw.as_str(),
+        at: 0,
+    }
+    .ranges(ranges, |scanner, index| {
+        scanner
+            .schema_value(0, 0, schema, spans)
+            .expect("validated selected row");
+        emit(spans, index)
+    })
+}
+
+#[cfg(feature = "experimental")]
+pub(crate) fn capture_schema_validated(
+    raw: RawJson<'_>,
+    schema: &crate::execution::acquisition::Schema,
+    spans: &mut [crate::execution::acquisition::Span],
+) {
+    Scanner::<true> {
+        text: raw.as_str(),
+        at: 0,
+    }
+    .schema_value(0, 0, schema, spans)
+    .expect("validated value");
+}
+
 struct Scanner<'a, const VALIDATED: bool> {
     text: &'a str,
     at: usize,
 }
 
 impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
+    #[cfg(feature = "experimental")]
+    fn ranges<E>(
+        &mut self,
+        ranges: &[crate::execution::acquisition::Span],
+        mut visit: impl FnMut(&mut Self, usize) -> Result<(), E>,
+    ) -> Result<(), E> {
+        let mut index = 0;
+        for range in ranges {
+            self.at = range.start;
+            self.space();
+            while self.at < range.end {
+                visit(self, index)?;
+                index += 1;
+                self.space();
+                self.take(b',');
+                self.space();
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "experimental")]
+    fn schema_value(
+        &mut self,
+        depth: usize,
+        id: usize,
+        schema: &crate::execution::acquisition::Schema,
+        spans: &mut [crate::execution::acquisition::Span],
+    ) -> Result<(), ScanError> {
+        let start = self.at;
+        // A duplicate object replaces its entire former subtree, including fields
+        // absent from the replacement. Arrays remain raw, preserving boundaries.
+        spans[id..schema.nodes[id].end].fill(Default::default());
+        if self.byte() == Some(b'{') && !schema.nodes[id].children.is_empty() {
+            self.open(depth)?;
+            self.object_members(|scanner, name| {
+                if let Some(child) = schema.encoded_child(id, name) {
+                    scanner.schema_value(depth + 1, child, schema, spans)?;
+                } else {
+                    scanner.value(depth + 1, None)?;
+                }
+                Ok(())
+            })?;
+        } else {
+            self.value(depth, None)?;
+        }
+        spans[id] = crate::execution::acquisition::Span {
+            start,
+            end: self.at,
+        };
+        Ok(())
+    }
+
     fn value<'path>(
         &mut self,
         depth: usize,

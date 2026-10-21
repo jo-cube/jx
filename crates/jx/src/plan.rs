@@ -227,6 +227,11 @@ fn binary(op: Op, a: Cell, b: Cell) -> Option<Cell> {
     })
 }
 impl Plan {
+    #[cfg(feature = "experimental")]
+    pub(crate) fn source(&self) -> &Node {
+        &self.source
+    }
+
     pub(crate) fn scalar(&self) -> bool {
         matches!(self.execution, Execution::Scalar(_))
     }

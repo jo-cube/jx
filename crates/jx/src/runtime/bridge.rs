@@ -74,6 +74,8 @@ impl<'e, 'i> Scope<'e, 'i> {
                 random: RefCell::new(self.runtime.random.borrow().clone()),
                 control: self.runtime.control.clone(),
                 constants: self.runtime.constants,
+                #[cfg(feature = "experimental")]
+                program: self.runtime.program,
                 constant_identity: self.runtime.constant_identity.clone(),
             }),
             frame: self.frame,

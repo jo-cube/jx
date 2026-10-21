@@ -2,7 +2,7 @@ pub(crate) mod acquire;
 mod arguments;
 pub(crate) mod composition;
 mod signature;
-mod tail;
+pub(crate) mod tail;
 use crate::builtin::Builtin;
 use crate::{
     Error, Value,
@@ -49,6 +49,13 @@ pub(crate) enum FunctionKind<'e, 'i> {
     Chain(Rc<Function<'e, 'i>>, Rc<Function<'e, 'i>>),
     Lambda {
         definition: &'e Definition,
+        focus: Value<'e, 'i>,
+        wrapped: bool,
+        frame: usize,
+    },
+    #[cfg(feature = "experimental")]
+    Program {
+        definition: &'e crate::execution::call::Definition,
         focus: Value<'e, 'i>,
         wrapped: bool,
         frame: usize,
@@ -112,6 +119,8 @@ pub(super) fn invoke_literal<'e, 'i>(
 pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
     match &function.kind {
         FunctionKind::Builtin(builtin) => builtin.arity(),
+        #[cfg(feature = "experimental")]
+        FunctionKind::Program { definition, .. } => definition.params.len(),
         FunctionKind::Host(function) => function.arity,
         FunctionKind::Dynamic(callable) => callable.arity(),
         FunctionKind::Matcher(_) => 2,
@@ -140,6 +149,26 @@ pub(crate) fn invoke_checked<'e, 'i>(
     offset: usize,
     validate: bool,
 ) -> Result<Operand<'e, 'i>, Error> {
+    invoke_in(
+        function,
+        arguments,
+        context,
+        offset,
+        validate,
+        #[cfg(feature = "experimental")]
+        None,
+    )
+}
+pub(crate) fn invoke_in<'e, 'i>(
+    function: &Function<'e, 'i>,
+    arguments: &[Option<Value<'e, 'i>>],
+    context: &Context<'e, 'i>,
+    offset: usize,
+    validate: bool,
+    #[cfg(feature = "experimental")] input: Option<&crate::execution::input::Input<'_, 'i, '_>>,
+) -> Result<Operand<'e, 'i>, Error> {
+    #[cfg(feature = "experimental")]
+    crate::execution::call::check(function, context, offset)?;
     if matches!(
         function.kind,
         FunctionKind::Builtin(_) | FunctionKind::Matcher(_) | FunctionKind::MatchNext(_)
@@ -148,6 +177,37 @@ pub(crate) fn invoke_checked<'e, 'i>(
         scope.checkpoint(offset)?;
     }
     match &function.kind {
+        #[cfg(feature = "experimental")]
+        FunctionKind::Program { definition, .. } => {
+            // Ordinary lambdas validate signatures before the call-depth guard;
+            // tail transitions validate inside the trampoline. Preserve both
+            // error phases while sharing its compiled-body execution loop.
+            let validated;
+            let (arguments, validate) = if !definition.body.call.tail
+                && validate
+                && let Some(signature) = &definition.signature
+            {
+                validated = signature.validate(arguments, &context.value, offset)?;
+                (validated.as_slice(), false)
+            } else {
+                (arguments, validate)
+            };
+            context
+                .scope
+                .as_ref()
+                .expect("lexical runtime")
+                .evaluated(|| {
+                    tail::invoke(
+                        function,
+                        arguments,
+                        context,
+                        offset,
+                        validate,
+                        #[cfg(feature = "experimental")]
+                        input,
+                    )
+                })
+        }
         FunctionKind::Host(function) => function.invoke(arguments, context, offset, validate),
         FunctionKind::Dynamic(callable) => callable.invoke(arguments, context, offset, validate),
         FunctionKind::Builtin(builtin) => {
@@ -180,7 +240,17 @@ pub(crate) fn invoke_checked<'e, 'i>(
                     .scope
                     .as_ref()
                     .expect("lexical runtime")
-                    .evaluated(|| tail::invoke(function, arguments, context, offset, validate));
+                    .evaluated(|| {
+                        tail::invoke(
+                            function,
+                            arguments,
+                            context,
+                            offset,
+                            validate,
+                            #[cfg(feature = "experimental")]
+                            input,
+                        )
+                    });
             }
             let scope = context.scope.as_ref().expect("lexical runtime");
             let validated;

@@ -123,6 +123,16 @@ impl Fold {
             self.invalid = true;
             return;
         };
+        self.number_value(number);
+    }
+    #[cfg(feature = "experimental")]
+    pub(crate) fn push_number(&mut self, number: f64) {
+        self.count += 1;
+        if !matches!(self.aggregate, Aggregate::Count) {
+            self.number_value(number);
+        }
+    }
+    fn number_value(&mut self, number: f64) {
         self.number = Some(match self.aggregate {
             Aggregate::Sum | Aggregate::Average => self.number.unwrap_or(0.0) + number,
             Aggregate::Min | Aggregate::Max => match self.number {

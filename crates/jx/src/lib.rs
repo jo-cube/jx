@@ -9,6 +9,11 @@
 //! # Ok::<(), jx::Error>(())
 //! ```
 
+/// Research executor; opt-in, incomplete, and separate from the default engine.
+#[cfg(feature = "experimental")]
+#[path = "experimental/mod.rs"]
+pub mod execution;
+
 mod access;
 mod acquire;
 mod aggregate;

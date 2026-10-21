@@ -125,6 +125,8 @@ pub(crate) enum View<'s, 'e, 'i> {
     Items(&'s [Value<'e, 'i>]),
     Map(&'s crate::route::Map<'s, 'e, 'i>),
     Filter(&'s crate::filter::Filter<'s, 'e, 'i>),
+    #[cfg(feature = "experimental")]
+    Producer(&'s dyn Fn(&mut Output<'_, 'e, 'i>) -> Walk),
 }
 impl<'e, 'i> View<'_, 'e, 'i> {
     pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
@@ -138,6 +140,8 @@ impl<'e, 'i> View<'_, 'e, 'i> {
             }
             Self::Map(map) => map.walk(output),
             Self::Filter(filter) => filter.walk(output),
+            #[cfg(feature = "experimental")]
+            Self::Producer(walk) => walk(output),
         }
     }
     // Defer downstream failures while checking this stage. If this stage fails,

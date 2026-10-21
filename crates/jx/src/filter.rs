@@ -18,34 +18,7 @@ pub(crate) fn with_filters<'e, 'i>(
     };
     with_filters(base, previous, context, &mut |input| {
         if let Kind::Number(index) = predicate.kind {
-            let mut length = 0;
-            if index < 0.0 {
-                input.candidates(true, &mut |_| {
-                    length += 1;
-                    Ok(())
-                })?;
-            }
-            let target = if index < 0.0 {
-                length as f64 + index.floor()
-            } else {
-                index.floor()
-            };
-            let mut at = 0;
-            let mut selected = None;
-            // Finish the source even after selection, so errors in upstream
-            // predicates are not suppressed by a subsequent positional filter.
-            input.candidates(true, &mut |value| {
-                if at as f64 == target {
-                    selected = Some(value);
-                }
-                at += 1;
-                Ok(())
-            })?;
-            match selected {
-                Some(value) if value.is_array() => output(View::Operand(&Operand::One(value))),
-                None | Some(Value::Undefined) => output(View::Items(&[])),
-                Some(value) => output(View::Items(&[value])),
-            }
+            position(input, index, output)
         } else {
             let filter = Filter {
                 input,
@@ -66,6 +39,41 @@ pub(crate) fn with_filters<'e, 'i>(
         }
     })
 }
+pub(crate) fn position<'e, 'i>(
+    input: View<'_, 'e, 'i>,
+    index: f64,
+    output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
+) -> Walk {
+    let mut length = 0;
+    if index < 0.0 {
+        input.candidates(true, &mut |_| {
+            length += 1;
+            Ok(())
+        })?;
+    }
+    let target = if index < 0.0 {
+        length as f64 + index.floor()
+    } else {
+        index.floor()
+    };
+    let mut at = 0;
+    let mut selected = None;
+    // Finish the source even after selection, so errors in upstream
+    // predicates are not suppressed by a subsequent positional filter.
+    input.candidates(true, &mut |value| {
+        if at as f64 == target {
+            selected = Some(value);
+        }
+        at += 1;
+        Ok(())
+    })?;
+    match selected {
+        Some(value) if value.is_array() => output(View::Operand(&Operand::One(value))),
+        None | Some(Value::Undefined) => output(View::Items(&[])),
+        Some(value) => output(View::Items(&[value])),
+    }
+}
+
 pub(crate) struct Filter<'s, 'e, 'i> {
     input: View<'s, 'e, 'i>,
     predicate: &'e Node,

@@ -53,6 +53,22 @@ impl CompileOptions {
         self
     }
     pub fn compile(&self, source: &str) -> Result<Expression, Error> {
+        self.validate_names()?;
+        crate::parse::configured(source, &self.bindings, &self.constants)
+            .map_err(Error::compilation)
+    }
+    /// Compile an owned program for the new execution foundation. Unsupported
+    /// semantics fail explicitly; the previous evaluator is never replayed.
+    #[cfg(feature = "experimental")]
+    pub fn compile_program(&self, source: &str) -> Result<crate::execution::Program, Error> {
+        self.validate_names()?;
+        let expression = crate::parse::semantic(source, &self.bindings, &self.constants)
+            .map_err(Error::compilation)?;
+        crate::execution::Program::compile(&expression).map_err(|e| {
+            Error::new(ErrorKind::UnsupportedExpression, e.offset, e.reason).compilation()
+        })
+    }
+    fn validate_names(&self) -> Result<(), Error> {
         for name in self
             .bindings
             .iter()
@@ -79,8 +95,7 @@ impl CompileOptions {
                 .compilation());
             }
         }
-        crate::parse::configured(source, &self.bindings, &self.constants)
-            .map_err(Error::compilation)
+        Ok(())
     }
 }
 
@@ -149,34 +164,24 @@ impl<'e, 'i> Expression {
         root: Value<'e, 'i>,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        for (name, value) in &options.bindings {
-            if !self.bindings.iter().any(|n| n.as_ref() == *name) {
-                return Err(Error::new(
-                    ErrorKind::BindingError,
-                    0,
-                    "external binding was not declared at compilation",
-                ));
-            }
-            external(value)?;
-        }
-        if let Some(focus) = &options.focus {
-            external(focus)?;
-        }
+        let focus_functions = validate_options(&self.bindings, &options)?;
         let control =
             crate::controls::Control::new(options.limits, options.cancellation, options.deadline);
-        let scope = if self.runtime || !options.bindings.is_empty() || control.is_some() {
-            let scope = crate::runtime::Scope::with_random(
-                root.clone(),
-                self.root.clock,
-                options.random.as_ref(),
-            )
-            .constants(&self.constants)
-            .configure(options.bindings, control.clone());
-            scope.checkpoint(self.root.offset)?;
-            Some(scope)
-        } else {
-            None
-        };
+        let scope =
+            if self.runtime || focus_functions || !options.bindings.is_empty() || control.is_some()
+            {
+                let scope = crate::runtime::Scope::with_random(
+                    root.clone(),
+                    self.root.clock,
+                    options.random.as_ref(),
+                )
+                .constants(&self.constants)
+                .configure(options.bindings, control.clone());
+                scope.checkpoint(self.root.offset)?;
+                Some(scope)
+            } else {
+                None
+            };
         let context = Context {
             value: options.focus.unwrap_or(root),
             wrapped: true,
@@ -195,12 +200,29 @@ impl<'e, 'i> Expression {
         })
     }
 }
+pub(crate) fn validate_options(
+    declared: &[Box<str>],
+    options: &EvaluationOptions<'_, '_>,
+) -> Result<bool, Error> {
+    for (name, value) in &options.bindings {
+        if !declared.iter().any(|n| n.as_ref() == *name) {
+            return Err(Error::new(
+                ErrorKind::BindingError,
+                0,
+                "external binding was not declared at compilation",
+            ));
+        }
+        external(value)?;
+    }
+    options.focus.as_ref().map_or(Ok(false), external)
+}
+
 // JSONata closures carry arena indices: accepting one from another evaluation
 // would be unsound semantically even though Rust's bytes still live. Host values
 // have independent ownership and can be safely injected into any evaluation.
-fn external(value: &Value<'_, '_>) -> Result<(), Error> {
+fn external(value: &Value<'_, '_>) -> Result<bool, Error> {
     match value {
-        Value::Raw(_) | Value::Constant(_) => Ok(()),
+        Value::Raw(_) | Value::Constant(_) => Ok(false),
         Value::Function(f) if !matches!(f.kind, crate::function::FunctionKind::Host(_)) => {
             Err(Error::new(
                 ErrorKind::BindingError,
@@ -208,19 +230,22 @@ fn external(value: &Value<'_, '_>) -> Result<(), Error> {
                 "only host functions can cross evaluation boundaries",
             ))
         }
+        Value::Function(_) => Ok(true),
         _ if value.is_array() => {
+            let mut functions = false;
             for v in value.elements() {
-                external(&v)?;
+                functions |= external(&v)?;
             }
-            Ok(())
+            Ok(functions)
         }
         _ if value.is_object() => {
+            let mut functions = false;
             for (_, v) in value.members() {
-                external(&v)?;
+                functions |= external(&v)?;
             }
-            Ok(())
+            Ok(functions)
         }
-        _ => Ok(()),
+        _ => Ok(false),
     }
 }
 

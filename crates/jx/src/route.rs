@@ -37,48 +37,56 @@ impl<'e, 'i> Map<'_, 'e, 'i> {
         })
     }
     fn walk_items(&self, output: &mut Output<'_, 'e, 'i>) -> Result<Option<Value<'e, 'i>>, Halt> {
-        let mut defined = false;
-        let mut pending = None;
-        self.input.transform(false, output, |value, output| {
+        map_items(self.input, self.last, output, |value, emit| {
             let context = Context {
                 value,
                 wrapped: self.step.lookup,
                 scope: self.context.scope.clone(),
             };
-            crate::filter::with_filters(
-                &self.step.node,
-                &self.step.predicates,
-                &context,
-                &mut |view| {
-                    if matches!(view, View::Operand(Operand::Missing)) {
-                        return Ok(());
-                    }
-                    if let Some(value) = pending.take() {
-                        emit_mapped(value, output)?;
-                    }
-                    if self.last && !defined {
-                        defined = true;
-                        if let View::Operand(Operand::One(value)) = view
-                            && value.is_array()
-                            && !value.is_sequence()
-                        {
-                            pending = Some(value.clone());
-                            return Ok(());
-                        }
-                    }
-                    defined = true;
-                    match &view {
-                        View::Operand(Operand::One(value)) if value.preserves_array() => {
-                            output(value.clone())
-                        }
-                        _ => view.candidates(false, output),
-                    }
-                },
-            )
-        })?;
-        Ok(pending)
+            crate::filter::with_filters(&self.step.node, &self.step.predicates, &context, emit)
+        })
     }
 }
+// Cardinality belongs to the route stage, regardless of how its expression is
+// executed. Both backends supply a view; this kernel owns mapping/error order.
+pub(crate) fn map_items<'e, 'i>(
+    input: View<'_, 'e, 'i>,
+    last: bool,
+    output: &mut Output<'_, 'e, 'i>,
+    mut evaluate: impl FnMut(Value<'e, 'i>, &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk) -> Walk,
+) -> Result<Option<Value<'e, 'i>>, Halt> {
+    let mut defined = false;
+    let mut pending = None;
+    input.transform(false, output, |value, output| {
+        evaluate(value, &mut |view| {
+            if matches!(view, View::Operand(Operand::Missing)) {
+                return Ok(());
+            }
+            if let Some(value) = pending.take() {
+                emit_mapped(value, output)?;
+            }
+            if last && !defined {
+                defined = true;
+                if let View::Operand(Operand::One(value)) = view
+                    && value.is_array()
+                    && !value.is_sequence()
+                {
+                    pending = Some(value.clone());
+                    return Ok(());
+                }
+            }
+            defined = true;
+            match &view {
+                View::Operand(Operand::One(value)) if value.preserves_array() => {
+                    output(value.clone())
+                }
+                _ => view.candidates(false, output),
+            }
+        })
+    })?;
+    Ok(pending)
+}
+
 fn emit_mapped<'e, 'i>(value: Value<'e, 'i>, output: &mut Output<'_, 'e, 'i>) -> Walk {
     if value.preserves_array() {
         output(value)

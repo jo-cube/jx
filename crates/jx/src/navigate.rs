@@ -76,6 +76,15 @@ pub(crate) fn range<'e, 'i>(
     offset: usize,
     output: &mut Output<'_, 'e, 'i>,
 ) -> Walk {
+    range_values(left.run(input)?, right.run(input)?, offset, output)
+}
+
+pub(crate) fn range_values<'e, 'i>(
+    lhs: Operand<'e, 'i>,
+    rhs: Operand<'e, 'i>,
+    offset: usize,
+    output: &mut Output<'_, 'e, 'i>,
+) -> Walk {
     fn integer(value: Operand<'_, '_>, offset: usize) -> Result<Option<f64>, Error> {
         match value {
             Operand::Missing => Ok(None),
@@ -86,8 +95,6 @@ pub(crate) fn range<'e, 'i>(
             _ => Err(type_error(offset)),
         }
     }
-    let lhs = left.run(input)?;
-    let rhs = right.run(input)?;
     let lhs = integer(lhs, offset)?;
     let rhs = integer(rhs, offset)?;
     let (Some(lhs), Some(rhs)) = (lhs, rhs) else {

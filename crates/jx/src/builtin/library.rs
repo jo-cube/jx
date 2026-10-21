@@ -101,6 +101,16 @@ impl Param {
     }
 }
 impl Library {
+    // Pattern values may be user matchers; function parameters may invoke host or
+    // lexical callbacks. Without a narrower argument proof these kernels are
+    // effectful, even when their final result is a scalar.
+    #[cfg(feature = "experimental")]
+    pub(crate) fn calls_functions(self) -> bool {
+        self.signature()
+            .0
+            .iter()
+            .any(|p| matches!(p, Param::Function | Param::Pattern))
+    }
     pub fn uses_clock(self) -> bool {
         matches!(self, Self::ToMillis | Self::Now | Self::Millis)
     }
