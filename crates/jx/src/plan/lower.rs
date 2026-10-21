@@ -8,6 +8,7 @@ pub(super) struct Lower {
     lookups: Vec<(Box<crate::constant::Storage>, Path)>,
     pub(super) operations: usize,
     parameters: Vec<Box<str>>,
+    locals: Vec<(Box<str>, u8)>,
     path_sources: Vec<Option<u8>>,
     lookup_sources: Vec<Option<u8>>,
     available: u32,
@@ -154,6 +155,31 @@ impl Lower {
     pub(super) fn node(&mut self, node: &Node) -> Option<u8> {
         let instruction = match &node.kind {
             Kind::Path(path) => return self.load(path.clone(), None),
+            Kind::Variable(name) if self.locals.iter().any(|(n, _)| n == name) => {
+                return self
+                    .locals
+                    .iter()
+                    .rev()
+                    .find(|(n, _)| n == name)
+                    .map(|(_, slot)| *slot);
+            }
+            Kind::Block(items) => {
+                let (result, bindings) = items.split_last()?;
+                let start = self.locals.len();
+                for binding in bindings {
+                    let Kind::Bind(name, value) = &binding.kind else {
+                        return None;
+                    };
+                    if self.locals[start..].iter().any(|(n, _)| n == name) {
+                        return None;
+                    }
+                    let slot = self.node(value)?;
+                    self.locals.push((name.clone(), slot));
+                }
+                let result = self.node(result)?;
+                self.locals.truncate(start);
+                return Some(result);
+            }
             Kind::Variable(_) | Kind::Route(_, false) if !self.parameters.is_empty() => {
                 let (path, source) = callback::path(node, &self.parameters)?;
                 return self.load(path, Some(source));
@@ -252,7 +278,20 @@ pub(super) fn computed(node: &Node) -> bool {
     match &node.kind {
         Kind::Path(_) | Kind::Variable(_) | Kind::Route(..) => false,
         Kind::Group(child) => computed(child),
+        Kind::Block(items) => items.last().is_some_and(computed),
         Kind::Conditional(_, yes, no) => computed(yes) && no.as_ref().is_none_or(|n| computed(n)),
         _ => true,
     }
+}
+
+// Local declarations can disappear only if every value and use lowers into the
+// replay-safe primitive program. Calls, writes outside declarations, escaping
+// values and unknown lexical reads fail this proof and retain their tree.
+pub(super) fn block(node: &Node) -> Option<Program> {
+    if node.clock || !matches!(node.kind, Kind::Block(_)) || !computed(node) {
+        return None;
+    }
+    let mut lower = Lower::default();
+    let result = lower.node(node)?;
+    (lower.operations >= 3).then(|| lower.finish(result))
 }

@@ -119,7 +119,6 @@ fn dynamic_contexts_effects_and_unbounded_demands_use_normal_execution() {
     for source in [
         "a",
         "$string(a)",
-        "a+a",
         "rows.{'a':a,'b':b,'c':a}",
         "$map(rows,function($r){$r.a&$r.b&$r.a})",
         "rows^(a&b&a)",
@@ -204,6 +203,7 @@ fn pure_missing_and_fallback_demands_are_bounded_static_paths() {
         "$exists(a) ? a : b",
         "$lookup({'x':1},a&'-'&b) ?? $lookup({'x':1},c)",
         "flag ? (a ?? b) : (b ?? c)",
+        "flag ? (a ?? b) : $lowercase(c)",
     ] {
         let expression = crate::compile(source).unwrap();
         assert!(paths(&expression.root, 1).is_some(), "{source}");
@@ -214,7 +214,6 @@ fn pure_missing_and_fallback_demands_are_bounded_static_paths() {
         "a ?? $error('untaken')",
         "a ?? $eval(b)",
         "($exists:=function($v){false}; a ?? b)",
-        "flag ? (a ?? b) : $lowercase(c)",
     ] {
         let expression = crate::compile(source).unwrap();
         assert!(paths(&expression.root, 1).is_none(), "{source}");
@@ -300,5 +299,78 @@ fn captured_nested_lookups_preserve_container_identity_without_caching() {
             outcome(expression.evaluate(input)),
             "{source}"
         );
+    }
+}
+
+#[test]
+fn pure_library_arguments_share_capture_and_preserve_signature_errors() {
+    for source in [
+        "{'x':$uppercase(n),'y':$length(n),'z':$contains(n,'a')}",
+        "$contains(n,'a') and $length(n)>0 and $contains(n,'b')",
+        "{'a':$substring(n,0,2),'b':$substringBefore(n,'a'),'c':n}",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        assert!(expression.region.is_some(), "{source}");
+        for input in [
+            r#"{"n":"ab😀"}"#,
+            r#"{"n":"\u0061b\ud800"}"#,
+            r#"{"n":null}"#,
+            r#"{"n":[]}"#,
+            r#"{"n":["ab"]}"#,
+            r#"{"n":1e999}"#,
+            "{}",
+            r#"[{"n":"a"},{"n":"b"}]"#,
+            r#"{"n":"a","\u006e":"b"}"#,
+        ] {
+            let bytes = input.as_bytes();
+            let expected = outcome(crate::evaluate::scalar(
+                &expression.root,
+                bytes,
+                None,
+                false,
+            ));
+            assert_eq!(
+                outcome(expression.evaluate(bytes)),
+                expected,
+                "{source}: {input}"
+            );
+            let plan = crate::InputPlan::new([&expression]);
+            assert_eq!(
+                outcome(plan.prepare(bytes).unwrap().evaluate(0)),
+                expected,
+                "{source}: {input}"
+            );
+        }
+    }
+}
+
+#[test]
+fn single_library_and_constructor_demands_capture_without_replacing_fused_selectors() {
+    for source in ["$uppercase(a)", "$contains(a,'b')", "{'x':a}", "a+a"] {
+        let expression = crate::compile(source).unwrap();
+        assert!(expression.region.is_some(), "{source}");
+        for input in [
+            r#"{"a":"ab"}"#,
+            r#"{"a":2}"#,
+            r#"{"a":["ab"]}"#,
+            r#"{"a":null}"#,
+            "{}",
+            r#"[{"a":"a"},{"a":"b"}]"#,
+            r#"{"a":"a","\u0061":"b"}"#,
+        ] {
+            assert_eq!(
+                outcome(expression.evaluate(input.as_bytes())),
+                outcome(crate::evaluate::scalar(
+                    &expression.root,
+                    input.as_bytes(),
+                    None,
+                    false
+                )),
+                "{source}: {input}"
+            );
+        }
+    }
+    for source in ["a", "$string(a)", "$number(a)", "$lookup({'x':1},a)"] {
+        assert!(crate::compile(source).unwrap().region.is_none(), "{source}");
     }
 }

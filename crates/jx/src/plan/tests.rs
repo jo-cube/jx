@@ -497,3 +497,87 @@ fn native_regions_match_interpreter_and_error_fallback() {
         );
     }
 }
+
+#[test]
+fn grouped_filter_sources_use_the_same_fold_and_fallback() {
+    for source in [
+        "$sum((rows[x>0]).(x*y+x))",
+        "$sum(((payload.rows)[x>0][y>0]).(x*y+x))",
+        "$sum((rows[x>0].(x*y+x)))",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        let Kind::Plan(plan) = &expression.root.kind else {
+            panic!("unplanned grouped fold: {source}")
+        };
+        for rows in [
+            "[]",
+            "null",
+            "{}",
+            r#"{"x":2,"y":3}"#,
+            r#"[{"x":2,"y":3},{"x":-1,"y":null}]"#,
+            r#"[{"x":2,"y":3},{"x":2,"y":null}]"#,
+            r#"[{"x":2,"y":3},[{"x":4,"y":5}]]"#,
+            r#"[{"x":[1],"y":2}]"#,
+            r#"[{"x":1e999,"y":2}]"#,
+        ] {
+            for input in [
+                format!(r#"{{"rows":{rows},"payload":{{"rows":{rows}}}}}"#),
+                format!(r#"[{{"rows":{rows},"payload":{{"rows":{rows}}}}}]"#),
+            ] {
+                assert_eq!(
+                    result(&expression.root, input.as_bytes()),
+                    result(&plan.source, input.as_bytes()),
+                    "{source}: {input}"
+                );
+            }
+        }
+    }
+    for source in [
+        "$sum((rows[0]).x)",
+        "$sum((rows[x>0]).(x*$$.y))",
+        "$sum(payload[x>0].rows.(x*x))",
+    ] {
+        assert!(
+            !matches!(crate::compile(source).unwrap().root.kind, Kind::Plan(_)),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn numeric_block_bindings_lower_without_moving_errors_or_exporting_scope() {
+    for source in [
+        "($a:=x;$b:=y;$a*$b+$a*$a+$b*$b)",
+        "($a:=x+x;$b:=$a+y;$a*$b+$a*$a)",
+        "($a:=x;$a>0 ? $a*$a+$a+y : y*y+y+y)",
+        "($a:=x;($a:=y;$a*$a+$a+$a)+$a*$a)",
+    ] {
+        let expression = crate::compile(source).unwrap();
+        let Kind::Plan(plan) = &expression.root.kind else {
+            panic!("unplanned block: {source}")
+        };
+        for x in ["2", "-0", "null", "1e999", "[1]", "[]", "{}", "true"] {
+            for y in ["3", "null", "1e999", "[2]", "[]"] {
+                let input = format!(r#"{{"x":{x},"y":{y}}}"#);
+                assert_eq!(
+                    result(&expression.root, input.as_bytes()),
+                    result(&plan.source, input.as_bytes()),
+                    "{source}: {input}"
+                );
+            }
+        }
+        assert_eq!(result(&expression.root, b"{}"), result(&plan.source, b"{}"));
+    }
+    for source in [
+        "($a:=x;$a)",
+        "($a:=$random();$a*$a+$a+$a)",
+        "($a:=x;$b:=$error('stop');$a*$a+$a+$a)",
+        "($a:=x;($a:=y)+$a*$a+$a)",
+        "($a:=x;$eval('$a')+$a*$a)",
+    ] {
+        assert!(
+            !matches!(crate::compile(source).unwrap().root.kind, Kind::Plan(_)),
+            "{source}"
+        );
+    }
+}

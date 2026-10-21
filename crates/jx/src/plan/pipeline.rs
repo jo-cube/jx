@@ -88,27 +88,30 @@ pub(super) fn lower(node: &Node) -> Option<Pipeline> {
     let [argument] = args.as_ref() else {
         return None;
     };
+    let argument = ungroup(argument);
     let Kind::Route(steps, false) = &argument.kind else {
         return None;
     };
     let (mapped, prefix) = steps.split_last()?;
-    let (source, parents) = prefix.split_last()?;
+    if mapped.bindings.is_some() || !mapped.predicates.is_empty() {
+        return None;
+    }
     let mut fields = Vec::new();
+    let mut predicates = Vec::new();
     for step in prefix {
-        let Kind::Path(path) = &step.node.kind else {
-            return None;
-        };
-        if path.rooted || path.fields.is_empty() {
+        // Filtering an intermediate path before navigation is a different stage.
+        if step.bindings.is_some() || !predicates.is_empty() {
             return None;
         }
-        fields.extend(path.fields.iter().cloned());
+        selection(&step.node, &mut fields, &mut predicates)?;
+        predicates.extend(step.predicates.iter());
     }
-    if parents.iter().any(|step| !step.predicates.is_empty()) || !mapped.predicates.is_empty() {
+    if fields.is_empty() {
         return None;
     }
     let mut lower = Lower::default();
     let mut branches = Vec::new();
-    for predicate in &source.predicates {
+    for predicate in predicates {
         if !boolean(predicate) {
             return None;
         }
@@ -126,6 +129,40 @@ pub(super) fn lower(node: &Node) -> Option<Pipeline> {
         aggregate: *aggregate,
         offset: node.offset,
     })
+}
+fn ungroup(mut node: &Node) -> &Node {
+    while let Kind::Group(child) = &node.kind {
+        node = child;
+    }
+    node
+}
+// Canonicalize only static selection plus Boolean filters. Keep positional,
+// ancestry, bindings and intermediate filtering on their semantic tree.
+fn selection<'a>(
+    node: &'a Node,
+    fields: &mut Vec<Box<str>>,
+    predicates: &mut Vec<&'a Node>,
+) -> Option<()> {
+    match &ungroup(node).kind {
+        Kind::Path(path) if !path.rooted && !path.fields.is_empty() => {
+            fields.extend(path.fields.iter().cloned());
+        }
+        Kind::Filter(base, tests) => {
+            selection(base, fields, predicates)?;
+            predicates.extend(tests.iter());
+        }
+        Kind::Route(steps, false) => {
+            for step in steps {
+                if step.bindings.is_some() || !predicates.is_empty() {
+                    return None;
+                }
+                selection(&step.node, fields, predicates)?;
+                predicates.extend(step.predicates.iter());
+            }
+        }
+        _ => return None,
+    }
+    Some(())
 }
 fn boolean(node: &Node) -> bool {
     match &node.kind {

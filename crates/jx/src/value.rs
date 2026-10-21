@@ -211,9 +211,11 @@ impl OwnedString {
     }
     // This body is already JSON-escaped; use text for newly computed UTF-8 text.
     pub(crate) fn body(body: &str) -> Self {
-        Self {
-            json: format!("\"{body}\"").into(),
-        }
+        let mut json = String::with_capacity(body.len().saturating_add(2));
+        json.push('"');
+        json.push_str(body);
+        json.push('"');
+        Self { json: json.into() }
     }
 }
 

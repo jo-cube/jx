@@ -46,6 +46,8 @@ mod native;
 mod navigation;
 #[path = "workloads/plans.rs"]
 mod plans;
+#[path = "workloads/realistic.rs"]
+mod realistic;
 #[path = "workloads/regions.rs"]
 mod regions;
 #[path = "workloads/root_regions.rs"]
@@ -324,6 +326,10 @@ fn main() {
         root_regions::run(smoke);
         return;
     }
+    if std::env::var_os("JX_BENCH_REALISTIC_ONLY").is_some() {
+        realistic::run(smoke);
+        return;
+    }
     measure_allocations("compile", 0, smoke, None, || {
         black_box(jx::compile(black_box("customer.id")).unwrap());
     });
@@ -381,4 +387,5 @@ fn main() {
     constant_bindings::run(smoke);
     compatibility::run(smoke);
     root_regions::run(smoke);
+    realistic::run(smoke);
 }

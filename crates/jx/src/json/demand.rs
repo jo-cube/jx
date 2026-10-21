@@ -18,7 +18,7 @@ impl<'a> Captures<'a> {
             self.values[slot].map_or(Captured::Missing, Captured::Raw)
         }
     }
-    pub(super) fn fill(&mut self, mut mask: u32, value: Captured<'a>) {
+    pub(crate) fn fill(&mut self, mut mask: u32, value: Captured<'a>) {
         self.deferred &= !mask;
         let raw = match value {
             Captured::Raw(raw) => Some(raw),
@@ -67,6 +67,24 @@ impl Demand {
                 self.children.len() - 1
             });
         self.children[at].1.insert(tail, slot);
+    }
+
+    pub(crate) fn visit_paths(&self, emit: &mut impl FnMut(&[Box<str>], u32)) {
+        fn visit(
+            demand: &Demand,
+            fields: &mut Vec<Box<str>>,
+            emit: &mut impl FnMut(&[Box<str>], u32),
+        ) {
+            if demand.slots != 0 {
+                emit(fields, demand.slots);
+            }
+            for (name, child) in &demand.children {
+                fields.push(name.clone());
+                visit(child, fields, emit);
+                fields.pop();
+            }
+        }
+        visit(self, &mut Vec::new(), emit);
     }
 
     pub(crate) fn is_empty(&self) -> bool {

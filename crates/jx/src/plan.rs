@@ -203,6 +203,7 @@ fn cell(operand: Operand<'_, '_>) -> Option<Cell> {
         Operand::Many(_) => None,
     }
 }
+#[inline]
 fn binary(op: Op, a: Cell, b: Cell) -> Option<Cell> {
     let a = a.number()?;
     let b = b.number()?;
@@ -260,7 +261,7 @@ impl Plan {
     }
 
     #[inline]
-    fn demand(&self) -> &Demand {
+    pub(crate) fn demand(&self) -> &Demand {
         match &self.execution {
             Execution::Scalar(p) => &p.capture,
             Execution::Object(o) => &o.program.capture,
@@ -269,7 +270,7 @@ impl Plan {
     }
 
     #[inline]
-    fn evaluate_captured<'e, 'i>(
+    pub(crate) fn evaluate_captured<'e, 'i>(
         &'e self,
         raw: crate::RawJson<'i>,
         captured: &Captures<'i>,
@@ -281,7 +282,10 @@ impl Plan {
         };
         let result = match &self.execution {
             Execution::Scalar(p) => p
-                .execute(&context, Some(captured), |s| s[usize::from(p.result)])
+                .dispatch(
+                    |at, _| captured_operand(captured.get(at)),
+                    |s| s[usize::from(p.result)],
+                )
                 .map(Cell::operand),
             Execution::Object(o) if raw.as_bytes()[0] != b'[' => {
                 o.run_captured(&context, Some(captured))
@@ -324,6 +328,13 @@ impl Plan {
 }
 
 pub(crate) fn prepare(node: &mut Node) {
+    if let Some(program) = lower::block(node) {
+        node.kind = Kind::Plan(Box::new(Plan {
+            source: Box::new(node.clone()),
+            execution: Execution::Scalar(program),
+        }));
+        return;
+    }
     if let Some(pipeline) = pipeline::lower_callbacks(node) {
         let source = Box::new(node.clone());
         node.kind = Kind::Plan(Box::new(Plan {

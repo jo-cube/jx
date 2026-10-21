@@ -1,6 +1,6 @@
 use crate::{
     Error, Evaluation, EvaluationOptions, Expression, RawJson, acquire,
-    expression::Path,
+    expression::{Kind, Path},
     json::{CAPTURE_SLOTS, Captures, Demand},
 };
 
@@ -18,9 +18,16 @@ use crate::{
 /// ```
 #[derive(Debug)]
 pub struct InputPlan<'e> {
-    expressions: Box<[(&'e Expression, u32)]>,
+    expressions: Box<[InputExpression<'e>]>,
     paths: Box<[Path]>,
     demand: Demand,
+}
+#[derive(Debug)]
+struct InputExpression<'e> {
+    expression: &'e Expression,
+    mask: u32,
+    // Global capture slot -> the plan's local demand slots, resolved once.
+    plan_slots: Box<[(u8, u32)]>,
 }
 impl<'e> InputPlan<'e> {
     pub fn new(expressions: impl IntoIterator<Item = &'e Expression>) -> Self {
@@ -28,17 +35,35 @@ impl<'e> InputPlan<'e> {
         let expressions = expressions
             .into_iter()
             .map(|expression| {
-                let eligible = (!expression.runtime)
-                    .then(|| acquire::paths(&expression.root, 1))
-                    .flatten();
+                let mut planned = false;
+                let eligible = if expression.runtime {
+                    None
+                } else if let Kind::Plan(plan) = &expression.root.kind {
+                    planned = true;
+                    let mut paths = Vec::new();
+                    plan.demand().visit_paths(&mut |fields, slots| {
+                        paths.push((
+                            Path {
+                                fields: fields.into(),
+                                rooted: false,
+                            },
+                            slots,
+                        ));
+                    });
+                    Some(paths)
+                } else {
+                    acquire::paths(&expression.root, 1)
+                        .map(|paths| paths.into_vec().into_iter().map(|p| (p, 0)).collect())
+                };
                 let mut mask = 0;
+                let mut plan_slots = Vec::new();
                 if let Some(eligible) = eligible {
                     let extra = eligible
                         .iter()
-                        .filter(|p| !paths.iter().any(|q| p.fields == q.fields))
+                        .filter(|(p, _)| !paths.iter().any(|q| p.fields == q.fields))
                         .count();
                     if paths.len() + extra <= CAPTURE_SLOTS {
-                        for path in eligible {
+                        for (path, local_slots) in eligible {
                             let slot = paths
                                 .iter()
                                 .position(|p| p.fields == path.fields)
@@ -47,10 +72,17 @@ impl<'e> InputPlan<'e> {
                                     paths.len() - 1
                                 });
                             mask |= 1 << slot;
+                            if planned {
+                                plan_slots.push((slot as u8, local_slots));
+                            }
                         }
                     }
                 }
-                (expression, mask)
+                InputExpression {
+                    expression,
+                    mask,
+                    plan_slots: plan_slots.into_boxed_slice(),
+                }
             })
             .collect();
         let mut demand = Demand::default();
@@ -114,9 +146,29 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
     /// Panics if `index` is outside the expressions supplied to the plan.
     #[inline]
     pub fn evaluate(&self, index: usize) -> Result<Evaluation<'e, 'i>, Error> {
-        let (expression, mask) = self.plan.expressions[index];
+        let entry = &self.plan.expressions[index];
+        let expression = entry.expression;
+        let mask = entry.mask;
         if mask != 0 && self.raw.as_bytes()[0] != b'[' && !self.captures.has_deferred(mask) {
-            acquire::evaluate_captured(&expression.root, self.raw, &self.plan.paths, &self.captures)
+            if !entry.plan_slots.is_empty() {
+                let Kind::Plan(plan) = &expression.root.kind else {
+                    unreachable!("compiled input plan")
+                };
+                let mut local = Captures::default();
+                for &(global, slots) in &entry.plan_slots {
+                    local.fill(slots, self.captures.get(usize::from(global)));
+                }
+                Ok(Evaluation {
+                    result: crate::evaluate::results(plan.evaluate_captured(self.raw, &local)?),
+                })
+            } else {
+                acquire::evaluate_captured(
+                    &expression.root,
+                    self.raw,
+                    &self.plan.paths,
+                    &self.captures,
+                )
+            }
         } else {
             expression.evaluate_validated(self.raw)
         }
@@ -142,7 +194,7 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
             self.evaluate(index)
         } else {
             self.plan.expressions[index]
-                .0
+                .expression
                 .evaluate_validated_with(Some(self.raw), options)
         }
     }

@@ -3,9 +3,11 @@ import argparse, csv, json, os, statistics, subprocess
 p=argparse.ArgumentParser()
 p.add_argument('before');p.add_argument('after');p.add_argument('filters');p.add_argument('prefix');p.add_argument('--reverse',action='store_true')
 a=p.parse_args();out=[[],[]]
-for item in json.load(open(a.filters)):
+items=json.load(open(a.filters))
+if a.reverse:items.reverse()
+for item in items:
     print(f"{item['filter']} / {item['bytes']} B",flush=True)
-    env={**os.environ,'JX_BENCH_FILTER':item['filter'],'JX_BENCH_BYTES':str(item['bytes']),'JX_BENCH_SAMPLE_MS':'300'}
+    env={**os.environ,'JX_BENCH_FILTER':item['filter'],'JX_BENCH_BYTES':str(item['bytes']),'JX_BENCH_SAMPLE_MS':'300',**item.get('env',{})}
     for i in ([1,0] if a.reverse else [0,1]):
         run=subprocess.run([a.before if i==0 else a.after],env=env,text=True,capture_output=True,check=True)
         rows=list(csv.DictReader(run.stdout.splitlines()))

@@ -57,6 +57,11 @@ pub(crate) fn paths(node: &Node, minimum_loads: usize) -> Option<Box<[Path]>> {
                     collect(arg, paths, loads)?;
                 }
             }
+            Kind::Builtin(Builtin::Library(library), args) if library.constant(args) => {
+                for arg in args {
+                    collect(arg, paths, loads)?;
+                }
+            }
             Kind::Array(items, _) => {
                 for item in items {
                     collect(item, paths, loads)?;
@@ -105,11 +110,20 @@ impl Region {
             demand: Demand::default(),
             paths: Box::new([]),
         };
-        // Plans already acquire their own inputs; simple paths/calls stay lightweight.
-        if matches!(node.kind, Kind::Plan(_)) {
-            return None;
+        // These entry points already combine validation with their own selection.
+        match &node.kind {
+            Kind::Plan(_) | Kind::Path(_) => return None,
+            Kind::StaticLookup(_, key) if matches!(key.kind, Kind::Path(_)) => return None,
+            Kind::Builtin(builtin, args)
+                if builtin.is_conversion()
+                    && args.len() == 1
+                    && matches!(args[0].kind, Kind::Path(_)) =>
+            {
+                return None;
+            }
+            _ => {}
         }
-        let paths = paths(node, 3)?;
+        let paths = paths(node, 1)?;
         for (slot, path) in paths.iter().enumerate() {
             region.demand.insert(&path.fields, slot);
         }
