@@ -45,6 +45,7 @@ pub(crate) type Bindings = [(Box<str>, Arc<crate::OwnedValue>)];
 pub(crate) enum Storage {
     Owned(Data),
     Shared(Arc<crate::OwnedValue>),
+    Selected(Arc<crate::OwnedValue>, Box<[usize]>),
 }
 impl From<Data> for Storage {
     fn from(data: Data) -> Self {
@@ -57,7 +58,45 @@ impl std::ops::Deref for Storage {
         match self {
             Self::Owned(data) => data,
             Self::Shared(value) => &value.data,
+            Self::Selected(value, indices) => {
+                let mut data = &value.data;
+                for &index in indices {
+                    let Data::Object { members, .. } = data else {
+                        unreachable!("immutable object selection")
+                    };
+                    data = &members[index].1;
+                }
+                data
+            }
         }
+    }
+}
+
+impl Storage {
+    pub(crate) fn is_shared(&self) -> bool {
+        matches!(self, Self::Shared(_) | Self::Selected(..))
+    }
+    // Only object descendants: array navigation/cardinality still folds through
+    // ordinary semantics. Integer member positions stay valid in the Arc owner.
+    pub(crate) fn select_object<'a>(&self, fields: impl Iterator<Item = &'a str>) -> Option<Self> {
+        let (owner, mut indices) = match self {
+            Self::Shared(owner) => (owner, Vec::new()),
+            Self::Selected(owner, indices) => (owner, indices.to_vec()),
+            Self::Owned(_) => return None,
+        };
+        let mut data: &Data = self;
+        for field in fields {
+            let Data::Object { members, .. } = data else {
+                return None;
+            };
+            let index = members
+                .iter()
+                .rposition(|(key, _)| string::matches(body(key), field))?;
+            data = &members[index].1;
+            indices.push(index);
+        }
+        matches!(data, Data::Object { .. })
+            .then(|| Self::Selected(owner.clone(), indices.into_boxed_slice()))
     }
 }
 

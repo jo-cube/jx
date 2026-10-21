@@ -56,7 +56,14 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
             wrapped: true,
             scope: None,
         };
-        if let Ok(value) = crate::retain::materialize(node, &context)
+        if let Some(data) = shared_object_route(node) {
+            node.kind = Kind::Prepared(Box::new(Prepared {
+                data,
+                array_syntax: false,
+            }));
+            node.effects = false;
+            node.clock = false;
+        } else if let Ok(value) = crate::retain::materialize(node, &context)
             && let Some(data) = Data::capture(&value.unwrap_or(Value::Undefined))
         {
             let prepared = Prepared {
@@ -114,14 +121,34 @@ fn constant_route(node: &Node) -> bool {
     let Kind::Route(steps, _) = &node.kind else {
         return false;
     };
-    steps.first().is_some_and(|head| {
-        matches!(&head.node.kind, Kind::Prepared(p) if matches!(p.data, crate::constant::Storage::Shared(_)))
-    }) && steps
-        .iter()
-        .all(|step| step.bindings.is_none() && step.predicates.is_empty())
+    steps
+        .first()
+        .is_some_and(|head| matches!(&head.node.kind, Kind::Prepared(p) if p.data.is_shared()))
+        && steps
+            .iter()
+            .all(|step| step.bindings.is_none() && step.predicates.is_empty())
         && steps[1..]
             .iter()
             .all(|step| matches!(&step.node.kind, Kind::Path(path) if !path.rooted))
+}
+
+fn shared_object_route(node: &Node) -> Option<crate::constant::Storage> {
+    if !constant_route(node) {
+        return None;
+    }
+    let Kind::Route(steps, _) = &node.kind else {
+        return None;
+    };
+    let Kind::Prepared(head) = &steps[0].node.kind else {
+        return None;
+    };
+    let fields = steps[1..].iter().flat_map(|step| {
+        let Kind::Path(path) = &step.node.kind else {
+            unreachable!("static route")
+        };
+        path.fields.iter().map(AsRef::as_ref)
+    });
+    head.data.select_object(fields)
 }
 
 fn specialize(node: &mut Node) {
@@ -147,4 +174,46 @@ fn specialize(node: &mut Node) {
     let mut clock = crate::analysis::own_clock(&node.kind);
     crate::analysis::children(node, &mut |child| clock |= child.clock);
     node.clock = clock;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn nested_immutable_object_storage_is_shared_across_expression_clones() {
+        let config = std::sync::Arc::new(
+            crate::OwnedValue::from_json(br#"{"labels":{"x":"value"}}"#).unwrap(),
+        );
+        let options = crate::CompileOptions::default().constant_binding("config", config.clone());
+        let expression = options.compile("$lookup($config.labels,key)").unwrap();
+        let expected = config
+            .data
+            .find(
+                || crate::json::string::fingerprint("labels"),
+                |key| crate::json::string::matches(key, "labels"),
+            )
+            .unwrap();
+        for expression in [expression.clone(), expression] {
+            let Kind::StaticLookup(data, _) = &expression.root.kind else {
+                panic!("static lookup")
+            };
+            let actual: &Data = data;
+            assert!(
+                std::ptr::eq(actual, expected),
+                "nested immutable table was copied"
+            );
+            assert_eq!(
+                expression
+                    .evaluate(br#"{"key":"x"}"#)
+                    .unwrap()
+                    .single()
+                    .unwrap()
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+                    .unwrap(),
+                "value"
+            );
+        }
+    }
 }

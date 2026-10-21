@@ -297,12 +297,7 @@ fn captured_nested_lookups_preserve_container_identity_without_caching() {
         let plan = crate::InputPlan::new([&expression]);
         assert_eq!(
             outcome(plan.prepare(input).unwrap().evaluate(0)),
-            outcome(crate::evaluate::scalar(
-                &expression.root,
-                input,
-                None,
-                false
-            )),
+            outcome(expression.evaluate(input)),
             "{source}"
         );
     }
