@@ -225,3 +225,139 @@ fn same_json(left: &Value, right: &Value) -> bool {
         _ => left == right,
     }
 }
+
+// Every pinned case has an explicit admission outcome for the opt-in foundation.
+// Coverage changes require a deliberate inventory update after differential checks.
+#[cfg(feature = "experimental")]
+#[test]
+fn execution_foundation_has_pinned_admission_and_semantic_outcomes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance");
+    let manifest = read(&root.join("manifest.json"));
+    let gate = read(&root.join("execution.json"));
+    assert_eq!(gate["revision"], manifest["revision"]);
+    let rows = manifest["cases"].as_array().unwrap();
+    let admission = gate["cases"].as_array().unwrap();
+    assert_eq!(rows.len(), admission.len());
+    for (row, admission) in rows.iter().zip(admission) {
+        let file = row["file"].as_str().unwrap();
+        let index = row["index"].as_u64().unwrap() as usize;
+        let id = format!("{file}#{index}");
+        assert_eq!(admission[0], id);
+        let spec = read(&root.join(file));
+        let case = if spec.is_array() { &spec[index] } else { &spec };
+        let original = case["expr"].as_str().map(str::to_owned).unwrap_or_else(|| {
+            fs::read_to_string(
+                root.join(file)
+                    .with_file_name(case["expr-file"].as_str().unwrap()),
+            )
+            .unwrap()
+        });
+        let source = if row["phase"] != "compile" {
+            if let Some(bindings) = case["bindings"].as_object().filter(|b| !b.is_empty()) {
+                format!(
+                    "({}{} )",
+                    bindings
+                        .iter()
+                        .map(|(name, value)| format!("${name}:={value};"))
+                        .collect::<String>(),
+                    original
+                )
+            } else {
+                original
+            }
+        } else {
+            original
+        };
+        let compiled = jx::CompileOptions::default().compile_program(&source);
+        match admission[1].as_str().unwrap() {
+            "compile_rejected" => {
+                assert_eq!(
+                    compiled.unwrap_err().kind,
+                    jx::ErrorKind::UnsupportedExpression,
+                    "{id}"
+                );
+                continue;
+            }
+            "syntax_error" => {
+                let error = compiled.unwrap_err();
+                assert_eq!(
+                    format!("{:?}", error.kind),
+                    row["kind"].as_str().unwrap(),
+                    "{id}"
+                );
+                continue;
+            }
+            "supported" => {}
+            other => panic!("unimplemented explicit admission outcome {other}: {id}"),
+        }
+        let program = compiled.unwrap_or_else(|e| panic!("{id}: {e}"));
+        let old = jx::compile(&source).unwrap();
+        let bytes = input_bytes(&root, case, file, index);
+        let absent = case.get("data").is_none() && case["dataset"].is_null();
+        let expected = execution_values(if absent {
+            old.evaluate_with(None, Default::default())
+        } else {
+            old.evaluate(&bytes)
+        });
+        let mut acquisition = jx::execution::Acquisition::new([&program]);
+        let outcomes = if absent {
+            vec![execution_values(program.evaluate_without_input())]
+        } else {
+            let raw = jx::validate(&bytes).unwrap();
+            vec![
+                execution_values(program.evaluate_bytes(&bytes)),
+                execution_values(program.evaluate_validated(raw)),
+                execution_values(program.evaluate(&acquisition.prepare_validated(raw))),
+            ]
+        };
+        for actual in outcomes {
+            assert_eq!(actual, expected, "{id}: {source}");
+        }
+        if row["status"] == "supported" {
+            let values = expected.unwrap();
+            if case["undefinedResult"] == true {
+                assert!(values.is_empty(), "{id}");
+            } else {
+                let mut actual = if values.len() == 1 {
+                    values.into_iter().next().unwrap()
+                } else {
+                    Value::Array(values)
+                };
+                let mut expected = case["result"].clone();
+                if case["unordered"] == true {
+                    actual.as_array_mut().unwrap().sort_by_key(Value::to_string);
+                    expected
+                        .as_array_mut()
+                        .unwrap()
+                        .sort_by_key(Value::to_string);
+                }
+                assert!(
+                    same_json(&actual, &expected),
+                    "{id}: {actual} != {expected}"
+                );
+            }
+        } else {
+            assert_eq!(
+                format!("{:?}", expected.unwrap_err().kind),
+                row["kind"].as_str().unwrap(),
+                "{id}"
+            );
+        }
+    }
+}
+
+#[cfg(feature = "experimental")]
+fn execution_values(
+    evaluation: Result<jx::Evaluation<'_, '_>, jx::Error>,
+) -> Result<Vec<Value>, jx::Error> {
+    evaluation?.collect_owned().map(|values| {
+        values
+            .into_iter()
+            .map(|value| {
+                let mut bytes = Vec::new();
+                value.as_value().write_compact(&mut bytes).unwrap();
+                serde_json::from_slice(&bytes).unwrap()
+            })
+            .collect()
+    })
+}

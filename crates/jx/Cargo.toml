@@ -49,3 +49,7 @@ harness = false
 [[example]]
 name = "execution"
 required-features = ["experimental"]
+
+[[example]]
+name = "architecture_probe"
+required-features = ["experimental"]
