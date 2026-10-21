@@ -74,3 +74,21 @@ platform checks. Packaging a working tree for review uses
 `cargo package --workspace --locked --allow-dirty`. Inspect extracted archives rather
 than relying only on in-workspace builds. [Release preparation](releases.md) covers
 platforms, feature policy, checksums, licenses and reproducibility.
+
+Representative predicate/projection, immutable-table, repeated-field, string and
+expression-form comparisons use `JX_BENCH_REALISTIC_ONLY=1 just bench`. The same selector
+with `just bench-runtime-memory` measures compile/clone retention and evaluation peaks.
+Optional `node scripts/check-optimizing.cjs UPSTREAM_CHECKOUT CLI_BINARY` checks grouping,
+numeric declarations, UTF-8 operations and membership against the pinned reference;
+set `JX_DIFFERENTIAL_JIT=1` to exercise native-enabled evaluation.
+
+The owned execution foundation uses `cargo bench -p jx --features experimental --bench architecture`.
+Run its shared-input example with `cargo run -p jx --features experimental --example execution`.
+The [comparison workflow](../benchmarks/execution/reproduce.md) separates compilation,
+execution, cancellation, memory and pinned upstream coverage. The new foundation is
+opt-in and is not selected by the CLI or the default execution API.
+
+The [execution model and compatibility inventory](execution.md) distinguish the
+opt-in foundation from the complete default embedding API. Active worker, sequence
+and compiler-scaling fixtures live in `crates/jx/benches/architecture`; compact
+selectors and reproduction instructions live in `benchmarks/execution`.

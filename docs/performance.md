@@ -1,41 +1,5 @@
 # Performance and efficiency
 
-## Current measurements
-
-| Workload | Input bytes | Mode | Records/s | Input MiB/s | Allocations/record |
-| --- | ---: | --- | ---: | ---: | ---: |
-| Shallow path | 500 | normal | 3.21 M | 1,529 | 0 |
-| Scalar arithmetic | 1,024 | normal | 1.61 M | 1,572 | 0 |
-| 8,192-key static lookup | 500 | normal | 2.82 M | 1,343 | 0 |
-| Filter/map/sum, 1,024 rows | 41,828 | normal | 5.92 k | 236 | 0 |
-| Constructed object | 500 | normal | 2.45 M | 1,168 | 3 |
-| Numeric filter/map/sum, 1,024 rows | 14,794 | native | 10.24 k | 144 | 0 |
-
-The table reports medians across two passes, each with seven 300 ms warmed samples.
-It includes full input validation and result consumption, not compilation, serialization
-or I/O. Allocation counts include allocator growth/reallocation; requested bytes are
-not retained heap or RSS. The constructed object uses 152 requested bytes per record.
-Pass medians differ by 0.2–4.5%; the table rounds rates accordingly. These measurements
-are scoped examples, not portable throughput guarantees.
-
-[Raw samples, selections and summary](../benchmarks/current) and the
-[reproduction environment](../benchmarks/current/environment.json) identify source,
-compiler/target, build settings, executable hashes and machine/OS. Hardware details
-are retained there only for reproduction.
-
-| Selection | Expression/fixture |
-| --- | --- |
-| `ascii/shallow`, 500 B | `id`, one borrowed scalar |
-| `execution/arithmetic`, 1 KiB | Repeated numeric field loads/arithmetic, one primitive result |
-| `acquisition/lookup_8192_short_varying`, 500 B | Compiled 8,192-key object, rotating hit/miss keys |
-| `regions/filtered_sum`, 41,828 B | `$sum($map($filter(rows,…),…))` over 1,024 nested rows |
-| `execution/constructor`, 500 B | Fixed schema plus computed arithmetic member, one object |
-| `jit/filter_map_fold`, 14,794 B | Native-enabled numeric filter/map/sum over 1,024 rows |
-
-Normal/native rows use different fixtures; their rates describe each workload independently.
-The measurements use the normal build for ordinary rows and a `jit` build with native
-execution enabled for the final row.
-
 `jx` is designed for one compiled expression evaluated over many independent records.
 Compilation can spend work on analysis so repeated execution stays small. Performance
 depends on expression shape, record layout, result size and the caller's consumption.
@@ -45,8 +9,10 @@ There is no universal comparison with other query engines.
 
 - Constants, constructors, regexes, pictures and static lookup tables are prepared once.
   Static object lookup uses a compact fingerprint index with exact UTF-16 equality checks.
+  Immutable nested object tables retain their snapshot owner instead of being copied
+  into each expression or clone.
 - Validation captures demanded fields/paths where possible. Repeated planned loads,
-  pure call arguments and bounded pure root string/constructor regions reuse spans
+  pure library/call arguments and bounded pure root constructor regions reuse spans
   instead of scanning the object again. Root capture is stack-scoped with no added heap
   allocation; callbacks and dynamic contexts retain their existing execution paths.
   Traversal of validated input skips subtree boundaries without parsing their grammar
@@ -56,7 +22,9 @@ There is no universal comparison with other query engines.
   avoids a UTF-16 round-trip and reuses its UTF-8 text buffer when escaping permits.
 - Sequences stream when cardinality and effects allow. Selected filter/map/aggregate
   regions fuse iteration and primitive computation without intermediate collections.
-- Bounded plans share loads/computations and reduce repeated tree dispatch. Unsupported
+- Bounded plans share loads/computations and reduce repeated tree dispatch. Grouped
+  static filter sources reuse fold lowering; proven numeric local declarations use
+  registers. `InputPlan` shares acquisition with scalar, fold and constructor plans. Unsupported
   shapes retain normal tree execution.
 - Frames recycle or retire when captures no longer escape. Ownership is paid for where
   lexical retention, sorting, grouping, construction or detached snapshots require it.
@@ -77,8 +45,10 @@ owned snapshots can allocate.
 | Sorting/grouping | Candidates must be retained; pure keys can be reused, observable callbacks cannot |
 | Transforms | Clone conversion and rebuilding affected containers remain necessary |
 
-Unplanned consumers and nested-array/cardinality operations can still rescan. Genuine
-escaping closures and retained outputs must keep their data alive. Effects, errors,
+Unplanned consumers and nested-array/cardinality operations can still rescan. Numeric
+plan guard failures may replay a pure prefix through the tree to preserve errors.
+Selected immutable object views retain their entire snapshot owner; eager map results
+still retain their sequence. Genuine escaping closures and retained outputs must keep their data alive. Effects, errors,
 randomness and dynamic calls cannot be memoized to improve a benchmark.
 
 ## Optional native execution
@@ -95,16 +65,16 @@ not a per-record operation. Keep native opt-in and compare it with the same plan
 
 ## Measuring
 
-To reproduce a table row, use its exact workload selector and input size:
+Use the workspace release profile and record compiler/target, host, source revision,
+feature flags and executable hashes. Keep compilation, profiles and allocation probes
+outside timed execution. Repeat warmed samples with both version orders and retain
+raw samples under ignored `target/` or external review storage.
 
-```sh
-JX_BENCH_FILTER=ascii/shallow JX_BENCH_BYTES=500 JX_BENCH_SAMPLE_MS=300 just bench
-JX_BENCH_FILTER=jit/filter_map_fold JX_BENCH_BYTES=14794 JX_BENCH_SAMPLE_MS=300 just bench-jit
-```
-
-Repeat all six selectors from `benchmarks/current/controls.json` in reverse order for
-the second pass. Refresh this small current measurement set when publishing new figures;
-keep development comparison snapshots outside user documentation.
+The [experimental execution workflow](../benchmarks/execution/reproduce.md) covers
+matched legacy/foundation execution, compiler scaling, allocation/heap probes and
+isolated transformation workers. The foundation remains opt-in; semantic coverage
+and output obligations must match before comparing rates. Projection throughput
+does not establish compatibility or end-to-end broker capacity.
 
 Benchmarks live in `crates/jx/benches`, with workloads separated by semantic area.
 They cover compilation, validation, paths/sequences, scalar kernels, callbacks,
@@ -119,6 +89,8 @@ JX_BENCH_FILTER=arithmetic JX_BENCH_BYTES=500 JX_BENCH_SAMPLE_MS=300 just bench
 JX_BENCH_ROOT_ONLY=1 JX_BENCH_FILTER=root_regions/string JX_BENCH_BYTES=500 just bench
 just bench-runtime
 just bench-runtime-memory
+JX_BENCH_REALISTIC_ONLY=1 just bench
+JX_BENCH_REALISTIC_ONLY=1 just bench-runtime-memory
 just bench-embedding
 just bench-plan
 just bench-jit

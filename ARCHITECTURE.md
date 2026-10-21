@@ -32,11 +32,12 @@ Every input byte is validated, including undemanded fields and untaken branches.
 Compact demand metadata captures required raw spans during validation where possible.
 Repeated planned loads, pure call arguments and bounded pure root regions reuse those
 captures. Pure missing tests and fallback branches can share input selection without
-evaluating untaken branches or caching expression results. Root string/conversion and
-fixed constructor regions use one stack capture frame, sharing scalar/constructor
+evaluating untaken branches or caching expression results. Pure library arguments and fixed constructor regions, including single-demand expressions,
+use one stack capture frame, sharing scalar/constructor
 operations with tree execution and existing numeric plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
-arrays fall back before region execution. An explicit `InputPlan` can union the same
-bounded pure root demands across compiled expressions. Its borrowed `PreparedInput`
+arrays fall back before region execution. An explicit `InputPlan` unions bounded pure root demands and existing scalar, fold and
+constructor plan demands across compiled expressions. Compile-time slot mappings reuse
+shared spans in each plan without rescanning its source. Its borrowed `PreparedInput`
 contains only validated spans; each evaluation runs independently, and deferred demands
 fall back per expression. Existing expression
 entry points keep their own acquisition fast paths. Runtime contexts and values carry
@@ -51,7 +52,10 @@ validator accepts unchecked input. There is no universal input index or per-reco
 Plans cover useful pure regions: scalar loads and lookups, arithmetic/comparisons,
 truth tests, forward branches/moves, selected filter/map/numeric folds and fixed
 constructors with computed primitive members. Eligible callback bodies use the same
-operations. Compilation shares repeated demands and computations within these regions.
+operations. Compilation shares repeated demands and computations within these regions. Pure static
+selection and Boolean filters can lower through grouping parentheses. Numeric local
+declarations use registers only when every value and use proves replay-safe; escaping
+values, external writes and unknown lexical reads retain their tree.
 Registers and captures are bounded; ordinary scalar execution uses stack storage.
 
 A plan retains its tree source. Unsupported shapes or failed guards fall back before
@@ -60,8 +64,8 @@ can be retried. Strings, general ownership, provenance, dynamic calls, host func
 and effects remain in normal Rust evaluation. Controlled execution uses tree regions
 where needed to keep cancellation and work checks effective.
 
-Lowering is deliberately bounded: representing every language feature would duplicate
-the general evaluator without a demonstrated benefit. Native execution has a narrower
+Legacy lowering is bounded and retains its tree reference. The replacement foundation
+below is the migration target for broader semantics. Native execution has a narrower
 boundary still.
 
 ## Values, sequences and retention
@@ -69,7 +73,9 @@ boundary still.
 Values can be raw borrowed JSON, expression-owned constants, primitive scalars,
 encoded strings, constructed containers or functions. Constructed containers own
 member lists and share immutable structure; their leaves can still borrow input.
-Decoded unescaped strings borrow, while escape decoding may allocate. Bounded
+Decoded unescaped strings borrow, while escape decoding may allocate. Case conversion,
+substring extraction and literal search use UTF-8 directly for unescaped strings;
+escaped strings retain UTF-16 handling, including isolated surrogate units. Bounded
 left-associated concatenation retains converted components on the stack and constructs
 one exactly sized owned string, preserving each operator's evaluation/conversion order.
 JSONata string
@@ -97,8 +103,10 @@ detach JSON-compatible results; JSONata functions remain evaluation-local.
 
 External names are declared before optimization. Immutable owned external data is shared
 by compile options/expressions and substituted only when scope analysis proves the name
-unchanged. Static navigation folds through ordinary semantics; dynamic evaluation,
-rebinding and identity-sensitive transforms retain a borrowed immutable environment
+unchanged. Static object descendants retain their snapshot owner and member positions without
+copying the table or its index. Such views keep the whole snapshot alive; arrays and
+general constant computations still fold through ordinary semantics. Dynamic evaluation,
+rebinding, transforms and identity-sensitive container membership retain a borrowed immutable environment
 beneath evaluation-local frames. Host functions are always effectful,
 synchronous and excluded from pure plans/replay. Randomness initializes lazily;
 timestamps are fixed within an evaluation. Optional controls live in evaluation state,
@@ -121,3 +129,17 @@ release are confined to `jx-native/src/executable.rs`. A fixed C ABI uses bounde
 buffers; an `Arc` owner keeps immutable code alive through calls/clones. No evaluator
 lock or unsafe sharing trait is needed. Default builds do not depend on Cranelift.
 See [performance](docs/performance.md#optional-native-execution) and [feature/platform policy](docs/releases.md).
+
+## Experimental execution foundation
+
+The opt-in `experimental` feature exposes `execution::Program` and
+`execution::Acquisition`. It shares parsing, semantic preparation, values, lexical
+runtime and checked kernels with the default engine. An owned semantic register
+program supplies both scalar and general execution; unsupported semantics fail
+explicitly without tree replay. Shared acquisition captures query-sized borrowed
+spans during complete validation, independently of the legacy 32-capture limit.
+
+The foundation is incomplete. It does not change `Expression`, CLI or native
+routing, and no legacy subsystem can yet be removed wholesale. See the
+[current execution model and semantic boundaries](docs/execution.md) and
+[validation and benchmark workflow](benchmarks/execution/reproduce.md).

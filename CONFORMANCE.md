@@ -70,3 +70,11 @@ For native parity, build with `just build-jit` and set `JX_DIFFERENTIAL_JIT=1` f
 same loop. The helper verifies the upstream revision. Ordinary `just all` and CI use
 vendored fixtures and need neither Node nor an upstream checkout. Manual CI/release
 preparation can opt into the pinned-upstream differential suites in both modes.
+
+The opt-in execution foundation has a separate explicit admission inventory in
+`tests/conformance/execution.json`. With `experimental`, the Rust conformance test
+checks every inventory entry and compares admitted raw/validated/prepared results
+and diagnostics with the legacy reference and pinned expectations. Updating that
+inventory is deliberate; use the differential workflow in
+[execution reproduction](benchmarks/execution/reproduce.md). Rejection is not a skip
+or a claim of language support.
