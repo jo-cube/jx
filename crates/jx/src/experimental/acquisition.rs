@@ -121,6 +121,10 @@ struct Port {
     // Unseen, unknown, or a resolved summary (including joined summaries).
     callee: Option<Option<Callee>>,
 }
+enum BindingChange {
+    Origin(String, Option<Origin>),
+    Function(String, Option<Callee>),
+}
 struct Demands {
     paths: Vec<Vec<Vec<String>>>,
     joins: Vec<(Arc<()>, usize, usize)>,
@@ -129,9 +133,49 @@ struct Demands {
     lexical: BTreeMap<String, Origin>,
     captures: Option<BTreeMap<String, usize>>,
     lexical_functions: BTreeMap<String, Callee>,
+    changes: Vec<BindingChange>,
     contexts: Option<BTreeMap<String, usize>>,
 }
 impl Demands {
+    fn bind_origin(&mut self, name: &str, origin: Option<Origin>) {
+        let old = if let Some(origin) = origin {
+            self.lexical.insert(name.to_owned(), origin)
+        } else {
+            self.lexical.remove(name)
+        };
+        self.changes
+            .push(BindingChange::Origin(name.to_owned(), old));
+    }
+    fn bind_function(&mut self, name: &str, function: Option<Callee>) {
+        let old = if let Some(function) = function {
+            self.lexical_functions.insert(name.to_owned(), function)
+        } else {
+            self.lexical_functions.remove(name)
+        };
+        self.changes
+            .push(BindingChange::Function(name.to_owned(), old));
+    }
+    // Analysis scopes restore only the names they changed. Copying every live
+    // ancestry/lexical path at each nested body makes setup grow unnecessarily.
+    fn restore(&mut self, mark: usize) {
+        while self.changes.len() > mark {
+            match self.changes.pop().unwrap() {
+                BindingChange::Origin(name, Some(origin)) => {
+                    self.lexical.insert(name, origin);
+                }
+                BindingChange::Origin(name, None) => {
+                    self.lexical.remove(&name);
+                }
+                BindingChange::Function(name, Some(function)) => {
+                    self.lexical_functions.insert(name, function);
+                }
+                BindingChange::Function(name, None) => {
+                    self.lexical_functions.remove(&name);
+                }
+            }
+        }
+    }
+
     // Generated ancestry slots are immutable semantic ports. Track one origin
     // per slot through the same demand analysis as lexical/call ports. Paths
     // beneath arrays remain row demands rather than a per-record graph.
@@ -159,17 +203,17 @@ impl Demands {
                                         self.shared.push(false);
                                         scope
                                     });
-                                self.lexical.insert(
-                                    name.to_string(),
-                                    Origin {
+                                self.bind_origin(
+                                    name,
+                                    Some(Origin {
                                         scope,
                                         path: Vec::new(),
-                                    },
+                                    }),
                                 );
                             } else if let Some(origin) = &current {
-                                self.lexical.insert(name.to_string(), origin.clone());
+                                self.bind_origin(name, Some(origin.clone()));
                             } else {
-                                self.lexical.remove(name.as_ref());
+                                self.bind_origin(name, None);
                             }
                         }
                     }
@@ -214,8 +258,7 @@ impl Demands {
         arguments: &[Option<Origin>],
         outer: &[Port],
     ) -> Option<Origin> {
-        let saved_lexical = self.lexical.clone();
-        let saved_functions = self.lexical_functions.clone();
+        let saved = self.changes.len();
         let mut lexical_scopes = Vec::new();
         let mut definitions = vec![0; p.registers];
         for i in &p.code {
@@ -321,27 +364,18 @@ impl Demands {
                         Some(origin)
                     }),
                 Operation::EnterScope => {
-                    lexical_scopes.push((self.lexical.clone(), self.lexical_functions.clone()));
+                    lexical_scopes.push(self.changes.len());
                     None
                 }
                 Operation::LeaveScope => {
-                    (self.lexical, self.lexical_functions) =
-                        lexical_scopes.pop().expect("balanced lexical scope");
+                    self.restore(lexical_scopes.pop().expect("balanced lexical scope"));
                     None
                 }
                 Operation::Bind(name, r) => {
-                    if let Some(function) = ports[*r].callee.clone().flatten() {
-                        self.lexical_functions.insert(name.to_string(), function);
-                    } else {
-                        self.lexical_functions.remove(name.as_ref());
-                    }
-                    if let Some(origin) = ports[*r].origin.clone() {
-                        self.lexical.insert(name.to_string(), origin.clone());
-                        Some(origin)
-                    } else {
-                        self.lexical.remove(name.as_ref());
-                        None
-                    }
+                    self.bind_function(name, ports[*r].callee.clone().flatten());
+                    let origin = ports[*r].origin.clone();
+                    self.bind_origin(name, origin.clone());
+                    origin
                 }
                 Operation::Read(name) => self.lexical_origin(name),
                 Operation::Focus => focus.clone(),
@@ -378,9 +412,9 @@ impl Demands {
                     })
                 }
                 Operation::Correlate(region) => {
-                    let saved = self.lexical.clone();
+                    let saved = self.changes.len();
                     let origin = self.context(region, root.clone(), focus.clone(), &ports);
-                    self.lexical = saved;
+                    self.restore(saved);
                     origin
                 }
                 Operation::CorrelatedGroup(..)
@@ -490,8 +524,7 @@ impl Demands {
             };
         }
         let result = ports[p.result].origin.clone();
-        self.lexical = saved_lexical;
-        self.lexical_functions = saved_functions;
+        self.restore(saved);
         result
     }
     fn lexical_origin(&mut self, name: &str) -> Option<Origin> {
@@ -526,6 +559,7 @@ fn collect(p: &Program, root: bool, focus: bool, argument: bool, paths: &mut Vec
         lexical: BTreeMap::new(),
         captures: None,
         lexical_functions: BTreeMap::new(),
+        changes: Vec::new(),
         contexts: None,
     };
     demands.collect(p, origin(root), origin(focus), &[origin(argument)], &[]);
@@ -596,6 +630,7 @@ pub(super) fn dependencies(p: &Program, count: usize) -> Arc<Dependencies> {
         lexical: BTreeMap::new(),
         captures: Some(BTreeMap::new()),
         lexical_functions: BTreeMap::new(),
+        changes: Vec::new(),
         contexts: None,
     };
     let arguments = (2..count + 2).map(origin).collect::<Vec<_>>();
@@ -659,6 +694,7 @@ pub(super) fn plan_joins(p: &mut Program) {
         lexical: BTreeMap::new(),
         captures: None,
         lexical_functions: BTreeMap::new(),
+        changes: Vec::new(),
         contexts: None,
     };
     demands.collect(p, None, None, &[], &[]);
@@ -732,6 +768,7 @@ fn plan_context(region: &mut super::context::Region) {
         lexical: BTreeMap::new(),
         captures: None,
         lexical_functions: BTreeMap::new(),
+        changes: Vec::new(),
         contexts: Some(BTreeMap::new()),
     };
     demands.context(region, None, None, &[]);
