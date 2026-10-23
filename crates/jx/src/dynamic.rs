@@ -241,6 +241,47 @@ fn evaluate<'e, 'i>(
         .as_ref()
         .map_or(context.wrapped, |v| v.is_array() && !v.is_sequence());
     let focus = replacement.unwrap_or_else(|| context.value.clone());
+    #[cfg(feature = "experimental")]
+    if context
+        .scope
+        .as_ref()
+        .is_some_and(crate::runtime::Scope::is_program)
+    {
+        // Dynamic code has a shorter source lifetime. The existing scope bridge
+        // retains escaping IR definitions and preserves imported value identity.
+        // No AST body can execute in this domain, including nested $eval calls.
+        let source = source(text, offset)?;
+        let expression = crate::parse::dynamic_semantic(&source)
+            .map_err(|e| wrapped(e, ErrorKind::EvalSyntax, offset))?;
+        let program = crate::execution::Program::compile_dynamic(&expression)?;
+        let scope = context.scope.as_ref().unwrap();
+        let mut definitions = scope.dynamic_definitions();
+        borrow::collect(&focus, &mut definitions);
+        return scope
+            .bridge(
+                borrow::value(&focus, &definitions),
+                wrapped_focus,
+                |local| {
+                    let scope = local.scope.as_ref().unwrap();
+                    scope.loan_dynamic(&definitions);
+                    scope.call(offset, program.call.depth, || {
+                        program.evaluate_region(local)
+                    })
+                },
+            )
+            .map(|v| v.map_or(Operand::Missing, Operand::One))
+            .map_err(|e| {
+                // Lowering rejection is an execution-domain boundary, not a
+                // JSONata failure. Keep it explicit through nested $eval calls.
+                if e.kind == ErrorKind::UnsupportedExpression
+                    && e.source == crate::Source::DynamicExpression
+                {
+                    e
+                } else {
+                    wrapped(e, ErrorKind::EvalError, offset)
+                }
+            });
+    }
     let result = if let Some(program) = prepared {
         let program = program
             .as_ref()
@@ -288,6 +329,8 @@ fn evaluate<'e, 'i>(
 pub(crate) enum Definition {
     #[cfg(feature = "experimental")]
     Program(crate::execution::call::Definition),
+    #[cfg(feature = "experimental")]
+    ProgramTransform(Box<crate::transform::Definition<crate::execution::Program>>),
     Lambda(crate::function::Definition),
     Transform(crate::transform::Definition),
 }
@@ -304,6 +347,8 @@ impl<'e, 'i> Callable<'e, 'i> {
             Definition::Lambda(d) => d.params.len(),
             #[cfg(feature = "experimental")]
             Definition::Program(d) => d.params.len(),
+            #[cfg(feature = "experimental")]
+            Definition::ProgramTransform(_) => 1,
             Definition::Transform(_) => 1,
         }
     }
@@ -362,6 +407,11 @@ impl<'e, 'i> Callable<'e, 'i> {
                     definition,
                     focus: borrow::value(&self.focus, &definitions),
                     wrapped: self.wrapped,
+                    frame: self.frame,
+                },
+                #[cfg(feature = "experimental")]
+                Definition::ProgramTransform(definition) => FunctionKind::ProgramTransform {
+                    definition,
                     frame: self.frame,
                 },
                 Definition::Transform(definition) => FunctionKind::Transform {

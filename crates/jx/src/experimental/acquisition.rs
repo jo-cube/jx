@@ -90,40 +90,146 @@ impl Schema {
 
 // A join is an acquisition namespace, not a union of all paths that could
 // reach it. Each value has one symbolic origin; branches never form products.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Origin {
     pub(super) scope: usize,
     pub(super) path: Vec<String>,
+}
+#[derive(Clone)]
+struct Callee {
+    demands: Arc<Dependencies>,
+    focus: Option<Origin>,
+    captured_result: Option<Origin>,
+}
+impl Callee {
+    fn join(mut self, other: Self) -> Self {
+        Arc::make_mut(&mut self.demands).join(&other.demands);
+        if self.focus != other.focus {
+            self.focus = None;
+        }
+        if self.captured_result != other.captured_result {
+            self.captured_result = None;
+        }
+        self
+    }
+}
+// A register carries both value provenance and a possible call target through
+// nested IR regions. Neither fact is a runtime substitution.
+#[derive(Clone, Default)]
+struct Port {
+    origin: Option<Origin>,
+    // Unseen, unknown, or a resolved summary (including joined summaries).
+    callee: Option<Option<Callee>>,
 }
 struct Demands {
     paths: Vec<Vec<Vec<String>>>,
     joins: Vec<(Arc<()>, usize, usize)>,
     local: bool,
     shared: Vec<bool>,
+    lexical: BTreeMap<String, Origin>,
+    captures: Option<BTreeMap<String, usize>>,
+    lexical_functions: BTreeMap<String, Callee>,
+    contexts: Option<BTreeMap<String, usize>>,
 }
 impl Demands {
+    // Generated ancestry slots are immutable semantic ports. Track one origin
+    // per slot through the same demand analysis as lexical/call ports. Paths
+    // beneath arrays remain row demands rather than a per-record graph.
+    fn context(
+        &mut self,
+        region: &super::context::Region,
+        root: Option<Origin>,
+        focus: Option<Origin>,
+        outer: &[Port],
+    ) -> Option<Origin> {
+        use super::context::Kind;
+        match &region.kind {
+            Kind::Value(p) => self.collect(p, root, focus, &[], outer),
+            Kind::Route { steps, .. } => {
+                let mut current = focus;
+                for step in steps {
+                    let next = self.context(&step.node, root.clone(), current.clone(), outer);
+                    if let Some(bindings) = &step.bindings {
+                        for name in &bindings.ancestors {
+                            if let Some(contexts) = &mut self.contexts {
+                                let scope =
+                                    *contexts.entry(name.to_string()).or_insert_with(|| {
+                                        let scope = self.paths.len();
+                                        self.paths.push(Vec::new());
+                                        self.shared.push(false);
+                                        scope
+                                    });
+                                self.lexical.insert(
+                                    name.to_string(),
+                                    Origin {
+                                        scope,
+                                        path: Vec::new(),
+                                    },
+                                );
+                            } else if let Some(origin) = &current {
+                                self.lexical.insert(name.to_string(), origin.clone());
+                            } else {
+                                self.lexical.remove(name.as_ref());
+                            }
+                        }
+                    }
+                    if step.bindings.as_ref().is_none_or(|b| b.focus.is_none()) {
+                        current = next;
+                    }
+                    for p in &step.predicates {
+                        self.context(p, root.clone(), current.clone(), outer);
+                    }
+                }
+                current
+            }
+            Kind::Scope(nodes) => {
+                let mut result = None;
+                for n in nodes {
+                    result = self.context(n, root.clone(), focus.clone(), outer);
+                }
+                result
+            }
+            Kind::Keep(n) => self.context(n, root, focus, outer),
+            Kind::Filter(n, tests) => {
+                let result = self.context(n, root.clone(), focus, outer);
+                for p in tests {
+                    self.context(p, root.clone(), result.clone(), outer);
+                }
+                result
+            }
+            Kind::Order(n, terms) => {
+                let result = self.context(n, root.clone(), focus, outer);
+                for (p, _) in terms {
+                    self.context(p, root.clone(), result.clone(), outer);
+                }
+                result
+            }
+        }
+    }
     fn collect(
         &mut self,
         p: &Program,
         root: Option<Origin>,
         focus: Option<Origin>,
         arguments: &[Option<Origin>],
-        outer: &[Option<Origin>],
+        outer: &[Port],
     ) -> Option<Origin> {
+        let saved_lexical = self.lexical.clone();
+        let saved_functions = self.lexical_functions.clone();
+        let mut lexical_scopes = Vec::new();
         let mut definitions = vec![0; p.registers];
         for i in &p.code {
             definitions[i.out] += 1;
         }
-        let mut functions: Vec<Option<(&super::call::Definition, Option<Origin>)>> =
-            vec![None; p.registers];
-        let mut origins = vec![None; p.registers];
+        // None is unseen; Some(None) is an unknown target. Joining known
+        // targets unions shared demands, never a list/product of callees.
+        let mut ports = vec![Port::default(); p.registers];
         let mut joins = vec![None; p.registers];
         let mut used: BTreeMap<usize, Vec<String>> = BTreeMap::new();
         for i in &p.code {
             if let Operation::Invoke(target, args, ..) = &i.kind
-                && let Some((definition, definition_focus)) = functions[*target].clone()
+                && let Some(Some(definition)) = &ports[*target].callee
             {
-                let definition: &super::call::Definition = definition;
                 let mut demand = |origin: Option<&Origin>, paths: &[Vec<String>]| {
                     if let Some(origin) = origin {
                         for path in paths {
@@ -137,47 +243,116 @@ impl Demands {
                     }
                 };
                 demand(root.as_ref(), &definition.demands.root);
-                demand(definition_focus.as_ref(), &definition.demands.focus);
+                demand(definition.focus.as_ref(), &definition.demands.focus);
                 for (reg, paths) in args.iter().zip(&definition.demands.arguments) {
-                    demand(origins[*reg].as_ref(), paths);
+                    demand(ports[*reg].origin.as_ref(), paths);
                 }
             }
-            functions[i.out] = if definitions[i.out] == 1 {
-                match &i.kind {
-                    Operation::Function(d) => Some((d.as_ref(), focus.clone())),
-                    Operation::Copy(r) | Operation::Materialize(r) => functions[*r].clone(),
-                    _ => None,
+            let function = match &i.kind {
+                Operation::Function(d) => {
+                    // Definitions capture live frames. These are acquisition
+                    // hints at definition time, not substitutions for a future
+                    // lexical read. Rebinding/shadowing still reads the actual
+                    // value and byte-identity guards select its active port.
+                    for (name, paths) in &d.demands.captures {
+                        let origin = self.lexical_origin(name);
+                        if let Some(origin) = origin {
+                            for path in paths {
+                                let mut full = origin.path.clone();
+                                full.extend(path.iter().cloned());
+                                self.paths[origin.scope].push(full);
+                            }
+                        }
+                    }
+                    let captured_result = d.demands.result.as_ref().and_then(|r| {
+                        let name = d.demands.capture_name(r.scope)?;
+                        let mut origin = self.lexical_origin(name)?;
+                        origin.path.extend(r.path.iter().cloned());
+                        Some(origin)
+                    });
+                    Some(Callee {
+                        demands: Arc::clone(&d.demands),
+                        focus: focus.clone(),
+                        captured_result,
+                    })
+                }
+                Operation::Copy(r) | Operation::Materialize(r) | Operation::Bind(_, r) => {
+                    ports[*r].callee.clone().flatten()
+                }
+                Operation::Read(name) => self.lexical_functions.get(name.as_ref()).cloned(),
+                Operation::Outer(n, _) => outer.get(*n).and_then(|p| p.callee.clone().flatten()),
+                _ => None,
+            };
+            let function = if definitions[i.out] > 1 {
+                // Only shared preparation consumes conditional call summaries here;
+                // local acquisition remains conservative across branch joins.
+                if self.local {
+                    None
+                } else {
+                    match (ports[i.out].callee.take(), function) {
+                        (None, incoming) => incoming,
+                        (Some(Some(before)), Some(incoming)) => Some(before.join(incoming)),
+                        _ => None,
+                    }
                 }
             } else {
-                None
+                function
             };
+            ports[i.out].callee = Some(function);
             if matches!(i.kind, Operation::Jump(_) | Operation::JumpFalse(..)) {
                 used.clear();
             }
             let origin = match i.kind.producer() {
-                Operation::Invoke(target, args, ..) => {
-                    functions[*target]
-                        .as_ref()
-                        .and_then(|(d, definition_focus)| {
-                            let result = d.demands.result.as_ref()?;
-                            let mut origin = match result.scope {
-                                0 => root.clone(),
-                                1 => definition_focus.clone(),
-                                n => args.get(n - 2).and_then(|r| origins[*r].clone()),
-                            }?;
-                            origin.path.extend(result.path.iter().cloned());
-                            Some(origin)
-                        })
+                Operation::Invoke(target, args, ..) => ports[*target]
+                    .callee
+                    .as_ref()
+                    .and_then(Option::as_ref)
+                    .and_then(|d| {
+                        let result = d.demands.result.as_ref()?;
+                        let mut origin = match result.scope {
+                            0 => root.clone(),
+                            1 => d.focus.clone(),
+                            n if n < d.demands.arguments.len() + 2 => {
+                                args.get(n - 2).and_then(|r| ports[*r].origin.clone())
+                            }
+                            _ => return d.captured_result.clone(),
+                        }?;
+                        origin.path.extend(result.path.iter().cloned());
+                        Some(origin)
+                    }),
+                Operation::EnterScope => {
+                    lexical_scopes.push((self.lexical.clone(), self.lexical_functions.clone()));
+                    None
                 }
+                Operation::LeaveScope => {
+                    (self.lexical, self.lexical_functions) =
+                        lexical_scopes.pop().expect("balanced lexical scope");
+                    None
+                }
+                Operation::Bind(name, r) => {
+                    if let Some(function) = ports[*r].callee.clone().flatten() {
+                        self.lexical_functions.insert(name.to_string(), function);
+                    } else {
+                        self.lexical_functions.remove(name.as_ref());
+                    }
+                    if let Some(origin) = ports[*r].origin.clone() {
+                        self.lexical.insert(name.to_string(), origin.clone());
+                        Some(origin)
+                    } else {
+                        self.lexical.remove(name.as_ref());
+                        None
+                    }
+                }
+                Operation::Read(name) => self.lexical_origin(name),
                 Operation::Focus => focus.clone(),
                 Operation::Root => root.clone(),
                 Operation::Argument(n) => arguments.get(*n).cloned().flatten(),
-                Operation::Outer(n, _) => outer.get(*n).cloned().flatten(),
+                Operation::Outer(n, _) => outer.get(*n).and_then(|p| p.origin.clone()),
                 Operation::Copy(n) | Operation::Materialize(n) | Operation::Acquire(n, _) => {
-                    origins[*n].clone()
+                    ports[*n].origin.clone()
                 }
                 Operation::Field(base, fields, _, _) => {
-                    origins[*base].clone().map(|mut origin: Origin| {
+                    ports[*base].origin.clone().map(|mut origin: Origin| {
                         for name in &fields.fields {
                             origin.path.push(name.to_string());
                             self.paths[origin.scope].push(origin.path.clone());
@@ -202,28 +377,55 @@ impl Demands {
                         origin
                     })
                 }
-                Operation::Group(..)
+                Operation::Correlate(region) => {
+                    let saved = self.lexical.clone();
+                    let origin = self.context(region, root.clone(), focus.clone(), &ports);
+                    self.lexical = saved;
+                    origin
+                }
+                Operation::CorrelatedGroup(..)
+                | Operation::Group(..)
                 | Operation::Order(..)
-                | Operation::Navigate(_)
                 | Operation::Select(..) => {
                     i.kind.children(&mut |p| {
-                        self.collect(p, root.clone(), None, &[], &origins);
+                        self.collect(p, root.clone(), None, &[], &ports);
                     });
                     None
                 }
+                Operation::Navigate(n) => {
+                    let mut current = focus.clone();
+                    for step in &n.steps {
+                        current = self.collect(&step.body, root.clone(), current, &[], &ports);
+                        // A stage may change cardinality or enumerate an array.
+                        // Local acquisition does not infer an object origin
+                        // across that general value boundary.
+                        if self.local {
+                            current = None;
+                        }
+                        for predicate in &step.predicates {
+                            self.collect(
+                                &predicate.body,
+                                root.clone(),
+                                current.clone(),
+                                &[],
+                                &ports,
+                            );
+                        }
+                    }
+                    current
+                }
                 Operation::Construct(body) => {
-                    self.collect(body, root.clone(), focus.clone(), &[], &origins);
-                    None
+                    self.collect(body, root.clone(), focus.clone(), &[], &ports)
                 }
                 Operation::Path(path) => {
-                    self.collect(&path.body, root.clone(), None, &[], &origins);
+                    self.collect(&path.body, root.clone(), None, &[], &ports);
                     for p in &path.predicates {
-                        self.collect(p, root.clone(), None, &[], &origins);
+                        self.collect(p, root.clone(), None, &[], &ports);
                     }
                     None
                 }
                 Operation::Each { body, .. } => {
-                    self.collect(body, root.clone(), focus.clone(), &[], &origins);
+                    self.collect(body, root.clone(), focus.clone(), &[], &ports);
                     None
                 }
                 Operation::Fold {
@@ -237,10 +439,10 @@ impl Demands {
                         root.clone(),
                         if *callback { focus.clone() } else { None },
                         &[],
-                        &origins,
+                        &ports,
                     );
                     if let Some(p) = predicate {
-                        self.collect(p, root.clone(), None, &[], &origins);
+                        self.collect(p, root.clone(), None, &[], &ports);
                     }
                     None
                 }
@@ -248,12 +450,14 @@ impl Demands {
             };
             let opaque = match &i.kind {
                 Operation::Read(_) | Operation::Chain(..) => true,
-                Operation::Invoke(target, ..) => functions[*target]
+                Operation::Invoke(target, ..) => ports[*target]
+                    .callee
                     .as_ref()
-                    .is_none_or(|(d, _)| d.demands.result.is_none()),
+                    .and_then(Option::as_ref)
+                    .is_none_or(|d| d.demands.result.is_none()),
                 _ => false,
             };
-            origins[i.out] = if definitions[i.out] > 1
+            ports[i.out].origin = if definitions[i.out] > 1
                 || matches!(i.kind, Operation::Reduce(..))
                 || (self.local && opaque && origin.is_none())
             {
@@ -285,7 +489,26 @@ impl Demands {
                 origin
             };
         }
-        origins[p.result].clone()
+        let result = ports[p.result].origin.clone();
+        self.lexical = saved_lexical;
+        self.lexical_functions = saved_functions;
+        result
+    }
+    fn lexical_origin(&mut self, name: &str) -> Option<Origin> {
+        if let Some(origin) = self.lexical.get(name) {
+            return Some(origin.clone());
+        }
+        let captures = self.captures.as_mut()?;
+        let scope = *captures.entry(name.to_string()).or_insert_with(|| {
+            let scope = self.paths.len();
+            self.paths.push(Vec::new());
+            self.shared.push(false);
+            scope
+        });
+        Some(Origin {
+            scope,
+            path: Vec::new(),
+        })
     }
 }
 fn collect(p: &Program, root: bool, focus: bool, argument: bool, paths: &mut Vec<Vec<String>>) {
@@ -300,6 +523,10 @@ fn collect(p: &Program, root: bool, focus: bool, argument: bool, paths: &mut Vec
         joins: Vec::new(),
         local: false,
         shared: vec![false],
+        lexical: BTreeMap::new(),
+        captures: None,
+        lexical_functions: BTreeMap::new(),
+        contexts: None,
     };
     demands.collect(p, origin(root), origin(focus), &[origin(argument)], &[]);
     paths.append(&mut demands.paths[0]);
@@ -309,10 +536,52 @@ pub(super) struct Dependencies {
     root: Vec<Vec<String>>,
     focus: Vec<Vec<String>>,
     arguments: Box<[Vec<Vec<String>>]>,
+    captures: Vec<(String, Vec<Vec<String>>)>,
     // One proven return port/path; joins never expand into alternatives.
     pub(super) result: Option<Origin>,
 }
-pub(super) fn dependencies(p: &Program, count: usize) -> Dependencies {
+impl Dependencies {
+    fn capture_name(&self, scope: usize) -> Option<&str> {
+        self.captures
+            .get(scope.checked_sub(self.arguments.len() + 2)?)
+            .map(|(name, _)| name.as_str())
+    }
+    fn join(&mut self, other: &Self) {
+        fn union(paths: &mut Vec<Vec<String>>, incoming: &[Vec<String>]) {
+            paths.extend_from_slice(incoming);
+            paths.sort_unstable();
+            paths.dedup();
+        }
+        // Capture port numbers are local to each summary's argument count.
+        // Test them before widening arity; otherwise a capture could appear
+        // to be a positional argument after a conditional target join.
+        let shared_result = self.result == other.result
+            && self.result.as_ref().is_none_or(|r| {
+                r.scope < self.arguments.len() + 2 && r.scope < other.arguments.len() + 2
+            });
+        union(&mut self.root, &other.root);
+        union(&mut self.focus, &other.focus);
+        if self.arguments.len() < other.arguments.len() {
+            let mut args = std::mem::take(&mut self.arguments).into_vec();
+            args.resize_with(other.arguments.len(), Vec::new);
+            self.arguments = args.into();
+        }
+        for (paths, incoming) in self.arguments.iter_mut().zip(&other.arguments) {
+            union(paths, incoming);
+        }
+        for (name, incoming) in &other.captures {
+            if let Some((_, paths)) = self.captures.iter_mut().find(|(n, _)| n == name) {
+                union(paths, incoming);
+            } else {
+                self.captures.push((name.clone(), incoming.clone()));
+            }
+        }
+        if !shared_result {
+            self.result = None;
+        }
+    }
+}
+pub(super) fn dependencies(p: &Program, count: usize) -> Arc<Dependencies> {
     let origin = |scope| {
         Some(Origin {
             scope,
@@ -324,6 +593,10 @@ pub(super) fn dependencies(p: &Program, count: usize) -> Dependencies {
         joins: Vec::new(),
         local: false,
         shared: vec![false; count + 2],
+        lexical: BTreeMap::new(),
+        captures: Some(BTreeMap::new()),
+        lexical_functions: BTreeMap::new(),
+        contexts: None,
     };
     let arguments = (2..count + 2).map(origin).collect::<Vec<_>>();
     let result = demands.collect(p, origin(0), origin(1), &arguments, &[]);
@@ -333,13 +606,26 @@ pub(super) fn dependencies(p: &Program, count: usize) -> Dependencies {
         paths.sort_unstable();
         paths.dedup();
     }
+    let mut captures = demands
+        .captures
+        .take()
+        .unwrap()
+        .into_iter()
+        .collect::<Vec<_>>();
+    captures.sort_unstable_by_key(|(_, scope)| *scope);
+    let captures = captures
+        .into_iter()
+        .map(|(name, scope)| (name, std::mem::take(&mut demands.paths[scope])))
+        .collect();
+    demands.paths.truncate(count + 2);
     let mut ports = demands.paths.into_iter();
-    Dependencies {
+    Arc::new(Dependencies {
         root: ports.next().unwrap(),
         focus: ports.next().unwrap(),
         arguments: ports.collect(),
         result,
-    }
+        captures,
+    })
 }
 pub(super) fn plan_joins(p: &mut Program) {
     fn contains_join(p: &Program) -> bool {
@@ -370,6 +656,10 @@ pub(super) fn plan_joins(p: &mut Program) {
         joins: Vec::new(),
         local: true,
         shared: vec![false],
+        lexical: BTreeMap::new(),
+        captures: None,
+        lexical_functions: BTreeMap::new(),
+        contexts: None,
     };
     demands.collect(p, None, None, &[], &[]);
     let schemas = demands
@@ -429,10 +719,84 @@ pub(super) fn plan_joins(p: &mut Program) {
     }
     apply(p, &schemas);
 }
+// The existing demand collector gives each demanded ancestor its own input
+// port. Only those sparse schemas survive stage/lexical lifetimes; arrays and
+// unrelated object names are not indexed.
+fn plan_context(region: &mut super::context::Region) {
+    use super::context::{Kind, Region};
+    let mut demands = Demands {
+        paths: vec![Vec::new()],
+        joins: Vec::new(),
+        local: false,
+        shared: vec![false],
+        lexical: BTreeMap::new(),
+        captures: None,
+        lexical_functions: BTreeMap::new(),
+        contexts: Some(BTreeMap::new()),
+    };
+    demands.context(region, None, None, &[]);
+    let schemas = demands
+        .contexts
+        .take()
+        .unwrap()
+        .into_iter()
+        .map(|(name, scope)| (name, std::mem::take(&mut demands.paths[scope])))
+        .collect::<BTreeMap<_, _>>();
+    fn install(region: &mut Region, schemas: &BTreeMap<String, Vec<Vec<String>>>) {
+        match &mut region.kind {
+            Kind::Route { steps, .. } => {
+                for step in steps {
+                    if let Some(bindings) = &step.bindings {
+                        let paths: Vec<_> = bindings
+                            .ancestors
+                            .iter()
+                            .filter_map(|n| schemas.get(n.as_ref()))
+                            .flatten()
+                            .cloned()
+                            .collect();
+                        step.node.parent_schema =
+                            (!paths.is_empty()).then(|| Arc::new(Schema::build(paths)));
+                    }
+                    install(&mut step.node, schemas);
+                    for p in &mut step.predicates {
+                        install(p, schemas)
+                    }
+                }
+            }
+            Kind::Scope(nodes) => {
+                for n in nodes {
+                    install(n, schemas)
+                }
+            }
+            Kind::Keep(n) => install(n, schemas),
+            Kind::Filter(n, tests) => {
+                install(n, schemas);
+                for p in tests {
+                    install(p, schemas)
+                }
+            }
+            Kind::Order(n, terms) => {
+                install(n, schemas);
+                for (p, _) in terms {
+                    install(p, schemas)
+                }
+            }
+            Kind::Value(_) => {}
+        }
+    }
+    install(region, &schemas);
+}
 pub(super) fn plan_rows(p: &mut Program) {
     for i in &mut p.code {
+        if let Operation::Correlate(region) | Operation::CorrelatedGroup(region, _) =
+            i.kind.producer_mut()
+        {
+            plan_context(region);
+        }
         match i.kind.producer_mut() {
-            Operation::Group(..)
+            Operation::Correlate(_)
+            | Operation::CorrelatedGroup(..)
+            | Operation::Group(..)
             | Operation::Order(..)
             | Operation::Navigate(_)
             | Operation::Select(..) => {

@@ -7,6 +7,10 @@ use std::io::{self, Write};
 #[derive(Clone, Debug)]
 pub enum Value<'expression, 'input> {
     Raw(RawJson<'input>),
+    /// Borrowed input with query-sized navigation metadata. Input bytes and
+    /// container identity are unchanged; metadata is shared across value moves.
+    #[cfg(feature = "experimental")]
+    InputView(crate::execution::BorrowedInput<'input>),
     Constant(crate::ConstantValue<'expression>),
     Copied(std::rc::Rc<crate::CopiedValue<'expression, 'input>>),
     Function(std::rc::Rc<crate::Function<'expression, 'input>>),
@@ -27,6 +31,8 @@ impl<'i> Value<'_, 'i> {
     pub fn as_raw(&self) -> Option<RawJson<'i>> {
         match self {
             Self::Raw(value) => Some(*value),
+            #[cfg(feature = "experimental")]
+            Self::InputView(view) => Some(view.raw()),
             _ => None,
         }
     }
@@ -44,6 +50,8 @@ impl<'i> Value<'_, 'i> {
             Self::Array(array) => array.write_compact(&mut output),
             Self::Object(object) => object.write_compact(&mut output),
             Self::Raw(value) => value.write_compact(output),
+            #[cfg(feature = "experimental")]
+            Self::InputView(view) => view.raw().write_compact(output),
             Self::StringLiteral(value) => output.write_all(value.as_bytes()),
             Self::String(value) => output.write_all(value.json.as_bytes()),
             Self::Number(value) if !value.is_finite() => output.write_all(b"null"),
@@ -56,21 +64,23 @@ impl<'i> Value<'_, 'i> {
     }
 
     pub(crate) fn atomic(&self) -> Self {
-        match *self {
-            Self::Raw(raw) => match raw.as_bytes()[0] {
+        if let Some(raw) = self.as_raw() {
+            return match raw.as_bytes()[0] {
                 b'n' => Self::Null,
                 b't' => Self::Boolean(true),
                 b'f' => Self::Boolean(false),
                 b'-' | b'0'..=b'9' => Self::Number(raw.as_str().parse().expect("validated number")),
                 _ => self.clone(),
-            },
-            _ => self.clone(),
+            };
         }
+        self.clone()
     }
 
     pub(crate) fn json(&self) -> Option<RawJson<'_>> {
         match self {
             Self::Raw(raw) => Some(*raw),
+            #[cfg(feature = "experimental")]
+            Self::InputView(view) => Some(view.raw()),
             Self::StringLiteral(raw) => Some(*raw),
             Self::String(value) => Some(RawJson(&value.json)),
             _ => None,

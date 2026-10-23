@@ -254,7 +254,7 @@ fn kind(value: Option<&Value<'_, '_>>) -> u8 {
         return MISSING;
     };
     match value {
-        Value::Raw(raw) => match raw.as_bytes()[0] {
+        _ if value.as_raw().is_some() => match value.as_raw().unwrap().as_bytes()[0] {
             b'n' => NULL,
             b't' | b'f' => BOOLEAN,
             b'-' | b'0'..=b'9' => NUMBER,

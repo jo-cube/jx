@@ -84,7 +84,7 @@ impl Program {
                 }
             };
             let cell = match &instruction.kind {
-                Operation::Focus => load(focus.clone()),
+                Operation::Focus => load(focus.read()),
                 Operation::Root => load(if let Some(scope) = &scopes.current {
                     input.restore(scope.lookup("$"))
                 } else {
@@ -130,6 +130,32 @@ impl Program {
                             frame: scopes.current.as_ref().expect("lexical scope").capture(),
                         },
                     })))
+                }
+                Operation::Transform(definition) => {
+                    Cell::Value(Value::Function(std::rc::Rc::new(crate::Function {
+                        kind: crate::function::FunctionKind::ProgramTransform {
+                            definition,
+                            frame: scopes.current.as_ref().expect("transform scope").capture(),
+                        },
+                    })))
+                }
+                Operation::Matcher(pattern) => Cell::Value(crate::matcher::literal(pattern)),
+                Operation::Formatted(function, registers, prepared) => {
+                    let mut values = crate::function::Arguments::new(registers.len());
+                    for reg in registers {
+                        values.push(frame[*reg].value(input));
+                    }
+                    let context = Context {
+                        value: focus.value(input).unwrap_or(Value::Undefined),
+                        wrapped,
+                        scope: scopes.current.clone(),
+                    };
+                    Cell::from_operand(prepared.values(
+                        *function,
+                        values.as_slice(),
+                        &context,
+                        offset,
+                    )?)?
                 }
                 Operation::FunctionReference(b) => Cell::Value(crate::Function::builtin(*b)),
                 Operation::Invoke(target, registers, tail, native) => {
@@ -216,8 +242,8 @@ impl Program {
                         }
                     }
                 }
-                Operation::Argument(i) => load(args.get(*i).cloned().unwrap_or(Cell::Missing)),
-                Operation::Outer(i, _) => load(outer[*i].clone()),
+                Operation::Argument(i) => load(args.get(*i).map_or(Cell::Missing, Cell::read)),
+                Operation::Outer(i, _) => load(outer[*i].read()),
                 Operation::Literal(l) => match l {
                     Literal::Missing => Cell::Missing,
                     Literal::Null => Cell::Value(Value::Null),
@@ -395,6 +421,16 @@ impl Program {
                     pc = *to;
                     continue;
                 }
+                Operation::CorrelatedGroup(region, pairs) => context::group(
+                    region,
+                    pairs,
+                    Activation {
+                        outer: frame,
+                        scope: scopes.current.as_ref(),
+                        ..activation
+                    },
+                    offset,
+                )?,
                 Operation::Group(..) | Operation::Order(..) => grouping::execute(
                     &instruction.kind,
                     Activation {
@@ -405,7 +441,8 @@ impl Program {
                     frame,
                     offset,
                 )?,
-                Operation::Navigate(_)
+                Operation::Correlate(_)
+                | Operation::Navigate(_)
                 | Operation::Select(..)
                 | Operation::Range(..)
                 | Operation::Traverse(_)

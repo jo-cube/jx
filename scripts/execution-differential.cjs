@@ -7,6 +7,7 @@ const upstream=path.resolve(process.argv[2]);const probe=path.resolve(process.ar
 assert.equal(spawnSync('git',['-C',upstream,'rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),'8ee4476f8a228bfc7a62979ae0a9c13a4043cd03');
 const jsonata=require(path.join(upstream,'src/jsonata'));
 const kinds={T1003:'TypeError',D3137:'UserError',T2001:'TypeError',T2002:'TypeError',T2003:'TypeError',T2004:'TypeError',T2006:'TypeError',T2007:'TypeError',T2008:'TypeError',T2009:'TypeError',T2010:'TypeError',T0410:'TypeError',T0411:'TypeError',T0412:'TypeError',D3070:'TypeError',D3072:'TypeError',D3030:'TypeError',D3040:'NumericRange',D1001:'NumericRange',D1002:'TypeError',D3020:'NumericRange',D3001:'NumericRange',D1009:'DuplicateKey'};
+Object.assign(kinds,{D1004:'RegexError',D2014:'NumericRange',D3080:'PictureError',D3081:'PictureError',D3082:'PictureError',D3083:'PictureError',D3084:'PictureError',D3085:'PictureError',D3086:'PictureError',D3087:'PictureError',D3088:'PictureError',D3089:'PictureError',D3090:'PictureError',D3091:'PictureError',D3092:'PictureError',D3093:'PictureError',D3110:'DateTimeError',D3120:'EvalSyntax',D3121:'EvalError',T2011:'TypeError',T2012:'TypeError',T2013:'TypeError'});
 function normalized(value){return JSON.parse(JSON.stringify(value===undefined?[]:Array.isArray(value)&&value.sequence&&!value.keepSingleton?Array.from(value):[value]));}
 function actual(value){return value.items_json===undefined?{error:value.error}:{items:JSON.parse(value.items_json)};}
 const tests=[];
@@ -97,28 +98,153 @@ for(const items of [undefined,[],[{}],[{k:'a',v:2,children:[{v:1},{v:2}]},{k:'a'
 for(const a of [undefined,null,-2,1,2.5,'x'])for(const b of [undefined,null,-1,3,'x'])for(const expr of ['[a..b]','[a..b][true][0]','[a..b].($+1)'])mechanism('range producer',expr,{a,b});
 for(const expr of ['items{k:($ in [$$.items[0]])}',"items{'x':{'self':$,'same':$ in [$$.items]}}", "items{(v=1?$error('key'):k):$error('value')}"])mechanism('grouped focus',expr,{items:[{k:'a',v:2},{k:'a',v:1}]});
 for(const data of [[],[{a:1}],[{a:1},{a:2}],{a:1}])for(const expr of ["{'x':{'self':$}}", "{'x':{'a':a}}", "{'x':$.(a+1)}", "{'x':{'n':$count($),'self':$}}", "($x:=1;{'v':($x:=$x+1)};$x)","($o:={'x':{'f':function(){$}}};$o.x.f())"])mechanism('constructor focus regions',expr,data);
+// Borrowed/owned callable boundaries, prepared pictures and caller-write effects.
+for(const text of [undefined,'','a12 b34','é😀a1','a\ud800b2'])for(const expr of [
+ '$match(text,/([a-z]+)([0-9]+)/)', '$contains(text,/[0-9]+/)',
+ '$split(text,/[0-9]+/)', "$replace(text,/[0-9]+/,'X')",
+ "$replace(text,/[0-9]+/,function($m){$m.start & ':' & $m.match})",
+ "($f:=function($r){function($s){$match($s,$r)}};$f(/[0-9]+/)(text))",
+ "($p:=/[0-9]+/;$m:=$p(text);[$m.match,$m.next().match])"
+]){mechanism('matcher callables',expr,{text});if(text===undefined&&expr.startsWith('($p:='))tests[tests.length-1].legacy_boundary='native regex argument coercion is deferred';}
+for(const n of [undefined,null,-12.5,0,1234,'bad'])for(const picture of ['0.00','#,##0.0','0.0.0'])for(const expr of [
+ '$formatNumber(n,picture)', `$formatNumber(n,${JSON.stringify(picture)})`,
+ "($f:=$formatNumber;$f(n,picture))", "$map([n],function($v){$formatNumber($v,picture)})"
+])mechanism('prepared format calls',expr,{n,picture});
+for(const t of [undefined,null,0,1526947200123])for(const picture of ['[Y0001]-[M01]-[D01]','[Y]-[M]-[D]T[H]:[m]:[s]'])for(const expr of [
+ '$fromMillis(t,picture)', `$fromMillis(t,${JSON.stringify(picture)})`,
+ '$toMillis($fromMillis(t,picture),picture)'
+])mechanism('prepared format calls',expr,{t,picture});
+for(const n of [undefined,null,2,'bad'])for(const expr of [
+ '$eval(source)', '$eval(source,items)', "($x:=n;$eval('$x+1'))",
+ "($make:=$eval('function($x){function($y){$x+$y+n}}');$make(2)(3))",
+ "($f:=$eval('function($x){$x=0?0:$f($x-1)+1}');$f(4))",
+ "($f:=$eval('function($x){$x+n}');$eval('$f(3)'))",
+ "$eval('1+')", "$eval('$number(\"bad\")')",
+ "($x:=n;$f:=$eval;$f('$x:=4');$x)",
+ "($x:=n;{'a':$x,'b':$map(['$x:=4'],$eval),'c':$x};$x)"
+])mechanism('dynamic IR ownership',expr,{n,source:'n+1',items:[1,2]});
+for(const items of [undefined,null,[],[{v:1,remove:true},{v:2}],{v:3},[1,2]])for(const expr of [
+ "$ ~> |items|{'v':v+1}|", "$ ~> |items|{'v':v+1},'remove'|",
+ "($delta:=2;$t:=|items|{'v':v+$delta}|;$delta:=3;$t($))",
+ "($make:=function($d){|items|{'v':v+$d}|};$make(2)($))",
+ "($t:=$eval(\"|items|{'v':v+1}|\");$t($))",
+ "($t:=|items|{'v':v+1}|;$eval('$t($)'))",
+ "$ ~> |items|5|", "$ ~> |items|{'v':v},42|",
+ "($a:=$clone(items);$b:=$clone(items);$a in [$b])"
+])mechanism('compiled copy update',expr,{items});
+for(const items of [undefined,[],[{v:1}],[{v:1},{v:2}]])for(const expr of [
+ "($x:=0;$t:=|$eval('$x:=items')|{'v':v+1}|;$f:=function($d){$t($d)};$f($);$x)",
+ "($x:=0;$t:=|$eval('$x:=items')|{'v':v+1}|;$f:=function($d){$t($d)};$g:=function($d){$f($d)};$g($);$x)",
+ "($x:=0;$t:=|$eval('$x:=items')|{'v':v+1}|;$f:=function($d){$t($d)};$map([$],$f);$x)"
+]){mechanism('captured-call effects',expr,{items});if(items?.length){const t=tests[tests.length-1];t.legacy_difference='immutable transform aliases observe the pre-update snapshot';t.legacy_expected={items:[items]};t.upstream_expected={items:[items.map(v=>({v:v.v+1}))]};}}
+// Known conditional callees union input demands; signatures/errors stay dynamic.
+for(const flag of [true,false])for(const data of [{},{a:{x:1},b:{y:2}},{a:[{x:1},{x:2}],b:{y:4}},{a:null,b:{y:'bad'}},{a:{x:{v:3}},b:{y:4}}])for(const expr of [
+ "($f:=flag?function($d){$d.a.x}:function($v){$v.b.y};$f($))",
+ "($f:=flag?function($d){$d}:function($v){$v};$f($).a.x)",
+ "($f:=flag?function($d){$d.a.x}:$string;$f($))",
+ "($f:=function($d){$d.a.x};$f:=flag?$f:function($v){$v.b.y};$f:=flag?$f:function($v){$v.a.x};$f($))"
+])mechanism('joined call dependencies',expr,{...data,flag});
+// Immediate callback ports remain valid inside unrelated retained lexical scopes.
+for(const items of [undefined,[],{},[1,2],[[1,2]], [{v:1,w:2},{v:2,w:4}], [{v:null,w:2},{v:'bad'}]])for(const expr of [
+ "($unused:=function($v){$v};$map(items,function($v){$v.v+$v.w}))",
+ "($unused:=function($v){$v};$map(items,function($v,$i,$all){[$v,$i,$count($all)]}))",
+ "($f:=function(){$n};$n:=4;$map(items,function($v){$v.v+$n}))",
+ "($f:=function(){$n};$n:=4;$map(items,function($v){($n:=$v.v;$n+1)});$n)",
+ "($unused:=function(){1};$filter(items,function($v){$v.v>0}))",
+ "($unused:=function(){1};$map(items,function($v){$map([$v],function($w){$w})}))"
+])mechanism('retained-scope immediate ports',expr,{items});
+// Context demands may pass through multiple ancestors, constructors and calls.
+for(const groups of [undefined,[],[{tag:'a',items:[{v:1},{v:2}]}],[{tag:'a',items:[]},{tag:'b',items:[{}, {v:3}]}]])for(const expr of [
+ "groups.items.{'root':%.%.name,'parent':%.tag,'v':v}",
+ "groups.items.($p:=%;$f:=function(){$p.tag};{'p':$f(),'v':v})",
+ "groups.items.{'p':%.tag,'same':% in [%.%.groups[0]]}",
+ "groups.items#$i[true].{'p':%.tag,'i':$i}"
+])mechanism('nested contextual acquisition',expr,{name:'root',groups});
+// Candidate positions and language reads have distinct missing-value semantics.
+for(const data of [{},{items:[]},{items:[1,2]},{items:[[1,2],[]]}])for(const expr of [
+ '$map(items[[0,-1]],function($v){$v})','$map(items[[0,-1]],function($v){[$v]})',
+ "$map(items[[0,-1]],function($v){{'v':$v}})",'items[[0,-1]].($)','(items[[0,-1]]).([$])',
+])mechanism('candidate reads across callbacks',expr,data);
+// Root arrays distinguish a wrapped record from a route's incoming candidates.
+for(const data of [[],[1,2],[[1,2],3],[{items:[1,2]},{items:[]},{}]])for(const expr of [
+ '$sum((items[true]).(2))','$sum(items[true].(2))','(items[true]).(2)',
+ '((items[true].(2))).($)',"$map($,function($x){(items[true]).(2)})",
+ "{'v':(items[true]).(2)}",
+])mechanism('route source focus',expr,data);
+// Correlation crosses every stage boundary without attaching context to Values.
+for(const items of [undefined,[],[{}],[{k:'a',v:2},{k:'a',v:1}],[{k:'a',v:1}],[[],[{v:3}]],null])for(const expr of [
+ "items#$i.{'i':$i,'v':v}","items#$i[$i>0].v", "(items#$i)[-1].v",
+ "items#$i[[0,0,-1]].{'i':$i,'v':v}","items@$v.{'v':$v.v}",
+ "items#$i^(v).{'i':$i,'v':v}","items#$i[true]#$j.{'i':$i,'j':$j,'v':v}",
+ "items@$v{k:$v.v}","items#$i{'all':[$i,v]}",
+ "items#$i.(function(){$i}) ~> $map(function($f){$f()})",
+ "($fs:=$eval('items#$i.(function(){$i})');$map($fs,function($f){$f()}))",
+ "items#$i.($f:=function(){$i};$f())","$sum(items#$i.($i))",
+ "$eval('items#$i.{\"i\":$i,\"v\":v}')",
+ "function($a){$a#$i.{'i':$i,'v':v}}(items)",
+ "items#$i[$i=1?$error('earlier'):true].($error('later'))",
+]){mechanism('correlated sequence stages',expr,{items});
+ if((items===undefined||items?.length===0)&&["items@$v{k:$v.v}","items#$i{'all':[$i,v]}"].includes(expr)) {
+  Object.assign(tests[tests.length-1],{upstream_exception:{name:'TypeError',message:"Cannot read properties of undefined (reading '@')"},legacy_expected:{items:[{}]},upstream_expected:{native_exception:'TypeError'}});
+ }}
+for(const groups of [undefined,[],[{}],[{name:'a',items:[{v:1},{v:2}]},{name:'b',items:[{v:3}]}],[{name:'a',items:[[{v:1}],{v:2}]}]])for(const expr of [
+ "groups.items.{'name':%.name,'v':v}","(groups.items)[%.name='a'].v",
+ "groups.items.( $p:=%;function(){$p.name}) ~> $map(function($f){$f()})",
+ "($fs:=$eval('groups.items.($p:=%;function(){$p.name})');$map($fs,function($f){$f()}))",
+ "groups#$g.items#$i.{'g':$g,'i':$i,'name':%.name,'v':v}",
+ "groups.items{'all':[$count(v),%.name]}",
+ "groups@$g.items@$v[$v.v>1].{'name':$g.name,'v':$v.v}",
+ "$eval('groups.items[%.name=\"a\"].v')",
+])mechanism('ancestry and retained contexts',expr,{groups});
+// Borrowed acquisition provenance crosses live lexical/callback/value ports.
+for(const groups of [undefined,[],[{}],[{name:'a',items:[{v:1},{v:2}]},{name:'b',items:[{v:3}]}],[{name:'a',items:[[1,2],{v:2}]}]])for(const expr of [
+ "groups.items.($p:=%;$f:=function(){$p.name};$f())",
+ "groups.items.($p:=%;$f:=function(){$p};$f().name)",
+ "groups.items.($p:=%;$f:=function($v){$p.name};$map([1,2],$f))",
+ "groups.items.($p:=%;$f:=function($q){$q.name};$f($p))",
+ "groups.items.($p:=%;$f:=function(){$p};$g:=$f;$g().name)",
+ "groups.items.($p:=%;{'v':$p,'same':$p in [$p]})",
+ "groups.items.($p:=%;$f:=function(){$p ~> |$|{'new':1}|};$f())",
+ "groups.items.($p:=%;$eval('$p.name'))",
+])mechanism('borrowed acquisition across lexical value ports',expr,{groups});
+for(const items of [undefined,[],[[]],[[],[]],[[1,2]],[{v:[1,2]}],[{v:1},{v:2}],[{v:null},{v:2}],[{v:1},{v:'bad'}]])for(const agg of ['sum','count','average','min','max'])for(const body of ['v','[v]','flag?v:missing'])
+ mechanism('cardinality-aware complete consumption',`$${agg}((items[true]).(${body}))`,{items});
+// Compositional sequence boundaries preserve candidate shape and error order.
+for(const items of [undefined,null,[],{},[{}],[{v:1,w:2},{v:2,w:3}], [{v:1,w:2},{v:2,w:3},{v:'bad',w:4}], [[],[{v:2,w:3}]], [[{v:2,w:3}],{v:1,w:2}], [{v:null,w:2}], [1,2], [null,false,[]]])for(const expr of [
+ "$sum((items[v>0]).(v*w+v))", "$count((items[v>0]).(v*w+v))",
+ "(items[true]).(v)", "(items[true]).([v])", "(items[[0,-1]]).(v)",
+ "(items[$number(v)>0]).(w*2)",
+ "function($rows){$sum(($rows[v>0]).(v*w+v))}(items)",
+ "($rows:=items;$sum(($rows[v>0]).(v*w+v)))",
+ "$sum($map($filter(items,function($r){$r.v>0}),function($r){$r.v*$r.w+$r.v}))",
+ "(items[true]).(function($v){$v.v}($))",
+ "(items[true]).{'value':v,'parent':%.name}",
+ "(items[true]).(v=1?$error('mapper'):w*2)",
+])mechanism('compositional sequence boundaries',expr,{name:'root',items});
+
 async function main(){
  const child=spawnSync(probe,[],{input:tests.map(t=>JSON.stringify(t)).join('\n')+'\n',encoding:'utf8',maxBuffer:64*1024*1024});assert.equal(child.status,0,child.stderr);
  const answers=child.stdout.trim().split('\n').map(s=>JSON.parse(s));assert.equal(answers.length,tests.length);
- const inventory=[];let supported=0,runtime=0,compile=0;
+ const inventory=[];let supported=0,legacy=0,runtime=0,compile=0,upstreamExceptions=0;
  for(let i=0;i<tests.length;i++){
   const t=tests[i];let reference;
-  try{reference={items:normalized(await jsonata(t.expr).evaluate(JSON.parse(t.input),t.vars?{vars:t.vars}:undefined))};}catch(e){assert.ok(kinds[e.code],`unclassified ${e.code} ${JSON.stringify(t)}`);reference={error:kinds[e.code]};}
-  const answer=answers[i];assert.deepEqual(actual(answer.engine),reference,'engine '+JSON.stringify(t));
+  try{reference={items:normalized(await jsonata(t.expr).evaluate(JSON.parse(t.input),t.vars?{vars:t.vars}:undefined))};}catch(e){if(t.upstream_exception){assert.deepEqual({name:e.name,message:e.message},t.upstream_exception);reference={native_exception:e.name};}else{assert.ok(kinds[e.code],`unclassified ${e.code} ${JSON.stringify(t)}`);reference={error:kinds[e.code]};}}
+  const expected=t.legacy_expected||reference;if(t.legacy_expected)assert.deepEqual(reference,t.upstream_expected,'declared upstream alias contract '+JSON.stringify(t));
+  const answer=answers[i];if(t.legacy_boundary){assert.deepEqual(actual(answer.engine),{error:'UnsupportedExpression'},'declared legacy boundary '+JSON.stringify(t));assert.ok(answer.engine.message.includes(t.legacy_boundary),JSON.stringify(t));}else assert.deepEqual(actual(answer.engine),expected,'engine '+JSON.stringify(t));
   let status;
   if(answer.unsupported){compile++;status='compile_rejected';}
   else {
    const rejection=answer.prototype.some(p=>p.error==='UnsupportedExpression');
    if(rejection){assert.ok(answer.prototype.every(p=>p.error==='UnsupportedExpression'),'mode-dependent rejection '+JSON.stringify(t));assert.equal(answer.complete.error,'UnsupportedExpression','complete rejection '+JSON.stringify(t));runtime++;status='shape_rejected';}
-   else {for(const p of answer.prototype){assert.deepEqual(actual(p),reference,'prototype '+JSON.stringify(t));if(p.error)assert.deepEqual(p,answer.engine,'exact engine diagnostic '+JSON.stringify(t));}supported++;status='supported';}
+   else {for(const p of answer.prototype){assert.deepEqual(actual(p),expected,'prototype '+JSON.stringify(t));if(p.error)assert.deepEqual(p,answer.engine,'exact engine diagnostic '+JSON.stringify(t));}if(t.upstream_exception){upstreamExceptions++;status='upstream_exception';}else if(t.legacy_expected){legacy++;status='legacy_difference';}else{supported++;status='supported';}}
   }
-  if(status==='supported') {
+  if(status==='supported'||status==='legacy_difference'||status==='upstream_exception') {
    if(answer.engine_complete.error)assert.deepEqual(answer.complete,answer.engine_complete,'complete exact error '+JSON.stringify(t));
    else {assert.equal(answer.complete.present,answer.engine_complete.present,'complete presence '+JSON.stringify(t));if(answer.complete.present)assert.deepEqual(JSON.parse(answer.complete.json),JSON.parse(answer.engine_complete.json),'complete JSON '+JSON.stringify(t));}
   }
   inventory.push({...t,status,reference});
  }
- if(process.argv[4])fs.writeFileSync(process.argv[4],JSON.stringify({supported,runtime_rejected:runtime,compile_rejected:compile,tests:inventory},null,2)+'\n');
- console.log(JSON.stringify({total:tests.length,supported,runtime_rejected:runtime,compile_rejected:compile,modes:2}));
+ if(process.argv[4])fs.writeFileSync(process.argv[4],JSON.stringify({supported,legacy_differences:legacy,upstream_exceptions:upstreamExceptions,runtime_rejected:runtime,compile_rejected:compile,tests:inventory},null,2)+'\n');
+ console.log(JSON.stringify({total:tests.length,supported,legacy_differences:legacy,upstream_exceptions:upstreamExceptions,runtime_rejected:runtime,compile_rejected:compile,modes:2}));
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

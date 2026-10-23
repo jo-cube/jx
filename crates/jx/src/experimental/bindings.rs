@@ -183,8 +183,10 @@ fn analyze(
                 Operation::Construct(body) => child(body, focus, None),
                 _ if regions => {}
                 Operation::Function(d) => child(&d.body, focus, None),
-                Operation::Group(..)
+                Operation::CorrelatedGroup(..)
+                | Operation::Group(..)
                 | Operation::Order(..)
+                | Operation::Correlate(_)
                 | Operation::Navigate(_)
                 | Operation::Select(..) => i.kind.children(&mut |p| child(p, None, None)),
                 Operation::Path(path) => {

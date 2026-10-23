@@ -71,7 +71,7 @@ pub(crate) struct Definition {
     pub params: Box<[Box<str>]>,
     pub signature: Option<crate::function::Signature>,
     pub body: Program,
-    pub(super) demands: acquisition::Dependencies,
+    pub(super) demands: Arc<acquisition::Dependencies>,
 }
 pub(super) enum Exit<'e, 'i> {
     Done,
@@ -109,12 +109,16 @@ impl Drop for Scopes<'_, '_> {
     }
 }
 impl Program {
-    pub(super) fn scope<'e, 'i>(&'e self, input: &Input<'_, 'i, '_>) -> Option<Scope<'e, 'i>> {
+    pub(super) fn scope<'e, 'i>(
+        &'e self,
+        input: &Input<'_, 'i, '_>,
+        random: Option<&crate::Random>,
+    ) -> Option<Scope<'e, 'i>> {
         self.scoped.then(|| {
             Scope::with_random(
                 input.root().value(input).unwrap_or(Value::Undefined),
-                false,
-                None,
+                self.clock,
+                random,
             )
             .for_program()
             .constants(&self.constants)
@@ -156,8 +160,9 @@ impl Program {
         };
         let mut frame = frame::Frame::new();
         if self.scalar.is_some() {
+            // The invocation/region owns capture lifetime for either backend.
             return Ok(tail::Outcome::Done(
-                self.run(activation, &mut frame)?.into_value(input),
+                self.run_scalar(activation, &mut frame)?.into_value(input),
             ));
         }
         match self.run_prefix(activation, &mut frame, None)? {
@@ -170,9 +175,99 @@ impl Program {
     }
 }
 
+// Non-tail regions retain their result before retiring temporary captures.
+// Dynamic source and transform parts have the same lifetime obligation.
+impl Program {
+    pub(crate) fn evaluate_region<'e, 'i>(
+        &'e self,
+        context: &Context<'e, 'i>,
+    ) -> Result<Option<Value<'e, 'i>>, Error> {
+        context.scope.as_ref().expect("region scope").retained(|| {
+            match self.run_function(context, &[], None)? {
+                crate::function::tail::Outcome::Done(value) => Ok(value),
+                crate::function::tail::Outcome::Call(_) => {
+                    unreachable!("region is not a tail body")
+                }
+            }
+        })
+    }
+}
+
+impl crate::transform::Body for Program {
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn depth(&self) -> usize {
+        self.call.depth
+    }
+    fn evaluate<'e, 'i>(
+        &'e self,
+        context: &Context<'e, 'i>,
+    ) -> Result<Option<Value<'e, 'i>>, Error> {
+        self.evaluate_region(context)
+    }
+}
+
+// Definitions own child frames, but captured calls may write older frames.
+// Reuse their conservative region-write summary; unknown/recursive targets stay
+// effectful. This one fact drives lexical ports, callbacks and region summaries.
+pub(super) fn writes_caller(code: &[Instruction], target: usize) -> bool {
+    fn read_only(op: &Operation) -> bool {
+        match op {
+            Operation::Function(d) => !d.body.writes_scope,
+            Operation::Matcher(_)
+            | Operation::Literal(_)
+            | Operation::Object(_)
+            | Operation::Array(..) => true,
+            Operation::FunctionReference(b) => {
+                !matches!(b, Builtin::Runtime(crate::dynamic::Builtin::Eval))
+            }
+            _ => false,
+        }
+    }
+    let mut found = false;
+    for i in code.iter().filter(|i| i.out == target) {
+        found = true;
+        if matches!(i.kind, Operation::Copy(_)) {
+            // Lowering emits forward, acyclic register flow. Join effects once
+            // in definition order; recursive traversal of alias diamonds would
+            // multiply planning work. Unknown/forward values stay effectful.
+            let mut effects = vec![None; code.iter().map(|i| i.out).max().map_or(0, |r| r + 1)];
+            for i in code {
+                let writes = match i.kind {
+                    Operation::Copy(r) => effects.get(r).copied().flatten().unwrap_or(true),
+                    _ => !read_only(&i.kind),
+                };
+                effects[i.out] = Some(effects[i.out].unwrap_or(false) || writes);
+            }
+            return effects.get(target).copied().flatten().unwrap_or(true);
+        }
+        if !read_only(&i.kind) {
+            return true;
+        }
+    }
+    !found
+}
+
+pub(super) fn builtin_writes_caller(
+    code: &[Instruction],
+    builtin: Builtin,
+    args: &[usize],
+) -> bool {
+    match builtin {
+        Builtin::Runtime(crate::dynamic::Builtin::Eval) => true,
+        Builtin::Library(l) => args
+            .iter()
+            .enumerate()
+            .any(|(i, r)| l.callback_argument(args.len(), i) && writes_caller(code, *r)),
+        _ => false,
+    }
+}
+
 // Value-based kernels share the function ABI with the reference engine. A
-// program domain must never enter AST-backed definitions or dynamic tree eval,
+// program domain must never enter AST-backed definitions,
 // including through unbound declared names, host results, partials or callbacks.
+// Dynamic source compilation selects IR before executing any expression body.
 pub(crate) fn check(
     function: &crate::Function<'_, '_>,
     context: &Context<'_, '_>,
@@ -183,16 +278,18 @@ pub(crate) fn check(
         return Ok(());
     }
     let supported = match &function.kind {
-        FunctionKind::Program { .. }
+        FunctionKind::ProgramTransform { .. }
+        | FunctionKind::Program { .. }
         | FunctionKind::Host(_)
         | FunctionKind::Matcher(_)
         | FunctionKind::MatchNext(_)
         | FunctionKind::Partial { .. }
         | FunctionKind::Chain(..) => true,
-        FunctionKind::Builtin(b) => !matches!(b, Builtin::Runtime(_)),
+        FunctionKind::Builtin(_) => true,
         FunctionKind::Dynamic(c) => matches!(
             c.definition.as_ref(),
             crate::dynamic::Definition::Program(_)
+                | crate::dynamic::Definition::ProgramTransform(_)
         ),
         FunctionKind::Lambda { .. } | FunctionKind::Transform { .. } => false,
     };

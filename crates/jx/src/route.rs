@@ -58,7 +58,7 @@ pub(crate) fn map_items<'e, 'i>(
     let mut defined = false;
     let mut pending = None;
     input.transform(false, output, |value, output| {
-        evaluate(value, &mut |view| {
+        let mut mapped = |view: View<'_, 'e, 'i>| {
             if matches!(view, View::Operand(Operand::Missing)) {
                 return Ok(());
             }
@@ -81,6 +81,16 @@ pub(crate) fn map_items<'e, 'i>(
                     output(value.clone())
                 }
                 _ => view.candidates(false, output),
+            }
+        };
+        evaluate(value, &mut |view| {
+            #[cfg(feature = "experimental")]
+            {
+                view.resolve(&mut mapped)
+            }
+            #[cfg(not(feature = "experimental"))]
+            {
+                mapped(view)
             }
         })
     })?;

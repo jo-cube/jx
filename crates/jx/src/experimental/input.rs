@@ -13,23 +13,49 @@ impl RowId {
 #[derive(Clone, Debug)]
 pub(super) enum Cell<'e, 'i> {
     Missing,
-    Indexed(std::rc::Rc<Indexed<'e, 'i>>, usize),
     Capture(usize),
     // Opaque row-view identity, never dereferenced. Row spans live in Input; a
     // cell is usable only while that input activation contains its row view.
     RowCapture(RowId, usize),
     Value(Value<'e, 'i>),
 }
+/// A borrowed input slice with immutable, query-sized navigation metadata.
+/// Cloning shares only span/schema storage; JSON bytes are never copied.
+#[derive(Clone, Debug)]
+pub struct BorrowedInput<'i> {
+    doc: std::rc::Rc<Indexed<'i>>,
+    id: usize,
+}
 #[derive(Debug)]
-pub(super) struct Indexed<'e, 'i> {
-    schema: &'e acquisition::Schema,
+struct Indexed<'i> {
+    schema: Arc<acquisition::Schema>,
     raw: RawJson<'i>,
     spans: Box<[acquisition::Span]>,
 }
-impl<'i> Indexed<'_, 'i> {
+impl<'i> Indexed<'i> {
     fn at(&self, id: usize) -> Option<RawJson<'i>> {
         let span = self.spans[id];
         (span.end > span.start).then(|| RawJson(&self.raw.as_str()[span.start..span.end]))
+    }
+}
+impl<'i> BorrowedInput<'i> {
+    pub(crate) fn raw(&self) -> RawJson<'i> {
+        self.doc.at(self.id).expect("present borrowed input")
+    }
+    pub(crate) fn field<'e>(&self, name: &str) -> Option<Value<'e, 'i>> {
+        let raw = self.raw();
+        if raw.as_bytes()[0] != b'{' {
+            return None;
+        }
+        if let Some(child) = self.doc.schema.child(self.id, name) {
+            return self.doc.at(child).map(|_| {
+                Value::InputView(Self {
+                    doc: std::rc::Rc::clone(&self.doc),
+                    id: child,
+                })
+            });
+        }
+        raw.field(name).map(Value::Raw)
     }
 }
 pub(crate) enum Input<'a, 'i, 's> {
@@ -59,7 +85,7 @@ impl<'i> Input<'_, 'i, '_> {
         }
     }
     // Recover a prepared port only by byte identity. Equal constructed values
-    // are never substituted, and no record state is retained by a closure.
+    // are never substituted. Portable input views keep their owned metadata.
     pub(super) fn restore<'e>(&self, value: Option<Value<'e, 'i>>) -> Cell<'e, 'i> {
         let Some(value) = value else {
             return Cell::Missing;
@@ -93,6 +119,19 @@ impl<'i> Input<'_, 'i, '_> {
         } else {
             Cell::Value(value)
         }
+    }
+    pub(super) fn retain<'e>(
+        &self,
+        value: Value<'e, 'i>,
+        schema: &Arc<acquisition::Schema>,
+    ) -> Value<'e, 'i> {
+        if !schema.has_fields() {
+            return value;
+        }
+        let cell = self.restore(Some(value));
+        cell.promote(self, schema)
+            .into_value(self)
+            .unwrap_or(Value::Undefined)
     }
     pub(super) fn root<'e>(&self) -> Cell<'e, 'i> {
         match self {
@@ -190,8 +229,9 @@ impl<'i> Input<'_, 'i, '_> {
         path: &'e crate::expression::Path,
         wrapped: bool,
     ) -> FieldResult<'e, 'i> {
-        if let Cell::Indexed(doc, id) = base {
-            let mut at = *id;
+        if let Cell::Value(Value::InputView(view)) = base {
+            let doc = &view.doc;
+            let mut at = view.id;
             let mut complete = true;
             for name in &path.fields {
                 if doc.at(at).is_none() {
@@ -209,7 +249,10 @@ impl<'i> Input<'_, 'i, '_> {
             }
             if complete {
                 return FieldResult::Cell(if doc.at(at).is_some() {
-                    Cell::Indexed(std::rc::Rc::clone(doc), at)
+                    Cell::Value(Value::InputView(BorrowedInput {
+                        doc: std::rc::Rc::clone(doc),
+                        id: at,
+                    }))
                 } else {
                     Cell::Missing
                 });
@@ -361,6 +404,14 @@ impl<'i> Input<'_, 'i, '_> {
                 && let Value::Raw(raw) = value
                 && raw.as_bytes()[0] == b'{'
             {
+                // An ancestor or lexical alias can already name an acquired
+                // port. Reuse it by byte identity and schema coverage; never
+                // retain a row buffer or index the complete input graph.
+                let focus = self.restore(Some(Value::Raw(raw)));
+                if focus.covered(self, schema) {
+                    emit(self, focus, index)?;
+                    continue;
+                }
                 crate::json::capture_schema_validated(raw, schema, spans);
                 let row = acquisition::Prepared {
                     text: raw.as_str(),
@@ -378,7 +429,10 @@ impl<'i> Input<'_, 'i, '_> {
                     index,
                 )?;
             } else {
-                emit(self, Cell::Value(value), index)?;
+                // Candidate streams can contain undefined positions. On entry
+                // to a body, reading that focus/argument denotes missing, just
+                // as at an ordinary call or restored borrowed-value boundary.
+                emit(self, self.restore(Some(value)), index)?;
             }
         }
         Ok(())
@@ -424,39 +478,103 @@ impl<'i> Input<'_, 'i, '_> {
     }
 }
 impl<'e, 'i> Cell<'e, 'i> {
-    pub(super) fn acquire(
-        &self,
-        input: &Input<'_, 'i, '_>,
-        schema: &'e acquisition::Schema,
-    ) -> Self {
-        let covered = match self {
+    // Undefined positions can be carried by a native candidate stream. Reading
+    // focus, a parameter or a lexical port denotes missing; it must not create
+    // a JSON null member or a spurious callback result.
+    pub(super) fn read(&self) -> Self {
+        match self {
+            Self::Value(Value::Undefined) => Self::Missing,
+            _ => self.clone(),
+        }
+    }
+    fn covered(&self, input: &Input<'_, 'i, '_>, schema: &acquisition::Schema) -> bool {
+        match self {
             Self::Capture(id) => input
                 .root_document()
                 .is_some_and(|d| d.schema.covers(*id, schema)),
             Self::RowCapture(row, id) => input
                 .row_document(*row)
                 .is_some_and(|d| d.schema.covers(*id, schema)),
-            Self::Indexed(doc, id) => doc.schema.covers(*id, schema),
+            Self::Value(Value::InputView(view)) => view.doc.schema.covers(view.id, schema),
             _ => false,
-        };
-        if covered {
+        }
+    }
+    // Promote a demanded borrowed port when its value must outlive the active
+    // row/input handle. Copy only query-sized span metadata; input bytes retain
+    // their identity and lifetime. An already owned port shares its owner.
+    fn promote(&self, input: &Input<'_, 'i, '_>, schema: &Arc<acquisition::Schema>) -> Self {
+        if let Self::Value(Value::InputView(view)) = self
+            && view.doc.schema.covers(view.id, schema)
+        {
             return self.clone();
         }
-        if let Some(Value::Raw(raw)) = self.value(input)
-            && raw.as_bytes()[0] == b'{'
-        {
-            let mut spans =
-                vec![acquisition::Span::default(); schema.nodes.len()].into_boxed_slice();
-            crate::json::capture_schema_validated(raw, schema, &mut spans);
-            return Self::Indexed(std::rc::Rc::new(Indexed { schema, raw, spans }), 0);
+        let Some(raw) = self.value(input).and_then(|v| v.as_raw()) else {
+            return self.clone();
+        };
+        if raw.as_bytes()[0] != b'{' {
+            return self.clone();
         }
-        self.clone()
+        let acquired = match self {
+            Self::Capture(id) => input.root_document().map(|d| (d, *id)),
+            Self::RowCapture(row, id) => input.row_document(*row).map(|d| (d, *id)),
+            _ => None,
+        };
+        let mut spans = vec![acquisition::Span::default(); schema.nodes.len()].into_boxed_slice();
+        if let Some((doc, base)) = acquired.filter(|(d, base)| d.schema.covers(*base, schema)) {
+            fn copy(
+                doc: &acquisition::Prepared<'_, '_>,
+                base: usize,
+                schema: &acquisition::Schema,
+                at: usize,
+                start: usize,
+                spans: &mut [acquisition::Span],
+            ) {
+                let span = doc.spans[base];
+                if span.end <= span.start {
+                    return;
+                }
+                spans[at] = acquisition::Span {
+                    start: span.start - start,
+                    end: span.end - start,
+                };
+                for (name, child) in &schema.nodes[at].children {
+                    copy(
+                        doc,
+                        doc.schema.child(base, name).expect("covered schema"),
+                        schema,
+                        *child,
+                        start,
+                        spans,
+                    );
+                }
+            }
+            copy(doc, base, schema, 0, doc.spans[base].start, &mut spans);
+        } else {
+            crate::json::capture_schema_validated(raw, schema, &mut spans);
+        }
+        Self::Value(Value::InputView(BorrowedInput {
+            doc: std::rc::Rc::new(Indexed {
+                schema: Arc::clone(schema),
+                raw,
+                spans,
+            }),
+            id: 0,
+        }))
+    }
+    pub(super) fn acquire(
+        &self,
+        input: &Input<'_, 'i, '_>,
+        schema: &Arc<acquisition::Schema>,
+    ) -> Self {
+        if self.covered(input, schema) {
+            return self.clone();
+        }
+        self.promote(input, schema)
     }
 
     pub(super) fn value(&self, input: &Input<'_, 'i, '_>) -> Option<Value<'e, 'i>> {
         match self {
             Self::Missing => None,
-            Self::Indexed(doc, id) => doc.at(*id).map(Value::Raw),
             Self::Capture(id) => input
                 .root_document()
                 .expect("captured root")
@@ -482,8 +600,10 @@ impl<'e, 'i> Cell<'e, 'i> {
     #[inline]
     pub(super) fn atomic(self, input: &Input<'_, 'i, '_>) -> Self {
         match self {
-            Self::Value(Value::Raw(raw)) => Self::Value(Value::Raw(raw).atomic()),
-            Self::Capture(_) | Self::RowCapture(..) | Self::Indexed(..) => self
+            Self::Value(value @ (Value::Raw(_) | Value::InputView(_))) => {
+                Self::Value(value.atomic())
+            }
+            Self::Capture(_) | Self::RowCapture(..) => self
                 .value(input)
                 .map(|v| v.atomic())
                 .map_or(Self::Missing, Self::Value),

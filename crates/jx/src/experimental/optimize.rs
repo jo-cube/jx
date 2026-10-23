@@ -11,11 +11,6 @@ pub(super) fn run(p: &mut Program) {
         definitions[i.out] += 1;
     }
     let mut data = vec![None; p.registers];
-    let mut uses = vec![0usize; p.registers];
-    uses[p.result] += 1;
-    for i in &p.code {
-        operands(&i.kind, &mut |r| uses[r] += 1);
-    }
     for i in &mut p.code {
         if let Operation::Builtin(Builtin::Lookup, args, _) = &i.kind
             && let [base, key] = args.as_ref()
@@ -32,6 +27,15 @@ pub(super) fn run(p: &mut Program) {
                 _ => None,
             }
         };
+    }
+    // Preserve eager selection as membership before aggregate fusion can
+    // consume its mapper. This avoids retaining an intermediate value sequence
+    // while keeping singleton-array normalization in the semantic Path region.
+    selection_ownership(p);
+    let mut uses = vec![0usize; p.registers];
+    uses[p.result] += 1;
+    for i in &p.code {
+        operands(&i.kind, &mut |r| uses[r] += 1);
     }
     for n in 1..p.code.len() {
         let (left, right) = p.code.split_at_mut(n);
@@ -60,7 +64,8 @@ pub(super) fn run(p: &mut Program) {
                 kind: Each::Map, ..
             } => true,
             Operation::Path(path) => {
-                !path.candidate
+                !path.eager
+                    && !path.candidate
                     && path.predicates.len() <= 1
                     && facts::non_array_result(&path.body)
                     && (path.predicates.is_empty()
@@ -73,6 +78,7 @@ pub(super) fn run(p: &mut Program) {
                 producer.kind,
                 Operation::Field(_, _, _, FieldMode::Value)
                     | Operation::Path(_)
+                    | Operation::Correlate(_)
                     | Operation::Navigate(_)
                     | Operation::Select(..)
                     | Operation::Range(..)
@@ -88,15 +94,15 @@ pub(super) fn run(p: &mut Program) {
             }
             continue;
         }
-        let (source, body, predicate, callback, eager) =
+        let (source, body, predicate, callback) =
             match std::mem::replace(&mut producer.kind, Operation::Literal(Literal::Missing)) {
-                Operation::Each { source, body, .. } => (source, body, None, true, false),
+                Operation::Each { source, body, .. } => (source, body, None, true),
                 Operation::Path(path) => {
                     let selection::Selection {
                         source,
                         body,
                         predicates,
-                        eager,
+                        eager: _,
                         mapping: _,
                         candidate: _,
                         positional: _,
@@ -107,7 +113,6 @@ pub(super) fn run(p: &mut Program) {
                         body,
                         predicates.into_vec().pop().map(Box::new),
                         false,
-                        eager,
                     )
                 }
                 _ => unreachable!(),
@@ -121,7 +126,6 @@ pub(super) fn run(p: &mut Program) {
             predicate,
             aggregate,
             callback,
-            eager,
         };
     }
 
@@ -177,7 +181,9 @@ pub(super) fn operands(op: &Operation, emit: &mut impl FnMut(usize)) {
             emit(*a);
             emit(*b);
         }
-        Operation::Builtin(_, args, _) => args.iter().for_each(|r| emit(*r)),
+        Operation::Builtin(_, args, _) | Operation::Formatted(_, args, _) => {
+            args.iter().for_each(|r| emit(*r))
+        }
         Operation::Bind(_, r) => emit(*r),
         Operation::Invoke(target, args, _, _) => {
             emit(*target);
@@ -195,7 +201,7 @@ pub(super) fn operands(op: &Operation, emit: &mut impl FnMut(usize)) {
         _ => {}
     }
     // Function definitions capture live names, not parent register numbers.
-    if !matches!(op, Operation::Function(_)) {
+    if !matches!(op, Operation::Function(_) | Operation::Transform(_)) {
         op.children(&mut |p| captures(p, emit));
     }
 }
@@ -208,64 +214,8 @@ fn captures(p: &Program, emit: &mut impl FnMut(usize)) {
     }
 }
 
-// A Boolean path filter completes before the mapper is semantically consumed.
-// The executor may interleave pure work only while retaining the first mapper
-// failure until all predicates have completed. Predicate errors still win.
-pub(super) fn fuse_filter_fold(p: &mut Program) {
-    let mut uses = vec![0; p.registers];
-    uses[p.result] += 1;
-    for i in &p.code {
-        operands(&i.kind, &mut |r| uses[r] += 1);
-    }
-    for n in 1..p.code.len() {
-        let (left, right) = p.code.split_at_mut(n);
-        let consumer = &mut right[0];
-        let Operation::Fold {
-            source,
-            predicate,
-            eager,
-            body,
-            ..
-        } = &mut consumer.kind
-        else {
-            continue;
-        };
-        if predicate.is_some()
-            || *source != left[n - 1].out
-            || uses[left[n - 1].out] != 1
-            || !reorderable(body)
-        {
-            continue;
-        }
-        // A single-use eager boundary is redundant for a complete aggregate.
-        // Crossing it is allowed only with no intervening instruction.
-        let candidate = if let Operation::Materialize(r) = left[n - 1].kind {
-            if n < 2 || r != left[n - 2].out || uses[r] != 1 {
-                continue;
-            }
-            n - 2
-        } else {
-            n - 1
-        };
-        if !matches!(&left[candidate].kind, Operation::Path(path) if !path.candidate && path.identity() && path.predicates.len() == 1 && reorderable(&path.predicates[0]))
-        {
-            continue;
-        }
-        let Operation::Path(path) = std::mem::replace(
-            &mut left[candidate].kind,
-            Operation::Literal(Literal::Missing),
-        ) else {
-            unreachable!()
-        };
-        if candidate != n - 1 {
-            left[n - 1].kind = Operation::Literal(Literal::Missing);
-        }
-        *source = path.source;
-        *eager = true;
-        *predicate = path.predicates.into_vec().pop().map(Box::new);
-    }
-}
-
+// An eager filter is a cardinality boundary: a sole selected array becomes
+// the mapper's input sequence. Do not erase that boundary when forming a fold.
 // Stage fusion can defer checked failures, but cannot move calls or writes
 // across earlier predicates. Reads alone observe immutable state when both stages
 // pass this proof. Keep the default conservative as new operations are introduced.
@@ -305,7 +255,7 @@ fn reorderable(p: &Program) -> bool {
 
 // A materialized identity filter used once by the next path needs membership,
 // not retained values. The eager predicate barrier is preserved explicitly.
-pub(super) fn selection_ownership(p: &mut Program) {
+fn selection_ownership(p: &mut Program) {
     let mut uses = vec![0; p.registers];
     uses[p.result] += 1;
     for i in &p.code {
@@ -387,7 +337,9 @@ fn remap(op: &mut Operation, id: &impl Fn(usize) -> usize) {
             *a = id(*a);
             *b = id(*b);
         }
-        Operation::Builtin(_, args, _) => args.iter_mut().for_each(|r| *r = id(*r)),
+        Operation::Builtin(_, args, _) | Operation::Formatted(_, args, _) => {
+            args.iter_mut().for_each(|r| *r = id(*r))
+        }
         Operation::Invoke(target, args, _, _) => {
             *target = id(*target);
             args.iter_mut().for_each(|r| *r = id(*r));
@@ -403,7 +355,7 @@ fn remap(op: &mut Operation, id: &impl Fn(usize) -> usize) {
         Operation::Each { source, .. } | Operation::Fold { source, .. } => *source = id(*source),
         _ => {}
     }
-    if !matches!(op, Operation::Function(_)) {
+    if !matches!(op, Operation::Function(_) | Operation::Transform(_)) {
         op.children_mut(&mut |p| {
             for i in &mut p.code {
                 if let Operation::Outer(r, _) = &mut i.kind {
@@ -650,11 +602,12 @@ pub(super) fn load_transfers(p: &Program, gate: Option<usize>) -> Box<[bool]> {
 // This is a lexical invalidation fact, not the source scheduling/effects flag
 // (which also includes reads). Compute it once, bottom-up, over the common IR.
 pub(super) fn writes_scope(p: &Program) -> bool {
-    fn operation(op: &Operation) -> bool {
+    fn operation(op: &Operation, code: &[Instruction]) -> bool {
         match op {
-            // Calls/definitions own child frames. Hosts cannot write caller names.
-            Operation::Invoke(..) | Operation::Chain(..) | Operation::Function(_) => false,
-            Operation::Builtin(Builtin::Runtime(_), ..) => true,
+            Operation::Invoke(target, ..) => call::writes_caller(code, *target),
+            Operation::Chain(_, target, _) => call::writes_caller(code, *target),
+            Operation::Function(_) | Operation::Transform(_) => false,
+            Operation::Builtin(b, args, _) => call::builtin_writes_caller(code, *b, args),
             _ => {
                 let mut writes = false;
                 op.children(&mut |p| writes |= p.writes_scope);
@@ -669,7 +622,7 @@ pub(super) fn writes_scope(p: &Program) -> bool {
             Operation::LeaveScope => depth -= 1,
             Operation::Bind(..) if depth == 0 => return true,
             _ => {
-                if operation(&i.kind) {
+                if operation(&i.kind, &p.code) {
                     return true;
                 }
             }

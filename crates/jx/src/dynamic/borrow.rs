@@ -101,6 +101,13 @@ pub(crate) fn value<'d, 'e: 'd, 'i>(
                             wrapped: c.wrapped,
                             frame: c.frame,
                         },
+                        #[cfg(feature = "experimental")]
+                        Definition::ProgramTransform(definition) => {
+                            FunctionKind::ProgramTransform {
+                                definition,
+                                frame: c.frame,
+                            }
+                        }
                         Definition::Transform(definition) => FunctionKind::Transform {
                             definition,
                             frame: c.frame,

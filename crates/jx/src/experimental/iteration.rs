@@ -24,15 +24,23 @@ pub(super) fn execute<'e, 'i>(
     } = activation;
     let offset = instruction.offset;
     let value = match &instruction.kind {
-        Operation::Navigate(_)
+        Operation::Correlate(_)
+        | Operation::Navigate(_)
         | Operation::Select(..)
         | Operation::Range(..)
         | Operation::Traverse(_) => {
             let mut values = Vec::new();
-            navigation::walk(&instruction.kind, activation, frame, offset, &mut |v| {
-                values.push(v);
-                Ok(())
-            })
+            navigation::walk(
+                &instruction.kind,
+                activation,
+                frame,
+                offset,
+                &mut |v| {
+                    values.push(v);
+                    Ok(())
+                },
+                true,
+            )
             .map_err(|e| match e {
                 crate::sequence::Halt::Evaluation(e) => e,
                 crate::sequence::Halt::Stop => unreachable!(),
@@ -116,12 +124,18 @@ pub(super) fn execute<'e, 'i>(
                         reads.and_then(|r| r.get(instruction.out)),
                     )
                     .walk(input, &mut push),
-                Operation::Navigate(_)
+                Operation::Correlate(_)
+                | Operation::Navigate(_)
                 | Operation::Select(..)
                 | Operation::Range(..)
-                | Operation::Traverse(_) => {
-                    navigation::consume(producer, activation, frame, *producer_offset, &mut push)
-                }
+                | Operation::Traverse(_) => navigation::consume(
+                    producer,
+                    activation,
+                    frame,
+                    *producer_offset,
+                    &mut push,
+                    true,
+                ),
                 Operation::Path(path) => {
                     path.walk(activation, &frame[path.source], *producer_offset, &mut push)
                 }
@@ -139,7 +153,6 @@ pub(super) fn execute<'e, 'i>(
             predicate,
             aggregate,
             callback,
-            eager,
         } => {
             let staged = body.scalar.as_ref().is_some_and(|s| s.gate.is_some());
             let mut child_frame = frame::Frame::repeated();
@@ -150,41 +163,7 @@ pub(super) fn execute<'e, 'i>(
             let mut arguments = Arguments::new(input, &frame[*source], body);
             let undefined = Cell::Value(Value::Undefined);
             let missing = frame[*source].value(input).is_none();
-            if missing
-                && *eager
-                && let Some(p) = predicate
-            {
-                p.run(
-                    Activation {
-                        input,
-                        focus: &undefined,
-                        wrapped: false,
-                        args: &[],
-                        outer: frame,
-                        calls,
-                        scope,
-                    },
-                    &mut predicate_frame,
-                )?
-                .truth(input, offset)?;
-            }
-            if missing && *eager && staged {
-                body.run_row(
-                    Activation {
-                        input,
-                        focus: &undefined,
-                        wrapped: false,
-                        args: &[],
-                        outer: frame,
-                        calls,
-                        scope,
-                    },
-                    &mut child_frame,
-                    &mut mapper_error,
-                    true,
-                )?;
-            }
-            let source = if missing && !*eager && (predicate.is_some() || staged) {
+            let source = if missing && (predicate.is_some() || staged) {
                 &undefined
             } else {
                 &frame[*source]
@@ -192,13 +171,6 @@ pub(super) fn execute<'e, 'i>(
             input.each(source, &body.row_schema, |child_input, item, index| {
                 if let Some(scope) = scope.filter(|s| s.controlled()) {
                     scope.item(offset)?;
-                }
-                if !callback && item.value(child_input).is_some_and(|v| v.is_array()) {
-                    return Err(crate::Error::new(
-                        crate::ErrorKind::UnsupportedExpression,
-                        offset,
-                        "research path sources must have non-array items",
-                    ));
                 }
                 if let Some(p) = predicate
                     && !p
@@ -291,13 +263,6 @@ pub(super) fn execute<'e, 'i>(
                     .into_value(child_input)
                     .filter(|v| !matches!(v, Value::Undefined))
                 {
-                    if !callback && value.is_array() {
-                        return Err(crate::Error::new(
-                            crate::ErrorKind::UnsupportedExpression,
-                            offset,
-                            "research path array results are not supported",
-                        ));
-                    }
                     reduction.push(value);
                 }
                 Ok(())

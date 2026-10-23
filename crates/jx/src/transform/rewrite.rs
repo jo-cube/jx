@@ -10,9 +10,9 @@ pub(super) struct Identity {
 }
 fn id(value: &Value<'_, '_>) -> Option<Identity> {
     Some(match value {
-        Value::Raw(raw) if value.is_object() || value.is_array() => Identity {
+        _ if value.as_raw().is_some() && (value.is_object() || value.is_array()) => Identity {
             owner: 0,
-            storage: raw.as_bytes().as_ptr() as usize,
+            storage: value.as_raw().unwrap().as_bytes().as_ptr() as usize,
             kind: 0,
         },
         Value::Array(a) => Identity {
@@ -50,7 +50,7 @@ impl<'e, 'i> Changes<'e, 'i> {
     fn insert(&mut self, target: &Value<'e, 'i>, value: Value<'e, 'i>) {
         let Some(identity) = id(target) else { return };
         if let Value::Copied(c) = target
-            && let Value::Raw(raw) = c.source
+            && let Some(raw) = c.source.as_raw()
         {
             self.raw.insert(
                 (identity.owner, identity.storage),
@@ -68,7 +68,7 @@ impl<'e, 'i> Changes<'e, 'i> {
             return Some(self.rewrite(replaced).unwrap_or_else(|| replaced.clone()));
         }
         if let Value::Copied(c) = value
-            && let Value::Raw(raw) = c.source
+            && let Some(raw) = c.source.as_raw()
         {
             let end = identity.storage + raw.as_bytes().len();
             self.raw
@@ -99,12 +99,12 @@ impl<'e, 'i> Changes<'e, 'i> {
         }
     }
 }
-pub(super) fn apply<'e, 'i>(
-    definition: &'e Definition,
+pub(super) fn apply<'e, 'i, B: Body>(
+    definition: &'e Definition<B>,
     value: Value<'e, 'i>,
     context: &Context<'e, 'i>,
 ) -> Result<Value<'e, 'i>, Error> {
-    let selected = crate::retain::materialize(&definition.pattern, context)?;
+    let selected = definition.pattern.evaluate(context)?;
     let Some(selected) = selected else {
         return Ok(value);
     };
@@ -121,7 +121,7 @@ pub(super) fn apply<'e, 'i>(
         if id(&target).is_some() && !belongs(&value, &target) {
             return Err(Error::new(
                 crate::ErrorKind::UnsupportedExpression,
-                definition.pattern.offset,
+                definition.pattern.offset(),
                 "transform locations outside the cloned argument are deferred",
             ));
         }
@@ -131,15 +131,15 @@ pub(super) fn apply<'e, 'i>(
             wrapped: false,
             ..context.clone()
         };
-        let update = crate::retain::materialize(&definition.update, &local)?;
+        let update = definition.update.evaluate(&local)?;
         if let Some(update) = update {
             if !update.is_object() {
-                return Err(crate::value::type_error(definition.update.offset));
+                return Err(crate::value::type_error(definition.update.offset()));
             }
             if function_value(&update) {
                 return Err(Error::new(
                     crate::ErrorKind::UnsupportedExpression,
-                    definition.update.offset,
+                    definition.update.offset(),
                     "function-valued transform updates are deferred",
                 ));
             }
@@ -149,11 +149,11 @@ pub(super) fn apply<'e, 'i>(
             {
                 return Err(Error::new(
                     crate::ErrorKind::UnsupportedExpression,
-                    definition.update.offset,
+                    definition.update.offset(),
                     "cyclic transform output is not JSON",
                 ));
             }
-            current = merge(&current, &update, definition.update.offset)?;
+            current = merge(&current, &update, definition.update.offset())?;
         }
         if let Some(delete) = &definition.delete {
             let local = Context {
@@ -161,16 +161,16 @@ pub(super) fn apply<'e, 'i>(
                 wrapped: false,
                 ..context.clone()
             };
-            if let Some(deletions) = crate::retain::materialize(delete, &local)? {
+            if let Some(deletions) = delete.evaluate(&local)? {
                 let keys: Vec<_> = if deletions.is_array() {
                     deletions.elements().collect()
                 } else {
                     vec![deletions]
                 };
                 if keys.iter().any(|key| key.string_body().is_none()) {
-                    return Err(crate::value::type_error(delete.offset));
+                    return Err(crate::value::type_error(delete.offset()));
                 }
-                current = remove(&current, &keys, delete.offset)?;
+                current = remove(&current, &keys, delete.offset())?;
             }
         }
         if id(&current) != id(&target) {
@@ -192,7 +192,7 @@ fn contains(value: &Value<'_, '_>, target: &Value<'_, '_>) -> bool {
     if id(value) == Some(target_id) {
         return true;
     }
-    if let Value::Raw(_) | Value::Constant(_) = value {
+    if value.as_raw().is_some() || matches!(value, Value::Constant(_)) {
         return false;
     }
     if let Value::Copied(c) = value
@@ -201,7 +201,7 @@ fn contains(value: &Value<'_, '_>, target: &Value<'_, '_>) -> bool {
         return false;
     }
     if let Value::Copied(c) = value
-        && let Value::Raw(raw) = c.source
+        && let Some(raw) = c.source.as_raw()
     {
         let value_id = identity(c);
         return value_id.owner == target_id.owner
@@ -218,7 +218,7 @@ fn contains(value: &Value<'_, '_>, target: &Value<'_, '_>) -> bool {
 }
 
 fn function_value(value: &Value<'_, '_>) -> bool {
-    if matches!(value, Value::Raw(_) | Value::Constant(_) | Value::Copied(_)) {
+    if value.as_raw().is_some() || matches!(value, Value::Constant(_) | Value::Copied(_)) {
         return false;
     }
     if matches!(value, Value::Function(_)) {

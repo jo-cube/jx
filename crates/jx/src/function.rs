@@ -54,6 +54,11 @@ pub(crate) enum FunctionKind<'e, 'i> {
         frame: usize,
     },
     #[cfg(feature = "experimental")]
+    ProgramTransform {
+        definition: &'e crate::transform::Definition<crate::execution::Program>,
+        frame: usize,
+    },
+    #[cfg(feature = "experimental")]
     Program {
         definition: &'e crate::execution::call::Definition,
         focus: Value<'e, 'i>,
@@ -121,6 +126,8 @@ pub(crate) fn arity(function: &Function<'_, '_>) -> usize {
         FunctionKind::Builtin(builtin) => builtin.arity(),
         #[cfg(feature = "experimental")]
         FunctionKind::Program { definition, .. } => definition.params.len(),
+        #[cfg(feature = "experimental")]
+        FunctionKind::ProgramTransform { .. } => 1,
         FunctionKind::Host(function) => function.arity,
         FunctionKind::Dynamic(callable) => callable.arity(),
         FunctionKind::Matcher(_) => 2,
@@ -219,6 +226,10 @@ pub(crate) fn invoke_in<'e, 'i>(
         }
         FunctionKind::Matcher(state) => crate::matcher::invoke(state, arguments, offset),
         FunctionKind::MatchNext(next) => next.invoke(offset),
+        #[cfg(feature = "experimental")]
+        FunctionKind::ProgramTransform { definition, frame } => {
+            crate::transform::invoke(*definition, *frame, arguments, context, offset)
+        }
         FunctionKind::Transform { definition, frame } => {
             crate::transform::invoke(definition, *frame, arguments, context, offset)
         }

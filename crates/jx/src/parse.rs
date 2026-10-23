@@ -19,6 +19,14 @@ pub(crate) fn dynamic(source: &str) -> Result<Expression, Error> {
         e
     })
 }
+#[cfg(feature = "experimental")]
+pub(crate) fn dynamic_semantic(source: &str) -> Result<Expression, Error> {
+    parse(source, true, &[], &[], false).map_err(|mut e| {
+        e.phase = crate::Phase::Compilation;
+        e.source = crate::Source::DynamicExpression;
+        e
+    })
+}
 pub(crate) fn configured(
     source: &str,
     bindings: &[Box<str>],

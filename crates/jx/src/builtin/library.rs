@@ -111,6 +111,19 @@ impl Library {
             .iter()
             .any(|p| matches!(p, Param::Function | Param::Pattern))
     }
+    // Contextual signatures can shift a callback left by one argument. The
+    // runtime decides the actual shift after type validation; effect analysis
+    // conservatively considers both positions, without evaluating arguments.
+    #[cfg(feature = "experimental")]
+    pub(crate) fn callback_argument(self, argc: usize, index: usize) -> bool {
+        let (params, _, context) = self.signature();
+        let callback = |i| {
+            params
+                .get(i)
+                .is_some_and(|p| matches!(p, Param::Function | Param::Pattern))
+        };
+        callback(index) || context && argc < params.len() && callback(index + 1)
+    }
     pub fn uses_clock(self) -> bool {
         matches!(self, Self::ToMillis | Self::Now | Self::Millis)
     }

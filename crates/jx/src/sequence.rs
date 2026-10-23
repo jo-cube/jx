@@ -127,6 +127,10 @@ pub(crate) enum View<'s, 'e, 'i> {
     Filter(&'s crate::filter::Filter<'s, 'e, 'i>),
     #[cfg(feature = "experimental")]
     Producer(&'s dyn Fn(&mut Output<'_, 'e, 'i>) -> Walk),
+    // A native candidate sequence at a value boundary. Resolve cardinality with
+    // one pending item instead of constructing an intermediate sequence graph.
+    #[cfg(feature = "experimental")]
+    Boundary(&'s dyn Fn(&mut Output<'_, 'e, 'i>) -> Walk),
 }
 impl<'e, 'i> View<'_, 'e, 'i> {
     pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
@@ -142,6 +146,51 @@ impl<'e, 'i> View<'_, 'e, 'i> {
             Self::Filter(filter) => filter.walk(output),
             #[cfg(feature = "experimental")]
             Self::Producer(walk) => walk(output),
+            #[cfg(feature = "experimental")]
+            Self::Boundary(_) => self.resolve(&mut |view| view.walk(output)),
+        }
+    }
+    #[cfg(feature = "experimental")]
+    pub fn resolve(&self, emit: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk) -> Walk {
+        let Self::Boundary(walk) = self else {
+            return emit(*self);
+        };
+        let mut first = None;
+        let mut many = false;
+        let mut downstream = None;
+        let mut deliver = |value| {
+            if downstream.is_some() {
+                return Ok(());
+            }
+            match emit(View::Items(std::slice::from_ref(&value))) {
+                Err(Halt::Evaluation(error)) => {
+                    downstream = Some(error);
+                    Ok(())
+                }
+                result => result,
+            }
+        };
+        walk(&mut |value| {
+            if many {
+                return deliver(value);
+            }
+            if let Some(first) = first.take() {
+                many = true;
+                deliver(first)?;
+                deliver(value)
+            } else {
+                first = Some(value);
+                Ok(())
+            }
+        })?;
+        if many {
+            downstream.map_or(Ok(()), |e| Err(Halt::Evaluation(e)))
+        } else {
+            let operand = match first {
+                None | Some(Value::Undefined) => Operand::Missing,
+                Some(value) => Operand::One(value),
+            };
+            emit(View::Operand(&operand))
         }
     }
     // Defer downstream failures while checking this stage. If this stage fails,
@@ -176,6 +225,8 @@ impl<'e, 'i> View<'_, 'e, 'i> {
     }
     pub fn candidates(&self, missing: bool, output: &mut Output<'_, 'e, 'i>) -> Walk {
         match self {
+            #[cfg(feature = "experimental")]
+            Self::Boundary(_) => self.resolve(&mut |view| view.candidates(missing, output)),
             Self::Operand(Operand::Missing) if missing => output(Value::Undefined),
             Self::Operand(Operand::One(value)) if value.is_array() => {
                 for item in value.elements() {

@@ -11,12 +11,19 @@ struct Lower<'e> {
     available: Vec<usize>,
     deferred: Vec<bool>,
     scoped: bool,
+    lexical: bool,
+    wrapped_focus: Option<bool>,
     constructor_body: bool,
     epoch: usize,
 }
-pub(super) fn compile(node: &Node, external: bool) -> Result<Program, Unsupported> {
+pub(super) fn compile(
+    node: &Node,
+    external: bool,
+    wrapped_focus: Option<bool>,
+) -> Result<Program, Unsupported> {
     let mut lower = Lower::new();
-    lower.scoped = external || needs_scope(node);
+    lower.scoped = external || node.clock || needs_scope(node);
+    lower.wrapped_focus = wrapped_focus;
     lower.emit(Operation::Focus, node.offset);
     lower.emit(Operation::Root, node.offset);
     let result = lower.node(node)?;
@@ -24,9 +31,21 @@ pub(super) fn compile(node: &Node, external: bool) -> Result<Program, Unsupporte
     program.deferred = streamable(node);
     program.deferred_options = streamable_options(node);
     program.offset = node.offset;
+    program.clock = node.clock;
     acquisition::plan_joins(&mut program);
     prepare(&mut program);
     Ok(program)
+}
+pub(super) fn context_body(node: &Node) -> Result<Program, Unsupported> {
+    let mut lower = Lower::new();
+    lower.scoped = true;
+    lower.emit(Operation::Focus, node.offset);
+    lower.emit(Operation::Root, node.offset);
+    let result = lower.node(node)?;
+    let mut p = lower.finish(result);
+    p.offset = node.offset;
+    p.call.depth = node.depth;
+    Ok(p)
 }
 // All semantic rewriting and capture remapping precedes physical preparation.
 // Parent rewrites may move/merge children; their executable metadata is built once.
@@ -56,6 +75,8 @@ impl<'e> Lower<'e> {
             available: Vec::new(),
             deferred: Vec::new(),
             scoped: false,
+            lexical: false,
+            wrapped_focus: None,
             constructor_body: false,
             epoch: 0,
         }
@@ -74,6 +95,7 @@ impl<'e> Lower<'e> {
             atomic_loads: Box::new([]),
             workspace: 0,
             scoped: self.scoped,
+            clock: false,
             call: Default::default(),
             writes_scope: false,
             deferred: false,
@@ -82,9 +104,6 @@ impl<'e> Lower<'e> {
             bindings: Box::new([]),
             offset: 0,
         };
-        optimize::run(&mut program);
-        optimize::fuse_filter_fold(&mut program);
-        optimize::selection_ownership(&mut program);
         optimize::run(&mut program);
         optimize::row_dataflow(&mut program);
         program.writes_scope = optimize::writes_scope(&program);
@@ -114,7 +133,8 @@ impl<'e> Lower<'e> {
                 &kind,
                 Operation::Builtin(
                     Builtin::Library(
-                        Library::Append
+                        Library::Clone
+                            | Library::Append
                             | Library::Reverse
                             | Library::Distinct
                             | Library::Keys
@@ -166,12 +186,25 @@ impl<'e> Lower<'e> {
         self.code.push(Instruction { out, kind, offset });
         out
     }
-    fn child(&self, node: &'e Node, params: &'e [Box<str>]) -> Result<Program, Unsupported> {
-        self.child_in(node, params)
+    fn child_focus(
+        &self,
+        node: &'e Node,
+        params: &'e [Box<str>],
+        wrapped_focus: Option<bool>,
+    ) -> Result<Program, Unsupported> {
+        self.child_scope(node, params, wrapped_focus, self.scoped)
     }
-    fn child_in(&self, node: &'e Node, params: &'e [Box<str>]) -> Result<Program, Unsupported> {
+    fn child_scope(
+        &self,
+        node: &'e Node,
+        params: &'e [Box<str>],
+        wrapped_focus: Option<bool>,
+        scoped: bool,
+    ) -> Result<Program, Unsupported> {
         let mut child = Lower::new();
-        child.scoped = self.scoped;
+        child.scoped = scoped;
+        child.lexical = self.scoped || self.lexical;
+        child.wrapped_focus = wrapped_focus;
         child.emit(Operation::Focus, node.offset);
         child.emit(Operation::Root, node.offset);
         let kinds = if self.env.is_empty() {
@@ -179,11 +212,11 @@ impl<'e> Lower<'e> {
         } else {
             facts::infer(&self.code, self.registers)
         };
-        for &(name, reg) in self.env.iter().filter(|_| !self.scoped) {
+        for &(name, reg) in self.env.iter().filter(|_| !scoped) {
             let out = child.emit(Operation::Outer(reg, kinds[reg]), node.offset);
             child.remember(name, out);
         }
-        for (i, name) in params.iter().enumerate().filter(|_| !self.scoped) {
+        for (i, name) in params.iter().enumerate().filter(|_| !scoped) {
             let reg = child.emit(Operation::Argument(i), node.offset);
             child.remember(name, reg);
         }
@@ -247,7 +280,7 @@ impl<'e> Lower<'e> {
         if d.signature.is_some() || d.params.len() > 3 {
             return Err(unsupported(node, "callback signature/arity"));
         }
-        let mut body = self.child_in(&d.body, &d.params)?;
+        let mut body = self.child_scope(&d.body, &d.params, self.wrapped_focus, false)?;
         body.call = call::Contract {
             depth: d.body.depth,
             tail: d.tail,
@@ -255,14 +288,19 @@ impl<'e> Lower<'e> {
         Ok(body)
     }
     fn predicate(&self, node: &'e Node) -> Result<Program, Unsupported> {
-        let mut p = self.child(node, &[])?;
+        let mut p = self.child_focus(node, &[], Some(false))?;
         p.offset = node.offset;
         Ok(p)
     }
     fn pairs(&self, pairs: &'e [(Node, Node)]) -> Result<Box<[(Program, Program)]>, Unsupported> {
         pairs
             .iter()
-            .map(|(k, v)| Ok((self.child(k, &[])?, self.child(v, &[])?)))
+            .map(|(k, v)| {
+                Ok((
+                    self.child_focus(k, &[], Some(false))?,
+                    self.child_focus(v, &[], Some(false))?,
+                ))
+            })
             .collect()
     }
     fn predicates(
@@ -325,17 +363,26 @@ impl<'e> Lower<'e> {
             predicates: programs.into(),
         })
     }
+    fn route_source(&self, step: &crate::expression::Step) -> bool {
+        match &source(&step.node).kind {
+            Kind::Variable(_) => true,
+            Kind::Path(path) if path.rooted && path.fields.is_empty() => true,
+            Kind::Path(_) => step.lookup && self.wrapped_focus == Some(true),
+            _ => false,
+        }
+    }
     fn projection(&mut self, node: &'e Node) -> Result<selection::Selection, Unsupported> {
         let node = source(node);
         if let Kind::Route(steps, false) = &node.kind
             && steps.len() == 2
+            && self.route_source(&steps[0])
             && steps.iter().all(|s| s.bindings.is_none())
             && steps[1].predicates.is_empty()
         {
             let base = self.node(&steps[0].node)?;
             self.stage(
                 base,
-                self.child(&steps[1].node, &[])?,
+                self.child_focus(&steps[1].node, &[], Some(false))?,
                 true,
                 &steps[0].predicates,
             )
@@ -354,6 +401,13 @@ impl<'e> Lower<'e> {
         self.fields.clear();
         self.available.clear();
     }
+    fn call_boundary(&mut self, target: usize) {
+        if call::writes_caller(&self.code, target) {
+            self.invalidate();
+        } else {
+            self.fence();
+        }
+    }
     fn invalidate(&mut self) {
         if self.scoped {
             self.env.clear();
@@ -367,7 +421,14 @@ impl<'e> Lower<'e> {
     fn node_in(&mut self, node: &'e Node, tail: bool) -> Result<usize, Unsupported> {
         let node = source(node);
         let offset = node.offset;
+        if crate::tuple::active(node) && !matches!(node.kind, Kind::Keep(..)) {
+            let region = context::Region::compile(node)?;
+            let result = self.emit(Operation::Correlate(Box::new(region)), offset);
+            self.invalidate();
+            return Ok(result);
+        }
         let kind = match &node.kind {
+            Kind::Parent(name) => Operation::Read(name.clone()),
             Kind::Path(path) => {
                 // '$' is current focus; '$$' is represented by a lexical variable.
                 let reg = self.focus(false, offset);
@@ -401,7 +462,16 @@ impl<'e> Lower<'e> {
                     .find(|(n, _)| *n == name.as_ref())
                     .map(|(_, r)| *r)
                     .map_or_else(
-                        || Ok(self.emit(Operation::Literal(Literal::Missing), offset)),
+                        || {
+                            Ok(self.emit(
+                                if self.lexical {
+                                    Operation::Read(name.clone())
+                                } else {
+                                    Operation::Literal(Literal::Missing)
+                                },
+                                offset,
+                            ))
+                        },
                         Ok,
                     );
             }
@@ -470,6 +540,7 @@ impl<'e> Lower<'e> {
             Kind::Lambda(d) => {
                 let mut body = Lower::new();
                 body.scoped = true;
+                body.wrapped_focus = self.wrapped_focus;
                 for (index, name) in d.params.iter().enumerate() {
                     let reg = body.emit(Operation::Argument(index), offset);
                     body.remember(name, reg);
@@ -489,14 +560,26 @@ impl<'e> Lower<'e> {
                     demands,
                 }))
             }
-            Kind::BuiltinReference(b) if supported(*b) => Operation::FunctionReference(*b),
+            Kind::BuiltinReference(b) => Operation::FunctionReference(*b),
+            Kind::Eval(call) => {
+                // Resolve the lexical target before evaluating arguments, as for
+                // ordinary calls. A builtin target compiles into this same IR.
+                let target = self.emit(Operation::Read("eval".into()), offset);
+                let args = call
+                    .args
+                    .iter()
+                    .map(|n| self.node(n))
+                    .collect::<Result<_, _>>()?;
+                self.invalidate();
+                Operation::Invoke(target, args, tail && node.tail_call, node.tail_call)
+            }
             Kind::Call(target, args) => {
                 let target = self.node(target)?;
                 let args = args
                     .iter()
                     .map(|n| self.node(n))
                     .collect::<Result<_, _>>()?;
-                self.fence();
+                self.call_boundary(target);
                 Operation::Invoke(target, args, tail && node.tail_call, node.tail_call)
             }
             Kind::Partial(target, args) => {
@@ -516,7 +599,7 @@ impl<'e> Lower<'e> {
                     for arg in args {
                         registers.push(self.node(arg)?);
                     }
-                    self.fence();
+                    self.call_boundary(target);
                     Operation::Invoke(
                         target,
                         registers.into(),
@@ -525,9 +608,30 @@ impl<'e> Lower<'e> {
                     )
                 } else {
                     let right = self.node(right)?;
-                    self.fence();
+                    self.call_boundary(right);
                     Operation::Chain(left, right, node.tail_call)
                 }
+            }
+            Kind::Transform(d) => {
+                let body = |node: &'e Node| {
+                    let mut program = self.child_focus(node, &[], Some(false))?;
+                    program.call.depth = node.depth;
+                    Ok::<_, Unsupported>(program)
+                };
+                Operation::Transform(Box::new(crate::transform::Definition {
+                    pattern: body(&d.pattern)?,
+                    update: body(&d.update)?,
+                    delete: d.delete.as_ref().map(body).transpose()?,
+                }))
+            }
+            Kind::Regex(pattern) => Operation::Matcher(pattern.clone()),
+            Kind::Formatted(call) => {
+                let regs = call
+                    .args
+                    .iter()
+                    .map(|n| self.node(n))
+                    .collect::<Result<_, _>>()?;
+                Operation::Formatted(call.function, regs, Arc::new(call.prepared.clone()))
             }
             Kind::Number(n) => Operation::Literal(Literal::Number(*n)),
             Kind::Boolean(b) => Operation::Literal(Literal::Boolean(*b)),
@@ -568,6 +672,7 @@ impl<'e> Lower<'e> {
                 let mut body = Lower::new();
                 body.scoped = self.scoped;
                 body.constructor_body = true;
+                body.wrapped_focus = Some(false);
                 body.emit(Operation::Focus, offset);
                 body.emit(Operation::Root, offset);
                 // This region executes once in its parent's activation. Known
@@ -592,6 +697,15 @@ impl<'e> Lower<'e> {
                 }
                 Operation::Group(None, pairs)
             }
+            Kind::Reduce(base, pairs) if crate::tuple::active(base) => {
+                let region = context::Region::compile(base)?;
+                let pairs = pairs
+                    .iter()
+                    .map(|(k, v)| Ok((context::Region::value(k)?, context::Region::value(v)?)))
+                    .collect::<Result<_, Unsupported>>()?;
+                self.invalidate();
+                Operation::CorrelatedGroup(Box::new(region), pairs)
+            }
             Kind::Reduce(base, pairs) => {
                 let base = self.node(base)?;
                 let pairs = self.pairs(pairs)?;
@@ -604,7 +718,7 @@ impl<'e> Lower<'e> {
                 let base = self.node(base)?;
                 let terms = terms
                     .iter()
-                    .map(|(n, desc)| Ok((self.child(n, &[])?, *desc, n.effects)))
+                    .map(|(n, desc)| Ok((self.child_focus(n, &[], Some(false))?, *desc, n.effects)))
                     .collect::<Result<Box<[_]>, Unsupported>>()?;
                 if terms.iter().any(|(p, _, _)| p.writes_scope) {
                     self.invalidate();
@@ -640,8 +754,8 @@ impl<'e> Lower<'e> {
                         offset,
                     ));
                 }
-                let force =
-                    matches!(&source(child).kind, Kind::Route(..)) || (*path && path_value(child));
+                let force = matches!(&source(child).kind, Kind::Route(..) | Kind::Tuples(..))
+                    || (*path && path_value(child));
                 let reg = self.node(child)?;
                 // Postfix retention consumes a native call result before ordinary
                 // call normalization; parentheses already crossed that boundary.
@@ -676,7 +790,11 @@ impl<'e> Lower<'e> {
                 )
             }
             Kind::Builtin(Builtin::Library(lib @ (Library::Map | Library::Filter)), args)
-                if args.len() == 2 && !self.scoped =>
+                if args.len() == 2
+                    && matches!(&source(&args[1]).kind, Kind::Lambda(d)
+                        if d.signature.is_none() && d.params.len() <= 3
+                            && d.params.iter().all(|p| &**p != "$")
+                            && !needs_scope(&d.body)) =>
             {
                 let source = self.node(&args[0])?;
                 let mut body = self.callback(&args[1])?;
@@ -694,6 +812,7 @@ impl<'e> Lower<'e> {
             }
             Kind::Route(steps, false)
                 if steps.len() == 1
+                    && self.route_source(&steps[0])
                     && steps[0].bindings.is_none()
                     && !steps[0].predicates.is_empty()
                     && steps[0]
@@ -709,6 +828,7 @@ impl<'e> Lower<'e> {
             }
             Kind::Route(steps, false)
                 if steps.len() > 1
+                    && self.route_source(&steps[0])
                     && steps
                         .iter()
                         .all(|s| s.bindings.is_none() && s.predicates.is_empty())
@@ -728,6 +848,7 @@ impl<'e> Lower<'e> {
             Kind::Route(steps, focus) => {
                 if !*focus
                     && steps.len() == 2
+                    && self.route_source(&steps[0])
                     && steps.iter().all(|s| s.bindings.is_none())
                     && steps[1].predicates.is_empty()
                     && steps[0]
@@ -745,7 +866,7 @@ impl<'e> Lower<'e> {
                         return Err(unsupported(node, "tuple bindings and ancestry context"));
                     }
                     compiled.push(navigation::Step {
-                        body: self.child(&step.node, &[])?,
+                        body: self.child_focus(&step.node, &[], Some(step.lookup))?,
                         predicates: self.predicates(&step.predicates)?,
                         lookup: step.lookup,
                         effects: step.effects,
@@ -800,12 +921,14 @@ impl<'e> Lower<'e> {
                 };
                 return Ok(self.emit_path(path, node));
             }
-            Kind::Builtin(builtin, args) if supported(*builtin) => {
+            Kind::Builtin(builtin, args) => {
                 let mut regs = Vec::new();
                 for n in args {
                     regs.push(self.node(n)?);
                 }
-                if matches!(builtin, Builtin::Library(l) if l.calls_functions()) {
+                if call::builtin_writes_caller(&self.code, *builtin, &regs) {
+                    self.invalidate();
+                } else if matches!(builtin, Builtin::Library(l) if l.calls_functions()) {
                     self.fence();
                 }
                 Operation::Builtin(*builtin, regs.into(), node.tail_call)
@@ -815,18 +938,6 @@ impl<'e> Lower<'e> {
                     node,
                     match node.kind {
                         Kind::Tuples(..) | Kind::Parent(_) => "tuple bindings and ancestry context",
-                        Kind::Route(_, true) => "array-focus cardinality context",
-                        Kind::Reduce(..) => "grouping and key aggregation context",
-                        Kind::Sort(..) => "ordered candidate context",
-                        Kind::Wildcard | Kind::Descendants => "recursive candidate navigation",
-                        Kind::Range(..) => "range sequence producer",
-                        Kind::Transform(_) => "copy identity and update context",
-                        Kind::Regex(_) => "matcher construction",
-                        Kind::Formatted(_) => "formatted library invocation",
-                        Kind::Eval(_) => "owned dynamic program lifetime",
-                        Kind::Builtin(..) | Kind::BuiltinReference(_) => {
-                            "library invocation adapter"
-                        }
                         _ => "unsupported semantic operation",
                     },
                 ));
@@ -950,63 +1061,6 @@ fn unsupported(node: &Node, reason: &'static str) -> Unsupported {
         reason,
     }
 }
-fn supported(b: Builtin) -> bool {
-    match b {
-        Builtin::Lookup
-        | Builtin::Boolean
-        | Builtin::Not
-        | Builtin::Exists
-        | Builtin::Aggregate(_) => true,
-        Builtin::Library(l) => matches!(
-            l,
-            Library::Number
-                | Library::String
-                | Library::Length
-                | Library::Uppercase
-                | Library::Lowercase
-                | Library::Trim
-                | Library::Substring
-                | Library::Before
-                | Library::After
-                | Library::Contains
-                | Library::Abs
-                | Library::Floor
-                | Library::Ceil
-                | Library::Sqrt
-                | Library::Power
-                | Library::Type
-                | Library::Join
-                | Library::Split
-                | Library::Replace
-                | Library::Round
-                | Library::Pad
-                | Library::Append
-                | Library::Reverse
-                | Library::Distinct
-                | Library::Keys
-                | Library::Spread
-                | Library::Merge
-                | Library::Sort
-                | Library::Zip
-                | Library::EncodeUrl
-                | Library::EncodeComponent
-                | Library::DecodeUrl
-                | Library::DecodeComponent
-                | Library::Base64Encode
-                | Library::Base64Decode
-                | Library::Map
-                | Library::Filter
-                | Library::Reduce
-                | Library::Each
-                | Library::Sift
-                | Library::Single
-                | Library::Error
-                | Library::Assert
-        ),
-        _ => false,
-    }
-}
-
 // Only deterministic scalar builtins enter this pool. Their arguments are SSA
 // values and focus is immutable in one activation. Pool snapshots enforce
 // dominance across branches: no error-producing instruction moves or replays.
@@ -1038,6 +1092,17 @@ fn needs_scope(node: &Node) -> bool {
     }
     fn analyze(node: &Node) -> (bool, bool) {
         match &source(node).kind {
+            Kind::Regex(_) => (false, false),
+            Kind::Transform(_) | Kind::Tuples(..) | Kind::Parent(_) => (true, false),
+            Kind::Eval(call) => (true, merge(call.args.iter().map(analyze)).1),
+            Kind::Formatted(call) => {
+                let (retained, writes) = merge(call.args.iter().map(analyze));
+                (retained || call.needs_clock(), writes)
+            }
+            Kind::Builtin(Builtin::Runtime(_), args) => (true, merge(args.iter().map(analyze)).1),
+            Kind::Builtin(Builtin::Library(l), args) if l.uses_clock() => {
+                (true, merge(args.iter().map(analyze)).1)
+            }
             Kind::Lambda(_) | Kind::Call(..) | Kind::Partial(..) | Kind::BuiltinReference(_) => {
                 (true, false)
             }
@@ -1126,12 +1191,13 @@ fn needs_scope(node: &Node) -> bool {
 // Delivery is a language/API property, independent of kernel selection. Effectful
 // paths and lexical blocks complete before external consumption, as in JSONata.
 fn streamable(node: &Node) -> bool {
-    if node.effects {
+    if node.effects && !matches!(source(node).kind, Kind::Tuples(..)) {
         return false;
     }
     match &source(node).kind {
         Kind::Path(p) => !p.fields.is_empty(),
         Kind::Route(..)
+        | Kind::Tuples(..)
         | Kind::Filter(..)
         | Kind::Wildcard
         | Kind::Descendants

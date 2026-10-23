@@ -34,6 +34,10 @@ fn loan(v: &Value<'_, '_>) -> Option<(usize, usize)> {
         FunctionKind::Lambda {
             definition, frame, ..
         } => Some((*definition as *const _ as usize, *frame)),
+        #[cfg(feature = "experimental")]
+        FunctionKind::ProgramTransform { definition, frame } => {
+            Some((*definition as *const _ as usize, *frame))
+        }
         FunctionKind::Transform { definition, frame } => {
             Some((*definition as *const _ as usize, *frame))
         }
@@ -42,6 +46,8 @@ fn loan(v: &Value<'_, '_>) -> Option<(usize, usize)> {
                 Definition::Lambda(d) => d as *const _ as usize,
                 #[cfg(feature = "experimental")]
                 Definition::Program(d) => d as *const _ as usize,
+                #[cfg(feature = "experimental")]
+                Definition::ProgramTransform(d) => &**d as *const _ as usize,
                 Definition::Transform(d) => d as *const _ as usize,
             },
             c.frame,
@@ -62,7 +68,12 @@ fn same_loan(a: &Value<'_, '_>, b: &Value<'_, '_>) -> bool {
             #[cfg(feature = "experimental")]
             FunctionKind::Program { focus, wrapped, .. } => Some((focus, *wrapped)),
             FunctionKind::Dynamic(c)
-                if !matches!(c.definition.as_ref(), Definition::Transform(_)) =>
+                if match c.definition.as_ref() {
+                    Definition::Transform(_) => false,
+                    #[cfg(feature = "experimental")]
+                    Definition::ProgramTransform(_) => false,
+                    _ => true,
+                } =>
             {
                 Some((&c.focus, c.wrapped))
             }
@@ -77,7 +88,8 @@ fn same_loan(a: &Value<'_, '_>, b: &Value<'_, '_>) -> bool {
 }
 pub(crate) fn same(a: &Value<'_, '_>, b: &Value<'_, '_>) -> bool {
     match (a, b) {
-        (Value::Raw(a), Value::Raw(b)) => {
+        _ if a.as_raw().is_some() && b.as_raw().is_some() => {
+            let (a, b) = (a.as_raw().unwrap(), b.as_raw().unwrap());
             a.as_bytes().as_ptr() == b.as_bytes().as_ptr()
                 && a.as_bytes().len() == b.as_bytes().len()
         }
@@ -156,6 +168,8 @@ impl<'e, 'i> Retention<'e, 'i> {
         }
         let result = match v {
             Value::Raw(v) => Value::Raw(*v),
+            #[cfg(feature = "experimental")]
+            Value::InputView(view) => Value::InputView(view.clone()),
             Value::Number(v) => Value::Number(*v),
             Value::Boolean(v) => Value::Boolean(*v),
             Value::Null => Value::Null,
@@ -222,6 +236,17 @@ impl<'e, 'i> Retention<'e, 'i> {
                         wrapped: *wrapped,
                         frame: *frame,
                     })),
+                    #[cfg(feature = "experimental")]
+                    FunctionKind::ProgramTransform { definition, frame } => {
+                        FunctionKind::Dynamic(Box::new(Callable {
+                            definition: Rc::new(Definition::ProgramTransform(Box::new(
+                                (*definition).clone(),
+                            ))),
+                            focus: Value::Undefined,
+                            wrapped: false,
+                            frame: *frame,
+                        }))
+                    }
                     FunctionKind::Transform { definition, frame } => {
                         FunctionKind::Dynamic(Box::new(Callable {
                             definition: Rc::new(Definition::Transform((*definition).clone())),

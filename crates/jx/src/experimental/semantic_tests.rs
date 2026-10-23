@@ -429,7 +429,7 @@ fn retained_lookup_keeps_matches_before_path_flattening() {
 }
 
 #[test]
-fn shared_call_abi_never_enters_reference_execution() {
+fn dynamic_call_abi_uses_programs_and_preserves_host_shadowing() {
     let options = crate::CompileOptions::default().binding("eval");
     let input = br#"{"source":"n","n":4}"#;
     for source in [
@@ -439,28 +439,26 @@ fn shared_call_abi_never_enters_reference_execution() {
         "$map([source],$eval)",
     ] {
         let p = options.compile_program(source).unwrap();
-        options
+        let expected = options
             .compile(source)
             .unwrap()
             .evaluate(input)
             .unwrap()
             .collect_owned()
             .unwrap();
-        let result = p.evaluate_bytes(input).and_then(|v| v.collect_owned());
-        assert_eq!(
-            result.unwrap_err().kind,
-            crate::ErrorKind::UnsupportedExpression,
-            "{source}"
-        );
+        let result = p.evaluate_bytes(input).unwrap().collect_owned().unwrap();
+        assert_eq!(format!("{result:?}"), format!("{expected:?}"), "{source}");
         let mut acquisition = Acquisition::new([&p]);
-        let mut output = b"prefix".to_vec();
-        let error = p
-            .write_json(&acquisition.prepare(input).unwrap(), &mut output)
-            .unwrap_err();
-        assert!(
-            matches!(error,crate::ConsumeError::Evaluation(ref e) if e.kind==crate::ErrorKind::UnsupportedExpression)
+        let mut output = Vec::new();
+        p.write_json(&acquisition.prepare(input).unwrap(), &mut output)
+            .unwrap();
+        assert_eq!(
+            p.evaluate(&acquisition.prepare(input).unwrap())
+                .unwrap()
+                .collect_owned()
+                .map(|v| format!("{v:?}")),
+            Ok(format!("{expected:?}"))
         );
-        assert_eq!(output, b"prefix");
     }
     let p = options.compile_program("($g:=$eval;$g(source))").unwrap();
     let host = crate::HostFunction::new(1, |_, _| Ok(Some(Value::Number(7.0))));
@@ -958,7 +956,9 @@ fn opaque_results_and_reads_use_the_common_local_acquisition() {
     let mut direct_acquisition = Acquisition::new([&direct]);
     let direct_document = direct_acquisition.prepare(br#"{"a":1,"b":2}"#).unwrap();
     assert!(matches!(
-        input.root().acquire(&input, direct_document.schema),
+        input
+            .root()
+            .acquire(&input, direct_document.owner.unwrap().0),
         run::Cell::Capture(0)
     ));
     assert_eq!(
@@ -1433,4 +1433,85 @@ fn non_iterating_regions_share_the_active_row_read_layout() {
             Ok::<_, ()>(())
         })
         .unwrap();
+}
+
+#[test]
+fn immediate_callbacks_keep_argument_ports_in_retained_lexical_scopes() {
+    let input = br#"{"n":3,"items":[{"v":1,"w":2},{"v":2,"w":4}]}"#;
+    for source in [
+        "($unused:=function($v){$v};$map(items,function($v){$v.v+$v.w}))",
+        "($unused:=function($v){$v};$map(items,function($v,$i,$all){[$v.v,$i,$count($all)]}))",
+        "($f:=function(){3};$n:=4;$map(items,function($v){$v.v+$n}))",
+        "($f:=function(){$n};$n:=4;$map(items,function($v){$v.v+$n}))",
+        "($f:=function(){$n};$n:=4;$map(items,function($v){($n:=$v.v;$n+1)});$n)",
+        "($n:=4;$f:=function(){5};$map(items,function($n){$n.v}))",
+        "($f:=function(){5};$map(items,function($v){missing}))",
+    ] {
+        compare(source, input);
+    }
+    let p = crate::CompileOptions::default()
+        .compile_program(
+            "($unused:=function($v){$v};$map(items,function($v){{'a':$v.v,'b':$v.w}}))",
+        )
+        .unwrap();
+    assert!(
+        p.code
+            .iter()
+            .any(|i| matches!(i.kind, Operation::Each { .. }))
+    );
+}
+
+#[test]
+fn acquired_predicates_preserve_shape_cardinality_and_stage_error_order() {
+    for input in [
+        br#"{}"#.as_slice(),
+        br#"{"items":[]}"#,
+        br#"{"items":[[]]}"#,
+        br#"{"items":[{"v":1,"w":2},{"v":2,"w":3}]}"#,
+        br#"{"items":[{"v":1,"w":null},{"v":null,"w":3}]}"#,
+        br#"{"items":[{"v":1,"w":null},{"v":"bad","w":3}]}"#,
+        br#"[{"items":[{"v":1,"w":2}]},{"items":[]},{}]"#,
+    ] {
+        for source in [
+            "$sum((items[v>0]).(w*2))",
+            "$sum((items[$number(v)>0]).(w*2))",
+            "(items[v>0])[w>0].(v*w)",
+            "(items[v>0])[-1].(w*2)",
+            "($n:=0;(items[($n:=$n+1;v>0)]).($n))",
+        ] {
+            compare(source, input);
+        }
+    }
+}
+
+#[test]
+fn conditional_read_only_calls_preserve_ports_and_writing_arms_invalidate_them() {
+    for source in [
+        "($f:=flag?function($d){$d.a.x}:function($d){$d.b.y};[$f($),$f($)])",
+        "($x:=1;$f:=flag?function(){$eval('$x:=2')}:function(){3};[$x,$f(),$x])",
+        "($x:=0;$t:=|$eval('$x:=items')|{'v':v+1}|;$f:=flag?function($d){$t($d)}:function($d){$d};$f($);$x)",
+    ] {
+        for flag in [true, false] {
+            compare(
+                source,
+                format!("{{\"flag\":{flag},\"a\":{{\"x\":4}},\"b\":{{\"y\":2}}}}").as_bytes(),
+            );
+        }
+    }
+    let source = "($f:=flag?function($d){$d.a.x}:function($d){$d.b.y};[$f($),$f($)])";
+    let p = crate::CompileOptions::default()
+        .compile_program(source)
+        .unwrap();
+    assert!(
+        !p.code
+            .iter()
+            .any(|i| matches!(&i.kind, Operation::Read(n) if &**n=="f"))
+    );
+    for depth in [8, 48] {
+        let source = format!(
+            "($f:=function($v){{$v.a.x}};{}$f($))",
+            "$f:=flag?$f:$f;".repeat(depth)
+        );
+        compare(&source, br#"{"flag":true,"a":{"x":4}}"#);
+    }
 }

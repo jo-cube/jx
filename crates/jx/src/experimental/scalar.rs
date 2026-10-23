@@ -115,14 +115,14 @@ impl Program {
                 }
             };
             let value = match &i.kind {
-                Operation::Focus => load(a.focus.clone()),
+                Operation::Focus => load(a.focus.read()),
                 Operation::Root => load(if let Some(scope) = a.scope {
                     a.input.restore(scope.lookup("$"))
                 } else {
                     a.input.root()
                 }),
-                Operation::Argument(n) => load(a.args.get(*n).cloned().unwrap_or(Cell::Missing)),
-                Operation::Outer(n, _) => load(a.outer[*n].clone()),
+                Operation::Argument(n) => load(a.args.get(*n).map_or(Cell::Missing, Cell::read)),
+                Operation::Outer(n, _) => load(a.outer[*n].read()),
                 Operation::Copy(n) => load(frame[slots[*n]].clone()),
                 Operation::Field(base, path, contextual, FieldMode::Value) => {
                     let value = a

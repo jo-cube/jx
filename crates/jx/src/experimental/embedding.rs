@@ -39,7 +39,7 @@ impl Program {
             && options.deadline.is_none()
             && input.root().value(&input).is_some()
         {
-            return self.evaluate_input(input);
+            return self.evaluate_input_random(input, options.random.as_ref());
         }
         let focus_functions = crate::embedding::validate_options(&self.bindings, &options)?;
         let control =
@@ -52,7 +52,7 @@ impl Program {
         {
             let scope = crate::runtime::Scope::with_random(
                 root.value(&input).unwrap_or(Value::Undefined),
-                false,
+                self.clock,
                 options.random.as_ref(),
             )
             .for_program()

@@ -166,3 +166,52 @@ fn nested_native_sequences_survive_callback_returns() {
         }
     }
 }
+
+#[test]
+fn grouped_pipeline_cardinality_errors_and_shapes() {
+    for source in [
+        "$sum((items[metrics.v0>0]).(metrics.v0*metrics.v1+metrics.v0))",
+        "(items[metrics.v0>0]).(metrics.v0*metrics.v1+metrics.v0)",
+        "(items[metrics.v0>0]).{'v':metrics.v0}",
+        "(items[metrics.v0>0]).($)",
+        "$count((items[metrics.v0>0]).(metrics.v0*metrics.v1+metrics.v0))",
+        "(items[metrics.v0>0]).(function($v){$v.metrics.v0}($))",
+        "$sum($map($filter(items,function($v){$v.metrics.v0>0}),function($v){$v.metrics.v0*$v.metrics.v1+$v.metrics.v0}))",
+    ] {
+        for item in [
+            "null",
+            "false",
+            "3",
+            "[]",
+            "[1]",
+            "{}",
+            "{\"metrics\":{\"v0\":3,\"v1\":4}}",
+            "{\"metrics\":{\"v0\":3,\"v1\":null}}",
+            "{\"metrics\":{\"v0\":null,\"v1\":2}}",
+        ] {
+            for rows in [
+                item.to_owned(),
+                format!("[{item}]"),
+                format!("[[{item}]]"),
+                format!("[{item},{item}]"),
+                format!("[[{item}],{item}]"),
+                format!("[{item},{{\"metrics\":{{\"v0\":1,\"v1\":null}}}}]"),
+            ] {
+                for input in [
+                    format!("{{\"items\":{rows}}}"),
+                    format!("[{{\"items\":{rows}}}]"),
+                ] {
+                    compare(source, input.as_bytes());
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn sequence_boundaries_keep_empty_candidate_parent() {
+    compare(
+        "(items[true]).{'value':v,'parent':%.name}",
+        br#"{"name":"root","items":[[],[{"v":2,"w":3}]]}"#,
+    );
+}

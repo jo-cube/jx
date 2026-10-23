@@ -103,9 +103,9 @@ impl Op {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct Step {
-    pub node: Node,
-    pub predicates: Box<[Node]>,
+pub(crate) struct Step<B = Node> {
+    pub node: B,
+    pub predicates: Box<[B]>,
     pub bindings: Option<Box<crate::tuple::Bindings>>,
     pub lookup: bool,
     pub effects: bool,

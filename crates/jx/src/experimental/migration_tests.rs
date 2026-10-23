@@ -4,7 +4,9 @@ fn compare(source: &str, input: &[u8]) {
     compare_with(&crate::CompileOptions::default(), source, input);
 }
 fn compare_with(options: &crate::CompileOptions, source: &str, input: &[u8]) {
-    let old = options.compile(source).unwrap();
+    let old = options
+        .compile(source)
+        .unwrap_or_else(|e| panic!("{source}: {e:?}"));
     let p = options.compile_program(source).unwrap();
     let expected = old.evaluate(input).and_then(|v| v.collect_owned());
     let raw = p.evaluate_bytes(input).and_then(|v| v.collect_owned());
@@ -435,6 +437,14 @@ fn complete_json_delivery_matches_retained_values_and_rolls_back_errors() {
         "items.([a])",
         "a.x.y",
         "flag ? items.(v*2) : ()",
+        "((items[true])[0]).(a)",
+        "((items[true])[-1]).(a)",
+        "((items[true])[[0,-1]]).(a)",
+        "$sum((items[true]).(a))",
+        "$sum((items[true]).($number(s)))",
+        "$sum((items[true]).($error('downstream')))",
+        "$sum((items.($number(s))[true]).($error('downstream')))",
+        "($x:=0;(items[true]).($x:=$x+1);$x)",
     ] {
         for input in [
             br#"{}"#.as_slice(),
@@ -448,7 +458,10 @@ fn complete_json_delivery_matches_retained_values_and_rolls_back_errors() {
                 .unwrap();
             let mut a = Acquisition::new([&p]);
             let doc = a.prepare(input).unwrap();
-            let expected = p.evaluate(&doc).and_then(|v| v.collect_owned());
+            let expected = crate::compile(source)
+                .unwrap()
+                .evaluate(input)
+                .and_then(|v| v.collect_owned());
             let mut output = b"prefix".to_vec();
             let result = p.write_json(&doc, &mut output);
             match expected {
@@ -585,7 +598,9 @@ fn atomic_lowering_preserves_observable_tokens_and_checked_operands() {
         ] {
             compare(source, input);
             let options = crate::CompileOptions::default();
-            let old = options.compile(source).unwrap();
+            let old = options
+                .compile(source)
+                .unwrap_or_else(|e| panic!("{source}: {e:?}"));
             let p = options.compile_program(source).unwrap();
             let mut a = Acquisition::new([&p]);
             let doc = a.prepare(input).unwrap();
@@ -815,7 +830,9 @@ fn absent_input_is_distinct_from_json_null() {
         "$number('bad')",
     ] {
         let options = crate::CompileOptions::default();
-        let expression = options.compile(source).unwrap();
+        let expression = options
+            .compile(source)
+            .unwrap_or_else(|e| panic!("{source}: {e:?}"));
         let program = options.compile_program(source).unwrap();
         let expected = expression
             .evaluate_with(None, crate::EvaluationOptions::default())
@@ -908,6 +925,260 @@ fn validated_acquisition_matches_validation_and_replaces_previous_spans() {
         for (p, expected) in programs.iter().zip(expected) {
             let actual = p.evaluate(&checked).and_then(|e| e.collect_owned());
             assert_eq!(format!("{actual:?}"), format!("{expected:?}"));
+        }
+    }
+}
+
+#[test]
+fn matcher_values_compose_with_compiled_callbacks_and_closures() {
+    for source in [
+        "$match(text, /([a-z]+)([0-9]+)/)",
+        "$replace(text, /([a-z]+)([0-9]+)/, function($m){$uppercase($m.groups[0])})",
+        "($p:=/[0-9]+/;$split(text,$p))",
+        "($f:=function($p){function($s){$match($s,$p)}};$f(/[0-9]+/)(text))",
+        "($p:=/[0-9]+/;$m:=$p(text);[$m.match,$m.next().match])",
+        "$contains(text,/[0-9]+/)",
+    ] {
+        for input in [
+            br#"{"text":"a12 b34"}"#.as_slice(),
+            br#"{"text":"none"}"#,
+            br#"{}"#,
+        ] {
+            compare(source, input);
+        }
+    }
+}
+
+#[test]
+fn formatting_uses_compiled_arguments_and_shared_picture_validation() {
+    for source in [
+        "$formatNumber(n,'#,##0.00')",
+        "$formatNumber(n,picture)",
+        "$formatInteger(n,'000')",
+        "$parseInteger(text,'000')",
+        "$fromMillis(n,'[Y0001]-[M01]-[D01]')",
+        "$toMillis(text)",
+        "$formatBase(n,16)",
+        "($f:=$formatNumber;$f(n,'0.0'))",
+        "$map([n,n+1],function($v){$formatNumber($v,'0.00')})",
+        "$formatNumber(n,'0.0.0')",
+    ] {
+        for input in [
+            br#"{"n":1234,"text":"123","picture":"0.0"}"#.as_slice(),
+            br#"{}"#,
+            br#"{"n":null}"#,
+        ] {
+            compare(source, input);
+        }
+    }
+}
+
+#[test]
+fn seeded_effects_are_honored_by_all_input_apis() {
+    for source in [
+        "[$random(),$random()]",
+        "$shuffle(items)",
+        "($f:=$shuffle;$f(items))",
+    ] {
+        let options = crate::CompileOptions::default();
+        let old = options
+            .compile(source)
+            .unwrap_or_else(|e| panic!("{source}: {e:?}"));
+        let p = options.compile_program(source).unwrap();
+        let input = br#"{"items":[1,2,3,4]}"#;
+        let settings = || crate::EvaluationOptions {
+            random: Some(crate::Random::seeded(42)),
+            ..Default::default()
+        };
+        let expected = old
+            .evaluate_with(Some(input), settings())
+            .unwrap()
+            .collect_owned()
+            .unwrap();
+        let mut acquisition = Acquisition::new([&p]);
+        let document = acquisition.prepare(input).unwrap();
+        for actual in [
+            p.evaluate_with(Some(input), settings()),
+            p.evaluate_validated_with(Some(crate::validate(input).unwrap()), settings()),
+            p.evaluate_prepared_with(&document, settings()),
+        ] {
+            assert_eq!(
+                format!("{:?}", actual.unwrap().collect_owned().unwrap()),
+                format!("{expected:?}"),
+                "{source}"
+            );
+        }
+    }
+}
+
+#[test]
+fn dynamic_programs_retain_closures_scopes_focus_and_owned_definitions() {
+    for source in [
+        "$eval(source)",
+        "$eval(source,items)",
+        "($x:=n;$eval('$x+1'))",
+        "($x:=n;$eval('$x:=4');$x)",
+        "($make:=$eval('function($x){function($y){$x+$y+n}}');$make(2)(3))",
+        "($f:=$eval('function($x){$x=0?0:$f($x-1)+1}');$f(6))",
+        "($f:=$eval('function($x){$x+n}');$eval('$f(3)'))",
+        "($m:=$eval('/[0-9]+/');$m(text).match)",
+        "$eval('$error(\"inner\")')",
+        "$eval('1+')",
+        "($f:=$eval;$f(source))",
+    ] {
+        for input in [
+            br#"{"n":2,"source":"n+1","items":[1,2],"text":"a12"}"#.as_slice(),
+            br#"{}"#,
+        ] {
+            compare(source, input);
+        }
+    }
+}
+
+#[test]
+fn dynamic_calls_invalidate_caller_ports_and_nested_region_summaries() {
+    for source in [
+        "($x:=n;$f:=$eval;$f('$x:=4');$x)",
+        "($x:=n;$f:=flag?$eval:$eval;$f('$x:=4');$x)",
+        "($x:=n;$f:=$eval;{'a':$x,'b':$f('$x:=4'),'c':$x};$x)",
+        "($x:=n;$f:=$eval;items[$f('$x:=4')];$x)",
+        "($x:=n;$f:=$eval;'$x:=4' ~> $f;$x)",
+        "($x:=n;$f:=$eval;$g:=$f(?);$g('$x:=4');$x)",
+    ] {
+        compare(source, br#"{"n":2,"flag":true,"items":[1,2]}"#);
+    }
+}
+
+#[test]
+fn transforms_use_compiled_bodies_and_preserve_copy_identity() {
+    for source in [
+        "$ ~> |items|{'v':v+1}|",
+        "$ ~> |items|{'v':v+1},'remove'|",
+        "($delta:=2;$t:=|items|{'v':v+$delta}|;$delta:=3;$t($))",
+        "($t:=|items|{'v':v+1}|;[$t($),$t($)])",
+        "($x:=n;$t:=|items|{'v':($x:=$x+1)}|;$t($);$x)",
+        "($make:=function($d){|items|{'v':v+$d}|};$make(2)($))",
+        "($t:=$eval(\"|items|{'v':v+1}|\");$t($))",
+        "($t:=|items|{'v':v+1}|;$eval('$t($)'))",
+        "($t:=|items|{'v':v}|;$eval('$t') in [$t])",
+        "$ ~> |items|5|",
+        "$ ~> |items|{'v':v},42|",
+        "($a:=$clone(items);$b:=$clone(items);$a in [$b])",
+    ] {
+        for input in [
+            br#"{"n":2,"items":[{"v":1,"remove":true},{"v":2}]}"#.as_slice(),
+            br#"{}"#,
+            br#"{"items":null}"#,
+        ] {
+            compare(source, input);
+        }
+    }
+}
+
+#[test]
+fn callback_kernels_propagate_possible_caller_writes() {
+    for source in [
+        "($x:=n;$map(['$x:=4'],$eval);$x)",
+        "($x:=n;{'a':$x,'b':$map(['$x:=4'],$eval),'c':$x};$x)",
+        "($x:=n;$f:=$eval;$map(['$x:=4'],$f);$x)",
+        "($x:=n;$map(['$x:=4'],function($s){$eval($s)});$x)",
+    ] {
+        compare(source, br#"{"n":2}"#);
+    }
+}
+
+#[test]
+fn known_functions_propagate_writes_through_captured_calls() {
+    for source in [
+        "($x:=0;$t:=|$eval('$x:=items')|{'v':v+1}|;$f:=function($d){$t($d)};$f($);$x)",
+        "($x:=0;$t:=|$eval('$x:=items')|{'v':v+1}|;$f:=function($d){$t($d)};$g:=function($d){$f($d)};$g($);$x)",
+        "($x:=0;$t:=|$eval('$x:=items')|{'v':v+1}|;$f:=function($d){$t($d)};$map([$],$f);$x)",
+    ] {
+        for input in [br#"{"items":[{"v":1}]}"#.as_slice(), br#"{}"#] {
+            compare(source, input);
+        }
+    }
+}
+
+#[test]
+fn correlated_rows_cross_sequence_and_lexical_boundaries() {
+    let input =
+        br#"{"groups":[{"name":"a","items":[{"v":1},{"v":3}]},{"name":"b","items":[{"v":2}]}]}"#;
+    for query in [
+        "groups#$g.items#$i.{'g':$g,'i':$i,'parent':%.name,'v':v}",
+        "groups@$g.items@$i[$i.v>1].{'name':$g.name,'v':$i.v}",
+        "groups.items[%.name='a'].v",
+        "(groups.items)[%.name='a'].v",
+        "groups.items@$it^($it.v).{'v':$it.v}",
+        "groups#$g.items{'key':[$g,v]}",
+        "groups.items.($p:=%;function(){$p.name}) ~> $map(function($f){$f()})",
+        "groups.items.( $p := %; {'name':$p.name,'v':v})",
+    ] {
+        compare(query, input);
+    }
+}
+
+#[test]
+fn folds_accept_general_sequence_shapes() {
+    for query in [
+        "$sum(items.(a))",
+        "$sum(items[true].(2))",
+        "$sum((items[true]).(2))",
+        "$count(items.(a))",
+        "$sum((items[true][true]).(a))",
+    ] {
+        for input in [
+            br#"{}"#.as_slice(),
+            br#"{"items":[[]]}"#,
+            br#"{"items":[[],[]]}"#,
+            br#"{"items":[{"a":[1]}]}"#,
+            br#"{"items":[{"a":[1,2]},{"a":[3]}]}"#,
+            br#"{"items":[[{"a":1},{"a":2}],{"a":3}]}"#,
+        ] {
+            compare(query, input);
+        }
+    }
+}
+
+#[test]
+fn route_source_context_survives_root_arrays_and_nested_focus_changes() {
+    for source in [
+        "$sum((items[true]).(2))",
+        "$sum(items[true].(2))",
+        "(items[true]).(2)",
+        "((items[true].(2))).($)",
+        "$map($,function($x){(items[true]).(2)})",
+        "{'v':(items[true]).(2)}",
+    ] {
+        for input in [
+            br#"[1,2]"#.as_slice(),
+            br#"[]"#,
+            br#"[[1,2],3]"#,
+            br#"[{"items":[1,2]},{"items":[]},{}]"#,
+            br#"{"items":[[]]}"#,
+            br#"{"items":[[],[]]}"#,
+        ] {
+            compare(source, input);
+        }
+    }
+}
+
+#[test]
+fn native_candidate_positions_become_missing_when_read_by_callbacks() {
+    for source in [
+        "$map(items[[0,-1]],function($v){$v})",
+        "$map(items[[0,-1]],function($v){[$v]})",
+        "$map(items[[0,-1]],function($v){{'v':$v}})",
+        "items[[0,-1]].($)",
+        "(items[[0,-1]]).([$])",
+    ] {
+        for input in [
+            br#"{}"#.as_slice(),
+            br#"{"items":[]}"#,
+            br#"{"items":[1,2]}"#,
+            br#"{"items":[[1,2],[]]}"#,
+        ] {
+            compare(source, input);
         }
     }
 }

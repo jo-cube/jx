@@ -5,6 +5,7 @@ pub(crate) mod acquisition;
 mod bindings;
 pub(crate) mod call;
 mod consume;
+mod context;
 pub(crate) use consume::Deferred;
 mod embedding;
 mod facts;
@@ -34,6 +35,7 @@ use crate::{
     expression::{Aggregate, Op},
 };
 pub use acquisition::{Acquisition, Prepared};
+pub use input::BorrowedInput;
 use std::{fmt, sync::Arc};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Unsupported {
@@ -64,6 +66,7 @@ pub struct Program {
     atomic_loads: Box<[bool]>,
     workspace: usize,
     scoped: bool,
+    clock: bool,
     pub(crate) call: call::Contract,
     writes_scope: bool,
     deferred: bool,
@@ -87,6 +90,13 @@ enum Operation {
     LeaveScope,
     Function(Box<call::Definition>),
     FunctionReference(Builtin),
+    Matcher(Box<crate::matcher::Pattern>),
+    Transform(Box<crate::transform::Definition<Program>>),
+    Formatted(
+        crate::builtin::library::Library,
+        Box<[usize]>,
+        Arc<crate::format::Prepared>,
+    ),
     Invoke(usize, Box<[usize]>, bool, bool),
     Partial(usize, Box<[Option<usize>]>),
     Chain(usize, usize, bool),
@@ -113,6 +123,11 @@ enum Operation {
     Jump(usize),
     Path(Box<selection::Selection>),
     Navigate(Box<navigation::Navigation>),
+    Correlate(Box<context::Region>),
+    CorrelatedGroup(
+        Box<context::Region>,
+        Box<[(context::Region, context::Region)]>,
+    ),
     Select(usize, Box<[navigation::Predicate]>),
     Range(usize, usize),
     Traverse(bool),
@@ -134,7 +149,6 @@ enum Operation {
         predicate: Option<Box<Program>>,
         aggregate: Aggregate,
         callback: bool,
-        eager: bool,
     },
 }
 // Retained lookup observes field matches before path cardinality normalization.
@@ -162,9 +176,20 @@ impl Program {
         let mut program = lower::compile(
             &expression.root,
             !expression.constants.is_empty() || !expression.bindings.is_empty(),
+            Some(true),
         )?;
         program.constants = expression.constants.clone();
         program.bindings = expression.bindings.clone();
+        Ok(program)
+    }
+    pub(crate) fn compile_dynamic(expression: &Expression) -> Result<Self, crate::Error> {
+        let mut program = lower::compile(&expression.root, true, None).map_err(|e| {
+            let mut error =
+                crate::Error::new(crate::ErrorKind::UnsupportedExpression, e.offset, e.reason);
+            error.source = crate::Source::DynamicExpression;
+            error
+        })?;
+        program.call.depth = expression.root.depth;
         Ok(program)
     }
     pub fn layout_sizes() -> (usize, usize) {
@@ -209,8 +234,15 @@ impl Program {
         &'e self,
         input: run::Input<'_, 'i, '_>,
     ) -> Result<crate::Evaluation<'e, 'i>, crate::Error> {
+        self.evaluate_input_random(input, None)
+    }
+    fn evaluate_input_random<'e, 'i>(
+        &'e self,
+        input: run::Input<'_, 'i, '_>,
+        random: Option<&crate::Random>,
+    ) -> Result<crate::Evaluation<'e, 'i>, crate::Error> {
         let focus = input.root();
-        let scope = self.scope(&input);
+        let scope = self.scope(&input, random);
         if self.deferred {
             return Ok(crate::Evaluation {
                 result: crate::evaluate::Results::Execution(Box::new(Deferred::new(
@@ -240,7 +272,22 @@ impl Operation {
     fn children(&self, visit: &mut impl FnMut(&Program)) {
         match self {
             Self::Reduce(_, p, _) => p.children(visit),
+            Self::Correlate(p) => p.children(visit),
+            Self::CorrelatedGroup(p, pairs) => {
+                p.children(visit);
+                for (k, v) in pairs {
+                    k.children(visit);
+                    v.children(visit);
+                }
+            }
             Self::Function(d) => visit(&d.body),
+            Self::Transform(d) => {
+                visit(&d.pattern);
+                visit(&d.update);
+                if let Some(delete) = &d.delete {
+                    visit(delete);
+                }
+            }
             Self::Construct(body) => visit(body),
             Self::Path(p) => {
                 visit(&p.body);
@@ -287,7 +334,22 @@ impl Operation {
     fn children_mut(&mut self, visit: &mut impl FnMut(&mut Program)) {
         match self {
             Self::Reduce(_, p, _) => p.children_mut(visit),
+            Self::Correlate(p) => p.children_mut(visit),
+            Self::CorrelatedGroup(p, pairs) => {
+                p.children_mut(visit);
+                for (k, v) in pairs {
+                    k.children_mut(visit);
+                    v.children_mut(visit);
+                }
+            }
             Self::Function(d) => visit(&mut d.body),
+            Self::Transform(d) => {
+                visit(&mut d.pattern);
+                visit(&mut d.update);
+                if let Some(delete) = &mut d.delete {
+                    visit(delete);
+                }
+            }
             Self::Construct(body) => visit(body),
             Self::Path(p) => {
                 visit(&mut p.body);

@@ -417,3 +417,338 @@ fn filtered_constructor_cancellation_matches_reference_boundaries() {
         }
     }
 }
+
+#[test]
+fn contextual_ancestors_reuse_demanded_ports_without_record_indexes() {
+    let sources = [
+        "items.{'parent':%.name,'v':metrics.v0}",
+        "groups.items.{'parent':%.tag,'root':%.%.name,'v':v}",
+        "groups.items.($f:=function(){%.tag};$f())",
+    ];
+    let input = br#"{"name":"root","items":[{"metrics":{"v0":1}},{"metrics":{"v0":2}}],"groups":[{"tag":"g","items":[{"v":1},{"v":2}]}]}"#;
+    for source in sources {
+        results(source, input);
+    }
+    let p = crate::CompileOptions::default()
+        .compile_program(sources[0])
+        .unwrap();
+    let mut a = Acquisition::new([&p]);
+    let d = a.prepare(input).unwrap();
+    assert!(d.schema.child(0, "name").is_some());
+    let input = run::Input::Captured(&d);
+    let root = input.root();
+    let schema = d.schema;
+    input
+        .each_values(
+            std::iter::once(Value::Raw(d.raw())),
+            schema,
+            |_| true,
+            |child, focus, _| {
+                assert!(matches!(focus, run::Cell::Capture(0)));
+                assert!(std::ptr::eq(child, &input));
+                assert_eq!(
+                    format!("{:?}", root.value(child)),
+                    format!("{:?}", focus.value(child))
+                );
+                Ok::<_, ()>(())
+            },
+        )
+        .unwrap();
+}
+
+#[test]
+fn captured_lexical_ancestors_preserve_values_across_general_calls() {
+    for source in [
+        "items.($p:=%;$f:=function(){$p.name};$f())",
+        "items.($p:=%;$f:=function($q){$q.name};{\"parent\":$f($p)})",
+        "items.($p:=%;$f:=function($q){$q};{\"parent\":$f($p).name})",
+        "items.($p:=%;$f:=function(){$p};$f().name)",
+        "items.($p:=%;$f:=function(){$p};$g:=function(){$f()};$g().name)",
+    ] {
+        results(source, br#"{"name":"root","items":[{"v":1},{"v":2}]}"#);
+    }
+}
+
+#[test]
+fn local_acquisition_survives_to_its_consumer() {
+    fn owned(p: &Program) -> usize {
+        let mut n = 0;
+        for i in &p.code {
+            n += usize::from(matches!(i.kind, Operation::Acquire(..)));
+            i.kind.children(&mut |p| n += owned(p));
+        }
+        n
+    }
+    let scope = "(flag?a:b).{'x':x,'y':y}";
+    let alias = "($m:=flag?a:b;{'x':$m.x,'y':$m.y})";
+    let options = crate::CompileOptions::default();
+    assert_eq!(
+        owned(&options.compile_program(scope).unwrap()),
+        0,
+        "navigation exports values before owned acquisition can be consumed"
+    );
+    assert!(
+        owned(&options.compile_program(alias).unwrap()) > 0,
+        "an alias retains its acquired owner until field reads finish"
+    );
+    for source in [scope, alias] {
+        results(
+            source,
+            br#"{"flag":true,"a":{"x":1,"y":2},"b":{"x":3,"y":4}}"#,
+        );
+        results(
+            source,
+            br#"{"flag":false,"a":{"x":1,"y":2},"b":{"x":3,"y":4}}"#,
+        );
+    }
+}
+
+#[test]
+fn conditional_callees_join_demands_without_expanding_targets() {
+    let source =
+        "($f:=flag?function($d){$d.a.x+$d.b.y}:function($other){$other.a.x-$other.b.y};$f($))";
+    let p = crate::CompileOptions::default()
+        .compile_program(source)
+        .unwrap();
+    let mut a = Acquisition::new([&p]);
+    for input in [
+        br#"{"flag":true,"a":{"x":4},"b":{"y":2}}"#.as_slice(),
+        br#"{"flag":false,"a":{"x":4},"b":{"y":2}}"#,
+    ] {
+        results(source, input);
+        let d = a.prepare(input).unwrap();
+        assert!(d.schema.child(0, "a").is_some());
+        assert!(d.schema.child(0, "b").is_some());
+    }
+}
+
+#[test]
+fn chained_callee_joins_keep_bounded_demand_sets() {
+    let options = crate::CompileOptions::default();
+    for n in [1, 8, 48] {
+        let source = format!(
+            "($f:=function($d){{$d.a.x+$d.b.y}};{}$f($))",
+            "$f:=flag?$f:function($v){$v.a.x+$v.b.y};".repeat(n)
+        );
+        let p = options.compile_program(&source).unwrap();
+        let a = Acquisition::new([&p]);
+        assert_eq!(
+            a.retained_bytes(),
+            6 * std::mem::size_of::<acquisition::Span>()
+        );
+        for flag in [true, false] {
+            results(
+                &source,
+                format!("{{\"flag\":{flag},\"a\":{{\"x\":4}},\"b\":{{\"y\":2}}}}").as_bytes(),
+            );
+        }
+    }
+    let source = "($f:=flag?function($d){$d.a.x}:$string;$f($))";
+    let p = options.compile_program(source).unwrap();
+    let mut a = Acquisition::new([&p]);
+    let d = a.prepare(br#"{"flag":false,"a":{"x":4}}"#).unwrap();
+    assert!(
+        d.schema.child(0, "a").is_none(),
+        "unknown targets poison the joined proof"
+    );
+    results(source, br#"{"flag":false,"a":{"x":4}}"#);
+}
+
+#[test]
+fn lexical_capture_demands_follow_values_and_resolved_returns() {
+    for source in [
+        "items.($p:=%;$f:=function(){$p.name};$f())",
+        "items.($p:=%;$f:=function($q){$q.name};{\"parent\":$f($p)})",
+        "items.($p:=%;$f:=function($q){$q};{\"parent\":$f($p).name})",
+        "items.($p:=%;$f:=function(){$p};$f().name)",
+        "items.($p:=%;$f:=function(){$p};$g:=$f;$g().name)",
+        "items.($p:=%;$f:=function(){$p.name};$map([1,2],function($v){$f()}))",
+    ] {
+        let p = crate::CompileOptions::default()
+            .compile_program(source)
+            .unwrap();
+        let mut a = Acquisition::new([&p]);
+        let d = a
+            .prepare(br#"{"name":"root","items":[{"name":"child"},{}]}"#)
+            .unwrap();
+        assert!(d.schema.child(0, "name").is_some(), "{source}");
+        results(source, d.raw().as_bytes());
+    }
+    // Acquisition is a hint, never substitution of a definition-time capture.
+    for source in [
+        "($p:=a;$f:=function(){$p.x};$p:=b;$f())",
+        "($p:=a;$f:=function(){$p.x};($p:=b;$f()))",
+        "($p:=a;$f:=function(){$p};$p:=b;$f().x)",
+        "($p:=a;$f:=function(){$p.x};$g:=function($p){$f()};$g(b))",
+        "($p:=a;$f:=flag?function(){$p.x}:function(){$p.y};$p:=b;$f())",
+    ] {
+        for flag in [true, false] {
+            results(
+                source,
+                format!(r#"{{"flag":{flag},"a":{{"x":1,"y":2}},"b":{{"x":3,"y":4}}}}"#).as_bytes(),
+            );
+        }
+    }
+}
+
+#[test]
+fn borrowed_navigation_metadata_survives_value_boundaries() {
+    let options = crate::CompileOptions::default();
+    let p = options.compile_program("{'x':x,'y':y,'n':x.n}").unwrap();
+    let mut a = Acquisition::new([&p]);
+    let bytes = br#"{"x":{"n":1},"y":[2],"extra":3}"#;
+    let d = a.prepare(bytes).unwrap();
+    let raw = run::Input::Raw(Some(d.raw()));
+    let cell = raw.root().acquire(&raw, d.owner.unwrap().0);
+    let value = cell.into_value(&raw).unwrap();
+    assert!(matches!(value, Value::InputView(..)));
+    assert_eq!(value.as_raw().unwrap().as_bytes().as_ptr(), bytes.as_ptr());
+    assert_eq!(value.value_type(), crate::ValueType::Object);
+    let x = value.field("x").unwrap();
+    let x_raw = Value::Raw(d.raw()).field("x").unwrap();
+    assert!(
+        crate::compare::includes(
+            crate::evaluate::Operand::One(x.clone()),
+            crate::evaluate::Operand::One(Value::kept(vec![x_raw]))
+        )
+        .unwrap()
+    );
+    assert_eq!(x.field("n").unwrap().as_number(), Some(1.));
+    assert_eq!(value.field("extra").unwrap().as_number(), Some(3.));
+    assert!(value.field("absent").is_none());
+    // Metadata owns only its spans and immutable schema, not the preparation
+    // workspace or expression. Reusing either does not alter the borrowed value.
+    a.prepare(br#"{"x":null,"y":0}"#).unwrap();
+    let opts = crate::CompileOptions::default().binding("p");
+    for source in [
+        "$p.x.n+$p.y[0]",
+        "($f:=function(){$p};$f().x.n)",
+        "$map([1,2],function($v){$p.x.n})",
+        "$eval('$p.x.n')",
+        "(function($n)<n:n>{$n*2})($p.x.n)",
+        "$p ~> |x|{'n':5}|",
+    ] {
+        let reference = opts
+            .compile(source)
+            .unwrap()
+            .evaluate_with(
+                Some(bytes),
+                crate::EvaluationOptions {
+                    bindings: vec![("p", Value::Raw(crate::validate(bytes).unwrap()))],
+                    ..Default::default()
+                },
+            )
+            .and_then(|v| v.collect_owned());
+        let program = opts.compile_program(source).unwrap();
+        let actual = program
+            .evaluate_with(
+                Some(bytes),
+                crate::EvaluationOptions {
+                    bindings: vec![("p", value.clone())],
+                    ..Default::default()
+                },
+            )
+            .and_then(|v| v.collect_owned());
+        assert_eq!(format!("{actual:?}"), format!("{reference:?}"), "{source}");
+    }
+}
+
+#[test]
+fn streamed_boundaries_preserve_arrays_missing_errors_and_output_prefixes() {
+    let rows = [
+        "null",
+        "[]",
+        "[[]]",
+        "[[],[]]",
+        "[[1,2]]",
+        "[[1,2],[3]]",
+        "[{\"v\":[1,2]}]",
+        "[{\"v\":2},{\"v\":3}]",
+        "[{\"v\":null},{\"v\":2}]",
+    ];
+    for rows in rows {
+        let input = format!(r#"{{"items":{rows}}}"#);
+        for expr in [
+            "(items[true]).($)",
+            "(items[true]).(v)",
+            "(items[true]).([v])",
+            "(items[true]).(v*2)",
+            "(items[true]).(flag?v:missing)",
+        ] {
+            for agg in ["sum", "count", "average", "min", "max"] {
+                results(&format!("${agg}({expr})"), input.as_bytes());
+            }
+        }
+    }
+    for source in [
+        "$sum((items[$number(p)>0]).(v*2))",
+        "$sum(((items[true]).(v)).($number($)))",
+    ] {
+        for input in [
+            br#"{"items":[{"p":1,"v":null},{"p":"bad","v":2}]}"#.as_slice(),
+            br#"{"items":[{"p":1,"v":2},{"p":2,"v":"bad"}]}"#,
+        ] {
+            let p = crate::CompileOptions::default()
+                .compile_program(source)
+                .unwrap();
+            let mut a = Acquisition::new([&p]);
+            let d = a.prepare(input).unwrap();
+            let mut bytes = b"prefix".to_vec();
+            assert!(p.write_json(&d, &mut bytes).is_err());
+            assert_eq!(bytes, b"prefix");
+            results(source, input);
+        }
+    }
+}
+
+#[test]
+fn composed_sequence_cancellation_keeps_eager_error_boundaries() {
+    for source in [
+        "(items[$number(p)>0]).(v*2)",
+        "((items[true]).(v*2)).($)",
+        "groups.items.($p:=%;$f:=function(){$p.name};$f())",
+    ] {
+        for input in [
+            br#"{"items":[{"p":1,"v":2},{"p":"bad","v":3}]}"#.as_slice(),
+            br#"{"items":[{"p":1,"v":2},{"p":2,"v":null}]}"#,
+            br#"{"items":[{"p":1,"v":2},{"p":2,"v":3},{"p":"bad","v":4}]}"#,
+            br#"{"groups":[{"name":"a","items":[1,2]},{"name":"b","items":[3]}]}"#,
+        ] {
+            let old = crate::compile(source).unwrap();
+            let p = Program::compile(&old).unwrap();
+            let mut a = Acquisition::new([&p]);
+            let d = a.prepare(input).unwrap();
+            let mut prefix = Vec::new();
+            let expected = old
+                .evaluate(input)
+                .map_err(ConsumeError::Evaluation)
+                .and_then(|e| {
+                    e.try_for_each(|v| {
+                        prefix.push(v.to_owned().unwrap());
+                        Err("stop")
+                    })
+                });
+            let expected_prefix = format!("{prefix:?}");
+            for mode in 0..3 {
+                prefix.clear();
+                let e = match mode {
+                    0 => p.evaluate_bytes(input),
+                    1 => p.evaluate(&d),
+                    _ => p.evaluate_prepared_with(&d, Default::default()),
+                };
+                let actual = e.map_err(ConsumeError::Evaluation).and_then(|e| {
+                    e.try_for_each(|v| {
+                        prefix.push(v.to_owned().unwrap());
+                        Err("stop")
+                    })
+                });
+                assert_eq!(actual, expected, "{source} mode {mode}");
+                assert_eq!(
+                    format!("{prefix:?}"),
+                    expected_prefix,
+                    "{source} mode {mode}"
+                );
+            }
+        }
+    }
+}

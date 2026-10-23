@@ -222,7 +222,7 @@ pub(crate) fn validate_options(
 // have independent ownership and can be safely injected into any evaluation.
 fn external(value: &Value<'_, '_>) -> Result<bool, Error> {
     match value {
-        Value::Raw(_) | Value::Constant(_) => Ok(false),
+        _ if value.as_raw().is_some() || matches!(value, Value::Constant(_)) => Ok(false),
         Value::Function(f) if !matches!(f.kind, crate::function::FunctionKind::Host(_)) => {
             Err(Error::new(
                 ErrorKind::BindingError,
