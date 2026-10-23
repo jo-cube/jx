@@ -120,13 +120,17 @@ fn main() {
         .ok()
         .map(|s| s.parse().unwrap())
         .unwrap_or(96);
-    for family in ["conditional", "alias", "callback", "nested", "constructor", "calls", "call_fanout", "constructors"] {
+    for family in ["context", "ancestry", "callee_join", "callee_alias", "conditional", "alias", "callback", "nested", "constructor", "calls", "call_fanout", "constructors"] {
         for depth in [1, 2, 4, 8, 12, 24, 48, 96, 192]
             .into_iter()
             .filter(|n| *n <= max)
         {
             let source = match family {
                 "conditional" => format!("($m:=$;{}$m.x)", "$m:=flag?$m.a:$m.b;".repeat(depth)),
+                "context" => format!("{}.{{'i':$i{}}}",(0..depth).map(|i|format!("a#$i{i}")).collect::<Vec<_>>().join("."),depth-1),
+                "ancestry" => format!("{}.{{'v':{}name}}",vec!["a";depth].join("."),"%.".repeat(depth)),
+                "callee_alias" => format!("($f:=function($d){{$d.a.x+$d.b.y}};{}$f($))","$f:=flag?$f:$f;".repeat(depth)),
+                "callee_join" => format!("($f:=function($d){{$d.a.x+$d.b.y}};{}$f($))","$f:=flag?$f:function($v){$v.a.x+$v.b.y};".repeat(depth)),
                 "callback" => format!(
                     "($m:=$;{}$map(items,function($v){{{{'x':$m.x,'v':$v}}}}))",
                     "$m:=flag?$m.a:$m.b;".repeat(depth)

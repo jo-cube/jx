@@ -17,21 +17,28 @@ parser.add_argument('current', type=Path)
 parser.add_argument('destination', type=Path)
 parser.add_argument('--cases', type=Path, default=Path('benchmarks/execution/workloads.json'))
 parser.add_argument('--ordinary', action='store_true')
+parser.add_argument('--entry-engine', action='store_true', help='also measure legacy execution from the entry binary')
 parser.add_argument('--expanded', action='store_true', help='new coverage: compare engine/current only')
 parser.add_argument('--calls', action='store_true', help='enable call fixtures in entry and current; requires matched admission')
 parser.add_argument('--raw', action='store_true', help='include validated scan execution controls')
 args = parser.parse_args()
 args.destination.mkdir(parents=True, exist_ok=True)
-cases = json.loads(args.cases.read_text())
+requested_cases = list(dict.fromkeys(json.loads(args.cases.read_text())))
+# Filters are a union of substrings. A narrower redundant selector must not
+# benchmark the same workload twice or produce a misleading sample count.
+cases = [case for case in requested_cases
+         if not any(other != case and other in case for other in requested_cases)]
 versions = [('engine', args.current.resolve(), 'engine'),
             ('entry', args.entry.resolve(), 'foundation'),
             ('current', args.current.resolve(), 'foundation')]
+if args.entry_engine:
+    versions.insert(0, ('entry_engine', args.entry.resolve(), 'engine'))
 if args.expanded:
-    versions = [v for v in versions if v[0] != 'entry']
+    versions = [v for v in versions if v[0] not in ('entry', 'entry_engine')]
 if args.raw:
     versions += [('entry_raw', args.entry.resolve(), 'vm_raw'), ('current_raw', args.current.resolve(), 'vm_raw')]
-metadata = dict(started=time.time(), ordinary=args.ordinary, expanded=args.expanded, calls=args.calls, raw=args.raw, samples=7,
-                milliseconds=200, cases=cases,
+metadata = dict(started=time.time(), ordinary=args.ordinary, entry_engine=args.entry_engine, expanded=args.expanded, calls=args.calls, raw=args.raw, samples=7,
+                milliseconds=200, cases=cases, requested_cases=requested_cases,
                 executables={label: dict(path=str(p), sha256=hashlib.sha256(p.read_bytes()).hexdigest())
                              for label, p, _ in versions})
 (args.destination/'run.json').write_text(json.dumps(metadata, indent=2)+'\n')

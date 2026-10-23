@@ -33,7 +33,9 @@ query-sized span copies and shares metadata when its preparation can be reused o
 dropped. Capture identities survive this ownership boundary. Input/code leaves stay
 borrowed. Raw/validated evaluation needs no span snapshot. Eager lexical and grouping
 boundaries still complete before returning results; parentheses are not universally
-interchangeable with terminal streaming.
+interchangeable with terminal streaming. Deferred root delivery can expose a terminal
+producer while its caller remains cancellable. It does not authorize crossing inner
+eager barriers. Complete serialization has a separate consumption contract.
 
 `try_for_each(prepared, consumer)` avoids an escaping continuation and span copy.
 Eligible terminal fields/paths stream directly, and a consumer failure stops later
@@ -49,9 +51,11 @@ takes precedence. Compare interfaces only with matching output/ownership obligat
 limits, deadlines and cooperative cancellation. Validation precedes binding failures,
 controls and effects. Controls share the lexical runtime and result wrapper. Work
 charges follow executed instructions/items; their counts need not equal AST work
-charges. They are cooperative budgets, not a process memory quota. Terminal
-`try_for_each`/`write_json` do not have settings overloads; consume a controlled
-`Evaluation` when settings are needed.
+charges. They are cooperative budgets, not a process memory quota.
+`try_for_each_with` and `write_json_with` accept the same settings for prepared input.
+Their settings-aware evaluation preserves the reference's eager effect boundaries;
+empty/seeded options preserve ordinary delivery. Complete serialization shares one
+rollback/error-order kernel with `write_json`.
 
 Returned values may outlive acquisition buffers while borrowing input/program.
 `to_owned` detaches JSON-compatible data. Functions have no JSON encoding and remain
@@ -76,23 +80,36 @@ not spend the tail-call budget.
 A program execution domain checks value-call targets, including callback, partial,
 owned-definition and tail transitions. AST-backed callees and unsupported builtin
 implementations fail explicitly. This also guards indirect resolution of a declared
-but unbound builtin name. Direct reserved intrinsic syntax such as `$eval` remains
-unsupported even when a host override could handle it; ordinary declared function
-names use the general call ABI.
+but unbound builtin name. `$eval` resolves its lexical target before arguments and honors host shadowing.
+Builtin dynamic source uses the semantic parser and lowers into this same IR. The
+scope lifetime bridge retains escaping compiled definitions, matchers and transforms;
+it does not execute a borrowed AST. Dynamic source, including literal `$eval` source,
+currently recompiles per invocation. The reference backend can retain literal code.
+Unsupported dynamic lowering remains an explicit evaluation rejection.
 
 Straight-line locals and proven immediate callbacks can retain SSA ports. A source
 scope analysis selects retained cells for escaping/callable values and enclosing
 writes. This is conservative promotion, not a complete closure conversion or liveness
 analysis. Proven locals and parameters keep register ports even inside retained scopes.
-Read-only branches preserve those ports; calls invalidate reusable expressions but
-cannot write their caller's lexical frame. Root rebinding and escaping captures still
+Read-only branches preserve those ports; call-effect summaries invalidate ports when
+a target can write an older lexical frame. Conditional aliases join invocation effects
+in one forward dataflow scan, so repeated read-only calls retain their lexical ports
+without recursively expanding alias diamonds. Root rebinding and escaping captures still
 use live cells. Immediate callbacks enforce the same call/stack/tail quotas as lexical
 calls, with inline depth state when no frame is needed.
 
-Definitions carry deduplicated root, definition-focus and parameter demands, and at
+Definitions carry deduplicated root, definition-focus, parameter and free-name demands, and at
 most one proven return origin. Statically resolved calls substitute these summaries
-into the common acquisition analysis; they do not inline or duplicate bodies. Direct
-IR calls forward prepared input through the shared ABI and restore borrowed spans by
+into the common acquisition analysis; they do not inline or duplicate bodies.
+A conditional callee joins demanded paths, with an unknown arm invalidating the proof.
+Summaries are shared immutable metadata; joins copy and deduplicate facts instead of
+retaining combinations of call targets. A result origin survives only when all arms
+agree. Nested IR regions carry value origins and resolved callees together, so
+constructor and argument boundaries preserve the same demand facts. Lexical bindings
+and resolved function aliases propagate acquisition hints, including returned captures. These definition-time hints never substitute for live reads: rebinding
+and shadowing still resolve the actual arena value, and byte-identity guards prevent
+using another object's spans. Unresolved/changed targets can lose hints without changing
+execution. Direct IR calls forward prepared input through the shared ABI and restore borrowed spans by
 byte identity. Unknown returned values and lexical reads can use the existing local
 acquisition operation when independent fields are co-used. Already acquired values
 reuse a covering schema. Dynamic calls retain their normal checks and effects.
@@ -100,13 +117,42 @@ reuse a covering schema. Dynamic calls retain their normal checks and effects.
 A row capture identifies its active Prepared view, separately from the immutable
 schema used for read-layout hints. Nested activations can reuse one schema without
 confusing their rows. Restoration searches active views by borrowed byte identity;
-no token is dereferenced. Values become borrowed bytes before a row view ends, so
-returned values and closures retain no reference to its temporary span buffer.
+no token is dereferenced. Temporary row spans never escape by reference. Demanded ancestors and explicit local
+acquisition can promote into `Value::InputView`, an experimental opaque borrowed input
+handle. It owns query-sized spans, shares the immutable schema, and preserves byte
+identity through bindings, arguments, closures, dynamic regions and returned values.
+A covered preparation copies only demanded spans; otherwise acquisition scans that
+object once. Ordinary cells remain compact; expressions without these demands do
+not allocate input views. `Value::as_raw`, access, signatures, transforms and owned
+conversion treat a view as the original input. Array elements without static spans
+still navigate normally; no full-document index or ancestry graph is built.
 
-Generic higher-order adapters, partial application and composition still pass values
-without forwarding prepared-input metadata. Row capture tokens are activation-local; only borrowed language values escape. These boundaries can lose indexing and remain optimization
-gaps. Scope selection is still conservative across an entire program: an unused
-function can promote otherwise immediate callbacks to retained invocation.
+Matchers use the existing function ABI and stateful continuation kernels. Literal
+execution creates fresh state per evaluation; compiled pictures own no executable
+AST. Prepared-format argument shifting and picture-error timing share the reference
+value kernel. Clock-using programs initialize evaluation-fixed time at entry, and
+seeded random settings are honored by byte, validated and prepared evaluation.
+
+Transforms own compiled selection/update/delete programs. A small body interface
+lets both backends use the same copy identity, membership, merge, deletion and
+ordered rewrite kernels. Captured frames and owned dynamic transform definitions
+use the existing lexical arena and lifetime bridge. Dynamic roots and transform
+parts share a non-tail region adapter that retires discarded closure environments
+before the next invocation; returned captures and older-frame writes remain live.
+No independent transform
+interpreter is introduced. Generic calls, callback parameters and compositions may
+resolve to `$eval` or a transform that writes the caller's frame; one conservative
+call-effect fact drives both port invalidation and region write summaries. Read-only
+definition bodies retain their register ports. Unknown calls inside a known function
+remain in its conservative write summary, including calls to captured transforms.
+
+Generic higher-order adapters, partial application and composition use the value ABI.
+Owned borrowed-input metadata survives that ABI. Plain raw values and activation-local
+row tokens are still different lifetime choices: arbitrary captured focus/argument values
+are not all promoted automatically. A missing static demand or a view ending before
+promotion can therefore lose indexing, but cannot change the value or trigger replay
+into another evaluator. Scope selection remains conservative; retained enclosing scopes
+do not discard proven immediate callback register ports.
 
 ## Compiler and physical execution
 
@@ -114,7 +160,10 @@ The semantic program represents focus/root, arguments/captures, live lexical rea
 and writes, scopes, functions/calls, ordered operations, branches, constructors,
 paths, aggregation and materialization. Registers have no fixed eligibility bound.
 Joins can write multiple definitions; this is structured register dataflow, not
-strict SSA. Identity-producing values are not commoned. Unknown builtin-name reads
+strict SSA. Acquisition analysis restores lexical scopes with a journal of changed
+bindings instead of copying every live lexical/path map at each nested body. This
+bounds scope restoration work by actual mutations; path construction and schema
+binding still have their own compilation costs. Identity-producing values are not commoned. Unknown builtin-name reads
 also retain fresh function identity when lexical lookup falls back to a builtin.
 
 Native call results retain their sequence shape until the consumer's normalization
@@ -125,9 +174,53 @@ producer views share the reference engine's mapping, literal-position, candidate
 selection and error-order kernels. Arbitrarily composed non-tuple routes, array
 focus, later numeric predicates, ranges, wildcards and descendants can therefore
 execute without an AST body or another evaluator. Negative positions obtain length
-lazily. Replay-safe views may revisit preceding pure work for cardinality/error
+lazily. Lowering tracks known wrapping at root, stage, constructor and closure
+entries. Collapsing a route source requires preserving that focus/iteration fact;
+unknown dynamic focus executes the general IR route. General stages acquire their
+requested row schema, including when a compact source collapse is not valid.
+Predicates over retained operands acquire fields in the element scan and preserve
+earlier predicate failures ahead of downstream failures; consumer cancellation
+still propagates immediately. Replay-safe views may revisit preceding pure work for cardinality/error
 precedence; effectful stages retain borrowed candidates before downstream replay.
 Consumer cancellation propagates immediately through the shared view contract.
+
+Correlated paths are explicit `Correlate` / `CorrelatedGroup` IR regions. Their
+structural operands describe stages, lexical boundaries, filtering and ordering;
+every executable body is an ordinary compiled program. A borrowed semantic view lets
+AST and IR operands use the same tuple, grouping and ordering kernels during migration.
+There is no AST body or reference retry inside a compiled context region.
+
+Rows carry a value and copy-on-write bindings only in correlated regions. Explicit
+focus/index bindings and statically demanded ancestry slots preserve their correlation
+through nested stages. Indexes before and after filtering have distinct stage positions.
+A focus binding preserves the incoming focus while binding the selected value. Parent
+slots denote expression-path ancestry, not a parent pointer on generic JSON values.
+Lexical blocks discard local names while preserving demanded ancestry; retained
+closures use the same frame/reachability rules as ordinary calls.
+
+Boolean and nonnegative literal filters stream. A predicate that can select from the
+end retains correlated rows once, without replaying effects. Sort/group consumers
+retain rows with their bindings; ordinary scalar/field values gain no metadata. Rows
+borrow original input fragments, and each IR region reuses one register workspace.
+The acquisition analysis follows generated immutable ancestry slots and route return
+origins through the same demand collector as lexical/call ports. Body acquisition
+reuses a covering root or active ancestor port by byte identity, exports language
+values before reusing spans, and never builds an input graph. Demanded ancestor slots receive sparse parent schemas from this same collector.
+Before a correlated stage exports its parent, it promotes that borrowed value when
+needed. Descendant stages share this metadata even after the producing row view ends.
+Dynamic field names without static demands still navigate borrowed bytes. Uncorrelated path prefixes compile
+once into ordinary IR rather than retaining duplicate contextual bodies.
+
+An eager selection is also a cardinality boundary: its sole selected array becomes
+the following mapper's input sequence. Fusion must preserve this rule. Complete consumers can pass a replay-safe IR producer
+through a cardinality-aware boundary view. It holds one candidate until a second item
+settles native-sequence cardinality; a sole array retains its distinct normalization.
+The existing route/filter kernels defer downstream failures behind earlier-stage errors.
+Externally cancellable delivery and effectful stages retain their eager boundaries.
+This avoids an intermediate sequence graph without creating a separate fold evaluator;
+separate predicate/mapper activations, numeric conversion and generic dispatch still
+limit throughput. Callback and replay boundaries can still require materialization. Valid
+array shapes execute normally rather than triggering an optimization-domain rejection.
 
 Static unique-key constructors execute one compiled focus region. Object members
 receive unwrapped focus, even when their enclosing constructor saw a wrapped array.
@@ -145,7 +238,8 @@ cache, invoked with compiled terms; effectful keys are evaluated in comparison o
 Local deterministic CSE, copy propagation, infallible DCE, field composition and
 single-use aggregate fusion precede physical preparation. Callback-capable kernels
 are not commoned as pure scalars. Stage fusion proves that neither side can call
-functions or write lexical state; delaying errors alone cannot preserve effects.
+functions or write lexical state, and preserves cardinality boundaries; delaying
+errors alone cannot preserve effects or sequence normalization.
 One structural child-program visitor serves preparation, capture traversal/remapping,
 local-acquisition traversal and lexical-write summaries. One structured branch
 lowerer owns lexical-version joins and dominance for conditional, default/coalescing
@@ -174,14 +268,14 @@ establish dynamic support.
 
 | Area | Available | Remaining legacy capability |
 | --- | --- | --- |
-| Values/operators | Borrowed JSON, missing/null, scalars, arrays, static and dynamic objects, grouping, ranges, scalar operators, membership, postfix retention | Tuple-aware grouping; complete input-shape support in fused path folds |
-| Navigation | Static fields, general non-tuple routes and predicates, later positions, array focus, wildcard/descendants, order-by, conditional acquisition | Tuple bindings and ancestry; tuple-aware ordering |
-| Scope/calls | Lexical blocks/writes, live/escaping closures, recursion/tail calls, signatures, general arity, first-class supported builtins, partials/composition | Direct reserved-intrinsic host adaptation; general producer/consumer call results |
-| Library | Lookup, truth/existence, aggregates, common string/numeric/collection kernels, map/filter/reduce/each/sift/single and sort callbacks, error/assert | Regex literals/library surface, formatted numbers/dates, eval, transform/clone, random/time |
-| Embedding | Compile/clone/reuse, immutable/runtime bindings, host calls/reentry, external focus, absent/validated/shared input, controlled borrowed results | Complete eligibility, terminal settings overloads, common-IR native execution |
+| Values/operators | Borrowed JSON, missing/null, scalars, arrays, static and dynamic objects, grouping, ranges, scalar operators, membership, postfix retention | Inherited host/coercion boundaries |
+| Navigation | Static fields, general routes and predicates, positions, focus/index tuples, ancestry, tuple grouping/order, array focus, wildcard/descendants, conditional acquisition | General producer/consumer call boundaries |
+| Scope/calls | Lexical blocks/writes, live/escaping closures, recursion/tail calls, signatures, general arity, first-class builtins, partials/composition, dynamic IR with retained definitions | General producer/consumer call results; literal dynamic-code reuse |
+| Library | Lookup, truth/existence, aggregates, common string/numeric/collection kernels, map/filter/reduce/each/sift/single and sort callbacks, error/assert, matcher values, formatted numbers/dates, eval, transform/clone, random/time | Inherited regex/coercion and formatting boundaries in `compatibility.md` |
+| Embedding | Compile/clone/reuse, immutable/runtime bindings, host calls/reentry, external focus, absent/validated/shared input, controlled borrowed results and terminal settings | Complete eligibility, common-IR native execution |
 
-Fused paths still reject some array source/result shapes. Unsupported syntax in an
-unselected branch is rejected at compilation. A runtime shape/callee-domain rejection
+The pinned legacy-success inventory is admitted, but this is not a proof of complete
+language or API parity. Unsupported syntax in an unselected branch is rejected at compilation. A runtime shape/callee-domain rejection
 can follow preceding streamed output. Neither is a hidden compatibility fallback.
 
 The full pinned corpus has an explicit admission entry in

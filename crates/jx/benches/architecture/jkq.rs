@@ -218,6 +218,11 @@ fn check(vars: &str) {
         (vec![], vec![], Some("missing")),
         (vec![], vec![], Some("[]")),
         (vec![], vec![], Some("items.v")),
+        (vec![], vec![], Some("items#$i.{'i':$i,'v':v}")),
+        (vec![], vec![], Some("items.{'id':%.id,'v':v}")),
+        (vec![], vec![], Some("items#$i.(function(){$i}) ~> $map(function($f){$f()})")),
+        (vec![], vec![], Some("$eval('items#$i.v')")),
+        (vec![], vec![], Some("$sum((items[true]).(2))")),
         (vec![], vec![], Some("items[($x:=v;$x>0)].{'v':v*2}")),
         (vec![], vec![], Some("items.(flag?v:$number(s))")),
         (
@@ -226,6 +231,11 @@ fn check(vars: &str) {
             Some("($m:=flag?a:b;{'x':$m.x,'same':$m in [$m]})"),
         ),
         (vec![], vec![], Some("$lookup($vars.labels,id)")),
+        (vec![], vec![], Some("{'s':$replace(id,/[0-9]+/,'X')}")),
+        (vec![], vec![], Some("$formatNumber($count(items),'0.0')")),
+        (vec![], vec![], Some("$eval('id')")),
+        (vec![], vec![], Some("$ ~> |items|{'v':v+1}|")),
+        (vec![], vec![], Some("{'f':/x/}")),
     ];
     let inputs = [
         None,
@@ -314,8 +324,11 @@ fn check(vars: &str) {
         }
     }
     assert!(reference::build_plan(&[], &[], false, Some("{'f':/x/}"), None, false).is_ok());
-    assert!(foundation::build_plan(&[], &[], false, Some("{'f':/x/}"), None, false).is_err());
-    eprintln!("correctness,{compared},explicit_compile_boundary,1");
+    assert!(reference::build_plan(&[], &[], false, Some("items@$v.v"), None, false).is_ok());
+    assert!(foundation::build_plan(&[], &[], false, Some("items@$v.v"), None, false).is_ok());
+    assert!(reference::build_plan(&[], &[], false, Some("(a+b).%"), None, false).is_err());
+    assert!(foundation::build_plan(&[], &[], false, Some("(a+b).%"), None, false).is_err());
+    eprintln!("correctness,{compared},shared_compile_boundary,1");
 }
 fn main() {
     let vars = format!(

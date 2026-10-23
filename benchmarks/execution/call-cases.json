@@ -4,5 +4,7 @@
   "calls/wide_dynamic_projection",
   "calls/wide_map",
   "calls/1024/row_closure",
-  "calls/1024/alias_map"
+  "calls/1024/alias_map",
+  "calls/repeated_dynamic_projection",
+  "calls/repeated_parameter_projection"
 ]

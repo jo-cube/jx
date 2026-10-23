@@ -329,6 +329,10 @@ fn main() {
     if std::env::var_os("ARCH_CONVERGENCE").is_some() {
         sequences::convergence(&options);
     }
+    if std::env::var("ARCH_FILTER").is_ok_and(|s| s.starts_with("pipelines/")) {
+        sequences::pipelines(&options);
+        return;
+    }
     sequences::run(&options);
     scopes::run(&options);
     foundation::run(&options);

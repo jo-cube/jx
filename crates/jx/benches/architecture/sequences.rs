@@ -80,3 +80,61 @@ pub(super) fn convergence(options: &CompileOptions) {
         }
     }
 }
+
+// Sequence length, selectivity and equivalent producer/call boundaries. Generate
+// records in memory; validation and serialization remain in every timed sample.
+pub(super) fn pipelines(options: &CompileOptions) {
+    for rows in [0, 1, 2, 8, 64, 128, 1024, 8192] {
+        for size in [48, 500] {
+            for percent in [0, 50, 100] {
+                let input = format!(
+                    "{{\"items\":[{}]}}",
+                    (0..rows)
+                        .map(|i| {
+                            let positive = percent == 100 || (percent == 50 && i % 2 == 0);
+                            let base = format!(
+                                "{{\"metrics\":{{\"v0\":{},\"v1\":7}},\"pad\":\"\"}}",
+                                if positive { 3 } else { -3 }
+                            );
+                            let padding = size - base.len();
+                            base.replace(
+                                "\"pad\":\"\"",
+                                &format!("\"pad\":\"{}\"", "x".repeat(padding)),
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",")
+                );
+                for (name, source) in [
+                    (
+                        "direct",
+                        "$sum(items[metrics.v0>0].(metrics.v0*metrics.v1+metrics.v0))",
+                    ),
+                    (
+                        "group",
+                        "$sum((items[metrics.v0>0]).(metrics.v0*metrics.v1+metrics.v0))",
+                    ),
+                    (
+                        "alias",
+                        "($rows:=items;$sum(($rows[metrics.v0>0]).(metrics.v0*metrics.v1+metrics.v0)))",
+                    ),
+                    (
+                        "call",
+                        "function($rows){$sum(($rows[metrics.v0>0]).(metrics.v0*metrics.v1+metrics.v0))}(items)",
+                    ),
+                    (
+                        "callbacks",
+                        "$sum($map($filter(items,function($v){$v.metrics.v0>0}),function($v){$v.metrics.v0*$v.metrics.v1+$v.metrics.v0}))",
+                    ),
+                ] {
+                    bench(
+                        &format!("pipelines/{rows}/{size}/{percent}/{name}"),
+                        &[source.into()],
+                        &input,
+                        options,
+                    );
+                }
+            }
+        }
+    }
+}

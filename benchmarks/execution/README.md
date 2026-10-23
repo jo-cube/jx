@@ -5,14 +5,13 @@ The `experimental` feature adds the shared semantic execution foundation. Legacy
 domains and input shapes fail explicitly; there is no compatibility replay. See
 [the execution model](../../docs/execution.md) and [reproduction](reproduce.md).
 
-The pinned gate admits 1,426 of 1,679 cases: 1,227 successful outcomes, 198 expected
-errors and one limit. There are 250 compile rejections and three parser errors. Of
-1,390 legacy-success cases, 163 remain unsupported. First missing mechanisms are
-tuple/index/ancestry contexts (68), matchers (37), formatted library calls (29),
-copy/update identity (12), dynamic program ownership (10) and invocation adapters
-(7). Groups have overlapping dependencies. Generated upstream controls also find
-valid fused path-fold array shapes that remain runtime rejections. These counts
-do not establish complete library or public API parity.
+The pinned gate admits 1,638 of 1,679 cases: all 1,390 legacy-success outcomes,
+247 expected errors and one limit. The remaining 38 compile rejections and three
+parser errors are expected-error cases, not missing successful tuple semantics.
+Generated controls exercise correlated stages, ancestry, retained callbacks and
+valid fold-array shapes. They separately assert inherited transform-alias differences,
+upstream empty-tuple grouping exceptions and the direct-regex coercion boundary.
+Admission does not establish complete public API, host/coercion or native parity.
 
 ## Retained fixtures
 
@@ -21,6 +20,9 @@ do not establish complete library or public API parity.
 | `crates/jx/benches/architecture.rs` and modules | Matched validation, acquisition, execution and serialization; varied record sizes and field distributions |
 | `architecture/calls.rs` | Captured/parameter/dynamic calls, callbacks, lexical forms and deferred delivery |
 | `architecture/sequences.rs` | Candidate stages, positions, grouping, order, ranges and numeric controls |
+| `pipeline-cases.json` | Sequence length, selection distribution and direct/grouped/alias/call/callback forms with matched entry fixtures |
+| `context-cases.json` | Index/focus/ancestry, contextual callbacks, predicates, ordering and grouping at 8/1,024 rows |
+| `semantic-cases.json` | Matchers, prepared formats, dynamic IR and compiled copy/update controls |
 | `architecture/scaling.rs` | Compilation time, allocations, retained/peak heap and program size by complexity |
 | `architecture/memory.rs` | Separate compilation, acquisition and execution heap probes |
 | `architecture/jkq.rs` | Actual-worker driver for an isolated read-only sibling experiment |
@@ -45,7 +47,8 @@ lookup storage, stack and existing output capacity are excluded. This is not RSS
 Samples use two reversed process orders; spread is not a confidence interval.
 
 Wide projections and shared acquisition are the strongest measured areas. Compact
-numeric folds and generic sequence stages can trail legacy substantially. Dynamic
+numeric folds and generic sequence stages can trail legacy substantially. Eager
+cardinality barriers remain explicit even when fusing them would improve timings. Dynamic
 calls, conservative scope promotion and aliases retain acquisition/materialization
 cliffs. Constructors add compilation cost; grouping/order retain candidates. Warm
 state and link layout can materially affect rates. Preserve raw samples and binary

@@ -22,6 +22,121 @@ pub(super) fn run(options: &CompileOptions) {
     ] {
         bench(&format!("calls/{name}"), &[source.into()], &input, options);
     }
+    for (name, source) in [
+        (
+            "matcher",
+            "{'name':$replace(name,/[A-Za-z]+/,function($m){$uppercase($m.match)}),'n':$count($match(name,/[A-Za-z]+/))}",
+        ),
+        (
+            "formatted",
+            "{'n':$formatNumber(metrics.v0,'0.00'),'hex':$formatBase(metrics.v1,16)}",
+        ),
+        ("dynamic", "$eval('metrics.v0+metrics.v1')"),
+        ("transform", "$ ~> |metrics|{'v0':v0+1}|"),
+    ] {
+        bench(
+            &format!("semantics/{name}"),
+            &[source.into()],
+            &input,
+            options,
+        );
+    }
+    if std::env::var_os("ARCH_CONTEXT").is_some() {
+        for depth in [8, 48] {
+            let source = format!(
+                "{}.{{'i':$i{}}}",
+                (0..depth)
+                    .map(|i| format!("items#$i{i}"))
+                    .collect::<Vec<_>>()
+                    .join("."),
+                depth - 1
+            );
+            for mode in ["engine", "foundation"] {
+                measure(
+                    &format!("compile/context/{depth}/{mode}"),
+                    source.as_bytes(),
+                    || {
+                        if mode == "engine" {
+                            black_box(options.compile(black_box(&source)).unwrap());
+                        } else {
+                            black_box(options.compile_program(black_box(&source)).unwrap());
+                        }
+                    },
+                );
+            }
+        }
+        for rows in [8, 1024] {
+            let record = record(500, 8, true, false);
+            let input = format!(
+                "{{\"name\":\"parent\",\"items\":[{}]}}",
+                vec![record; rows].join(",")
+            );
+            for (form, query) in [
+                ("index", "items#$i.{'i':$i,'v':metrics.v0}"),
+                ("parent", "items.{'parent':%.name,'v':metrics.v0}"),
+                (
+                    "captured_call",
+                    "items.($p:=%;$f:=function(){$p.name};{'parent':$f(),'v':metrics.v0})",
+                ),
+                (
+                    "returned_parent",
+                    "items.($p:=%;$f:=function(){$p};{'parent':$f().name,'v':metrics.v0})",
+                ),
+                (
+                    "captured_callback",
+                    "items.($p:=%;$f:=function($v){$p.name};{'parent':$map([1],$f),'v':metrics.v0})",
+                ),
+                (
+                    "captured_argument",
+                    "items.($p:=%;$f:=function($q){$q.name};{'parent':$f($p),'v':metrics.v0})",
+                ),
+                (
+                    "callback",
+                    "items#$i.($f:=function(){$i};{'i':$f(),'v':metrics.v0})",
+                ),
+                ("filter", "items#$i[$i%2=0].{'i':$i,'v':metrics.v0}"),
+                ("sort", "items#$i^(>metrics.v0).{'i':$i,'v':metrics.v0}"),
+                ("group", "items#$i{'all':[$i,metrics.v0]}"),
+            ] {
+                bench(
+                    &format!("context/{rows}/{form}"),
+                    &[query.into()],
+                    &input,
+                    options,
+                );
+            }
+        }
+    }
+    if std::env::var_os("ARCH_CONTEXT").is_some() {
+        for rows in [8, 128] {
+            let row = record(500, 8, true, false);
+            let group = format!(
+                "{{\"tag\":\"group\",\"items\":[{}]}}",
+                vec![row; rows].join(",")
+            );
+            let input = format!(
+                "{{\"name\":\"root\",\"groups\":[{}]}}",
+                vec![group; 4].join(",")
+            );
+            for (form, query) in [
+                (
+                    "parent",
+                    "groups.items.{'parent':%.tag,'root':%.%.name,'v':metrics.v0}",
+                ),
+                (
+                    "callback",
+                    "groups.items.($p:=%;$f:=function(){$p.tag};{'parent':$f(),'v':metrics.v0})",
+                ),
+            ] {
+                bench(
+                    &format!("context_nested/{rows}/{form}"),
+                    &[query.into()],
+                    &input,
+                    options,
+                );
+            }
+        }
+    }
     let wide_input = record(1024, 40, true, false);
     // Same output as the ordinary wide projection. Isolate retained-scope and
     // call-port acquisition from the already indexed direct/alias controls.
@@ -73,6 +188,20 @@ pub(super) fn run(options: &CompileOptions) {
             "wide_dynamic_projection",
             format!(
                 "($f:=flag?function($doc){{{0}}}:function($doc){{{0}}};$f($))",
+                parameter_projection(40)
+            ),
+        ),
+        (
+            "repeated_dynamic_projection",
+            format!(
+                "($f:=flag?function($doc){{{0}}}:function($doc){{{0}}};$f($);$f($))",
+                parameter_projection(40)
+            ),
+        ),
+        (
+            "repeated_parameter_projection",
+            format!(
+                "($f:=function($doc){{{0}}};$f($);$f($))",
                 parameter_projection(40)
             ),
         ),

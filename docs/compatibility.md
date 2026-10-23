@@ -72,6 +72,9 @@ stay borrowed. Custom `$clone` overrides, locations outside the cloned argument,
 unscoped pattern/update bindings, function-valued updates, cyclic output and advanced
 mutable JavaScript aliasing are unsupported. `$clone` performs language conversion,
 including number rounding and undefined/function handling, rather than a raw byte copy.
+Aliases to selected nodes retained in lexical bindings observe the pre-update
+immutable snapshot; jsonata-js can expose later in-place updates through those
+aliases. Differential tests label this inherited value difference separately.
 
 ## Regex, encoding and pictures
 
