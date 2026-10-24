@@ -1,5 +1,6 @@
+use super::registers::Layout;
 use super::run::Cell;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 // Inline storage changes only allocation, never eligibility or semantics. Larger
 // activations grow normally. One frame is reused across all rows of an operator.
@@ -8,6 +9,7 @@ pub(super) struct Frame<'e, 'i> {
     heap: Vec<Cell<'e, 'i>>,
     len: usize,
     repeated: bool,
+    slots: &'e [usize],
     region: Option<Box<Self>>,
 }
 impl<'e, 'i> Frame<'e, 'i> {
@@ -17,6 +19,7 @@ impl<'e, 'i> Frame<'e, 'i> {
             heap: Vec::new(),
             len: 0,
             repeated: false,
+            slots: &[],
             region: None,
         }
     }
@@ -32,16 +35,17 @@ impl<'e, 'i> Frame<'e, 'i> {
     pub fn region<T>(
         &mut self,
         workspace: usize,
-        run: impl FnOnce(&[Cell<'e, 'i>], &mut Self) -> T,
+        run: impl FnOnce(Registers<'_, 'e, 'i>, &mut Self) -> T,
     ) -> T {
         if !self.repeated || workspace <= self.inline.len() {
-            return run(self, &mut Self::new());
+            return run(self.view(), &mut Self::new());
         }
         let Self {
             inline,
             heap,
             len,
             region,
+            slots,
             ..
         } = self;
         let parent = if *len <= inline.len() {
@@ -50,7 +54,13 @@ impl<'e, 'i> Frame<'e, 'i> {
             &heap[..]
         };
         let child = region.get_or_insert_with(|| Box::new(Self::repeated()));
-        let result = run(parent, child);
+        let result = run(
+            Registers {
+                values: parent,
+                slots,
+            },
+            child,
+        );
         child.reset(0);
         result
     }
@@ -58,6 +68,16 @@ impl<'e, 'i> Frame<'e, 'i> {
     // reset/drop path; stages that still need their result read the frame directly.
     pub fn take_result(&mut self, result: usize) -> Cell<'e, 'i> {
         std::mem::replace(&mut self[result], Cell::Missing)
+    }
+    pub fn configure(&mut self, layout: &'e Layout) {
+        self.reset(layout.count);
+        self.slots = &layout.slots;
+    }
+    pub fn view(&self) -> Registers<'_, 'e, 'i> {
+        Registers {
+            values: self,
+            slots: self.slots,
+        }
     }
     pub fn reset(&mut self, len: usize) {
         self.deref_mut().fill(Cell::Missing);
@@ -100,7 +120,7 @@ mod tests {
         let mut frame = Frame::repeated();
         frame.region(32, |_, child| {
             child.reset(32);
-            child[0] = Cell::Value(value);
+            child.deref_mut()[0] = Cell::Value(value);
         });
         assert!(
             weak.upgrade().is_none(),
@@ -110,5 +130,29 @@ mod tests {
             child.reset(32);
             assert!(child.iter().all(|c| matches!(c, Cell::Missing)));
         });
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+pub(super) struct Registers<'a, 'e, 'i> {
+    values: &'a [Cell<'e, 'i>],
+    slots: &'a [usize],
+}
+impl<'e, 'i> Index<usize> for Registers<'_, 'e, 'i> {
+    type Output = Cell<'e, 'i>;
+    fn index(&self, id: usize) -> &Self::Output {
+        &self.values[self.slots[id]]
+    }
+}
+impl<'e, 'i> Index<usize> for Frame<'e, 'i> {
+    type Output = Cell<'e, 'i>;
+    fn index(&self, id: usize) -> &Self::Output {
+        &self.deref()[self.slots[id]]
+    }
+}
+impl IndexMut<usize> for Frame<'_, '_> {
+    fn index_mut(&mut self, id: usize) -> &mut Self::Output {
+        let slot = self.slots[id];
+        &mut self.deref_mut()[slot]
     }
 }

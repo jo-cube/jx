@@ -208,7 +208,7 @@ pub(super) fn execute<'e, 'i>(
                         calls,
                         ..activation
                     };
-                    if let Some(layout) = body.scalar.as_ref().filter(|s| s.number_result) {
+                    if body.scalar.as_ref().is_some_and(|s| s.number_result) {
                         let accepted = if staged {
                             body.run_row(activation, &mut child_frame, &mut mapper_error, false)
                         } else {
@@ -217,7 +217,7 @@ pub(super) fn execute<'e, 'i>(
                         };
                         match accepted {
                             Ok(true) => {
-                                match &child_frame[layout.slots[body.result]] {
+                                match &child_frame[body.result] {
                                     Cell::Value(Value::Number(n)) => reduction.push_number(*n),
                                     Cell::Missing => {}
                                     _ => {
@@ -233,9 +233,7 @@ pub(super) fn execute<'e, 'i>(
                         body.run_row(activation, &mut child_frame, &mut mapper_error, false)
                             .map(|accepted| {
                                 if accepted {
-                                    child_frame.take_result(
-                                        body.scalar.as_ref().unwrap().slots[body.result],
-                                    )
+                                    child_frame.take_result(body.result)
                                 } else {
                                     Cell::Missing
                                 }

@@ -73,7 +73,7 @@ impl Program {
                     focus: &focus,
                     wrapped: true,
                     args: &[],
-                    outer: &[],
+                    outer: Default::default(),
                     calls: Default::default(),
                     scope: scope.as_ref(),
                 },

@@ -285,7 +285,8 @@ fn scalar_allocation_preserves_values_and_reuses_dead_cells() {
     let p = crate::CompileOptions::default()
         .compile_program("metrics.a+metrics.b+metrics.c+metrics.d+metrics.e")
         .unwrap();
-    let layout = p.scalar.as_ref().unwrap();
+    assert!(p.scalar.is_some());
+    let layout = &p.storage;
     assert!(layout.count <= 4);
     assert!(layout.count < p.registers);
     for source in [

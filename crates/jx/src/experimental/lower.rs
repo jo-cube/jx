@@ -54,11 +54,12 @@ fn prepare(p: &mut Program) {
         i.kind.children_mut(&mut prepare);
     }
     acquisition::plan_rows(p);
+    p.storage = registers::layout(p);
     p.scalar = scalar::layout(p);
     p.atomic_loads = optimize::load_transfers(p, p.scalar.as_ref().and_then(|s| s.gate));
     p.delivery = consume::plan(p);
     p.argument_mask = optimize::argument_mask(p);
-    p.workspace = p.scalar.as_ref().map_or(p.registers, |s| s.count);
+    p.workspace = p.storage.count;
     for i in &p.code {
         if let Operation::Construct(body) = &i.kind {
             p.workspace = p.workspace.max(body.workspace);
@@ -90,6 +91,7 @@ impl<'e> Lower<'e> {
             row_reads: Box::new([]),
             key: Arc::new(()),
             scalar: None,
+            storage: Default::default(),
             delivery: consume::Delivery::Value,
             argument_mask: 0,
             atomic_loads: Box::new([]),

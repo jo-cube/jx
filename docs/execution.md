@@ -249,11 +249,13 @@ and delivery. Lexical-write facts are computed bottom-up from the IR, separately
 source effects that govern scheduling. Definition summaries have one proven origin,
 never combinations of branch alternatives. This is not a general pass framework.
 
-Two dispatch loops consume the same instructions. The straight-line scalar kernel
-reuses slots; the general executor uses logical slots. Checked numeric/value kernels
-are shared. Inline frames spill dynamically without changing admission. There is no
-physical guard replay. Compact typed instructions and general frame liveness remain
-unimplemented.
+Two dispatch loops consume the same instructions and physical storage layout.
+Conservative live intervals assign logical values to reusable cells, including
+forward branch joins and synchronous child captures. Read layouts still name
+logical IDs; physical slot reuse does not change acquisition identities. Scalar
+and general activations use the same allocation analysis. Inline frames spill
+dynamically without changing admission; no register-count threshold selects another
+evaluator. Backedges would require CFG liveness before reusing their storage.
 
 Root/row captures, owned indexed aliases and raw navigation are input strategies.
 Failed read guards navigate the same value once. Separate origin analyses,

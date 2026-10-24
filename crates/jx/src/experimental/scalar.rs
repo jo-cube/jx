@@ -43,9 +43,8 @@ impl Program {
         a: Activation<'_, 'e, 'i, '_>,
         frame: &mut Frame<'e, 'i>,
     ) -> Result<Cell<'e, 'i>, Error> {
-        let layout = self.scalar.as_ref().expect("scalar layout");
         self.run_scalar_frame(&a, frame)?;
-        Ok(frame.take_result(layout.slots[self.result]))
+        Ok(frame.take_result(self.result))
     }
     pub(super) fn run_scalar_frame<'e, 'i>(
         &'e self,
@@ -53,7 +52,7 @@ impl Program {
         frame: &mut Frame<'e, 'i>,
     ) -> Result<(), Error> {
         let layout = self.scalar.as_ref().expect("scalar layout");
-        frame.reset(layout.count);
+        frame.configure(&self.storage);
         self.scalar_range(a, frame, 0..self.code.len(), layout.reads[0])
     }
     pub(super) fn run_row<'e, 'i>(
@@ -65,12 +64,12 @@ impl Program {
     ) -> Result<bool, Error> {
         let layout = self.scalar.as_ref().expect("scalar layout");
         let gate = layout.gate.expect("ordered row stage");
-        frame.reset(layout.count);
+        frame.configure(&self.storage);
         self.scalar_range(&a, frame, 0..gate, layout.reads[0])?;
         let Operation::Accept(test) = self.code[gate].kind else {
             unreachable!()
         };
-        if !frame[layout.slots[test]].truth(a.input, self.code[gate].offset)?
+        if !frame[test].truth(a.input, self.code[gate].offset)?
             || pending.is_some()
             || predicate_only
         {
@@ -93,8 +92,6 @@ impl Program {
         range: std::ops::Range<usize>,
         needs_reads: bool,
     ) -> Result<(), Error> {
-        let layout = self.scalar.as_ref().expect("scalar layout");
-        let slots = &layout.slots;
         let reads = if needs_reads {
             a.input.reads(self)
         } else {
@@ -123,12 +120,12 @@ impl Program {
                 }),
                 Operation::Argument(n) => load(a.args.get(*n).map_or(Cell::Missing, Cell::read)),
                 Operation::Outer(n, _) => load(a.outer[*n].read()),
-                Operation::Copy(n) => load(frame[slots[*n]].clone()),
+                Operation::Copy(n) => load(frame[*n].clone()),
                 Operation::Field(base, path, contextual, FieldMode::Value) => {
                     let value = a
                         .input
                         .select_field(
-                            &frame[slots[*base]],
+                            &frame[*base],
                             path,
                             *contextual && a.wrapped,
                             reads.and_then(|r| r.get(i.out)),
@@ -150,13 +147,13 @@ impl Program {
                         }
                     }
                 },
-                Operation::Negate(n) => frame[slots[*n]]
+                Operation::Negate(n) => frame[*n]
                     .number(a.input, i.offset)?
                     .map_or(Cell::Missing, |n| Cell::Value(Value::Number(-n))),
                 Operation::Binary(op @ (Op::Equal | Op::NotEqual), l, r) => {
                     Cell::Value(Value::Boolean(crate::compare::equal(
-                        frame[slots[*l]].operand(a.input),
-                        frame[slots[*r]].operand(a.input),
+                        frame[*l].operand(a.input),
+                        frame[*r].operand(a.input),
                         *op == Op::NotEqual,
                     )?))
                 }
@@ -164,7 +161,7 @@ impl Program {
                     op @ (Op::Less | Op::LessEqual | Op::Greater | Op::GreaterEqual),
                     l,
                     r,
-                ) => match (&frame[slots[*l]], &frame[slots[*r]]) {
+                ) => match (&frame[*l], &frame[*r]) {
                     (Cell::Value(Value::Number(l)), Cell::Value(Value::Number(r))) => {
                         Cell::Value(Value::Boolean(match op {
                             Op::Less => l < r,
@@ -175,22 +172,22 @@ impl Program {
                         }))
                     }
                     _ => Cell::from_operand(crate::compare::order(
-                        frame[slots[*l]].operand(a.input),
-                        frame[slots[*r]].operand(a.input),
+                        frame[*l].operand(a.input),
+                        frame[*r].operand(a.input),
                         *op,
                         i.offset,
                     )?)?,
                 },
                 Operation::Binary(op, l, r) => {
-                    frame[slots[*l]].arithmetic(*op, &frame[slots[*r]], a.input, i.offset)?
+                    frame[*l].arithmetic(*op, &frame[*r], a.input, i.offset)?
                 }
                 Operation::Lookup(data, key) => load(
-                    crate::lookup::constant(data, frame[slots[*key]].value(a.input), i.offset)?
+                    crate::lookup::constant(data, frame[*key].value(a.input), i.offset)?
                         .map_or(Cell::Missing, Cell::Value),
                 ),
                 _ => unreachable!("scalar backend validated at compilation"),
             };
-            frame[slots[i.out]] = value;
+            frame[i.out] = value;
         }
         Ok(())
     }
@@ -198,8 +195,6 @@ impl Program {
 
 #[derive(Clone, Debug)]
 pub(super) struct Layout {
-    pub slots: Box<[usize]>,
-    pub count: usize,
     pub gate: Option<usize>,
     pub number_result: bool,
     reads: [bool; 2],
@@ -219,32 +214,6 @@ pub(super) fn layout(p: &Program) -> Option<Layout> {
         || [fields(&p.code), false],
         |at| [fields(&p.code[..at]), fields(&p.code[at + 1..])],
     );
-    let mut last = vec![usize::MAX; p.registers];
-    for (pc, i) in p.code.iter().enumerate() {
-        super::optimize::operands(&i.kind, &mut |r| last[r] = pc);
-    }
-    last[p.result] = p.code.len();
-    let mut slots = vec![usize::MAX; p.registers];
-    let mut free = Vec::new();
-    let mut count = 0;
-    for (pc, i) in p.code.iter().enumerate() {
-        // The result is written after all operands have been read, so a cell
-        // whose last read is this instruction can also hold its output.
-        super::optimize::operands(&i.kind, &mut |r| {
-            if last[r] == pc && !free.contains(&slots[r]) {
-                free.push(slots[r]);
-            }
-        });
-        let out = free.pop().unwrap_or_else(|| {
-            let n = count;
-            count += 1;
-            n
-        });
-        slots[i.out] = out;
-        if last[i.out] == usize::MAX {
-            free.push(out);
-        }
-    }
     let number_result = p.code.iter().any(|i| {
         i.out == p.result
             && matches!(
@@ -258,8 +227,6 @@ pub(super) fn layout(p: &Program) -> Option<Layout> {
             )
     });
     Some(Layout {
-        slots: slots.into(),
-        count,
         number_result,
         gate,
         reads,

@@ -9,7 +9,7 @@ use crate::Error;
 pub(super) fn execute<'e, 'i>(
     op: &'e Operation,
     a: Activation<'_, 'e, 'i, '_>,
-    registers: &[Cell<'e, 'i>],
+    registers: frame::Registers<'_, 'e, 'i>,
     offset: usize,
 ) -> Result<Cell<'e, 'i>, Error> {
     let run = |body: &'e Program, value: Value<'e, 'i>, frame: &mut Frame<'e, 'i>| {

@@ -154,7 +154,7 @@ impl Program {
             focus: &focus,
             wrapped: context.wrapped,
             args,
-            outer: &[],
+            outer: Default::default(),
             calls: Default::default(),
             scope: context.scope.as_ref(),
         };

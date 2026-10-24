@@ -246,7 +246,7 @@ impl Navigation {
 pub(super) fn walk<'e, 'i>(
     op: &'e Operation,
     a: Activation<'_, 'e, 'i, '_>,
-    frame: &[Cell<'e, 'i>],
+    frame: frame::Registers<'_, 'e, 'i>,
     offset: usize,
     output: &mut Output<'_, 'e, 'i>,
     complete: bool,
@@ -280,7 +280,7 @@ pub(super) fn walk<'e, 'i>(
 pub(super) fn consume<'e, 'i, E>(
     op: &'e Operation,
     a: Activation<'_, 'e, 'i, '_>,
-    frame: &[Cell<'e, 'i>],
+    frame: frame::Registers<'_, 'e, 'i>,
     offset: usize,
     output: &mut dyn FnMut(Value<'e, 'i>) -> Result<(), crate::ConsumeError<E>>,
     complete: bool,

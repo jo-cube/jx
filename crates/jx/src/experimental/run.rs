@@ -10,7 +10,7 @@ pub(super) struct Activation<'a, 'e, 'i, 't> {
     pub wrapped: bool,
     pub calls: call::Depth,
     pub args: &'a [Cell<'e, 'i>],
-    pub outer: &'a [Cell<'e, 'i>],
+    pub outer: frame::Registers<'a, 'e, 'i>,
     pub scope: Option<&'a crate::runtime::Scope<'e, 'i>>,
 }
 impl Program {
@@ -65,7 +65,7 @@ impl Program {
         let mut scopes = call::Scopes::new(scope);
         let controlled = scope.filter(|s| s.controlled());
         let reads = input.reads(self);
-        frame.reset(self.registers);
+        frame.configure(&self.storage);
         let mut pc = 0;
         while pc < self.code.len() {
             if stop == Some(pc) {
@@ -425,7 +425,7 @@ impl Program {
                     region,
                     pairs,
                     Activation {
-                        outer: frame,
+                        outer: frame.view(),
                         scope: scopes.current.as_ref(),
                         ..activation
                     },
@@ -434,11 +434,11 @@ impl Program {
                 Operation::Group(..) | Operation::Order(..) => grouping::execute(
                     &instruction.kind,
                     Activation {
-                        outer: frame,
+                        outer: frame.view(),
                         scope: scopes.current.as_ref(),
                         ..activation
                     },
-                    frame,
+                    frame.view(),
                     offset,
                 )?,
                 Operation::Correlate(_)
@@ -456,7 +456,7 @@ impl Program {
                         focus,
                         wrapped,
                         args: &[],
-                        outer: frame,
+                        outer: frame.view(),
                         calls,
                         scope: scopes.current.as_ref(),
                     },

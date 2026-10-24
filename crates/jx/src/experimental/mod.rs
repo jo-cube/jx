@@ -20,6 +20,7 @@ mod lower;
 mod migration_tests;
 mod navigation;
 mod optimize;
+mod registers;
 mod rows;
 mod run;
 mod scalar;
@@ -61,6 +62,7 @@ pub struct Program {
     row_reads: Box<[Option<bindings::Binding>]>,
     key: Arc<()>,
     scalar: Option<scalar::Layout>,
+    storage: registers::Layout,
     delivery: consume::Delivery,
     argument_mask: u8,
     atomic_loads: Box<[bool]>,
@@ -256,7 +258,7 @@ impl Program {
                 focus: &focus,
                 wrapped: true,
                 args: &[],
-                outer: &[],
+                outer: Default::default(),
                 calls: Default::default(),
                 scope: scope.as_ref(),
             },

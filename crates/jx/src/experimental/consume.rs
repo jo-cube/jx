@@ -71,7 +71,7 @@ impl Program {
                 focus: &focus,
                 wrapped: true,
                 args: &[],
-                outer: &[],
+                outer: Default::default(),
                 calls: Default::default(),
                 scope: scope.as_ref(),
             },
@@ -98,7 +98,7 @@ impl Program {
                     focus: &focus,
                     wrapped: true,
                     args: &[],
-                    outer: &[],
+                    outer: Default::default(),
                     calls: Default::default(),
                     scope: scope.as_ref(),
                 },
@@ -154,7 +154,7 @@ impl Program {
                 call::Exit::Stop(pc, scopes) => {
                     let i = &self.code[pc];
                     let a = Activation {
-                        outer: frame,
+                        outer: frame.view(),
                         scope: scopes.current.as_ref(),
                         ..a
                     };
@@ -185,7 +185,7 @@ impl Program {
                                 ConsumeError::Evaluation(e) => Halt::Evaluation(e),
                                 ConsumeError::Consumer(e) => e,
                             }),
-                        _ => navigation::walk(&i.kind, a, frame, i.offset, out, true),
+                        _ => navigation::walk(&i.kind, a, frame.view(), i.offset, out, true),
                     };
                     return emit(View::Boundary(&walk));
                 }
@@ -237,7 +237,7 @@ impl Program {
                     let mut pending = None;
                     path.walk(
                         Activation {
-                            outer: &frame,
+                            outer: frame.view(),
                             scope: scopes.current.as_ref(),
                             ..a
                         },
@@ -274,11 +274,11 @@ impl Program {
                 | Operation::Traverse(_) => navigation::consume(
                     &instruction.kind,
                     Activation {
-                        outer: &frame,
+                        outer: frame.view(),
                         scope: scopes.current.as_ref(),
                         ..a
                     },
-                    &frame,
+                    frame.view(),
                     instruction.offset,
                     output,
                     mode == Consumption::Complete,
@@ -357,7 +357,7 @@ impl<'e, 'i> Deferred<'e, 'i> {
                 focus: &focus,
                 wrapped: true,
                 args: &[],
-                outer: &[],
+                outer: Default::default(),
                 calls: Default::default(),
                 scope: self.scope.as_ref(),
             },
