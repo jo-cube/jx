@@ -20,6 +20,7 @@ mod lower;
 mod migration_tests;
 mod navigation;
 mod optimize;
+mod region;
 mod registers;
 mod rows;
 mod run;

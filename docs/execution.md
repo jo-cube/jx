@@ -9,8 +9,8 @@ compilation; unsupported semantics never cause a tree retry.
 `CompileOptions::compile_program` shares parsing, provenance, binding analysis and
 constant preparation, then lowers an owned register program. Constant preparation
 can still evaluate AST nodes during compilation. It is not a runtime fallback.
-Unsupported instructions fail compilation; some admitted expressions still reject
-valid input shapes. Both boundaries prevent default adoption.
+Unsupported instructions fail compilation. Inherited host/coercion boundaries remain
+explicit runtime errors; admission alone does not establish API compatibility.
 
 Programs are immutable, cloneable and `Send + Sync`. Clones copy code/operand arrays
 and share immutable constants, schemas and acquisition tokens. Evaluation state is
@@ -257,6 +257,22 @@ and general activations use the same allocation analysis. Inline frames spill
 dynamically without changing admission; no register-count threshold selects another
 evaluator. Backedges would require CFG liveness before reusing their storage.
 
+Complete, uncontrolled consumption can use a fused source/filter/map region when
+its IR bodies fit the scalar kernel, its single predicate is Boolean-like, and its
+mapper cannot produce an array. A derived row program shares field reads, scalar
+work and acquisition across the predicate and mapper. It has a fresh acquisition
+identity and reuses the common instruction, slot and checked-value machinery.
+The region stores a locator for its original source and retains only the fused row
+code. It does not recognize expression text or an aggregate builtin.
+
+Array/undefined candidates whose cardinality is ambiguous remain borrowed until
+that boundary is resolved. Predicate failures precede deferred mapper failures,
+which precede downstream failures. Cancellable/controlled delivery, array root
+focus, retained scopes, captured arguments, multiple predicates and incompatible
+bodies use their existing semantic operations. Strategy selection happens before
+language execution; no guard retries completed expressions. This bounded physical
+strategy does not yet fuse general callbacks or replace all sequence operations.
+
 Root/row captures, owned indexed aliases and raw navigation are input strategies.
 Failed read guards navigate the same value once. Separate origin analyses,
 `Fold`/`Reduce`, and immediate `Each` versus generic higher-order value kernels remain
@@ -286,3 +302,55 @@ checks assert admitted outcomes in raw, validated and prepared value modes again
 legacy and upstream expectations. Optional JS differential tests also check complete
 byte output. See the [decision and measurements](../benchmarks/execution/README.md)
 and [reproduction](../benchmarks/execution/reproduce.md).
+
+## Default migration boundary
+
+The common IR is ready for a facade migration, but that migration is not implemented.
+The following contracts must be preserved before changing the default:
+
+| Contract | Current foundation | Remaining work |
+| --- | --- | --- |
+| Compilation and cloning | Semantic parsing, immutable programs, shared constants/schemas, independent execution state | Route `compile` / `CompileOptions::compile` through IR; preserve error phase/source/offset and explicit unsupported outcomes |
+| Byte, validated and absent input | Full validation first; raw and settings-aware entry points; missing distinct from null | Route all `Expression` methods consistently, including random/settings paths |
+| Shared prepared input | `Acquisition` unions arbitrary program demands; results outlive its span buffers | Replace the legacy `InputPlan` / `PreparedInput` internals without changing indexed evaluation or result lifetimes; choose worker-owned span storage explicitly |
+| Bindings and host calls | Shared immutable data, declared runtime bindings, external focus, host reentry, lexical arenas | Run the public embedding contract suite through the migrated facade, including mixed host/dynamic calls |
+| Delivery and controls | Borrowed/deferred results, eager barriers, immediate consumer stop, complete-output rollback, cooperative limits | Preserve public eager/deferred error timing and prefixes; instruction work charges are not AST counts |
+| Native feature | Default native adapter still compiles legacy bounded plans | Choose an explicit `enable_native` contract for IR programs; native acceleration is not required for interpreter correctness or adoption |
+
+A facade must preserve demanded acquisition. `Program::evaluate_bytes` and
+`evaluate_validated` are scan controls, not substitutes for prepared execution:
+wide projections can repeatedly navigate the same raw object. Store immutable
+acquisition metadata with compiled code and make per-evaluation span ownership
+explicit. Rebuilding schemas per record or routing every `Expression` call directly
+to the raw entry point would discard the worker gains. The existing immutable
+`InputPlan::prepare(&self)` contract also differs from reusable
+`Acquisition::prepare(&mut self)` storage; resolve this at the facade boundary.
+
+The pinned admission inventory covers every legacy-success outcome. The remaining
+41 non-admitted cases are compilation errors in both inventories, not missing
+successful language features. Generated checks distinguish immutable-transform alias
+snapshots, upstream empty-tuple grouping exceptions and inherited regex coercion
+rejections. Those existing boundaries are documented in `compatibility.md`; they
+are not new IR regressions and do not require recreating JavaScript mutability.
+
+General callbacks, lexical sequence values, sort/group and escaping closures can
+retain evaluated values. Their general path is correct on the retained conformance
+and embedding suites; scalar-only physical fusion is an optimization coverage
+boundary. Materialization required for replay, identity, lexical lifetime or effect
+ordering must remain. Avoidable callback result graphs and per-invocation dynamic
+compilation are follow-up efficiency work, not reasons to retain a second evaluator.
+
+After facade, CLI and shared-input parity, retire the legacy bounded `plan` family,
+`acquire::Region` / `Acquired`, `function::acquire`, and their guard/retry routing.
+Replace `InputPlan` storage with shared acquisition. Retire AST-backed callable and
+stream adapters only after their reference callers and compile-time uses are gone.
+`compile::prepare` still uses AST constant evaluation; removing the complete tree
+implementation requires replacing that dependency as a separate step.
+
+Retain the parser, semantic provenance/binding preparation, validator/scanner,
+borrowed public values, lookup and scalar kernels, lexical arena, controls,
+signature/callback ABI, sequence/cardinality, tuple/group/order and transform kernels.
+Files containing both shared kernels and AST adapters cannot be deleted wholesale.
+The legacy native adapter may retire with bounded plans; preserve the auditable
+`jx-native` executable boundary only if an IR-native backend is later justified.
+No native parity project or additional execution framework is a migration prerequisite.

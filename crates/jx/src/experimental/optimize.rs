@@ -454,41 +454,48 @@ pub(super) fn row_dataflow(p: &mut Program) {
         {
             continue;
         }
-        let predicate = predicate.take().unwrap();
-        let shift = predicate.registers;
-        let mut code = predicate.code.into_vec();
-        code.push(Instruction {
-            out: shift + body.registers,
-            kind: Operation::Accept(predicate.result),
-            offset: instruction.offset,
-        });
-        let mut ids = vec![usize::MAX; body.registers];
-        for mut i in std::mem::take(&mut body.code).into_vec() {
-            remap(&mut i.kind, &|r| ids[r]);
-            let equivalent = code.iter().find(|before| match (&before.kind, &i.kind) {
-                (Operation::Focus, Operation::Focus) | (Operation::Root, Operation::Root) => true,
-                (Operation::Outer(a, _), Operation::Outer(b, _)) => a == b,
-                (Operation::Field(a, x, c, m), Operation::Field(b, y, d, n)) => {
-                    a == b && x.fields == y.fields && c == d && m == n
-                }
-                _ => super::lower::same(&before.kind, &i.kind),
-            });
-            if let Some(before) = equivalent {
-                ids[i.out] = before.out;
-            } else {
-                let original = i.out;
-                i.out += shift;
-                ids[original] = i.out;
-                code.push(i);
-            }
-        }
-        body.result = ids[body.result];
-        body.registers += shift + 1;
-        body.code = code.into();
-        // Compact away inputs shared across stages; replan acquisition and the
-        // physical register layout over this single semantic program.
-        compact(body);
+        compose_row(body, *predicate.take().unwrap(), instruction.offset);
     }
+}
+
+// Both physical iteration regions and direct folds use this same IR composition.
+pub(super) fn compose_row(body: &mut Program, predicate: Program, offset: usize) {
+    // A derived program has new logical IDs; it cannot use a source program's
+    // root binding table when no acquired row is active.
+    body.key = Arc::new(());
+    let shift = predicate.registers;
+    let mut code = predicate.code.into_vec();
+    code.push(Instruction {
+        out: shift + body.registers,
+        kind: Operation::Accept(predicate.result),
+        offset,
+    });
+    let mut ids = vec![usize::MAX; body.registers];
+    for mut i in std::mem::take(&mut body.code).into_vec() {
+        remap(&mut i.kind, &|r| ids[r]);
+        let equivalent = code.iter().find(|before| match (&before.kind, &i.kind) {
+            (Operation::Focus, Operation::Focus) | (Operation::Root, Operation::Root) => true,
+            (Operation::Outer(a, _), Operation::Outer(b, _)) => a == b,
+            (Operation::Field(a, x, c, m), Operation::Field(b, y, d, n)) => {
+                a == b && x.fields == y.fields && c == d && m == n
+            }
+            _ => super::lower::same(&before.kind, &i.kind),
+        });
+        if let Some(before) = equivalent {
+            ids[i.out] = before.out;
+        } else {
+            let original = i.out;
+            i.out += shift;
+            ids[original] = i.out;
+            code.push(i);
+        }
+    }
+    body.result = ids[body.result];
+    body.registers += shift + 1;
+    body.code = code.into();
+    // Compact away inputs shared across stages; replan acquisition and the
+    // physical register layout over this single semantic program.
+    compact(body);
 }
 
 // Static explicit-base navigation composes with its defining field path. The

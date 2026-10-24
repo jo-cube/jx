@@ -49,11 +49,16 @@ pub(super) fn context_body(node: &Node) -> Result<Program, Unsupported> {
 }
 // All semantic rewriting and capture remapping precedes physical preparation.
 // Parent rewrites may move/merge children; their executable metadata is built once.
-fn prepare(p: &mut Program) {
+pub(super) fn prepare(p: &mut Program) {
     for i in &mut p.code {
         i.kind.children_mut(&mut prepare);
     }
     acquisition::plan_rows(p);
+    for i in &mut p.code {
+        if let Operation::Navigate(n) = i.kind.producer_mut() {
+            n.region = region::plan(n);
+        }
+    }
     p.storage = registers::layout(p);
     p.scalar = scalar::layout(p);
     p.atomic_loads = optimize::load_transfers(p, p.scalar.as_ref().and_then(|s| s.gate));
@@ -886,6 +891,7 @@ impl<'e> Lower<'e> {
                     self.invalidate();
                 }
                 Operation::Navigate(Box::new(navigation::Navigation {
+                    region: None,
                     steps: compiled.into(),
                     array_focus: *focus,
                     variable,

@@ -46,15 +46,17 @@ requested bytes and incremental requested peak live heap. Input, code, schemas,
 lookup storage, stack and existing output capacity are excluded. This is not RSS.
 Samples use two reversed process orders; spread is not a confidence interval.
 
-Wide projections and shared acquisition are the strongest measured areas. Compact
-numeric folds and generic sequence stages can trail legacy substantially. Eager
-cardinality barriers remain explicit even when fusing them would improve timings. Dynamic
+Wide projections and shared acquisition are the strongest measured areas. Complete
+scalar filter/map regions also share row acquisition and execution; grouped folds
+can approach legacy throughput. Compact numeric folds and generic callbacks can
+still trail legacy. Eager cardinality barriers remain explicit even when fusing
+them would improve timings. Dynamic
 calls, conservative scope promotion and aliases retain acquisition/materialization
 cliffs. Constructors add compilation cost; grouping/order retain candidates. Warm
 state and link layout can materially affect rates. Preserve raw samples and binary
 identities; investigate broad regressions before default adoption.
 
-Semantic convergence and migration remain necessary. No legacy subsystem can yet
-be retired wholesale. Historical reports, profiles, trial variants and raw evidence
+Public facade migration and compatibility validation remain necessary. No legacy
+subsystem can yet be retired wholesale. Historical reports, profiles, trial variants and raw evidence
 bundles are review artifacts, not build/CI inputs. New measurements belong under
 ignored `target/` or external review storage.

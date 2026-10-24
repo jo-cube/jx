@@ -823,6 +823,12 @@ fn plan_context(region: &mut super::context::Region) {
     }
     install(region, &schemas);
 }
+pub(super) fn plan_row(body: &mut Program, focus: bool, argument: bool) {
+    let mut paths = Vec::new();
+    collect(body, false, focus, argument, &mut paths);
+    body.row_schema = Arc::new(Schema::build(paths));
+    super::bindings::bind_rows(body, false, focus, argument);
+}
 pub(super) fn plan_rows(p: &mut Program) {
     for i in &mut p.code {
         if let Operation::Correlate(region) | Operation::CorrelatedGroup(region, _) =
@@ -837,43 +843,13 @@ pub(super) fn plan_rows(p: &mut Program) {
             | Operation::Order(..)
             | Operation::Navigate(_)
             | Operation::Select(..) => {
-                i.kind.children_mut(&mut |body| {
-                    let mut paths = Vec::new();
-                    collect(body, false, true, false, &mut paths);
-                    body.row_schema = Arc::new(Schema::build(paths));
-                    super::bindings::bind_rows(body, false, true, false);
-                });
+                i.kind.children_mut(&mut |body| plan_row(body, true, false));
             }
             Operation::Path(path) => {
-                if path.eager || path.preflight || path.positional {
-                    let mut body_paths = Vec::new();
-                    collect(&path.body, false, true, true, &mut body_paths);
-                    for p in &mut path.predicates {
-                        let mut paths = Vec::new();
-                        collect(p, false, true, false, &mut paths);
-                        p.row_schema = Arc::new(Schema::build(paths));
-                        super::bindings::bind_rows(p, false, true, false);
-                    }
-                    path.body.row_schema = Arc::new(Schema::build(body_paths));
-                } else {
-                    let mut paths = Vec::new();
-                    collect(&path.body, false, true, true, &mut paths);
-                    for p in &path.predicates {
-                        collect(p, false, true, false, &mut paths);
-                    }
-                    path.body.row_schema = Arc::new(Schema::build(paths));
-                    for p in &mut path.predicates {
-                        p.row_schema = Arc::clone(&path.body.row_schema);
-                        super::bindings::bind_rows(p, false, true, false);
-                    }
-                }
-                super::bindings::bind_rows(&mut path.body, false, true, true);
+                plan_selection(path);
             }
             Operation::Each { body, .. } => {
-                let mut paths = Vec::new();
-                collect(body, false, false, true, &mut paths);
-                body.row_schema = Arc::new(Schema::build(paths));
-                super::bindings::bind_rows(body, false, false, true);
+                plan_row(body, false, true);
             }
             Operation::Fold {
                 body,
@@ -896,6 +872,32 @@ pub(super) fn plan_rows(p: &mut Program) {
             _ => {}
         }
     }
+}
+
+pub(super) fn plan_selection(path: &mut super::selection::Selection) {
+    if path.eager || path.preflight || path.positional {
+        let mut body_paths = Vec::new();
+        collect(&path.body, false, true, true, &mut body_paths);
+        for p in &mut path.predicates {
+            let mut paths = Vec::new();
+            collect(p, false, true, false, &mut paths);
+            p.row_schema = Arc::new(Schema::build(paths));
+            super::bindings::bind_rows(p, false, true, false);
+        }
+        path.body.row_schema = Arc::new(Schema::build(body_paths));
+    } else {
+        let mut paths = Vec::new();
+        collect(&path.body, false, true, true, &mut paths);
+        for p in &path.predicates {
+            collect(p, false, true, false, &mut paths);
+        }
+        path.body.row_schema = Arc::new(Schema::build(paths));
+        for p in &mut path.predicates {
+            p.row_schema = Arc::clone(&path.body.row_schema);
+            super::bindings::bind_rows(p, false, true, false);
+        }
+    }
+    super::bindings::bind_rows(&mut path.body, false, true, true);
 }
 
 /// A union of static root paths for any number of compiled transformations.

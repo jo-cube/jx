@@ -25,6 +25,7 @@ pub(super) struct Step {
 }
 #[derive(Clone, Debug)]
 pub(super) struct Navigation {
+    pub region: Option<Box<region::Region>>,
     pub steps: Box<[Step]>,
     pub array_focus: bool,
     pub variable: bool,
@@ -137,6 +138,17 @@ impl Navigation {
         output: &mut Output<'_, 'e, 'i>,
         complete: bool,
     ) -> Walk {
+        // Select a physical strategy before executing any expression. Array
+        // focus and controlled/cancellable evaluation keep their general path;
+        // no expression is replayed after a guard failure.
+        if let Some(region) = &self.region
+            && complete
+            && a.wrapped
+            && a.scope.is_none_or(|s| !s.controlled())
+            && a.focus.value(a.input).is_some_and(|v| !v.is_array())
+        {
+            return region.walk(self, a, output);
+        }
         fn stages<'e, 'i>(
             input: View<'_, 'e, 'i>,
             steps: &'e [Step],
