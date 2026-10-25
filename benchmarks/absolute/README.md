@@ -134,7 +134,7 @@ CPU accounting identity. `compile` creates and drops programs against an already
 prepared immutable binding. Prepared-input bandwidth is logical record bandwidth,
 not bytes necessarily read. Rust prepared numeric controls reduce pre-parsed pairs.
 
-Timing disables allocation instrumentation. Separate 128-operation warmed probes
+Timing disables allocation instrumentation. Separate warmed probes (128 operations, rounded up to a complete worker-trial input cycle)
 count alloc/realloc requests, requested bytes and incremental peak requested live
 heap. Inputs, compiled code, immutable tables, stack, existing output capacity and
 allocator fragmentation are excluded. No live heap may remain after a warmed record.
@@ -192,3 +192,69 @@ wall/CPU throughput; single-worker probes remain the memory reference. The contr
 replay changes only compilation selection, fixture paths, and two native-installation
 assertions to require the documented zero-kernel IR policy. Result, ownership, error,
 effect, control and consumer assertions remain unchanged.
+
+## Shared-program worker trial
+
+`nested-program/SIZE/WIDTH/{direct,eval,eval-focus}` applies the same production-shaped
+projection on sixteen records through direct and immutable nested programs. Validation,
+serialization and output obligations match; the suite's schema-only Rust caveats still
+apply. These cases check dependency propagation across program boundaries.
+
+`ABS_WORKER_TRIAL=1` runs the copied original worker using only public `Expression`
+and `InputPlan` APIs. `ABS_MODE=legacy` or `facade` selects compilation alone. The
+`trial/{500/8,1024/40,16384/40}/direct` cases use three ordered drop predicates, two
+tombstone predicates, a 4,096-entry immutable lookup table, numeric/string conversions
+and projections. `trial/1024/40/eval` wraps the same projection in invariant dynamic
+code. Each 64-record cycle has 18 drops, seven tombstones (one absent input), and
+39 projections. Sizes are the target present-record sizes; report weighted measured
+input/output bandwidth. `trial/{8,128}/{fold,callbacks}` uses alternating present
+arrays of 500-byte rows and absent payloads, with scalar reduction or callback output.
+These distributions differ from the original worker controls and must be labeled.
+
+```sh
+ABS_WORKER_TRIAL=1 ABS_CHECK=1 target/absolute-run/harness/target/release/jx-absolute
+ABS_WORKER_TRIAL=1 ABS_MODE=facade ABS_CASE=trial/1024/40/direct target/absolute-run/harness/target/release/jx-absolute
+ABS_WORKER_TRIAL=1 ABS_MODE=legacy ABS_THREADS=4 ABS_MS=1000 target/absolute-run/harness/target/release/jx-absolute
+```
+
+Before timing, both workers assert identical complete `Execution` outcomes for every
+record. Single-worker probes include input copies, shared validation/acquisition,
+action selection, serialization and output-capacity recycling. Parallel runs share
+one immutable compiled plan, use separate workers/input plans/output buffers, and
+report aggregate process CPU and wall time. Allocation instrumentation is disabled
+for parallel runs; report single-worker allocation probes separately. Workers are
+synchronous and private to the harness. This measures no Kafka broker, pipeline
+scheduler, consumer offset handling, network, or physical I/O.
+
+
+`application/SIZE/REJECT/{direct,eval}` extends the same copied-worker trial with
+nested customer/event attributes, compound lookup keys, independent immutable
+whitelist and blacklist tables, numeric and string conversions, and tombstones.
+Sizes are 500/1,024/16,384 bytes; `REJECT` is the whitelist cutoff 32/128/224 in a
+256-record cycle, **not** the final rejection percentage. Other predicates also
+reject records. Observed drop/tombstone/projection counts are 46/13/197,
+136/8/112 and 227/3/26; tombstones include one absent input. Whitelist sizes are
+3,584/2,048/512, blacklist size 133 and label table size 4,096. Cases use 8 or 40
+numeric output fields plus five metadata fields. The sole Eval form is 1 KiB,
+cutoff 128, with the same projection. These successful-work distributions are
+controlled fixtures, not a production-traffic replay.
+
+```sh
+ABS_WORKER_TRIAL=1 ABS_MODE=facade ABS_CASE=application/1024/128/direct target/absolute-run/harness/target/release/jx-absolute
+ABS_WORKER_TRIAL=1 ABS_MODE=legacy ABS_CASE=application/1024/128/direct ABS_THREADS=4 target/absolute-run/harness/target/release/jx-absolute
+ABS_WORKER_TRIAL=1 ABS_CHECK=1 ABS_EXPORT=target/worker-fixtures target/absolute-run/harness/target/release/jx-absolute
+```
+
+`ABS_EXPORT` writes reviewed input/expression/binding/outcome fixtures to an ignored
+destination. It does not add an engine API. Trial warmup and allocation probes
+cover complete input cycles, so a late first projection cannot be mistaken for a
+retained-value leak or bias allocations toward an early rejection segment.
+
+For source/feature regression isolation, hold the harness, source path, package
+identity, lockfile, compiler flags and input/output contract fixed; rebuild source
+snapshots sequentially and preserve each executable before rebuilding. Verify a
+repeat baseline build and inspect executable sections as well as whole-file hashes.
+A default-only harness and the full experimental harness have different linked
+code and cannot alone identify the source of a small coexistence regression.
+Retain power checks, independent process orders and raw profiles outside the
+intended committed benchmark tree.

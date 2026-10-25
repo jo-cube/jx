@@ -105,6 +105,33 @@ pub fn cases() -> Vec<Case> {
             });
         }
     }
+    // Same transformation and obligations across a separate immutable-code
+    // invocation boundary; acquisition must compose with the caller's template.
+    for (size, width) in [(500, 8), (1024, 40), (16384, 40)] {
+        let direct = project(width, "direct");
+        for (form, source) in [
+            ("direct", direct.clone()),
+            ("eval", format!("$eval({direct:?})")),
+            ("eval-focus", format!("$eval({direct:?},$)")),
+        ] {
+            let name = format!("nested-program/{size}/{width}/{form}");
+            if !wanted(&name) {
+                continue;
+            }
+            cases.push(Case {
+                name,
+                kind: Kind::Project,
+                source,
+                width,
+                rows: 0,
+                keys: (0..width).map(|i| format!("v{i}")).collect(),
+                inputs: (0..16)
+                    .map(|i| Some(record(size, width, i, false)))
+                    .collect(),
+                worker: false,
+            });
+        }
+    }
     for size in [500, 1024, 10240, 1048576] {
         for (name, kind, source) in [
             ("validate", Kind::Validate, "$"),

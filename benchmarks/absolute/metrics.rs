@@ -55,13 +55,21 @@ pub fn cpu() -> f64 {
     );
     t.tv_sec as f64 + t.tv_nsec as f64 * 1e-9
 }
-pub fn measure(
+pub fn measure(name: &str, mode: &str, phase: &str, input: f64, operation: impl FnMut() -> usize) {
+    measure_cycle(name, mode, phase, input, 1, operation)
+}
+// Probe complete deterministic distributions, including late first-output records.
+pub fn measure_cycle(
     name: &str,
     mode: &str,
     phase: &str,
     input: f64,
+    cycle: usize,
     mut operation: impl FnMut() -> usize,
 ) {
+    assert!(cycle > 0);
+    let warm = 64_usize.div_ceil(cycle) * cycle;
+    let probe = 128_usize.div_ceil(cycle) * cycle;
     let ms = std::env::var("ABS_MS")
         .ok()
         .map(|s| s.parse::<u64>().unwrap())
@@ -70,7 +78,7 @@ pub fn measure(
         .ok()
         .map(|s| s.parse::<usize>().unwrap())
         .unwrap_or(5);
-    for _ in 0..64 {
+    for _ in 0..warm {
         black_box(operation());
     }
     // Initialize retained stderr state before establishing the allocation baseline.
@@ -80,11 +88,11 @@ pub fn measure(
     BYTES.store(0, Relaxed);
     PEAK.store(base, Relaxed);
     let mut output = 0;
-    for _ in 0..128 {
+    for _ in 0..probe {
         output += operation();
     }
-    let allocations = CALLS.load(Relaxed) as f64 / 128.;
-    let bytes = BYTES.load(Relaxed) as f64 / 128.;
+    let allocations = CALLS.load(Relaxed) as f64 / probe as f64;
+    let bytes = BYTES.load(Relaxed) as f64 / probe as f64;
     let peak = PEAK.load(Relaxed) - base;
     assert_eq!(LIVE.load(Relaxed), base, "warm residual {name}");
     for sample in 0..samples {
@@ -106,7 +114,7 @@ pub fn measure(
         println!(
             "{name},{mode},{phase},{sample},{n},{wall:.9},{cpu:.9},{input},{},{allocations},{bytes},{peak},{}",
             produced as f64 / n as f64,
-            output as f64 / 128.
+            output as f64 / probe as f64
         );
     }
 }

@@ -12,6 +12,7 @@ mod metrics;
 #[path = "reference/mod.rs"]
 mod reference;
 mod typed;
+mod worker_trial;
 
 fn vars() -> (String, HashMap<String, String>) {
     let labels = (0..4096)
@@ -392,6 +393,10 @@ fn check(case: &Case, options: &jx::CompileOptions, labels: &HashMap<String, Str
     }
 }
 fn main() {
+    if std::env::var_os("ABS_WORKER_TRIAL").is_some() {
+        worker_trial::run();
+        return;
+    }
     let (vars, labels) = vars();
     let options = jx::CompileOptions::default()
         .constant_binding("vars", jx::OwnedValue::from_json(vars.as_bytes()).unwrap());
