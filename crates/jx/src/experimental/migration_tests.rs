@@ -35,7 +35,7 @@ fn joins_preserve_both_acquisition_demands() {
     let a = Acquisition::new([&p]);
     // Root, flag, and two candidate objects. Joined fields belong to a local scope.
     assert_eq!(
-        a.retained_bytes(),
+        a.demand_bytes(),
         4 * std::mem::size_of::<acquisition::Span>()
     );
     for input in [
@@ -407,7 +407,7 @@ fn conditional_acquisition_scales_without_branch_products() {
             .unwrap();
         let a = Acquisition::new([&p]);
         assert_eq!(
-            a.retained_bytes(),
+            a.demand_bytes(),
             4 * std::mem::size_of::<acquisition::Span>()
         );
         assert!(p.instruction_count() < depth * 8 + 10);
@@ -520,7 +520,7 @@ fn alias_diamonds_have_bounded_delivery_and_acquisition_analysis() {
             .unwrap();
         let mut a = Acquisition::new([&p]);
         assert_eq!(
-            a.retained_bytes(),
+            a.demand_bytes(),
             3 * std::mem::size_of::<acquisition::Span>()
         );
         let doc = a.prepare(br#"{"flag":true,"x":7}"#).unwrap();

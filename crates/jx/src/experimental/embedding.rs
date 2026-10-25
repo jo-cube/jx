@@ -1,6 +1,6 @@
 //! Public input/settings adaptation. All executable work stays in the program.
 use super::{
-    run::{Activation, Cell, Input},
+    run::{Activation, Input},
     *,
 };
 use crate::{Error, Evaluation, EvaluationOptions, evaluate::Results};
@@ -10,15 +10,46 @@ impl Program {
         input: Option<&'i [u8]>,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        // Full grammar validation precedes bindings, cancellation and host calls.
-        self.evaluate_validated_with(input.map(crate::validate).transpose()?, options)
+        self.evaluate_with_workspace(input, options, &mut Workspace::default())
     }
     pub fn evaluate_validated_with<'e, 'i>(
         &'e self,
         input: Option<crate::RawJson<'i>>,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        self.evaluate_settings(Input::Raw(input), options)
+        self.evaluate_validated_with_workspace(input, options, &mut Workspace::default())
+    }
+    /// Reuse query-sized offsets; returned values never borrow the workspace.
+    pub fn evaluate_with_workspace<'e, 'i>(
+        &'e self,
+        input: Option<&'i [u8]>,
+        options: EvaluationOptions<'e, 'i>,
+        workspace: &mut Workspace,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        if let (Some(bytes), Some(template)) = (input, self.input_template.as_ref())
+            && template.has_fields()
+        {
+            let document = template.prepare(bytes, workspace)?;
+            self.evaluate_settings(Input::Captured(&document), options)
+        } else {
+            // Validation precedes bindings, cancellation and host calls.
+            self.evaluate_settings(Input::Raw(input.map(crate::validate).transpose()?), options)
+        }
+    }
+    pub fn evaluate_validated_with_workspace<'e, 'i>(
+        &'e self,
+        input: Option<crate::RawJson<'i>>,
+        options: EvaluationOptions<'e, 'i>,
+        workspace: &mut Workspace,
+    ) -> Result<Evaluation<'e, 'i>, Error> {
+        if let (Some(raw), Some(template)) = (input, self.input_template.as_ref())
+            && template.has_fields()
+        {
+            let document = template.prepare_validated(raw, workspace);
+            self.evaluate_settings(Input::Captured(&document), options)
+        } else {
+            self.evaluate_settings(Input::Raw(input), options)
+        }
     }
     pub fn evaluate_prepared_with<'e, 'i>(
         &'e self,
@@ -63,7 +94,9 @@ impl Program {
         } else {
             None
         };
-        let focus = options.focus.map_or(root, Cell::Value);
+        // Explicit focus is value movement too: retain an existing acquired port
+        // only when its raw byte identity matches this input preparation.
+        let focus = options.focus.map_or(root, |v| input.restore(Some(v)));
         let result = if self.deferred_options {
             Results::Execution(Box::new(Deferred::new(self, &input, focus, scope)))
         } else {

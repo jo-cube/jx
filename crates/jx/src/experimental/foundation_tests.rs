@@ -534,7 +534,7 @@ fn chained_callee_joins_keep_bounded_demand_sets() {
         let p = options.compile_program(&source).unwrap();
         let a = Acquisition::new([&p]);
         assert_eq!(
-            a.retained_bytes(),
+            a.demand_bytes(),
             6 * std::mem::size_of::<acquisition::Span>()
         );
         for flag in [true, false] {

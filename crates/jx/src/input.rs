@@ -21,6 +21,8 @@ pub struct InputPlan<'e> {
     expressions: Box<[InputExpression<'e>]>,
     paths: Box<[Path]>,
     demand: Demand,
+    #[cfg(feature = "experimental")]
+    common: Option<crate::execution::InputTemplate>,
 }
 #[derive(Debug)]
 struct InputExpression<'e> {
@@ -32,11 +34,15 @@ struct InputExpression<'e> {
 impl<'e> InputPlan<'e> {
     pub fn new(expressions: impl IntoIterator<Item = &'e Expression>) -> Self {
         let mut paths: Vec<Path> = Vec::new();
-        let expressions = expressions
+        let expressions: Box<[InputExpression<'e>]> = expressions
             .into_iter()
             .map(|expression| {
                 let mut planned = false;
-                let eligible = if expression.runtime {
+                #[cfg(feature = "experimental")]
+                let common = expression.execution.is_some();
+                #[cfg(not(feature = "experimental"))]
+                let common = false;
+                let eligible = if common || expression.runtime {
                     None
                 } else if let Kind::Plan(plan) = &expression.root.kind {
                     planned = true;
@@ -89,7 +95,20 @@ impl<'e> InputPlan<'e> {
         for (slot, path) in paths.iter().enumerate() {
             demand.insert(&path.fields, slot);
         }
+        #[cfg(feature = "experimental")]
+        let common = expressions
+            .iter()
+            .any(|e| e.expression.execution.is_some())
+            .then(|| {
+                crate::execution::InputTemplate::new(
+                    expressions
+                        .iter()
+                        .filter_map(|e| e.expression.execution.as_deref()),
+                )
+            });
         Self {
+            #[cfg(feature = "experimental")]
+            common,
             expressions,
             paths: paths.into_boxed_slice(),
             demand,
@@ -100,12 +119,31 @@ impl<'e> InputPlan<'e> {
     /// Does not evaluate any expression or run its effects.
     pub fn prepare<'p, 'i>(&'p self, input: &'i [u8]) -> Result<PreparedInput<'p, 'e, 'i>, Error> {
         let mut captures = Captures::default();
-        let raw = if self.demand.is_empty() {
+        #[cfg(feature = "experimental")]
+        let mut workspace = crate::execution::Workspace::default();
+        #[cfg(feature = "experimental")]
+        let common_raw = self
+            .common
+            .as_ref()
+            .map(|t| t.prepare(input, &mut workspace).map(|d| (d.raw(), d.text)))
+            .transpose()?;
+        #[cfg(not(feature = "experimental"))]
+        let common_raw: Option<(RawJson<'i>, &str)> = None;
+        let raw = if let Some((raw, _)) = common_raw {
+            if !self.demand.is_empty() {
+                raw.capture(&self.demand, &mut captures);
+            }
+            raw
+        } else if self.demand.is_empty() {
             crate::validate(input)?
         } else {
             crate::json::capture(input, &self.demand, &mut captures)?
         };
         Ok(PreparedInput {
+            #[cfg(feature = "experimental")]
+            text: common_raw.map_or("", |(_, text)| text),
+            #[cfg(feature = "experimental")]
+            workspace,
             plan: self,
             raw,
             captures,
@@ -115,10 +153,20 @@ impl<'e> InputPlan<'e> {
     /// Capture paths from an already validated value without validating it again.
     pub fn prepare_validated<'p, 'i>(&'p self, raw: RawJson<'i>) -> PreparedInput<'p, 'e, 'i> {
         let mut captures = Captures::default();
+        #[cfg(feature = "experimental")]
+        let mut workspace = crate::execution::Workspace::default();
+        #[cfg(feature = "experimental")]
+        if let Some(t) = &self.common {
+            t.prepare_validated(raw, &mut workspace);
+        }
         if !self.demand.is_empty() {
             raw.capture(&self.demand, &mut captures);
         }
         PreparedInput {
+            #[cfg(feature = "experimental")]
+            text: raw.as_str(),
+            #[cfg(feature = "experimental")]
+            workspace,
             plan: self,
             raw,
             captures,
@@ -129,6 +177,11 @@ impl<'e> InputPlan<'e> {
 /// Borrowed input and bounded captures; no lexical state or evaluated results.
 /// Results borrow the original input and expressions, never this capture frame.
 pub struct PreparedInput<'p, 'e, 'i> {
+    // Capture offsets refer to this text base, not the trimmed root's start.
+    #[cfg(feature = "experimental")]
+    text: &'i str,
+    #[cfg(feature = "experimental")]
+    workspace: crate::execution::Workspace,
     plan: &'p InputPlan<'e>,
     raw: RawJson<'i>,
     captures: Captures<'i>,
@@ -148,6 +201,11 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
     pub fn evaluate(&self, index: usize) -> Result<Evaluation<'e, 'i>, Error> {
         let entry = &self.plan.expressions[index];
         let expression = entry.expression;
+        #[cfg(feature = "experimental")]
+        if let Some(p) = &expression.execution {
+            let template = self.plan.common.as_ref().expect("IR input template");
+            return p.evaluate(&template.document(self.text, &self.workspace));
+        }
         let mask = entry.mask;
         if mask != 0 && self.raw.as_bytes()[0] != b'[' && !self.captures.has_deferred(mask) {
             if !entry.plan_slots.is_empty() {
@@ -184,6 +242,12 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
         index: usize,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
+        #[cfg(feature = "experimental")]
+        if let Some(p) = &self.plan.expressions[index].expression.execution {
+            let template = self.plan.common.as_ref().expect("IR input template");
+            return p
+                .evaluate_prepared_with(&template.document(self.text, &self.workspace), options);
+        }
         if options.bindings.is_empty()
             && options.focus.is_none()
             && options.limits.is_none()

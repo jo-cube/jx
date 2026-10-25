@@ -92,6 +92,7 @@ impl<'e> Lower<'e> {
             code: self.code.into(),
             result,
             registers: self.registers,
+            input_template: None,
             row_schema: Arc::new(acquisition::Schema::default()),
             row_reads: Box::new([]),
             key: Arc::new(()),
@@ -439,6 +440,12 @@ impl<'e> Lower<'e> {
             Kind::Path(path) => {
                 // '$' is current focus; '$$' is represented by a lexical variable.
                 let reg = self.focus(false, offset);
+                if path.rooted && !path.fields.is_empty() {
+                    return Ok(self.emit(
+                        Operation::Field(reg, Box::new(path.clone()), true, FieldMode::Value),
+                        offset,
+                    ));
+                }
                 return Ok(self.field(reg, &path.fields, true, offset));
             }
             Kind::Variable(name)
@@ -632,6 +639,18 @@ impl<'e> Lower<'e> {
                 }))
             }
             Kind::Regex(pattern) => Operation::Matcher(pattern.clone()),
+            Kind::Formatted(call) if tail && call.function.contextual(call.args.len()) => {
+                let target = self.emit(
+                    Operation::FunctionReference(Builtin::Library(call.function)),
+                    offset,
+                );
+                let args = call
+                    .args
+                    .iter()
+                    .map(|n| self.node(n))
+                    .collect::<Result<_, _>>()?;
+                Operation::Invoke(target, args, true, true)
+            }
             Kind::Formatted(call) => {
                 let regs = call
                     .args
@@ -764,6 +783,35 @@ impl<'e> Lower<'e> {
                 let force = matches!(&source(child).kind, Kind::Route(..) | Kind::Tuples(..))
                     || (*path && path_value(child));
                 let reg = self.node(child)?;
+                // An eager copy does not own cardinality. Preserve the native
+                // producer's candidates before its normalization, even when the
+                // child required an administrative materialization instruction.
+                let mut producer = reg;
+                if force || matches!(child.kind, Kind::Filter(..)) {
+                    while let Some(Instruction {
+                        kind: Operation::Materialize(source),
+                        ..
+                    }) = self.code.iter().rev().find(|i| i.out == producer)
+                    {
+                        producer = *source;
+                    }
+                }
+                if (force || matches!(child.kind, Kind::Filter(..)))
+                    && let Some(i) = self.code.iter_mut().rev().find(|i| i.out == producer)
+                    && matches!(
+                        i.kind,
+                        Operation::Navigate(_)
+                            | Operation::Correlate(_)
+                            | Operation::Select(..)
+                            | Operation::Path(_)
+                            | Operation::Traverse(_)
+                            | Operation::Range(..)
+                    )
+                {
+                    let producer =
+                        std::mem::replace(&mut i.kind, Operation::Literal(Literal::Missing));
+                    i.kind = Operation::Collect(Box::new(producer));
+                }
                 // Postfix retention consumes a native call result before ordinary
                 // call normalization; parentheses already crossed that boundary.
                 if matches!(
@@ -787,6 +835,16 @@ impl<'e> Lower<'e> {
                     regs.push((self.node(n)?, n.is_array_constructor()));
                 }
                 Operation::Array(regs.into(), *preserve)
+            }
+            Kind::Builtin(builtin, args)
+                if tail && node.tail_call && builtin.contextual(args.len()) =>
+            {
+                let target = self.emit(Operation::FunctionReference(*builtin), offset);
+                let args = args
+                    .iter()
+                    .map(|n| self.node(n))
+                    .collect::<Result<_, _>>()?;
+                Operation::Invoke(target, args, true, true)
             }
             Kind::Builtin(Builtin::Aggregate(aggregate), args) if args.len() == 1 => {
                 let reg = self.node(&args[0])?;
@@ -961,29 +1019,25 @@ impl<'e> Lower<'e> {
         no: &'e Node,
         tail: bool,
     ) -> Result<usize, Unsupported> {
-        let (condition, value) = if op == Op::Coalesce {
-            let Kind::Builtin(Builtin::Exists, args) = &source(test).kind else {
-                return Err(unsupported(node, "shadowed coalescing exists"));
+        let yes = if op == Op::Coalesce {
+            let args = match &source(test).kind {
+                Kind::Builtin(Builtin::Exists, args) | Kind::Call(_, args) => args,
+                _ => return Err(unsupported(node, "coalescing test must be a call")),
             };
             let [value] = args.as_ref() else {
                 return Err(unsupported(node, "coalescing arity"));
             };
-            let value = self.node(value)?;
-            (
-                self.emit(
-                    Operation::Builtin(Builtin::Exists, vec![value].into(), false),
-                    node.offset,
-                ),
-                value,
-            )
+            value
         } else {
-            let value = self.node(test)?;
-            (value, value)
+            test
         };
+        let condition = self.node(test)?;
+        // Both operators re-evaluate their selected primary. Common pure CSE is
+        // still legal, while effects and shadowable $exists retain normal calls.
         self.branch(
             condition,
             node.offset,
-            |_| Ok(value),
+            |lower| lower.node_in(yes, tail),
             |lower| lower.node_in(no, tail),
         )
     }

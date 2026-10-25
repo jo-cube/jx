@@ -429,10 +429,15 @@ impl<'i> Input<'_, 'i, '_> {
                     index,
                 )?;
             } else {
-                // Candidate streams can contain undefined positions. On entry
-                // to a body, reading that focus/argument denotes missing, just
-                // as at an ordinary call or restored borrowed-value boundary.
-                emit(self, self.restore(Some(value)), index)?;
+                // Preserve native candidate positions until the consumer
+                // normalizes them. Reading focus/arguments still uses Cell::read,
+                // which denotes missing for an undefined candidate.
+                let item = if matches!(value, Value::Undefined) {
+                    Cell::Value(value)
+                } else {
+                    self.restore(Some(value))
+                };
+                emit(self, item, index)?;
             }
         }
         Ok(())

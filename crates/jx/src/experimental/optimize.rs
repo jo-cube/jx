@@ -164,7 +164,9 @@ pub(super) fn run(p: &mut Program) {
 
 pub(super) fn operands(op: &Operation, emit: &mut impl FnMut(usize)) {
     match op {
-        Operation::Reduce(_, producer, _) => return operands(producer, emit),
+        Operation::Reduce(_, producer, _) | Operation::Collect(producer) => {
+            return operands(producer, emit);
+        }
         Operation::Field(r, ..)
         | Operation::Copy(r)
         | Operation::Acquire(r, _)
@@ -319,7 +321,9 @@ fn compact(p: &mut Program) {
 }
 fn remap(op: &mut Operation, id: &impl Fn(usize) -> usize) {
     match op {
-        Operation::Reduce(_, producer, _) => return remap(producer, id),
+        Operation::Reduce(_, producer, _) | Operation::Collect(producer) => {
+            return remap(producer, id);
+        }
         Operation::Field(r, ..)
         | Operation::Copy(r)
         | Operation::Acquire(r, _)
@@ -477,7 +481,7 @@ pub(super) fn compose_row(body: &mut Program, predicate: Program, offset: usize)
             (Operation::Focus, Operation::Focus) | (Operation::Root, Operation::Root) => true,
             (Operation::Outer(a, _), Operation::Outer(b, _)) => a == b,
             (Operation::Field(a, x, c, m), Operation::Field(b, y, d, n)) => {
-                a == b && x.fields == y.fields && c == d && m == n
+                a == b && x.fields == y.fields && x.rooted == y.rooted && c == d && m == n
             }
             _ => super::lower::same(&before.kind, &i.kind),
         });

@@ -334,6 +334,9 @@ impl Program {
                         wrapped,
                         scope: scopes.current.clone(),
                     };
+                    if let Some(scope) = controlled {
+                        scope.arguments(values.as_slice(), offset)?;
+                    }
                     let value = builtin.values(values.as_slice(), &context, offset)?;
                     load(if *native {
                         Cell::from_native_operand(value)?
@@ -441,7 +444,8 @@ impl Program {
                     frame.view(),
                     offset,
                 )?,
-                Operation::Correlate(_)
+                Operation::Collect(_)
+                | Operation::Correlate(_)
                 | Operation::Navigate(_)
                 | Operation::Select(..)
                 | Operation::Range(..)

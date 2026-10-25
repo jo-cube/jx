@@ -8,6 +8,7 @@ mod consume;
 mod context;
 pub(crate) use consume::Deferred;
 mod embedding;
+mod facade;
 mod facts;
 #[cfg(test)]
 mod foundation_tests;
@@ -36,7 +37,7 @@ use crate::{
     constant::{Data, Storage},
     expression::{Aggregate, Op},
 };
-pub use acquisition::{Acquisition, Prepared};
+pub use acquisition::{Acquisition, InputTemplate, Prepared, Workspace};
 pub use input::BorrowedInput;
 use std::{fmt, sync::Arc};
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -59,6 +60,7 @@ pub struct Program {
     code: Box<[Instruction]>,
     result: usize,
     pub(crate) registers: usize,
+    input_template: Option<Arc<InputTemplate>>,
     row_schema: Arc<acquisition::Schema>,
     row_reads: Box<[Option<bindings::Binding>]>,
     key: Arc<()>,
@@ -104,6 +106,8 @@ enum Operation {
     Partial(usize, Box<[Option<usize>]>),
     Chain(usize, usize, bool),
     Keep(usize, bool),
+    // Preserve native candidates before missing/singleton normalization.
+    Collect(Box<Operation>),
     Root,
     Argument(usize),
     Outer(usize, u16),
@@ -183,6 +187,7 @@ impl Program {
         )?;
         program.constants = expression.constants.clone();
         program.bindings = expression.bindings.clone();
+        program.input_template = Some(Arc::new(InputTemplate::new([&program])));
         Ok(program)
     }
     pub(crate) fn compile_dynamic(expression: &Expression) -> Result<Self, crate::Error> {
@@ -211,12 +216,12 @@ impl Program {
     pub fn evaluate_without_input(&self) -> Result<crate::Evaluation<'_, '_>, crate::Error> {
         self.evaluate_validated_with(None, Default::default())
     }
-    /// Equal-validation control without constructing capture spans.
+    /// Validate and acquire the program's demands before evaluation.
     pub fn evaluate_bytes<'e, 'i>(
         &'e self,
         input: &'i [u8],
     ) -> Result<crate::Evaluation<'e, 'i>, crate::Error> {
-        self.evaluate_input(run::Input::Raw(Some(crate::validate(input)?)))
+        self.evaluate_with(Some(input), Default::default())
     }
     /// Evaluate against a document already validated and acquired for this or
     /// other programs. Values borrow input/program storage, never capture buffers.
@@ -226,12 +231,25 @@ impl Program {
     ) -> Result<crate::Evaluation<'e, 'i>, crate::Error> {
         self.evaluate_input(run::Input::Captured(document))
     }
-    /// Already-validated scan control; no repeated grammar validation.
+    /// Acquire already validated input without repeating grammar validation.
     pub fn evaluate_validated<'e, 'i>(
         &'e self,
         input: crate::RawJson<'i>,
     ) -> Result<crate::Evaluation<'e, 'i>, crate::Error> {
+        self.evaluate_validated_with(Some(input), Default::default())
+    }
+    /// Diagnostic scan control. Normal entry points automatically acquire demands.
+    pub fn evaluate_scan<'e, 'i>(
+        &'e self,
+        input: crate::RawJson<'i>,
+    ) -> Result<crate::Evaluation<'e, 'i>, crate::Error> {
         self.evaluate_input(run::Input::Raw(Some(input)))
+    }
+    /// Immutable acquisition metadata for sharing preparation across evaluations.
+    pub fn input_template(&self) -> &InputTemplate {
+        self.input_template
+            .as_ref()
+            .expect("public compiled program")
     }
     fn evaluate_input<'e, 'i>(
         &'e self,
@@ -274,7 +292,7 @@ impl Program {
 impl Operation {
     fn children(&self, visit: &mut impl FnMut(&Program)) {
         match self {
-            Self::Reduce(_, p, _) => p.children(visit),
+            Self::Reduce(_, p, _) | Self::Collect(p) => p.children(visit),
             Self::Correlate(p) => p.children(visit),
             Self::CorrelatedGroup(p, pairs) => {
                 p.children(visit);
@@ -336,7 +354,7 @@ impl Operation {
     }
     fn children_mut(&mut self, visit: &mut impl FnMut(&mut Program)) {
         match self {
-            Self::Reduce(_, p, _) => p.children_mut(visit),
+            Self::Reduce(_, p, _) | Self::Collect(p) => p.children_mut(visit),
             Self::Correlate(p) => p.children_mut(visit),
             Self::CorrelatedGroup(p, pairs) => {
                 p.children_mut(visit);
@@ -398,13 +416,13 @@ impl Operation {
     }
     fn producer(&self) -> &Self {
         match self {
-            Self::Reduce(_, producer, _) => producer,
+            Self::Reduce(_, producer, _) | Self::Collect(producer) => producer,
             _ => self,
         }
     }
     fn producer_mut(&mut self) -> &mut Self {
         match self {
-            Self::Reduce(_, producer, _) => producer,
+            Self::Reduce(_, producer, _) | Self::Collect(producer) => producer,
             _ => self,
         }
     }

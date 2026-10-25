@@ -71,6 +71,8 @@ pub use value::{OwnedString, Value};
 /// Immutable compiled expression; share across callers with independent inputs.
 #[derive(Clone, Debug)]
 pub struct Expression {
+    #[cfg(feature = "experimental")]
+    execution: Option<std::sync::Arc<execution::Program>>,
     root: expression::Node,
     runtime: bool,
     acquisition: Option<json::Demand>,
@@ -81,6 +83,12 @@ pub struct Expression {
 
 pub fn compile(source: &str) -> Result<Expression, Error> {
     parse::expression(source).map_err(Error::compilation)
+}
+
+/// Opt in to the common-IR facade. The default [`compile`] remains legacy.
+#[cfg(feature = "experimental")]
+pub fn compile_execution(source: &str) -> Result<Expression, Error> {
+    CompileOptions::default().compile_execution(source)
 }
 
 /// Newly installed native kernels and failures; unsupported plans are left unchanged.
@@ -95,8 +103,14 @@ pub struct NativeStats {
 impl Expression {
     /// Compile eligible primitive plan regions with the host's native backend.
     /// Unsupported regions and compilation failures keep their existing interpreter.
+    /// An opt-in common-IR expression currently installs zero kernels (and reports
+    /// zero failures); it continues interpreting the same immutable program.
     /// Call once before sharing/cloning; cloned expressions share immutable code.
     pub fn enable_native(&mut self) -> NativeStats {
+        #[cfg(feature = "experimental")]
+        if self.execution.is_some() {
+            return NativeStats::default();
+        }
         plan::native_prepare(&mut self.root)
     }
 }
@@ -109,6 +123,16 @@ impl Expression {
         input: &'i [u8],
         random: &Random,
     ) -> Result<Evaluation<'e, 'i>, Error> {
+        #[cfg(feature = "experimental")]
+        if let Some(p) = &self.execution {
+            return p.evaluate_with(
+                Some(input),
+                EvaluationOptions {
+                    random: Some(random.clone()),
+                    ..Default::default()
+                },
+            );
+        }
         if let Some(demand) = &self.acquisition
             && self.constants.is_empty()
         {
@@ -133,6 +157,10 @@ impl Expression {
     /// traversal; scalar operations and lexical retention finish before returning.
     #[inline]
     pub fn evaluate<'e, 'i>(&'e self, input: &'i [u8]) -> Result<Evaluation<'e, 'i>, Error> {
+        #[cfg(feature = "experimental")]
+        if let Some(p) = &self.execution {
+            return p.evaluate_bytes(input);
+        }
         if let Some(region) = &self.region {
             return region.evaluate(&self.root, input);
         }
@@ -192,6 +220,10 @@ impl Expression {
         &'e self,
         input: RawJson<'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
+        #[cfg(feature = "experimental")]
+        if let Some(p) = &self.execution {
+            return p.evaluate_validated(input);
+        }
         if let Some(region) = &self.region {
             return region.evaluate_validated(&self.root, input);
         }

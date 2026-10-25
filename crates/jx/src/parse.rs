@@ -81,6 +81,8 @@ fn parse(
         crate::acquire::Region::prepare(&root)
     };
     Ok(Expression {
+        #[cfg(feature = "experimental")]
+        execution: None,
         root,
         runtime,
         acquisition,

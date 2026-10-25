@@ -24,6 +24,42 @@ pub(super) fn execute<'e, 'i>(
     } = activation;
     let offset = instruction.offset;
     let value = match &instruction.kind {
+        Operation::Collect(producer) => {
+            let mut values = Vec::new();
+            let result = match &**producer {
+                Operation::Path(path) => path
+                    .walk(activation, &frame[path.source], offset, &mut |v| {
+                        values.push(v);
+                        Ok::<_, crate::ConsumeError<std::convert::Infallible>>(())
+                    })
+                    .map_err(|e| match e {
+                        crate::ConsumeError::Evaluation(e) => crate::sequence::Halt::Evaluation(e),
+                        crate::ConsumeError::Consumer(e) => match e {},
+                    }),
+                _ => navigation::walk(
+                    producer,
+                    activation,
+                    frame,
+                    offset,
+                    &mut |v| {
+                        values.push(v);
+                        Ok(())
+                    },
+                    true,
+                ),
+            };
+            result.map_err(|e| match e {
+                crate::sequence::Halt::Evaluation(e) => e,
+                crate::sequence::Halt::Stop => unreachable!("complete retention"),
+            })?;
+            if values.is_empty() {
+                Cell::Missing
+            } else if values.len() == 1 && values[0].is_array() && !values[0].preserves_array() {
+                Cell::Value(values.pop().unwrap())
+            } else {
+                Cell::Value(Value::kept(values))
+            }
+        }
         Operation::Correlate(_)
         | Operation::Navigate(_)
         | Operation::Select(..)
@@ -111,7 +147,12 @@ pub(super) fn execute<'e, 'i>(
         }
         Operation::Reduce(aggregate, producer, producer_offset) => {
             let mut reduction = Reduction::new(*aggregate);
-            let mut push = |value| {
+            let mut push = |value: Value<'e, 'i>| {
+                if let Some(scope) = scope.filter(|s| s.controlled()) {
+                    scope
+                        .arguments(&[Some(value.clone())], offset)
+                        .map_err(crate::ConsumeError::Evaluation)?;
+                }
                 reduction.push(value);
                 Ok::<_, crate::ConsumeError<std::convert::Infallible>>(())
             };

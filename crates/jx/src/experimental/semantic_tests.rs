@@ -730,7 +730,7 @@ fn resolved_calls_contribute_parameter_and_definition_focus_demands() {
             .unwrap();
         let mut acquisition = Acquisition::new([&p]);
         assert!(
-            acquisition.retained_bytes() >= 3 * std::mem::size_of::<acquisition::Span>(),
+            acquisition.demand_bytes() >= 3 * std::mem::size_of::<acquisition::Span>(),
             "{source}"
         );
         let d = acquisition.prepare(br#"{"a":1,"b":2}"#).unwrap();
@@ -843,7 +843,7 @@ fn unused_definitions_do_not_acquire_their_body_fields() {
         .compile_program("($f:=function(){{'a':a.x,'b':b.y}};1)")
         .unwrap();
     let a = Acquisition::new([&p]);
-    assert_eq!(a.retained_bytes(), std::mem::size_of::<acquisition::Span>());
+    assert_eq!(a.demand_bytes(), std::mem::size_of::<acquisition::Span>());
 }
 
 #[test]
@@ -860,7 +860,7 @@ fn returned_ports_compose_with_navigation_without_acquiring_unused_definitions()
             .unwrap();
         let a = Acquisition::new([&p]);
         assert!(
-            a.retained_bytes() >= 3 * std::mem::size_of::<acquisition::Span>(),
+            a.demand_bytes() >= 3 * std::mem::size_of::<acquisition::Span>(),
             "{source}"
         );
         for input in [
@@ -885,9 +885,9 @@ fn read_only_conditionals_keep_parameter_and_return_dependencies() {
             .unwrap();
         let a = Acquisition::new([&p]);
         assert!(
-            a.retained_bytes() >= 6 * std::mem::size_of::<acquisition::Span>(),
+            a.demand_bytes() >= 6 * std::mem::size_of::<acquisition::Span>(),
             "{source}: {}",
-            a.retained_bytes()
+            a.demand_bytes()
         );
         for input in [
             br#"{"flag":true,"a":{"x":1,"y":2},"b":{"x":3,"y":4}}"#.as_slice(),
@@ -905,9 +905,7 @@ fn repeated_calls_keep_bindings_and_return_ports_in_the_caller() {
     let p = crate::CompileOptions::default()
         .compile_program(source)
         .unwrap();
-    assert!(
-        Acquisition::new([&p]).retained_bytes() >= 5 * std::mem::size_of::<acquisition::Span>()
-    );
+    assert!(Acquisition::new([&p]).demand_bytes() >= 5 * std::mem::size_of::<acquisition::Span>());
     compare(source, br#"{"a":{},"b":{"x":1,"y":2}}"#);
 }
 

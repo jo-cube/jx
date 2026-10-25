@@ -900,54 +900,133 @@ pub(super) fn plan_selection(path: &mut super::selection::Selection) {
     super::bindings::bind_rows(&mut path.body, false, true, true);
 }
 
-/// A union of static root paths for any number of compiled transformations.
-/// Immutable schema and caller-owned span storage are separate from input bytes.
+/// Immutable union of input demands and physical read bindings. Clone/share this
+/// across workers; each concurrent evaluation uses independent span storage.
 #[derive(Debug, Clone)]
-pub struct Acquisition {
+pub struct InputTemplate {
     schema: Arc<Schema>,
-    spans: Vec<Span>,
     bindings: Arc<[super::bindings::Bound]>,
 }
-impl Acquisition {
+impl InputTemplate {
     pub fn new<'e>(programs: impl IntoIterator<Item = &'e Program>) -> Self {
         let programs = programs.into_iter().collect::<Vec<_>>();
+        if let [program] = programs.as_slice()
+            && let Some(template) = &program.input_template
+        {
+            return (**template).clone();
+        }
         let mut paths = Vec::new();
         for p in &programs {
             collect(p, true, true, false, &mut paths);
         }
         let schema = Arc::new(Schema::build(paths));
         let bindings = super::bindings::bind_tree(&programs, &schema).into();
+        Self { schema, bindings }
+    }
+    pub fn prepare<'i, 's>(
+        &'s self,
+        input: &'i [u8],
+        workspace: &'s mut Workspace,
+    ) -> Result<Prepared<'i, 's>, Error> {
+        workspace.resize(self.schema.nodes.len());
+        match crate::json::capture_schema(input, &self.schema, workspace.slots()) {
+            Ok(text) => Ok(self.document(text, workspace)),
+            Err(error) => {
+                workspace.slots().fill(Span::default());
+                Err(error)
+            }
+        }
+    }
+    /// Capture token boundaries without repeating validation.
+    pub fn prepare_validated<'i, 's>(
+        &'s self,
+        raw: RawJson<'i>,
+        workspace: &'s mut Workspace,
+    ) -> Prepared<'i, 's> {
+        workspace.resize(self.schema.nodes.len());
+        crate::json::capture_schema_validated(raw, &self.schema, workspace.slots());
+        self.document(raw.as_str(), workspace)
+    }
+    pub(crate) fn document<'i, 's>(
+        &'s self,
+        text: &'i str,
+        workspace: &'s Workspace,
+    ) -> Prepared<'i, 's> {
+        Prepared {
+            text,
+            schema: &self.schema,
+            spans: workspace.values(),
+            bindings: &self.bindings,
+            owner: Some((&self.schema, &self.bindings)),
+        }
+    }
+    pub(super) fn has_fields(&self) -> bool {
+        self.schema.has_fields()
+    }
+}
+
+/// Reusable, caller-owned acquisition scratch. Contains offsets only: no input,
+/// values, lexical environments or program references survive an evaluation.
+/// Sharing programs is safe; simultaneous evaluations use separate workspaces.
+#[derive(Debug, Default, Clone)]
+pub struct Workspace {
+    inline: [Span; 8],
+    spill: Vec<Span>,
+    len: usize,
+}
+impl Workspace {
+    fn resize(&mut self, len: usize) {
+        self.len = len;
+        if len > self.inline.len() {
+            self.spill.resize(len, Span::default());
+        }
+    }
+    fn slots(&mut self) -> &mut [Span] {
+        if self.len <= self.inline.len() {
+            &mut self.inline[..self.len]
+        } else {
+            &mut self.spill[..self.len]
+        }
+    }
+    fn values(&self) -> &[Span] {
+        if self.len <= self.inline.len() {
+            &self.inline[..self.len]
+        } else {
+            &self.spill[..self.len]
+        }
+    }
+    /// Retained heap capacity, independent of record size or array cardinality.
+    /// Eight inline offset pairs are excluded. There is no demand limit.
+    pub fn retained_bytes(&self) -> usize {
+        self.spill.capacity() * std::mem::size_of::<Span>()
+    }
+    /// Release capacity after evaluating a program with unusually many demands.
+    pub fn clear(&mut self) {
+        *self = Self::default();
+    }
+}
+
+/// Compatibility convenience bundling immutable demands and one workspace.
+#[derive(Debug, Clone)]
+pub struct Acquisition {
+    template: InputTemplate,
+    workspace: Workspace,
+}
+impl Acquisition {
+    pub fn new<'e>(programs: impl IntoIterator<Item = &'e Program>) -> Self {
         Self {
-            spans: vec![Span::default(); schema.nodes.len()],
-            schema,
-            bindings,
+            template: InputTemplate::new(programs),
+            workspace: Workspace::default(),
         }
     }
     pub fn prepare<'i>(&mut self, input: &'i [u8]) -> Result<Prepared<'i, '_>, Error> {
-        let text = crate::json::capture_schema(input, &self.schema, &mut self.spans)?;
-        Ok(Prepared {
-            text,
-            schema: &self.schema,
-            spans: &self.spans,
-            bindings: &self.bindings,
-            owner: Some((&self.schema, &self.bindings)),
-        })
+        self.template.prepare(input, &mut self.workspace)
     }
-    /// Acquire an already validated document without repeating JSON validation.
-    /// This still walks token boundaries to capture the shared schema's fields.
     pub fn prepare_validated<'i>(&mut self, raw: RawJson<'i>) -> Prepared<'i, '_> {
-        crate::json::capture_schema_validated(raw, &self.schema, &mut self.spans);
-        Prepared {
-            text: raw.as_str(),
-            schema: &self.schema,
-            spans: &self.spans,
-            bindings: &self.bindings,
-            owner: Some((&self.schema, &self.bindings)),
-        }
+        self.template.prepare_validated(raw, &mut self.workspace)
     }
-    /// Record spans only. Immutable schema and caller's input/output are excluded.
     pub fn retained_bytes(&self) -> usize {
-        self.spans.capacity() * std::mem::size_of::<Span>()
+        self.workspace.retained_bytes()
     }
 }
 #[derive(Debug)]
@@ -997,5 +1076,14 @@ impl<'i> Snapshot<'i> {
             }),
             Self::Raw(_) => None,
         }
+    }
+}
+
+// Demand-analysis tests must measure the immutable plan, independently of lazy
+// allocation or the workspace's inline capacity.
+#[cfg(test)]
+impl Acquisition {
+    pub(super) fn demand_bytes(&self) -> usize {
+        self.template.schema.nodes.len() * std::mem::size_of::<Span>()
     }
 }

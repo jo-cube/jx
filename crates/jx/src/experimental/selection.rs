@@ -107,7 +107,7 @@ impl Selection {
             }
             predicate_frame.reset(0);
         }
-        if (self.eager && missing) || (preflight && selected_count == 0) {
+        if (self.eager && missing && self.mapping) || (preflight && selected_count == 0) {
             return Ok(());
         }
         // A singleton selected array becomes the next stage's array source;
@@ -164,6 +164,15 @@ impl Selection {
                 if pending.is_some() {
                     return Ok(());
                 }
+                // Identity selection transports native candidates. Reading '$'
+                // would normalize an undefined candidate too early; its consumer
+                // owns that missing/singleton boundary (including postfix keep).
+                if self.identity() && !self.predicates.is_empty() {
+                    if let Some(value) = item.value(child_input) {
+                        return output(value);
+                    }
+                    return Ok(());
+                }
                 let args = arguments.at(&item, index);
                 let value = self
                     .body
@@ -183,9 +192,6 @@ impl Selection {
                 match value {
                     Ok(Some(Value::Undefined)) => Ok(()),
                     Ok(Some(value)) => {
-                        if self.identity() && !self.predicates.is_empty() {
-                            return output(value);
-                        }
                         if let Some(pending) = first_array.take() {
                             emit_mapped(pending, output)?;
                         }
@@ -248,9 +254,11 @@ impl Selection {
         let mut first_array = None;
         let mut emit_body = |child_input: &Input<'_, 'i, '_>, item: &Cell<'e, 'i>| {
             if self.identity() {
+                // A literal positional stage is a value boundary; a general
+                // predicate transports the selected native candidate unchanged.
                 if let Some(value) = item
                     .value(child_input)
-                    .filter(|v| !(self.positional || self.eager) || !matches!(v, Value::Undefined))
+                    .filter(|v| !self.positional || !matches!(v, Value::Undefined))
                 {
                     output(value)?;
                 }

@@ -68,6 +68,19 @@ impl CompileOptions {
             Error::new(ErrorKind::UnsupportedExpression, e.offset, e.reason).compilation()
         })
     }
+    /// Opt in to common-IR execution through the ordinary Expression API.
+    /// Unsupported compilation is explicit; execution never retries legacy.
+    #[cfg(feature = "experimental")]
+    pub fn compile_execution(&self, source: &str) -> Result<Expression, Error> {
+        self.validate_names()?;
+        let mut expression = crate::parse::semantic(source, &self.bindings, &self.constants)
+            .map_err(Error::compilation)?;
+        let program = crate::execution::Program::compile(&expression).map_err(|e| {
+            Error::new(ErrorKind::UnsupportedExpression, e.offset, e.reason).compilation()
+        })?;
+        expression.execution = Some(Arc::new(program));
+        Ok(expression)
+    }
     fn validate_names(&self) -> Result<(), Error> {
         for name in self
             .bindings
@@ -116,6 +129,10 @@ impl<'e, 'i> Expression {
         input: Option<&'i [u8]>,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
+        #[cfg(feature = "experimental")]
+        if let Some(p) = &self.execution {
+            return p.evaluate_with(input, options);
+        }
         if options.bindings.is_empty()
             && options.focus.is_none()
             && options.limits.is_none()
@@ -144,6 +161,10 @@ impl<'e, 'i> Expression {
         input: Option<crate::RawJson<'i>>,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
+        #[cfg(feature = "experimental")]
+        if let Some(p) = &self.execution {
+            return p.evaluate_validated_with(input, options);
+        }
         if options.bindings.is_empty()
             && options.focus.is_none()
             && options.limits.is_none()
