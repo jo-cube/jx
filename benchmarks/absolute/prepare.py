@@ -22,11 +22,16 @@ if a.default_only:
     print(binary);raise SystemExit(0)
 build=out/'harness';(build/'src').mkdir(parents=True,exist_ok=True)
 for module in ['reference','foundation']:shutil.copytree(out/'worker'/module,build/'src'/module,dirs_exist_ok=True)
-for name in ['main.rs','fixtures.rs','handwritten.rs','metrics.rs','typed.rs','validation.rs','simd.rs']:
+for name in ['main.rs','fixtures.rs','handwritten.rs','metrics.rs','typed.rs','validation.rs','simd.rs','facade.rs']:
     if (root/'benchmarks/absolute'/name).exists():shutil.copy2(root/'benchmarks/absolute'/name,build/'src'/name)
 for module in ['reference','foundation']:
     test=build/'src'/module/'jsonata/tests.rs'
     test.write_text(test.read_text().replace('crate::transform::build_plan',f'crate::{module}::build_plan'))
+# Exact public-facade integration: only compilation selection differs from jkq.
+shutil.copytree(build/'src/reference',build/'src/facade_worker',dirs_exist_ok=True)
+for name in ['mod.rs','jsonata/tests.rs']:
+    p=build/'src/facade_worker'/name
+    p.write_text(p.read_text().replace('.compile(source)', '.compile_execution(source)').replace('crate::reference::build_plan','crate::facade_worker::build_plan'))
 (build/'src/simd_metrics.rs').write_text((root/'benchmarks/absolute/metrics.rs').read_text()+'\npub fn live_bytes()->i64 { LIVE.load(Relaxed) }\n')
 # The independently built crate keeps benchmark dependencies out of production Cargo manifests.
 (build/'Cargo.toml').write_text(f'''[package]

@@ -39,6 +39,9 @@ pub(super) fn run(options: &CompileOptions) {
     for alias in [false, true] {
         let expr = options.compile(&projection(24, alias)).unwrap();
         let program = options.compile_program(&projection(24, alias)).unwrap();
+        let facade = options.compile_execution(&projection(24, alias)).unwrap();
+        let facade_plan = InputPlan::new([&facade]);
+        let mut workspace = jx::execution::Workspace::default();
         let mut acquisition = jx::execution::Acquisition::new([&program]);
         let plan = InputPlan::new([&expr]);
 
@@ -61,9 +64,23 @@ pub(super) fn run(options: &CompileOptions) {
         let mut output = Vec::with_capacity(16384);
         let mut at = 0;
         let modes = if std::env::var_os("ARCH_REVERSE").is_some() {
-            ["foundation", "vm_raw", "engine"]
+            [
+                "shared",
+                "workspace",
+                "facade",
+                "foundation",
+                "vm_raw",
+                "engine",
+            ]
         } else {
-            ["engine", "vm_raw", "foundation"]
+            [
+                "engine",
+                "vm_raw",
+                "foundation",
+                "facade",
+                "workspace",
+                "shared",
+            ]
         };
         for mode in modes {
             let name = format!("corpus/{}", if alias { "alias" } else { "direct" });
@@ -76,8 +93,17 @@ pub(super) fn run(options: &CompileOptions) {
                         .unwrap()
                         .evaluate(0)
                         .and_then(|e| write(e, &mut output)),
+                    "facade" => facade.evaluate(input).and_then(|e| write(e, &mut output)),
+                    "workspace" => facade
+                        .evaluate_with_workspace(Some(input), Default::default(), &mut workspace)
+                        .and_then(|e| write(e, &mut output)),
+                    "shared" => facade_plan
+                        .prepare(input)
+                        .unwrap()
+                        .evaluate(0)
+                        .and_then(|e| write(e, &mut output)),
                     "vm_raw" => program
-                        .evaluate_bytes(input)
+                        .evaluate_scan(jx::validate(input).unwrap())
                         .and_then(|e| write(e, &mut output)),
                     "foundation" => {
                         let d = acquisition.prepare(input).unwrap();

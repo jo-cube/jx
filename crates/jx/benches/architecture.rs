@@ -276,10 +276,7 @@ fn bench(name: &str, sources: &[String], input: &str, options: &CompileOptions) 
             measure(&format!("{name}/vm_raw"), input.as_bytes(), || {
                 let raw = jx::validate(black_box(input.as_bytes())).unwrap();
                 for p in &programs {
-                    let _ = black_box(
-                        p.evaluate_validated(raw)
-                            .and_then(|r| write(r, &mut output)),
-                    );
+                    let _ = black_box(p.evaluate_scan(raw).and_then(|r| write(r, &mut output)));
                 }
             });
             continue;

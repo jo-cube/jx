@@ -1,6 +1,9 @@
 #![allow(unsafe_code, dead_code)]
 use fixtures::{Case, Kind};
 use std::{collections::HashMap, hint::black_box};
+mod facade;
+#[path = "facade_worker/mod.rs"]
+mod facade_worker;
 mod fixtures;
 #[path = "foundation/mod.rs"]
 mod foundation;
@@ -392,6 +395,10 @@ fn main() {
     let (vars, labels) = vars();
     let options = jx::CompileOptions::default()
         .constant_binding("vars", jx::OwnedValue::from_json(vars.as_bytes()).unwrap());
+    if std::env::var_os("ABS_API").is_some() {
+        facade::run(&options, &vars);
+        return;
+    }
     let mode = std::env::var("ABS_MODE").unwrap_or_else(|_| "foundation".into());
     let filter = std::env::var("ABS_CASE").unwrap_or_default();
     assert!(
@@ -497,6 +504,14 @@ fn main() {
         } else {
             core(case, &mode, &phase, &options, &labels)
         }
+    }
+}
+fn api_worker(case: &Case, vars: &str, mode: &str) {
+    match mode {
+        "legacy" => worker!(reference, case, vars, mode, true),
+        "prepared" => worker!(foundation, case, vars, mode, true),
+        "facade" => worker!(facade_worker, case, vars, mode, true),
+        _ => panic!("worker API mode: {mode}"),
     }
 }
 fn parallel_run(filter: &str, mode: &str, barrier: &std::sync::Barrier) -> usize {

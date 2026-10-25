@@ -91,7 +91,7 @@ fn main() {
                 Err(e) => json!({"unsupported":e.to_string(),"engine":original}),
                 Ok(p) => json!({
                     "engine":original,
-                    "prototype":[result(p.evaluate_without_input())],
+                    "prototype":[result(p.evaluate_without_input()), result(options.compile_execution(source).unwrap().evaluate_with(None, Default::default()))],
                     "complete":complete_reference(p.evaluate_without_input()),
                     "engine_complete":complete_reference(expression.evaluate_with(None, Default::default()))
                 }),
@@ -103,7 +103,25 @@ fn main() {
         let answer = match compiled {
             Err(e) => json!({"unsupported":e.to_string(),"engine":original}),
             Ok(p) => {
-                let mut results = vec![result(p.evaluate_bytes(input))];
+                let facade = options.compile_execution(source).unwrap();
+                let mut workspace = jx::execution::Workspace::default();
+                let plan = jx::InputPlan::new([&facade]);
+                let prepared = plan.prepare(input);
+                let mut results = vec![
+                    result(p.evaluate_bytes(input)),
+                    result(facade.evaluate(input)),
+                    result(facade.evaluate_with_workspace(
+                        Some(input),
+                        Default::default(),
+                        &mut workspace,
+                    )),
+                    result(
+                        prepared
+                            .as_ref()
+                            .map_err(Clone::clone)
+                            .and_then(|d| d.evaluate(0)),
+                    ),
+                ];
                 let mut a = jx::execution::Acquisition::new([&p]);
                 let mut items = Vec::new();
                 let result = a
