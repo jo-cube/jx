@@ -179,6 +179,9 @@ fn analyze(
                     regions,
                 );
             };
+            if !regions && let Some((body, replacement)) = i.kind.invoked_region() {
+                child(body, replacement.map_or(focus, |r| nodes[r]), None);
+            }
             match i.kind.producer() {
                 Operation::Construct(body) => child(body, focus, None),
                 _ if regions => {}

@@ -182,8 +182,15 @@ impl Program {
         &'e self,
         context: &Context<'e, 'i>,
     ) -> Result<Option<Value<'e, 'i>>, Error> {
+        self.evaluate_region_in(context, None)
+    }
+    pub(crate) fn evaluate_region_in<'e, 'i>(
+        &'e self,
+        context: &Context<'e, 'i>,
+        input: Option<&Input<'_, 'i, '_>>,
+    ) -> Result<Option<Value<'e, 'i>>, Error> {
         context.scope.as_ref().expect("region scope").retained(|| {
-            match self.run_function(context, &[], None)? {
+            match self.run_function(context, &[], input)? {
                 crate::function::tail::Outcome::Done(value) => Ok(value),
                 crate::function::tail::Outcome::Call(_) => {
                     unreachable!("region is not a tail body")

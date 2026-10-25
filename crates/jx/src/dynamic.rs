@@ -274,10 +274,14 @@ impl PreparedProgram {
             syntax_error,
         }))
     }
+    pub(crate) fn body(&self) -> Option<&crate::execution::Program> {
+        self.program.as_ref().ok()
+    }
     pub(crate) fn evaluate<'e, 'i>(
         &'e self,
         args: &[Option<Value<'e, 'i>>],
         context: &Context<'e, 'i>,
+        input: &crate::execution::input::Input<'_, 'i, '_>,
         offset: usize,
     ) -> Result<Operand<'e, 'i>, Error> {
         let scope = context.scope.as_ref().expect("dynamic eval runtime");
@@ -302,7 +306,7 @@ impl PreparedProgram {
         // only genuinely dynamic short-lived code needs a lifetime bridge.
         scope
             .call(offset, program.call.depth, || {
-                program.evaluate_region(&local)
+                program.evaluate_region_in(&local, Some(input))
             })
             .map(|v| v.map_or(Operand::Missing, Operand::One))
             .map_err(|e| {

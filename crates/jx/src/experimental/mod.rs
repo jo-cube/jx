@@ -294,6 +294,17 @@ impl Program {
 }
 
 impl Operation {
+    // Already compiled invocation regions are immutable call boundaries, not
+    // optimizer children. Expose their input mapping to the common demand and
+    // binding analyses without re-running physical preparation or inlining code.
+    fn invoked_region(&self) -> Option<(&Program, Option<usize>)> {
+        match self.producer() {
+            Self::Invoke(_, args, _, _, Some(code)) => {
+                code.body().map(|body| (body, args.get(1).copied()))
+            }
+            _ => None,
+        }
+    }
     fn children(&self, visit: &mut impl FnMut(&Program)) {
         match self {
             Self::Reduce(_, p, _) | Self::Collect(p) => p.children(visit),

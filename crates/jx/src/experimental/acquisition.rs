@@ -270,6 +270,13 @@ impl Demands {
         let mut joins = vec![None; p.registers];
         let mut used: BTreeMap<usize, Vec<String>> = BTreeMap::new();
         for i in &p.code {
+            if let Some((body, replacement)) = i.kind.invoked_region() {
+                let nested_focus =
+                    replacement.map_or_else(|| focus.clone(), |r| ports[r].origin.clone());
+                // Invocation still resolves its target and evaluates arguments
+                // at runtime. These are only input-span hints, guarded by identity.
+                self.collect(body, root.clone(), nested_focus, &[], &[]);
+            }
             if let Operation::Invoke(target, args, ..) = &i.kind
                 && let Some(Some(definition)) = &ports[*target].callee
             {

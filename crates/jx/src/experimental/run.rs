@@ -187,7 +187,7 @@ impl Program {
                                 crate::dynamic::Builtin::Eval
                             ))
                         ) {
-                        prepared.evaluate(arguments.as_slice(), &context, offset)?
+                        prepared.evaluate(arguments.as_slice(), &context, input, offset)?
                     } else {
                         crate::function::invoke_in(
                             &function,

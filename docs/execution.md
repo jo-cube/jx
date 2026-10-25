@@ -118,6 +118,14 @@ retains no evaluated results or environments. Input-derived sources, indirect ca
 and genuine tail transitions retain dynamic compilation and the lifetime bridge.
 There is no source-keyed/global cache. Unsupported dynamic lowering remains explicit.
 
+Immutable invocation regions expose their incoming/replacement focus and root demands
+to the existing acquisition and read-binding analysis. Their code is already physically
+prepared and is not inlined or rewritten as an ordinary child region. Invocation
+forwards the active input view through the same region/call runtime used by functions.
+Byte-identity and base guards keep external focus, rebinding and separate objects
+distinct. Unknown input origins navigate normally; acquisition hints never authorize
+execution before target resolution, argument evaluation or lazy-error checks.
+
 Straight-line locals and proven immediate callbacks can retain SSA ports. A source
 scope analysis selects retained cells for escaping/callable values and enclosing
 writes. This is conservative promotion, not a complete closure conversion or liveness
