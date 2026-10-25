@@ -1,8 +1,9 @@
 # Execution foundation
 
-The `experimental` feature exposes `jx::execution`. The default `Expression`, CLI
-and native backend retain legacy routing. Foundation selection is explicit at
-compilation; unsupported semantics never cause a tree retry.
+The `experimental` feature exposes `jx::execution` and `compile_execution` (also on
+`CompileOptions`). The latter returns the ordinary `Expression` facade backed by
+the common IR. Default `compile` and the CLI retain legacy routing. Selection is
+explicit at compilation; unsupported semantics never cause a tree retry.
 
 ## Compile, prepare and consume
 
@@ -16,22 +17,43 @@ Programs are immutable, cloneable and `Send + Sync`. Clones copy code/operand ar
 and share immutable constants, schemas and acquisition tokens. Evaluation state is
 independent. Prefer `Arc<Program>` when copying code is unnecessary.
 
-`Acquisition::new` unions root demands from multiple programs. Each worker owns its
-span buffer; clones share metadata. `prepare(bytes)` validates every input byte and
-captures demanded spans together. `prepare_validated(raw)` acquires spans without
-repeating grammar validation. It still walks token boundaries. Preparations replace
-old spans, including decoded duplicate-key subtrees. There is no mandatory input DOM
-or record-result cache.
+Each public program stores an immutable input template compiled once from its IR.
+Ordinary byte evaluation validates every input byte and captures demanded spans in
+one traversal. Validated evaluation acquires token boundaries without repeating
+grammar validation. Both automatically use the same acquisition as prepared input;
+`evaluate_scan(raw)` is a separately named diagnostic control.
+
+`InputTemplate::new` unions demands and read bindings from multiple programs.
+Templates are immutable, cloneable and `Send + Sync`. `Workspace` contains only
+query-sized offsets: eight inline pairs plus a reusable heap spill. It retains no
+JSON bytes, values, environments or program pointers. `retained_bytes` reports heap
+capacity; `clear` releases it. Capacity follows the widest query used, not record
+size or array cardinality. Concurrent evaluations need separate mutable workspaces;
+programs/templates may be shared freely. No global or thread-local cache is used.
+
+Ordinary calls use a temporary workspace. `evaluate_with_workspace` and
+`evaluate_validated_with_workspace` on `Expression` and `Program` reuse caller-owned
+storage with the same settings and result lifetimes. A returned `Evaluation` never
+borrows that workspace. `Acquisition` remains a convenience bundle of template and
+workspace. A one-program template reuses the program's precompiled metadata.
+Preparations replace old spans, including duplicate-key subtrees. Invalid input
+clears partial offsets before returning. There is no mandatory input DOM or index.
+
+The existing `InputPlan::prepare(&self)` and indexed `PreparedInput` APIs also support
+IR expressions. Each preparation owns independent offsets, so multiple preparations
+and results may coexist. IR demands have no fixed capture limit. A mixed IR/legacy
+plan validates once and uses a separate validated capture traversal for legacy
+entries; it never evaluates an IR expression through legacy. For allocation reuse
+across multiple programs, use their shared template and a worker-local workspace.
 
 `evaluate(prepared)`, `evaluate_bytes(bytes)`, `evaluate_validated(raw)` and
-`evaluate_without_input()` return the existing `Evaluation` interface. Byte evaluation
-validates without shared acquisition; use prepared input for shared field access.
-Absent focus/root are missing, distinct from JSON null.
+`evaluate_without_input()` return the existing `Evaluation` interface. Absent
+focus/root are missing, distinct from JSON null.
 
 Pure terminal paths defer execution until consumption. A one-shot continuation owns
 query-sized span copies and shares metadata when its preparation can be reused or
 dropped. Capture identities survive this ownership boundary. Input/code leaves stay
-borrowed. Raw/validated evaluation needs no span snapshot. Eager lexical and grouping
+borrowed. Automatic acquisition follows the same snapshot rule. Eager lexical and grouping
 boundaries still complete before returning results; parentheses are not universally
 interchangeable with terminal streaming. Deferred root delivery can expose a terminal
 producer while its caller remains cancellable. It does not authorize crossing inner
@@ -167,7 +189,12 @@ binding still have their own compilation costs. Identity-producing values are no
 also retain fresh function identity when lexical lookup falls back to a builtin.
 
 Native call results retain their sequence shape until the consumer's normalization
-boundary. Postfix array retention is explicit. Retained field lookup observes matches
+boundary. Postfix array retention is explicit. `Collect` consumes a sequence producer
+before missing/singleton normalization when candidate positions must be preserved;
+it reuses the ordinary route/selection/context kernels. It is an eager cardinality
+boundary, not a new execution strategy. Contextual builtin tail calls enter the same
+tail ABI as general calls, evaluating arguments in definition focus and using caller
+focus for context substitution. Retained field lookup observes matches
 before ordinary path flattening; keeping an already normalized value would lose
 nested-array cardinality. General routes compile each step and predicate into the same IR. Stack-scoped
 producer views share the reference engine's mapping, literal-position, candidate
@@ -284,13 +311,13 @@ of immediate callbacks.
 Constant preparation can remove unsupported syntax. A constant-only example does not
 establish dynamic support.
 
-| Area | Available | Remaining legacy capability |
+| Area | Available | Remaining boundaries |
 | --- | --- | --- |
 | Values/operators | Borrowed JSON, missing/null, scalars, arrays, static and dynamic objects, grouping, ranges, scalar operators, membership, postfix retention | Inherited host/coercion boundaries |
 | Navigation | Static fields, general routes and predicates, positions, focus/index tuples, ancestry, tuple grouping/order, array focus, wildcard/descendants, conditional acquisition | General producer/consumer call boundaries |
 | Scope/calls | Lexical blocks/writes, live/escaping closures, recursion/tail calls, signatures, general arity, first-class builtins, partials/composition, dynamic IR with retained definitions | General producer/consumer call results; literal dynamic-code reuse |
 | Library | Lookup, truth/existence, aggregates, common string/numeric/collection kernels, map/filter/reduce/each/sift/single and sort callbacks, error/assert, matcher values, formatted numbers/dates, eval, transform/clone, random/time | Inherited regex/coercion and formatting boundaries in `compatibility.md` |
-| Embedding | Compile/clone/reuse, immutable/runtime bindings, host calls/reentry, external focus, absent/validated/shared input, controlled borrowed results and terminal settings | Complete eligibility, common-IR native execution |
+| Embedding | Compile/clone/reuse, immutable/runtime bindings, host calls/reentry, external focus, absent/validated/shared input, controlled borrowed results and terminal settings | Escaping-result allocation, conservative settings delivery, interpreter-only native requests |
 
 The pinned legacy-success inventory is admitted, but this is not a proof of complete
 language or API parity. Unsupported syntax in an unselected branch is rejected at compilation. A runtime shape/callee-domain rejection
@@ -305,26 +332,24 @@ and [reproduction](../benchmarks/execution/reproduce.md).
 
 ## Default migration boundary
 
-The common IR is ready for a facade migration, but that migration is not implemented.
-The following contracts must be preserved before changing the default:
+The opt-in `compile_execution` facade routes byte, validated, absent-input, random,
+settings, workspace and shared-preparation evaluation through IR. `Expression::clone`
+shares its immutable program. The semantic AST remains stored for compilation and
+reference infrastructure; it is not a runtime fallback.
 
-| Contract | Current foundation | Remaining work |
-| --- | --- | --- |
-| Compilation and cloning | Semantic parsing, immutable programs, shared constants/schemas, independent execution state | Route `compile` / `CompileOptions::compile` through IR; preserve error phase/source/offset and explicit unsupported outcomes |
-| Byte, validated and absent input | Full validation first; raw and settings-aware entry points; missing distinct from null | Route all `Expression` methods consistently, including random/settings paths |
-| Shared prepared input | `Acquisition` unions arbitrary program demands; results outlive its span buffers | Replace the legacy `InputPlan` / `PreparedInput` internals without changing indexed evaluation or result lifetimes; choose worker-owned span storage explicitly |
-| Bindings and host calls | Shared immutable data, declared runtime bindings, external focus, host reentry, lexical arenas | Run the public embedding contract suite through the migrated facade, including mixed host/dynamic calls |
-| Delivery and controls | Borrowed/deferred results, eager barriers, immediate consumer stop, complete-output rollback, cooperative limits | Preserve public eager/deferred error timing and prefixes; instruction work charges are not AST counts |
-| Native feature | Default native adapter still compiles legacy bounded plans | Choose an explicit `enable_native` contract for IR programs; native acceleration is not required for interpreter correctness or adoption |
+Under `jit`, `enable_native()` on an IR expression returns zero kernels, zero code
+bytes and zero failures. It does not traverse legacy plans or change execution.
+Repeated calls are harmless; clones share the same interpreted code. Default legacy
+expressions retain their existing native installation behavior. Native acceleration
+is optional and is not a prerequisite for an IR default.
 
-A facade must preserve demanded acquisition. `Program::evaluate_bytes` and
-`evaluate_validated` are scan controls, not substitutes for prepared execution:
-wide projections can repeatedly navigate the same raw object. Store immutable
-acquisition metadata with compiled code and make per-evaluation span ownership
-explicit. Rebuilding schemas per record or routing every `Expression` call directly
-to the raw entry point would discard the worker gains. The existing immutable
-`InputPlan::prepare(&self)` contract also differs from reusable
-`Acquisition::prepare(&mut self)` storage; resolve this at the facade boundary.
+Before default adoption, keep public contract replays, validation/error phase and
+source checks, shared-input ownership, cancellation/prefix tests, concurrent reuse
+and actual-worker controls mandatory. Work quotas count executed IR work rather
+than AST instructions; retained builtin arguments and sequence consumption still
+charge their item/work budgets. Literal `$eval` recompilation and conservative
+callback retention remain significant workload caveats. CLI/default compilation
+have not migrated. No legacy subsystem can yet be removed wholesale.
 
 The pinned admission inventory covers every legacy-success outcome. The remaining
 41 non-admitted cases are compilation errors in both inventories, not missing
@@ -342,7 +367,8 @@ compilation are follow-up efficiency work, not reasons to retain a second evalua
 
 After facade, CLI and shared-input parity, retire the legacy bounded `plan` family,
 `acquire::Region` / `Acquired`, `function::acquire`, and their guard/retry routing.
-Replace `InputPlan` storage with shared acquisition. Retire AST-backed callable and
+Remove `InputPlan`'s remaining legacy capture storage; its IR entries already use
+shared acquisition. Retire AST-backed callable and
 stream adapters only after their reference callers and compile-time uses are gone.
 `compile::prepare` still uses AST constant evaluation; removing the complete tree
 implementation requires replacing that dependency as a separate step.

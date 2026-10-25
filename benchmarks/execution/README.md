@@ -56,7 +56,10 @@ cliffs. Constructors add compilation cost; grouping/order retain candidates. War
 state and link layout can materially affect rates. Preserve raw samples and binary
 identities; investigate broad regressions before default adoption.
 
-Public facade migration and compatibility validation remain necessary. No legacy
+Opt-in `compile_execution` facade controls include automatic acquisition, workspaces
+and the immutable shared-input API. `scripts/check-execution-facade.py` replays the
+public contracts with documented interpreter-only native requests. Default/CLI
+migration and compatibility validation remain necessary. No legacy
 subsystem can yet be retired wholesale. Historical reports, profiles, trial variants and raw evidence
 bundles are review artifacts, not build/CI inputs. New measurements belong under
 ignored `target/` or external review storage.

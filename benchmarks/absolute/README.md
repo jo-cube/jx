@@ -36,6 +36,10 @@ Use `ABS_CASE` for exact names (`|` joins a subset), `ABS_MODE`, `ABS_PHASE`,
 runs two reversed independent-process orders, and preserves every observation.
 Process ranges are not confidence intervals. Counter/RSS and sampling commands use macOS tools. Builds, checks and sampling must not
 run concurrently with throughput timing. Sampled timings are diagnostic only.
+Keep the power source and power-saving mode constant. On macOS, record `pmset -g
+batt` and `pmset -g custom`; a temporary `caffeinate -i` assertion can prevent idle
+sleep during a campaign. Exclude sleep/power-transition samples from absolute-rate
+comparisons rather than pooling them with unrestricted runs.
 
 ## Work and obligations
 
@@ -162,3 +166,29 @@ ownership cliffs; they do not expand the references' JSONata semantics.
 Keep raw measurements, binary/source hashes and profiles in the ignored run
 destination. Investigation-specific analysis scripts and reports are review
 artifacts, not dependencies of this suite.
+
+## Opt-in facade controls
+
+`ABS_API=1` compares `legacy`, diagnostic `scan`, automatically acquired `program`,
+ordinary `facade`, reusable `workspace`, reusable-template `prepared`, and immutable
+`InputPlan` `shared` modes. `focus` explicitly supplies the same validated root as
+focus, checking provenance through the settings boundary. Core modes use identical validation and cancellable
+serialization. `ABS_PHASE=validated` excludes grammar validation; `compile` measures
+compilation separately. `eval/literal`, `eval/dynamic` and `context/128` extend the
+existing deterministic cases. Worker API modes are `legacy`, `prepared` and `facade`;
+the facade worker changes only compilation selection in copied sibling sources.
+The sibling checkout is read-only. Worker completion/ownership obligations match;
+the existing prepared adapter may use its complete-output consumer.
+
+```sh
+ABS_API=1 ABS_MODE=facade ABS_CASE=project/1024/24/direct target/absolute-run/harness/target/release/jx-absolute
+ABS_API=1 ABS_MODE=workspace ABS_CASE=project/1024/24/direct ABS_API_THREADS=4 ABS_MS=1000 target/absolute-run/harness/target/release/jx-absolute
+python3 scripts/check-execution-facade.py target/facade-contracts
+```
+
+`ABS_API_THREADS` shares one compiled expression across callers with local offsets
+and output buffers. It disables allocation instrumentation and reports aggregate
+wall/CPU throughput; single-worker probes remain the memory reference. The contract
+replay changes only compilation selection, fixture paths, and two native-installation
+assertions to require the documented zero-kernel IR policy. Result, ownership, error,
+effect, control and consumer assertions remain unchanged.
