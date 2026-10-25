@@ -158,7 +158,7 @@ impl Program {
                     )?)?
                 }
                 Operation::FunctionReference(b) => Cell::Value(crate::Function::builtin(*b)),
-                Operation::Invoke(target, registers, tail, native) => {
+                Operation::Invoke(target, registers, tail, native, prepared) => {
                     let mut arguments = crate::function::Arguments::new(registers.len());
                     for reg in registers {
                         arguments.push(frame[*reg].value(input));
@@ -180,14 +180,24 @@ impl Program {
                         wrapped,
                         scope: scopes.current.clone(),
                     };
-                    let value = crate::function::invoke_in(
-                        &function,
-                        arguments.as_slice(),
-                        &context,
-                        offset,
-                        true,
-                        Some(input),
-                    )?;
+                    let value = if let Some(prepared) = prepared
+                        && matches!(
+                            function.kind,
+                            crate::function::FunctionKind::Builtin(Builtin::Runtime(
+                                crate::dynamic::Builtin::Eval
+                            ))
+                        ) {
+                        prepared.evaluate(arguments.as_slice(), &context, offset)?
+                    } else {
+                        crate::function::invoke_in(
+                            &function,
+                            arguments.as_slice(),
+                            &context,
+                            offset,
+                            true,
+                            Some(input),
+                        )?
+                    };
                     let value = if *native {
                         Cell::from_native_operand(value)?
                     } else {

@@ -9,7 +9,12 @@ use crate::ConsumeError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Delivery {
     Value,
-    Stream { producer: usize, retained: bool },
+    Stream {
+        producer: usize,
+        retained: bool,
+        resolved: bool,
+        total: bool,
+    },
 }
 pub(super) fn plan(p: &Program) -> Delivery {
     // Scope release is administrative, but the scope must stay live while a
@@ -44,9 +49,59 @@ pub(super) fn plan(p: &Program) -> Delivery {
         | Operation::Range(..)
         | Operation::Traverse(_)
         | Operation::Path(_)
-        | Operation::Field(_, _, _, FieldMode::Value) => Delivery::Stream { producer, retained },
+        | Operation::Field(_, _, _, FieldMode::Value) => Delivery::Stream {
+            producer,
+            retained,
+            total: total(p),
+            // Resolving a pure borrowed field needs no lexical activation or
+            // delayed errors. Keep general producers and eager boundaries deferred.
+            resolved: !retained
+                && matches!(instruction.kind, Operation::Field(..))
+                && p.code[..producer].iter().all(|i| {
+                    matches!(
+                        i.kind,
+                        Operation::Focus
+                            | Operation::Root
+                            | Operation::Copy(_)
+                            | Operation::Literal(_)
+                    )
+                }),
+        },
         _ => Delivery::Value,
     }
+}
+// Total, read-only code can defer settings delivery without moving a possible
+// language failure or lexical write past evaluate(). Controls still require the
+// existing eager contract. Unknown operations deliberately make no such promise.
+pub(super) fn total(p: &Program) -> bool {
+    !p.writes_scope
+        && p.code.iter().all(|i| match &i.kind {
+            Operation::Focus
+            | Operation::Root
+            | Operation::Read(_)
+            | Operation::Argument(_)
+            | Operation::Outer(..)
+            | Operation::Literal(_)
+            | Operation::Copy(_)
+            | Operation::Materialize(_)
+            | Operation::Acquire(..)
+            | Operation::Keep(..)
+            | Operation::Field(..)
+            | Operation::Object(_)
+            | Operation::Array(..)
+            | Operation::EnterScope
+            | Operation::LeaveScope => true,
+            Operation::Construct(body) => total(body),
+            Operation::Correlate(region) => region.total(),
+            Operation::Navigate(n) => {
+                !n.array_focus
+                    && n.steps
+                        .iter()
+                        .all(|s| s.predicates.is_empty() && total(&s.body))
+            }
+            Operation::Path(s) => s.predicates.is_empty() && !s.candidate && total(&s.body),
+            _ => false,
+        })
 }
 // A deferred root may expose its terminal producer while its caller can still
 // cancel. This does not authorize streaming across inner eager boundaries.
@@ -210,11 +265,9 @@ impl Program {
         }
         let stop = {
             let stop = match self.delivery {
-                Delivery::Stream { producer, retained }
-                    if mode != Consumption::Cancellable || !retained =>
-                {
-                    Some(producer)
-                }
+                Delivery::Stream {
+                    producer, retained, ..
+                } if mode != Consumption::Cancellable || !retained => Some(producer),
                 _ => None,
             };
             match self
@@ -324,6 +377,53 @@ pub(crate) struct Deferred<'e, 'i> {
     scope: Option<crate::runtime::Scope<'e, 'i>>,
 }
 impl<'e, 'i> Deferred<'e, 'i> {
+    pub(super) fn result(
+        program: &'e Program,
+        input: &Input<'_, 'i, '_>,
+        focus: super::run::Cell<'e, 'i>,
+        scope: Option<crate::runtime::Scope<'e, 'i>>,
+    ) -> Result<crate::evaluate::Results<'e, 'i>, crate::Error> {
+        use crate::evaluate::Results;
+        if let Delivery::Stream {
+            producer,
+            resolved: true,
+            ..
+        } = program.delivery
+            && scope.as_ref().is_none_or(|s| !s.controlled())
+        {
+            let mut frame = Frame::new();
+            let activation = Activation {
+                input,
+                focus: &focus,
+                wrapped: true,
+                args: &[],
+                outer: Default::default(),
+                calls: Default::default(),
+                scope: scope.as_ref(),
+            };
+            program.run_prefix(activation, &mut frame, Some(producer))?;
+            let i = &program.code[producer];
+            let Operation::Field(base, path, contextual, _) = &i.kind else {
+                unreachable!()
+            };
+            return Ok(
+                match input.select_field(
+                    &frame[*base],
+                    path,
+                    *contextual,
+                    input.reads(program).and_then(|r| r.get(i.out)),
+                ) {
+                    super::input::FieldResult::Cell(cell) => {
+                        Results::Scalar(cell.into_value(input))
+                    }
+                    super::input::FieldResult::Path(path) => Results::Path(path),
+                },
+            );
+        }
+        Ok(Results::Execution(Box::new(Self::new(
+            program, input, focus, scope,
+        ))))
+    }
     pub(super) fn new(
         program: &'e Program,
         input: &Input<'_, 'i, '_>,

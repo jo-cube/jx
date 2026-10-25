@@ -97,8 +97,11 @@ impl Program {
         // Explicit focus is value movement too: retain an existing acquired port
         // only when its raw byte identity matches this input preparation.
         let focus = options.focus.map_or(root, |v| input.restore(Some(v)));
-        let result = if self.deferred_options {
-            Results::Execution(Box::new(Deferred::new(self, &input, focus, scope)))
+        let total = control.is_none()
+            && self.deferred
+            && matches!(self.delivery, consume::Delivery::Stream { total: true, .. });
+        let result = if self.deferred_options || total {
+            Deferred::result(self, &input, focus, scope)?
         } else {
             let value = self.run(
                 Activation {

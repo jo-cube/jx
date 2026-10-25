@@ -187,7 +187,7 @@ pub(super) fn operands(op: &Operation, emit: &mut impl FnMut(usize)) {
             args.iter().for_each(|r| emit(*r))
         }
         Operation::Bind(_, r) => emit(*r),
-        Operation::Invoke(target, args, _, _) => {
+        Operation::Invoke(target, args, ..) => {
             emit(*target);
             args.iter().for_each(|r| emit(*r));
         }
@@ -344,7 +344,7 @@ fn remap(op: &mut Operation, id: &impl Fn(usize) -> usize) {
         Operation::Builtin(_, args, _) | Operation::Formatted(_, args, _) => {
             args.iter_mut().for_each(|r| *r = id(*r))
         }
-        Operation::Invoke(target, args, _, _) => {
+        Operation::Invoke(target, args, ..) => {
             *target = id(*target);
             args.iter_mut().for_each(|r| *r = id(*r));
         }

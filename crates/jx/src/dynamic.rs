@@ -217,17 +217,17 @@ fn wrapped(mut error: Error, kind: ErrorKind, offset: usize) -> Error {
     );
     wrapped.with_cause(error)
 }
-fn evaluate<'e, 'i>(
+// Argument validation and focus substitution are shared by cached and dynamic code.
+fn evaluation_focus<'e, 'i>(
     args: &[Option<Value<'e, 'i>>],
-    prepared: Option<&'e Result<crate::Expression, Error>>,
     context: &Context<'e, 'i>,
     offset: usize,
-) -> Result<Operand<'e, 'i>, Error> {
+) -> Result<Option<(Value<'e, 'i>, bool)>, Error> {
     if !(1..=2).contains(&args.len()) {
         return Err(type_error(offset));
     }
     let Some(text) = args[0].as_ref().filter(|v| !matches!(v, Value::Undefined)) else {
-        return Ok(Operand::Missing);
+        return Ok(None);
     };
     if text.string_body().is_none() {
         return Err(type_error(offset));
@@ -241,6 +241,92 @@ fn evaluate<'e, 'i>(
         .as_ref()
         .map_or(context.wrapped, |v| v.is_array() && !v.is_sequence());
     let focus = replacement.unwrap_or_else(|| context.value.clone());
+    Ok(Some((focus, wrapped_focus)))
+}
+
+/// Immutable code attached to a literal or immutable-source call site.
+/// Stores code or a lazy syntax error, never environments or evaluated values.
+#[cfg(feature = "experimental")]
+#[derive(Debug, Clone)]
+pub(crate) struct PreparedProgram {
+    program: Result<crate::execution::Program, Error>,
+    syntax_error: bool,
+}
+#[cfg(feature = "experimental")]
+impl PreparedProgram {
+    pub(crate) fn new(args: &[Node]) -> Option<std::sync::Arc<Self>> {
+        let node = args.first()?;
+        let value = match &node.kind {
+            Kind::String(s) => Value::StringLiteral(crate::RawJson(s)),
+            Kind::Prepared(p) if matches!(*p.data, crate::constant::Data::String(_)) => {
+                p.data.value()
+            }
+            _ => return None,
+        };
+        let (program, syntax_error) = match source(&value, node.offset)
+            .and_then(|text| crate::parse::dynamic_semantic(&text))
+        {
+            Ok(e) => (crate::execution::Program::compile_dynamic(&e), false),
+            Err(e) => (Err(e), true),
+        };
+        Some(std::sync::Arc::new(Self {
+            program,
+            syntax_error,
+        }))
+    }
+    pub(crate) fn evaluate<'e, 'i>(
+        &'e self,
+        args: &[Option<Value<'e, 'i>>],
+        context: &Context<'e, 'i>,
+        offset: usize,
+    ) -> Result<Operand<'e, 'i>, Error> {
+        let scope = context.scope.as_ref().expect("dynamic eval runtime");
+        scope.checkpoint(offset)?;
+        scope.arguments(args, offset)?;
+        let Some((value, wrapped_focus)) = evaluation_focus(args, context, offset)? else {
+            return Ok(Operand::Missing);
+        };
+        let program = self.program.as_ref().map_err(|e| {
+            if self.syntax_error {
+                wrapped(e.clone(), ErrorKind::EvalSyntax, offset)
+            } else {
+                e.clone()
+            }
+        })?;
+        let local = Context {
+            value,
+            wrapped: wrapped_focus,
+            scope: context.scope.clone(),
+        };
+        // Code outlives evaluation. The ordinary arena retains closures/writes;
+        // only genuinely dynamic short-lived code needs a lifetime bridge.
+        scope
+            .call(offset, program.call.depth, || {
+                program.evaluate_region(&local)
+            })
+            .map(|v| v.map_or(Operand::Missing, Operand::One))
+            .map_err(|e| {
+                if e.kind == ErrorKind::UnsupportedExpression
+                    && e.source == crate::Source::DynamicExpression
+                {
+                    e
+                } else {
+                    wrapped(e, ErrorKind::EvalError, offset)
+                }
+            })
+    }
+}
+
+fn evaluate<'e, 'i>(
+    args: &[Option<Value<'e, 'i>>],
+    prepared: Option<&'e Result<crate::Expression, Error>>,
+    context: &Context<'e, 'i>,
+    offset: usize,
+) -> Result<Operand<'e, 'i>, Error> {
+    let Some((focus, wrapped_focus)) = evaluation_focus(args, context, offset)? else {
+        return Ok(Operand::Missing);
+    };
+    let text = args[0].as_ref().expect("source validated");
     #[cfg(feature = "experimental")]
     if context
         .scope

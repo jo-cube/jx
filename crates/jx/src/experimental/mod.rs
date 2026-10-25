@@ -102,7 +102,13 @@ enum Operation {
         Box<[usize]>,
         Arc<crate::format::Prepared>,
     ),
-    Invoke(usize, Box<[usize]>, bool, bool),
+    Invoke(
+        usize,
+        Box<[usize]>,
+        bool,
+        bool,
+        Option<Arc<crate::dynamic::PreparedProgram>>,
+    ),
     Partial(usize, Box<[Option<usize>]>),
     Chain(usize, usize, bool),
     Keep(usize, bool),
@@ -266,9 +272,7 @@ impl Program {
         let scope = self.scope(&input, random);
         if self.deferred {
             return Ok(crate::Evaluation {
-                result: crate::evaluate::Results::Execution(Box::new(Deferred::new(
-                    self, &input, focus, scope,
-                ))),
+                result: Deferred::result(self, &input, focus, scope)?,
             });
         }
         let result = self.run(

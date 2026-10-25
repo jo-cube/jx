@@ -307,6 +307,13 @@ fn execution_foundation_has_pinned_admission_and_semantic_outcomes() {
             vec![
                 execution_values(program.evaluate_bytes(&bytes)),
                 execution_values(program.evaluate_validated(raw)),
+                execution_values(program.evaluate_validated_with(
+                    Some(raw),
+                    jx::EvaluationOptions {
+                        focus: Some(jx::Value::Raw(raw)),
+                        ..Default::default()
+                    },
+                )),
                 execution_values(program.evaluate(&acquisition.prepare_validated(raw))),
             ]
         };

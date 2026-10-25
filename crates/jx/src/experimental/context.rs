@@ -402,3 +402,17 @@ pub(super) fn group<'e, 'i>(
     };
     crate::tuple::group_with(region, pairs, &context, offset, &Execute::new(a)).map(Cell::Value)
 }
+
+impl Region {
+    pub(super) fn total(&self) -> bool {
+        match &self.kind {
+            Kind::Value(body) => super::consume::total(body),
+            Kind::Route { steps, .. } => steps
+                .iter()
+                .all(|s| s.predicates.is_empty() && s.node.total()),
+            Kind::Keep(body) => body.total(),
+            Kind::Scope(nodes) => nodes.iter().all(Self::total),
+            Kind::Filter(..) | Kind::Order(..) => false,
+        }
+    }
+}

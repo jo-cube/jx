@@ -585,7 +585,17 @@ impl<'e> Lower<'e> {
                     .map(|n| self.node(n))
                     .collect::<Result<_, _>>()?;
                 self.invalidate();
-                Operation::Invoke(target, args, tail && node.tail_call, node.tail_call)
+                Operation::Invoke(
+                    target,
+                    args,
+                    tail && node.tail_call,
+                    node.tail_call,
+                    if tail && node.tail_call {
+                        None
+                    } else {
+                        crate::dynamic::PreparedProgram::new(&call.args)
+                    },
+                )
             }
             Kind::Call(target, args) => {
                 let target = self.node(target)?;
@@ -594,7 +604,7 @@ impl<'e> Lower<'e> {
                     .map(|n| self.node(n))
                     .collect::<Result<_, _>>()?;
                 self.call_boundary(target);
-                Operation::Invoke(target, args, tail && node.tail_call, node.tail_call)
+                Operation::Invoke(target, args, tail && node.tail_call, node.tail_call, None)
             }
             Kind::Partial(target, args) => {
                 let args = args
@@ -619,6 +629,7 @@ impl<'e> Lower<'e> {
                         registers.into(),
                         tail && node.tail_call,
                         node.tail_call,
+                        None,
                     )
                 } else {
                     let right = self.node(right)?;
@@ -649,7 +660,7 @@ impl<'e> Lower<'e> {
                     .iter()
                     .map(|n| self.node(n))
                     .collect::<Result<_, _>>()?;
-                Operation::Invoke(target, args, true, true)
+                Operation::Invoke(target, args, true, true, None)
             }
             Kind::Formatted(call) => {
                 let regs = call
@@ -821,7 +832,7 @@ impl<'e> Lower<'e> {
                 {
                     match &mut i.kind {
                         Operation::Builtin(_, _, native)
-                        | Operation::Invoke(_, _, _, native)
+                        | Operation::Invoke(_, _, _, native, _)
                         | Operation::Chain(_, _, native)
                         | Operation::Each { native, .. } => *native = true,
                         _ => {}
@@ -844,7 +855,7 @@ impl<'e> Lower<'e> {
                     .iter()
                     .map(|n| self.node(n))
                     .collect::<Result<_, _>>()?;
-                Operation::Invoke(target, args, true, true)
+                Operation::Invoke(target, args, true, true, None)
             }
             Kind::Builtin(Builtin::Aggregate(aggregate), args) if args.len() == 1 => {
                 let reg = self.node(&args[0])?;
