@@ -50,10 +50,12 @@ across multiple programs, use their shared template and a worker-local workspace
 `evaluate_without_input()` return the existing `Evaluation` interface. Absent
 focus/root are missing, distinct from JSON null.
 
-Pure terminal paths defer execution until consumption. A one-shot continuation owns
-query-sized span copies and shares metadata when its preparation can be reused or
-dropped. Capture identities survive this ownership boundary. Input/code leaves stay
-borrowed. Automatic acquisition follows the same snapshot rule. Eager lexical and grouping
+Terminal borrowed fields with an infallible reference-only prefix resolve directly
+through the ordinary field kernel to a value or a lazy path cursor. Neither needs an
+escaping activation or span snapshot. Controlled and general sequence producers
+retain a one-shot continuation owning query-sized span copies and shared metadata.
+Preparations can be reused or dropped while results remain live; input/code leaves
+and capture identities survive these ownership boundaries. Eager lexical and grouping
 boundaries still complete before returning results; parentheses are not universally
 interchangeable with terminal streaming. Deferred root delivery can expose a terminal
 producer while its caller remains cancellable. It does not authorize crossing inner
@@ -75,7 +77,10 @@ controls and effects. Controls share the lexical runtime and result wrapper. Wor
 charges follow executed instructions/items; their counts need not equal AST work
 charges. They are cooperative budgets, not a process memory quota.
 `try_for_each_with` and `write_json_with` accept the same settings for prepared input.
-Their settings-aware evaluation preserves the reference's eager effect boundaries;
+Their settings-aware evaluation preserves the reference's eager effect boundaries.
+IR-proven total, read-only contextual producers can defer without retaining a result
+graph when controls are absent. Unknown/fallible operations and controlled execution
+keep their existing delivery boundary;
 empty/seeded options preserve ordinary delivery. Complete serialization shares one
 rollback/error-order kernel with `write_json`.
 
@@ -105,9 +110,13 @@ implementations fail explicitly. This also guards indirect resolution of a decla
 but unbound builtin name. `$eval` resolves its lexical target before arguments and honors host shadowing.
 Builtin dynamic source uses the semantic parser and lowers into this same IR. The
 scope lifetime bridge retains escaping compiled definitions, matchers and transforms;
-it does not execute a borrowed AST. Dynamic source, including literal `$eval` source,
-currently recompiles per invocation. The reference backend can retain literal code.
-Unsupported dynamic lowering remains an explicit evaluation rejection.
+it does not execute a borrowed AST. Non-tail `$eval` call sites with literal or
+compile-time immutable string sources own shared compiled IR code (or a lazy syntax
+error). Arguments still execute in order; the resolved target must be the actual
+builtin before prepared code is used. Code shares the caller's lexical arena and
+retains no evaluated results or environments. Input-derived sources, indirect calls
+and genuine tail transitions retain dynamic compilation and the lifetime bridge.
+There is no source-keyed/global cache. Unsupported dynamic lowering remains explicit.
 
 Straight-line locals and proven immediate callbacks can retain SSA ports. A source
 scope analysis selects retained cells for escaping/callable values and enclosing
@@ -315,7 +324,7 @@ establish dynamic support.
 | --- | --- | --- |
 | Values/operators | Borrowed JSON, missing/null, scalars, arrays, static and dynamic objects, grouping, ranges, scalar operators, membership, postfix retention | Inherited host/coercion boundaries |
 | Navigation | Static fields, general routes and predicates, positions, focus/index tuples, ancestry, tuple grouping/order, array focus, wildcard/descendants, conditional acquisition | General producer/consumer call boundaries |
-| Scope/calls | Lexical blocks/writes, live/escaping closures, recursion/tail calls, signatures, general arity, first-class builtins, partials/composition, dynamic IR with retained definitions | General producer/consumer call results; literal dynamic-code reuse |
+| Scope/calls | Lexical blocks/writes, live/escaping closures, recursion/tail calls, signatures, general arity, first-class builtins, partials/composition, dynamic IR with retained definitions | General producer/consumer call results; indirect and tail dynamic-code reuse |
 | Library | Lookup, truth/existence, aggregates, common string/numeric/collection kernels, map/filter/reduce/each/sift/single and sort callbacks, error/assert, matcher values, formatted numbers/dates, eval, transform/clone, random/time | Inherited regex/coercion and formatting boundaries in `compatibility.md` |
 | Embedding | Compile/clone/reuse, immutable/runtime bindings, host calls/reentry, external focus, absent/validated/shared input, controlled borrowed results and terminal settings | Escaping-result allocation, conservative settings delivery, interpreter-only native requests |
 
@@ -347,8 +356,8 @@ Before default adoption, keep public contract replays, validation/error phase an
 source checks, shared-input ownership, cancellation/prefix tests, concurrent reuse
 and actual-worker controls mandatory. Work quotas count executed IR work rather
 than AST instructions; retained builtin arguments and sequence consumption still
-charge their item/work budgets. Literal `$eval` recompilation and conservative
-callback retention remain significant workload caveats. CLI/default compilation
+charge their item/work budgets. Indirect/tail `$eval` recompilation and conservative
+callback retention remain workload caveats. CLI/default compilation
 have not migrated. No legacy subsystem can yet be removed wholesale.
 
 The pinned admission inventory covers every legacy-success outcome. The remaining
