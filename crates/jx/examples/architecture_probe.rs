@@ -91,7 +91,7 @@ fn main() {
                 Err(e) => json!({"unsupported":e.to_string(),"engine":original}),
                 Ok(p) => json!({
                     "engine":original,
-                    "prototype":[result(p.evaluate_without_input()), result(options.compile_execution(source).unwrap().evaluate_with(None, Default::default()))],
+                    "prototype":[result(p.evaluate_without_input()), result(options.compile(source).unwrap().evaluate_with(None, Default::default()))],
                     "complete":complete_reference(p.evaluate_without_input()),
                     "engine_complete":complete_reference(expression.evaluate_with(None, Default::default()))
                 }),
@@ -103,7 +103,7 @@ fn main() {
         let answer = match compiled {
             Err(e) => json!({"unsupported":e.to_string(),"engine":original}),
             Ok(p) => {
-                let facade = options.compile_execution(source).unwrap();
+                let facade = options.compile(source).unwrap();
                 let mut workspace = jx::execution::Workspace::default();
                 let plan = jx::InputPlan::new([&facade]);
                 let prepared = plan.prepare(input);

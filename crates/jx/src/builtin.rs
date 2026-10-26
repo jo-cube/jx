@@ -47,14 +47,7 @@ impl Builtin {
             _ => return None,
         })
     }
-    pub fn evaluate<'e, 'i>(
-        self,
-        args: &'e [Node],
-        context: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<Operand<'e, 'i>, Error> {
-        self.evaluate_in(args, context, context, offset)
-    }
+
     pub fn contextual(self, argc: usize) -> bool {
         match self {
             Self::Library(f) => f.contextual(argc),
@@ -64,64 +57,7 @@ impl Builtin {
             _ => false,
         }
     }
-    pub fn evaluate_in<'e, 'i>(
-        self,
-        args: &'e [Node],
-        context: &Context<'e, 'i>,
-        caller: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<Operand<'e, 'i>, Error> {
-        if let Self::Library(function) = self {
-            return function.evaluate_in(args, context, caller, offset);
-        }
-        if matches!(self, Self::Lookup) {
-            return crate::lookup::evaluate_in(args, context, caller, offset);
-        }
-        if let Self::Runtime(function) = self {
-            let args = crate::function::Arguments::evaluate(args, context)?;
-            return function.values(args.as_slice(), caller, offset);
-        }
-        if let Self::Aggregate(aggregate) = self {
-            return aggregate.evaluate(args, context, offset);
-        }
-        if args.is_empty() && matches!(self, Self::Boolean | Self::Not) {
-            return self.value(Some(caller.value.clone()), offset);
-        }
-        let [argument] = args else {
-            for arg in args {
-                crate::retain::materialize(arg, context)?;
-            }
-            return Err(type_error(offset));
-        };
-        let mut count = 0;
-        let mut defined = false;
-        let mut truth = false;
-        let mut error = None;
-        crate::retain::visit(argument, context, &mut |value| {
-            count += 1;
-            defined |= !matches!(value, Value::Undefined);
-            if !matches!(self, Self::Exists) {
-                match value.truth(offset) {
-                    Ok(value) => truth |= value,
-                    Err(e) => {
-                        error.get_or_insert(e);
-                    }
-                }
-            }
-        })?;
-        if let Some(error) = error {
-            return Err(error);
-        }
-        if matches!(self, Self::Exists) {
-            return Ok(Operand::One(Value::Boolean(count > 1 || defined)));
-        }
-        if count <= 1 && !defined {
-            return Ok(Operand::Missing);
-        }
-        Ok(Operand::One(Value::Boolean(
-            truth != matches!(self, Self::Not),
-        )))
-    }
+
     pub fn values<'e, 'i>(
         self,
         args: &[Option<Value<'e, 'i>>],
@@ -239,12 +175,6 @@ impl Builtin {
             Self::Runtime(function) => function.arity(),
             _ => 1,
         }
-    }
-    pub fn is_conversion(self) -> bool {
-        matches!(
-            self,
-            Self::Library(library::Library::String | library::Library::Number)
-        )
     }
 
     pub fn constant(self, args: &[Node]) -> bool {

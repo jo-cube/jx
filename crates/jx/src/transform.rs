@@ -22,20 +22,6 @@ pub(crate) trait Body {
         context: &Context<'e, 'i>,
     ) -> Result<Option<Value<'e, 'i>>, Error>;
 }
-impl Body for Node {
-    fn offset(&self) -> usize {
-        self.offset
-    }
-    fn depth(&self) -> usize {
-        self.depth
-    }
-    fn evaluate<'e, 'i>(
-        &'e self,
-        context: &Context<'e, 'i>,
-    ) -> Result<Option<Value<'e, 'i>>, Error> {
-        crate::retain::materialize(self, context)
-    }
-}
 impl<B: Body> Definition<B> {
     pub fn depth(&self) -> usize {
         self.pattern
@@ -44,17 +30,7 @@ impl<B: Body> Definition<B> {
             .max(self.delete.as_ref().map_or(0, |d| d.depth()))
     }
 }
-pub(crate) fn literal<'e, 'i>(
-    definition: &'e Definition,
-    context: &Context<'e, 'i>,
-) -> Value<'e, 'i> {
-    Value::Function(Rc::new(crate::Function {
-        kind: crate::function::FunctionKind::Transform {
-            definition,
-            frame: context.scope.as_ref().expect("transform runtime").capture(),
-        },
-    }))
-}
+
 pub(crate) fn invoke<'e, 'i, B: Body>(
     definition: &'e Definition<B>,
     frame: usize,

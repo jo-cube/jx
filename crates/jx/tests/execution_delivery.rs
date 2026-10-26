@@ -1,4 +1,3 @@
-#![cfg(feature = "experimental")]
 use jx::{CompileOptions, EvaluationOptions, Value};
 
 fn outcome(e: &jx::Expression, input: &[u8]) -> String {
@@ -39,15 +38,20 @@ fn prepared_dynamic_code_preserves_scope_focus_effects_and_lazy_failures() {
         "($f:=function(){$eval('a')};{'a':9}.($f()))",
         "($fs:=$map([1,2,3],function($x){$eval('function(){$x}')});$map($fs,function($f){$f()}))",
     ] {
-        let legacy = options.compile(source).unwrap();
-        let ir = options.compile_execution(source).unwrap();
+        let ordinary = options.compile(source).unwrap();
+        let expressions = [ordinary.clone(), jx::compile("source").unwrap()];
+        let plan = jx::InputPlan::new(&expressions);
         for input in [
             br#"{"a":1,"b":2,"source":"a+3"}"#.as_slice(),
             br#"{"a":[1,2],"b":3,"source":"bad["}"#,
             br#"{}"#,
         ] {
             for _ in 0..3 {
-                assert_eq!(outcome(&ir, input), outcome(&legacy, input), "{source}");
+                assert_eq!(
+                    snapshot(plan.prepare(input).unwrap().evaluate(0)),
+                    outcome(&ordinary, input),
+                    "{source}"
+                );
             }
         }
     }
@@ -56,8 +60,8 @@ fn prepared_dynamic_code_preserves_scope_focus_effects_and_lazy_failures() {
 #[test]
 fn completed_fields_keep_borrowing_shape_and_independent_result_lifetimes() {
     for source in ["a", "$.a", "a.b", "$$.a"] {
-        let ir = jx::compile_execution(source).unwrap();
-        let legacy = jx::compile(source).unwrap();
+        let ir = jx::compile(source).unwrap();
+        let ordinary = jx::compile(source).unwrap();
         let mut w = jx::execution::Workspace::default();
         for input in [
             b" {} ".as_slice(),
@@ -74,10 +78,10 @@ fn completed_fields_keep_borrowing_shape_and_independent_result_lifetimes() {
                 .evaluate_with_workspace(Some(b"{}"), Default::default(), &mut w)
                 .unwrap();
             w.clear();
-            assert_eq!(snapshot(Ok(pending)), outcome(&legacy, input), "{source}");
+            assert_eq!(snapshot(Ok(pending)), outcome(&ordinary, input), "{source}");
         }
     }
-    let e = jx::compile_execution("a").unwrap();
+    let e = jx::compile("a").unwrap();
     let bytes = br#"{"a":"value"}"#;
     let v = e.evaluate(bytes).unwrap().single().unwrap().unwrap();
     assert_eq!(v.as_raw().unwrap().as_bytes().as_ptr(), bytes[5..].as_ptr());
@@ -90,7 +94,7 @@ fn contextual_settings_keep_streaming_cancellation_and_error_precedence() {
         "groups.items.{'v':v,'p':%.name}",
         "groups.items@$item#$i.{'v':$item.v,'i':$i}",
     ] {
-        let e = jx::compile_execution(source).unwrap();
+        let e = jx::compile(source).unwrap();
         let root = jx::validate(input).unwrap();
         let r = e
             .evaluate_with(
@@ -131,19 +135,13 @@ fn fallible_contextual_settings_still_fail_before_returning_results() {
         "groups.items.{'p':%.name,'v':$error('failure')}",
     ] {
         let root = jx::validate(input).unwrap();
-        let legacy = jx::compile(source).unwrap();
-        let ir = jx::compile_execution(source).unwrap();
+        let ir = jx::compile(source).unwrap();
         let settings = || EvaluationOptions {
             focus: Some(Value::Raw(root)),
             ..Default::default()
         };
-        let expected = legacy.evaluate_with(Some(input), settings()).err();
-        assert!(expected.is_some(), "legacy error timing: {source}");
-        assert_eq!(
-            ir.evaluate_with(Some(input), settings()).err(),
-            expected,
-            "{source}"
-        );
+        let error = ir.evaluate_with(Some(input), settings()).unwrap_err();
+        assert_eq!(error.phase, jx::Phase::Evaluation, "{source}");
     }
 }
 
@@ -152,7 +150,7 @@ fn shared_prepared_dynamic_code_never_captures_a_previous_evaluation() {
     let e = std::sync::Arc::new(
         CompileOptions::default()
             .binding("delta")
-            .compile_execution("$eval('a+$delta')")
+            .compile("$eval('a+$delta')")
             .unwrap(),
     );
     std::thread::scope(|scope| {

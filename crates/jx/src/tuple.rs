@@ -7,8 +7,8 @@ use crate::{
     expression::{Kind, Node, Step},
     sequence::{Context, Halt, Output, View, Walk},
 };
+use model::materialize;
 pub(crate) use model::{Evaluator, Expression, Form};
-use model::{Tree, materialize};
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
@@ -94,25 +94,6 @@ pub(crate) fn correlated<B: Expression>(node: &B) -> bool {
 }
 // A stage finishes its input even after its own evaluation fails, preserving
 // earlier-stage error precedence. Consumer cancellation always stops immediately.
-fn transform<'e, 'i>(
-    input: &mut Source<'_, 'e, 'i>,
-    mut apply: impl FnMut(Row<'e, 'i>) -> Walk,
-) -> Walk {
-    let mut error = None;
-    input(&mut |row| {
-        if error.is_some() {
-            return Ok(());
-        }
-        match apply(row) {
-            Err(Halt::Evaluation(e)) => {
-                error = Some(e);
-                Ok(())
-            }
-            result => result,
-        }
-    })?;
-    error.map_or(Ok(()), |e| Err(Halt::Evaluation(e)))
-}
 
 fn walk<'e, 'i, B: Expression + 'e>(
     node: &'e B,
@@ -275,14 +256,6 @@ fn route<'e, 'i, B: Expression + 'e>(
     stages::pipeline(&mut seed, &steps[start..], context, output, evaluator)
 }
 
-pub(crate) fn group<'e, 'i>(
-    base: &'e Node,
-    pairs: &'e [(Node, Node)],
-    context: &Context<'e, 'i>,
-    offset: usize,
-) -> Result<Value<'e, 'i>, Error> {
-    group_with(base, pairs, context, offset, &Tree)
-}
 pub(crate) fn group_with<'e, 'i, B: Expression + 'e>(
     base: &'e B,
     pairs: &'e [(B, B)],
@@ -292,7 +265,7 @@ pub(crate) fn group_with<'e, 'i, B: Expression + 'e>(
 ) -> Result<Value<'e, 'i>, Error> {
     reduce::evaluate(base, pairs, context, offset, evaluator)
 }
-#[cfg(feature = "experimental")]
+
 pub(crate) fn values<'e, 'i, B: Expression + 'e>(
     node: &'e B,
     context: &Context<'e, 'i>,
@@ -301,15 +274,7 @@ pub(crate) fn values<'e, 'i, B: Expression + 'e>(
 ) -> Walk {
     walk(node, context, &mut |row| output(row.value), evaluator)
 }
-pub(crate) fn route_values<'e, 'i>(
-    steps: &'e [Step],
-    focus: bool,
-    context: &Context<'e, 'i>,
-    output: &mut Output<'_, 'e, 'i>,
-) -> Walk {
-    // A borrowed route view is supplied by the reference adapter below.
-    route(steps, focus, context, &mut |row| output(row.value), &Tree)
-}
+
 fn ordered<'e, 'i, B: Expression + 'e>(
     base: &'e B,
     terms: &'e [(B, bool)],
@@ -362,44 +327,23 @@ fn ordered<'e, 'i, B: Expression + 'e>(
     }
     Ok(())
 }
-pub(crate) fn sorted<'e, 'i>(
-    base: &'e Node,
-    terms: &'e [(Node, bool)],
-    context: &Context<'e, 'i>,
-    offset: usize,
-) -> Result<Operand<'e, 'i>, Error> {
-    crate::retain::collect(|emit| {
-        match ordered(
-            base,
-            terms,
-            context,
-            offset,
-            &mut |row| {
-                emit(row.value);
-                Ok(())
-            },
-            &Tree,
-        ) {
-            Ok(()) => Ok(()),
-            Err(Halt::Evaluation(error)) => Err(error),
-            Err(Halt::Stop) => unreachable!("sorting is fully consumed"),
-        }
-    })
-    .map(|value| value.map_or(Operand::Missing, Operand::One))
-}
 
-pub(crate) fn filtered_values<'e, 'i>(
-    base: &'e Node,
-    predicates: &'e [Node],
-    context: &Context<'e, 'i>,
-    output: &mut Output<'_, 'e, 'i>,
+fn transform<'e, 'i>(
+    input: &mut Source<'_, 'e, 'i>,
+    mut apply: impl FnMut(Row<'e, 'i>) -> Walk,
 ) -> Walk {
-    let mut source = |emit: &mut Emit<'_, 'e, 'i>| walk(base, context, emit, &Tree);
-    stages::postfilters(
-        &mut source,
-        predicates,
-        context,
-        &mut |row| output(row.value),
-        &Tree,
-    )
+    let mut error = None;
+    input(&mut |row| {
+        if error.is_some() {
+            return Ok(());
+        }
+        match apply(row) {
+            Err(Halt::Evaluation(e)) => {
+                error = Some(e);
+                Ok(())
+            }
+            result => result,
+        }
+    })?;
+    error.map_or(Ok(()), |e| Err(Halt::Evaluation(e)))
 }

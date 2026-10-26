@@ -1,4 +1,4 @@
-use crate::{Error, ErrorKind, Evaluation, Expression, Value, evaluate, sequence::Context};
+use crate::{Error, ErrorKind, Evaluation, Expression, Value, sequence::Context};
 use std::{rc::Rc, sync::Arc};
 
 /// Declare external lexical names before compilation so specialization respects
@@ -53,33 +53,18 @@ impl CompileOptions {
         self
     }
     pub fn compile(&self, source: &str) -> Result<Expression, Error> {
-        self.validate_names()?;
-        crate::parse::configured(source, &self.bindings, &self.constants)
-            .map_err(Error::compilation)
-    }
-    /// Compile an owned program for the new execution foundation. Unsupported
-    /// semantics fail explicitly; the previous evaluator is never replayed.
-    #[cfg(feature = "experimental")]
-    pub fn compile_program(&self, source: &str) -> Result<crate::execution::Program, Error> {
-        self.validate_names()?;
-        let expression = crate::parse::semantic(source, &self.bindings, &self.constants)
-            .map_err(Error::compilation)?;
-        crate::execution::Program::compile(&expression).map_err(|e| {
-            Error::new(ErrorKind::UnsupportedExpression, e.offset, e.reason).compilation()
+        Ok(Expression {
+            execution: Arc::new(self.compile_program(source)?),
         })
     }
-    /// Opt in to common-IR execution through the ordinary Expression API.
-    /// Unsupported compilation is explicit; execution never retries legacy.
-    #[cfg(feature = "experimental")]
-    pub fn compile_execution(&self, source: &str) -> Result<Expression, Error> {
+    /// Compile immutable common-IR code. Unsupported syntax fails explicitly.
+    pub fn compile_program(&self, source: &str) -> Result<crate::execution::Program, Error> {
         self.validate_names()?;
-        let mut expression = crate::parse::semantic(source, &self.bindings, &self.constants)
+        let parsed = crate::parse::semantic(source, &self.bindings, &self.constants)
             .map_err(Error::compilation)?;
-        let program = crate::execution::Program::compile(&expression).map_err(|e| {
+        crate::execution::Program::compile_parsed(&parsed).map_err(|e| {
             Error::new(ErrorKind::UnsupportedExpression, e.offset, e.reason).compilation()
-        })?;
-        expression.execution = Some(Arc::new(program));
-        Ok(expression)
+        })
     }
     fn validate_names(&self) -> Result<(), Error> {
         for name in self
@@ -129,96 +114,14 @@ impl<'e, 'i> Expression {
         input: Option<&'i [u8]>,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        #[cfg(feature = "experimental")]
-        if let Some(p) = &self.execution {
-            return p.evaluate_with(input, options);
-        }
-        if options.bindings.is_empty()
-            && options.focus.is_none()
-            && options.limits.is_none()
-            && options.cancellation.is_none()
-            && options.deadline.is_none()
-            && let Some(input) = input
-        {
-            return match options.random.as_ref() {
-                Some(random) => self.evaluate_with_random(input, random),
-                None => self.evaluate(input),
-            };
-        }
-        // Validation precedes bindings, control failures, and host effects.
-        let root = input
-            .map(crate::validate)
-            .transpose()?
-            .map_or(Value::Undefined, Value::Raw);
-        self.evaluate_options(root, options)
+        self.execution.evaluate_with(input, options)
     }
-
-    /// Evaluate already validated input with the settings of [`Self::evaluate_with`].
-    /// `None` denotes absent input; `Some` retains its borrowed encoding without
-    /// validating it again. Empty options preserve specialized execution paths.
     pub fn evaluate_validated_with(
         &'e self,
         input: Option<crate::RawJson<'i>>,
         options: EvaluationOptions<'e, 'i>,
     ) -> Result<Evaluation<'e, 'i>, Error> {
-        #[cfg(feature = "experimental")]
-        if let Some(p) = &self.execution {
-            return p.evaluate_validated_with(input, options);
-        }
-        if options.bindings.is_empty()
-            && options.focus.is_none()
-            && options.limits.is_none()
-            && options.cancellation.is_none()
-            && options.deadline.is_none()
-            && let Some(input) = input
-        {
-            return match options.random.as_ref() {
-                Some(random) => self.evaluate_validated_with_random(input, random),
-                None => self.evaluate_validated(input),
-            };
-        }
-        self.evaluate_options(input.map_or(Value::Undefined, Value::Raw), options)
-    }
-
-    pub(crate) fn evaluate_options(
-        &'e self,
-        root: Value<'e, 'i>,
-        options: EvaluationOptions<'e, 'i>,
-    ) -> Result<Evaluation<'e, 'i>, Error> {
-        let focus_functions = validate_options(&self.bindings, &options)?;
-        let control =
-            crate::controls::Control::new(options.limits, options.cancellation, options.deadline);
-        let scope =
-            if self.runtime || focus_functions || !options.bindings.is_empty() || control.is_some()
-            {
-                let scope = crate::runtime::Scope::with_random(
-                    root.clone(),
-                    self.root.clock,
-                    options.random.as_ref(),
-                )
-                .constants(&self.constants)
-                .configure(options.bindings, control.clone());
-                scope.checkpoint(self.root.offset)?;
-                Some(scope)
-            } else {
-                None
-            };
-        let context = Context {
-            value: options.focus.unwrap_or(root),
-            wrapped: true,
-            scope,
-        };
-        let result = if let Some(stream) = self.root.stream(&context) {
-            evaluate::results(crate::evaluate::Operand::Many(stream))
-        } else {
-            evaluate::results(self.root.run(&context)?)
-        };
-        Ok(Evaluation {
-            result: match control {
-                Some(c) => evaluate::Results::Controlled(Box::new((result, c))),
-                None => result,
-            },
-        })
+        self.execution.evaluate_validated_with(input, options)
     }
 }
 pub(crate) fn validate_options(

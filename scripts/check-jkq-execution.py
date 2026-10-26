@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build the actual jkq transform worker and an isolated foundation adapter.
+"""Build the actual jkq transform worker and a lower-level common-IR adapter.
 
 No sibling writes, Kafka dependency, network, or runtime backend trait. Both
-workers compile in one standalone release binary against the same local jx.
+workers compile in one standalone release binary against the same common-IR engine.
 """
 import argparse
 import hashlib
@@ -72,7 +72,7 @@ s = s.replace('fn tombstone_action(&self) -> Action {\n        if self.plan.drop
 a=s.index('fn serialize_projection(');b=s.index('fn evaluation_result(',a);s=s[:a]+s[b:]
 p.write_text(s)
 shutil.copy2(root/'crates/jx/benches/architecture/jkq.rs',out/'main.rs')
-subprocess.run(['cargo','build','-p','jx','--features','experimental','--release','--locked'],cwd=root,check=True)
+subprocess.run(['cargo','build','-p','jx','--release','--locked'],cwd=root,check=True)
 subprocess.run(['rustc','-O','-C','lto=thin','-C','codegen-units=1','--edition=2024','-A','dead_code',
     str(out/'main.rs'),'--extern',f'jx={root}/target/release/libjx.rlib','-L',f'dependency={root}/target/release/deps','-o',str(out/'worker')],check=True)
 metadata = dict(jkq=str(args.jkq.resolve()),revision=subprocess.check_output(['git','-C',str(args.jkq),'rev-parse','HEAD'],text=True).strip(),

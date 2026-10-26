@@ -181,7 +181,6 @@ pub(super) fn boolean(node: &Node) -> bool {
                 | Op::In
         ),
         Kind::Group(n) => boolean(n),
-        Kind::Plan(plan) => boolean(&plan.source),
         Kind::Builtin(b, _) => matches!(
             b,
             crate::builtin::Builtin::Boolean

@@ -1,7 +1,4 @@
-use crate::{
-    Error, ErrorKind, Value, evaluate::Operand, expression::Node, json::string, sequence::Context,
-    value::type_error,
-};
+use crate::{Error, ErrorKind, Value, evaluate::Operand, json::string, value::type_error};
 use std::{
     collections::HashMap,
     hash::{Hash, Hasher},
@@ -42,15 +39,7 @@ impl<'e, 'i, T: Clone> Groups<'e, 'i, T> {
             index: None,
         }
     }
-    pub fn add(
-        &mut self,
-        pairs: &'e [(Node, Node)],
-        context: &Context<'e, 'i>,
-        item: Option<T>,
-        offset: usize,
-    ) -> Result<(), Error> {
-        self.add_with(pairs.len(), item, offset, |pair| pairs[pair].0.run(context))
-    }
+
     pub fn add_with(
         &mut self,
         count: usize,
@@ -111,13 +100,7 @@ impl<'e, 'i, T: Clone> Groups<'e, 'i, T> {
         }
         Ok(())
     }
-    pub fn finish(
-        self,
-        pairs: &'e [(Node, Node)],
-        mut evaluate: impl FnMut((Option<T>, Vec<T>), &'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
-    ) -> Result<Value<'e, 'i>, Error> {
-        self.finish_with(|values, pair| evaluate(values, &pairs[pair].1))
-    }
+
     pub fn finish_with(
         mut self,
         mut evaluate: impl FnMut((Option<T>, Vec<T>), usize) -> Result<Option<Value<'e, 'i>>, Error>,

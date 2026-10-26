@@ -385,6 +385,28 @@ impl<'i> Input<'_, 'i, '_> {
         mut selected: impl FnMut(usize) -> bool,
         mut emit: impl FnMut(&Input<'_, 'i, '_>, Cell<'e, 'i>, usize) -> Result<(), E>,
     ) -> Result<(), E> {
+        if self.root_document().is_some() && schema.has_fields() {
+            return self.each_acquired_values(values, schema, selected, emit);
+        }
+        for (index, value) in values.enumerate() {
+            if selected(index) {
+                let item = if matches!(value, Value::Undefined) {
+                    Cell::Value(value)
+                } else {
+                    self.restore(Some(value))
+                };
+                emit(self, item, index)?;
+            }
+        }
+        Ok(())
+    }
+    fn each_acquired_values<'e, E>(
+        &self,
+        values: impl Iterator<Item = Value<'e, 'i>>,
+        schema: &'e acquisition::Schema,
+        mut selected: impl FnMut(usize) -> bool,
+        mut emit: impl FnMut(&Input<'_, 'i, '_>, Cell<'e, 'i>, usize) -> Result<(), E>,
+    ) -> Result<(), E> {
         let acquire = self.root_document().is_some() && schema.has_fields();
         let mut inline = [acquisition::Span::default(); 16];
         let mut heap = Vec::new();

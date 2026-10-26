@@ -67,7 +67,7 @@ impl Builtin {
             scope.arguments(args, offset)?;
         }
         match self {
-            Self::Eval => evaluate(args, None, context, offset),
+            Self::Eval => evaluate(args, context, offset),
             Self::Random if args.is_empty() => Ok(Operand::One(Value::Number(
                 context
                     .scope
@@ -113,73 +113,18 @@ fn shuffle<'e, 'i>(
 #[derive(Clone, Debug)]
 pub(crate) struct Call {
     pub args: Box<[Node]>,
-    program: Option<Result<crate::Expression, Error>>,
+    pub program: Option<std::sync::Arc<PreparedProgram>>,
 }
 impl Call {
     pub fn prepare(args: Box<[Node]>) -> Self {
-        let program = args.first().and_then(|n| match &n.kind {
-            Kind::String(s) => Some(
-                source(&Value::StringLiteral(crate::RawJson(s)), n.offset)
-                    .and_then(|s| crate::parse::dynamic(&s)),
-            ),
-            Kind::Prepared(p) if matches!(*p.data, crate::constant::Data::String(_)) => {
-                Some(source(&p.data.value(), n.offset).and_then(|s| crate::parse::dynamic(&s)))
-            }
-            _ => None,
-        });
+        let program = PreparedProgram::new(&args);
         Self { args, program }
     }
-    pub fn needs_runtime(&self) -> bool {
-        self.program
-            .as_ref()
-            .is_none_or(|p| p.as_ref().is_ok_and(|p| p.runtime))
-    }
+
     pub fn needs_clock(&self) -> bool {
         self.program
             .as_ref()
-            .is_none_or(|p| p.as_ref().is_ok_and(|p| p.root.clock))
-    }
-    pub fn evaluate<'e, 'i>(
-        &'e self,
-        context: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<Operand<'e, 'i>, Error> {
-        let target = Self::target(context);
-        let arguments = Arguments::evaluate(&self.args, context)?;
-        let target = Self::resolve(target, offset)?;
-        if let Some(function) = target {
-            return crate::function::invoke(&function, arguments.as_slice(), context, offset);
-        }
-        self.values(arguments.as_slice(), context, offset)
-    }
-    pub fn target<'e, 'i>(context: &Context<'e, 'i>) -> Option<Value<'e, 'i>> {
-        context.scope.as_ref().and_then(|s| s.lookup("eval"))
-    }
-    pub fn resolve<'e, 'i>(
-        target: Option<Value<'e, 'i>>,
-        offset: usize,
-    ) -> Result<Option<Rc<crate::Function<'e, 'i>>>, Error> {
-        match target {
-            None => Ok(None),
-            Some(Value::Function(function))
-                if matches!(
-                    function.kind,
-                    FunctionKind::Builtin(crate::builtin::Builtin::Runtime(Builtin::Eval))
-                ) =>
-            {
-                Ok(None)
-            }
-            Some(Value::Function(function)) => Ok(Some(function)),
-            Some(_) => Err(type_error(offset)),
-        }
-    }
-    pub fn values<'e, 'i>(
-        &'e self,
-        arguments: &[Option<Value<'e, 'i>>],
-        context: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<Operand<'e, 'i>, Error> {
-        evaluate(arguments, self.program.as_ref(), context, offset)
+            .is_none_or(|p| p.body().is_some_and(crate::execution::Program::needs_clock))
     }
 }
 fn source<'a>(value: &'a Value<'_, '_>, offset: usize) -> Result<Cow<'a, str>, Error> {
@@ -246,13 +191,13 @@ fn evaluation_focus<'e, 'i>(
 
 /// Immutable code attached to a literal or immutable-source call site.
 /// Stores code or a lazy syntax error, never environments or evaluated values.
-#[cfg(feature = "experimental")]
+
 #[derive(Debug, Clone)]
 pub(crate) struct PreparedProgram {
     program: Result<crate::execution::Program, Error>,
     syntax_error: bool,
 }
-#[cfg(feature = "experimental")]
+
 impl PreparedProgram {
     pub(crate) fn new(args: &[Node]) -> Option<std::sync::Arc<Self>> {
         let node = args.first()?;
@@ -323,7 +268,6 @@ impl PreparedProgram {
 
 fn evaluate<'e, 'i>(
     args: &[Option<Value<'e, 'i>>],
-    prepared: Option<&'e Result<crate::Expression, Error>>,
     context: &Context<'e, 'i>,
     offset: usize,
 ) -> Result<Operand<'e, 'i>, Error> {
@@ -331,98 +275,52 @@ fn evaluate<'e, 'i>(
         return Ok(Operand::Missing);
     };
     let text = args[0].as_ref().expect("source validated");
-    #[cfg(feature = "experimental")]
-    if context
-        .scope
-        .as_ref()
-        .is_some_and(crate::runtime::Scope::is_program)
-    {
-        // Dynamic code has a shorter source lifetime. The existing scope bridge
-        // retains escaping IR definitions and preserves imported value identity.
-        // No AST body can execute in this domain, including nested $eval calls.
-        let source = source(text, offset)?;
-        let expression = crate::parse::dynamic_semantic(&source)
-            .map_err(|e| wrapped(e, ErrorKind::EvalSyntax, offset))?;
-        let program = crate::execution::Program::compile_dynamic(&expression)?;
-        let scope = context.scope.as_ref().unwrap();
-        let mut definitions = scope.dynamic_definitions();
-        borrow::collect(&focus, &mut definitions);
-        return scope
-            .bridge(
-                borrow::value(&focus, &definitions),
-                wrapped_focus,
-                |local| {
-                    let scope = local.scope.as_ref().unwrap();
-                    scope.loan_dynamic(&definitions);
-                    scope.call(offset, program.call.depth, || {
-                        program.evaluate_region(local)
-                    })
-                },
-            )
-            .map(|v| v.map_or(Operand::Missing, Operand::One))
-            .map_err(|e| {
-                // Lowering rejection is an execution-domain boundary, not a
-                // JSONata failure. Keep it explicit through nested $eval calls.
-                if e.kind == ErrorKind::UnsupportedExpression
-                    && e.source == crate::Source::DynamicExpression
-                {
-                    e
-                } else {
-                    wrapped(e, ErrorKind::EvalError, offset)
-                }
-            });
-    }
-    let result = if let Some(program) = prepared {
-        let program = program
-            .as_ref()
-            .map_err(|e| wrapped(e.clone(), ErrorKind::EvalSyntax, offset))?;
-        let local = Context {
-            value: focus,
-            wrapped: wrapped_focus,
-            scope: context.scope.clone(),
-        };
-        if let Some(scope) = &context.scope {
-            scope.call(offset, program.root.depth, || {
-                crate::retain::materialize(&program.root, &local)
-            })
-        } else {
-            crate::retain::materialize(&program.root, &local)
-        }
-    } else {
-        let source = source(text, offset)?;
-        let program = crate::parse::dynamic(&source)
-            .map_err(|e| wrapped(e, ErrorKind::EvalSyntax, offset))?;
-        let scope = context.scope.as_ref().expect("dynamic eval runtime");
-        let mut definitions = scope.dynamic_definitions();
-        borrow::collect(&focus, &mut definitions);
-        scope.bridge(
+
+    // Dynamic code has a shorter source lifetime. The existing scope bridge
+    // retains escaping IR definitions and preserves imported value identity.
+    // No AST body can execute in this domain, including nested $eval calls.
+    let source = source(text, offset)?;
+    let expression = crate::parse::dynamic_semantic(&source)
+        .map_err(|e| wrapped(e, ErrorKind::EvalSyntax, offset))?;
+    let program = crate::execution::Program::compile_dynamic(&expression)?;
+    let scope = context.scope.as_ref().unwrap();
+    let mut definitions = scope.dynamic_definitions();
+    borrow::collect(&focus, &mut definitions);
+    scope
+        .bridge(
             borrow::value(&focus, &definitions),
             wrapped_focus,
             |local| {
-                local.scope.as_ref().unwrap().loan_dynamic(&definitions);
-                local
-                    .scope
-                    .as_ref()
-                    .unwrap()
-                    .call(offset, program.root.depth, || {
-                        crate::retain::materialize(&program.root, local)
-                    })
+                let scope = local.scope.as_ref().unwrap();
+                scope.loan_dynamic(&definitions);
+                scope.call(offset, program.call.depth, || {
+                    program.evaluate_region(local)
+                })
             },
         )
-    };
-    result
         .map(|v| v.map_or(Operand::Missing, Operand::One))
-        .map_err(|e| wrapped(e, ErrorKind::EvalError, offset))
+        .map_err(|e| {
+            // Lowering rejection is an execution-domain boundary, not a
+            // JSONata failure. Keep it explicit through nested $eval calls.
+            if e.kind == ErrorKind::UnsupportedExpression
+                && e.source == crate::Source::DynamicExpression
+            {
+                e
+            } else {
+                wrapped(e, ErrorKind::EvalError, offset)
+            }
+        })
 }
 
 #[derive(Debug)]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "Definitions are already shared behind Rc; boxing adds another allocation."
+)]
 pub(crate) enum Definition {
-    #[cfg(feature = "experimental")]
     Program(crate::execution::call::Definition),
-    #[cfg(feature = "experimental")]
+
     ProgramTransform(Box<crate::transform::Definition<crate::execution::Program>>),
-    Lambda(crate::function::Definition),
-    Transform(crate::transform::Definition),
 }
 #[derive(Debug)]
 pub(crate) struct Callable<'e, 'i> {
@@ -434,12 +332,9 @@ pub(crate) struct Callable<'e, 'i> {
 impl<'e, 'i> Callable<'e, 'i> {
     pub fn arity(&self) -> usize {
         match self.definition.as_ref() {
-            Definition::Lambda(d) => d.params.len(),
-            #[cfg(feature = "experimental")]
             Definition::Program(d) => d.params.len(),
-            #[cfg(feature = "experimental")]
+
             Definition::ProgramTransform(_) => 1,
-            Definition::Transform(_) => 1,
         }
     }
     pub fn invoke(
@@ -450,27 +345,6 @@ impl<'e, 'i> Callable<'e, 'i> {
         validate: bool,
     ) -> Result<Operand<'e, 'i>, Error> {
         let scope = context.scope.as_ref().expect("dynamic closure runtime");
-        if !scope.controlled()
-            && let Definition::Lambda(definition) = self.definition.as_ref()
-            && !definition.tail
-            && let Some(plan) = &definition.plan
-        {
-            let validated;
-            let arguments = if validate && let Some(signature) = &definition.signature {
-                validated = signature.validate(args, &context.value, offset)?;
-                validated.as_slice()
-            } else {
-                args
-            };
-            // Pure plans cannot read or write lexical frames. Retain only their
-            // result; unsupported shapes still use the scope bridge below.
-            let result = scope.call(offset, definition.body.depth, || {
-                Ok(plan.retained(arguments, &self.focus, self.wrapped))
-            })?;
-            if let Some(result) = result {
-                return Ok(result);
-            }
-        }
         let mut definitions = scope.dynamic_definitions();
         if !definitions.iter().any(|d| Rc::ptr_eq(d, &self.definition)) {
             definitions.push(self.definition.clone());
@@ -486,25 +360,14 @@ impl<'e, 'i> Callable<'e, 'i> {
                 arguments.push(v.as_ref().map(|v| borrow::value(v, &definitions)));
             }
             let kind = match self.definition.as_ref() {
-                #[cfg(feature = "experimental")]
                 Definition::Program(definition) => FunctionKind::Program {
                     definition,
                     focus: borrow::value(&self.focus, &definitions),
                     wrapped: self.wrapped,
                     frame: self.frame,
                 },
-                Definition::Lambda(definition) => FunctionKind::Lambda {
-                    definition,
-                    focus: borrow::value(&self.focus, &definitions),
-                    wrapped: self.wrapped,
-                    frame: self.frame,
-                },
-                #[cfg(feature = "experimental")]
+
                 Definition::ProgramTransform(definition) => FunctionKind::ProgramTransform {
-                    definition,
-                    frame: self.frame,
-                },
-                Definition::Transform(definition) => FunctionKind::Transform {
                     definition,
                     frame: self.frame,
                 },

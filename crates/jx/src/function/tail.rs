@@ -5,7 +5,6 @@ use crate::{
     expression::{Kind, Node},
     runtime::Scope,
     sequence::Context,
-    value::type_error,
 };
 use std::rc::Rc;
 
@@ -33,96 +32,7 @@ pub(crate) fn possible(node: &Node) -> bool {
     }
 }
 
-// Evaluate only tail control flow here. Expressions, tests, arguments and
-// terminal results continue through the ordinary evaluator and retention rules.
-fn evaluate<'e, 'i>(
-    node: &'e Node,
-    context: &Context<'e, 'i>,
-    caller: &Context<'e, 'i>,
-) -> Result<Outcome<'e, 'i>, Error> {
-    match &node.kind {
-        Kind::Group(body) => block(std::slice::from_ref(body.as_ref()), context, caller),
-        Kind::Block(nodes) => block(nodes, context, caller),
-        Kind::Conditional(test, yes, no) => {
-            if test.run(context)?.truth(node.offset)? {
-                evaluate(yes, context, caller)
-            } else if let Some(no) = no {
-                evaluate(no, context, caller)
-            } else {
-                Ok(Outcome::Done(None))
-            }
-        }
-        Kind::Call(target, nodes) => {
-            let target = crate::retain::materialize(target, context)?;
-            let arguments = Arguments::evaluate(nodes, context)?;
-            let Some(Value::Function(function)) = target else {
-                return Err(type_error(node.offset));
-            };
-            Ok(Outcome::Call(Call {
-                function,
-                arguments,
-                offset: node.offset,
-                validate: true,
-                null_focus: false,
-            }))
-        }
-        Kind::Eval(call) => {
-            let target = crate::dynamic::Call::target(context);
-            let arguments = Arguments::evaluate(&call.args, context)?;
-            let target = crate::dynamic::Call::resolve(target, node.offset)?;
-            if let Some(function) = target {
-                Ok(Outcome::Call(Call {
-                    function,
-                    arguments,
-                    offset: node.offset,
-                    validate: true,
-                    null_focus: false,
-                }))
-            } else {
-                super::retained(call.values(arguments.as_slice(), caller, node.offset)?)
-                    .map(Outcome::Done)
-            }
-        }
-        Kind::Builtin(builtin, args) => {
-            super::retained(builtin.evaluate_in(args, context, caller, node.offset)?)
-                .map(Outcome::Done)
-        }
-        Kind::Formatted(call) => {
-            super::retained(call.evaluate_in(context, caller, node.offset)?).map(Outcome::Done)
-        }
-        _ => crate::retain::materialize(node, context).map(Outcome::Done),
-    }
-}
-fn block<'e, 'i>(
-    nodes: &'e [Node],
-    context: &Context<'e, 'i>,
-    caller: &Context<'e, 'i>,
-) -> Result<Outcome<'e, 'i>, Error> {
-    let scope = context.scope.as_ref().expect("lexical runtime");
-    let child = scope.child(scope.frame);
-    let context = Context {
-        scope: Some(child.clone()),
-        ..context.clone()
-    };
-    let result = (|| {
-        let Some((last, prefix)) = nodes.split_last() else {
-            return Ok(Outcome::Done(None));
-        };
-        if scope.controlled() {
-            for node in prefix {
-                scope.checkpoint(node.offset)?;
-                crate::retain::materialize(node, &context)?;
-            }
-        } else {
-            for node in prefix {
-                crate::retain::materialize(node, &context)?;
-            }
-        }
-        evaluate(last, &context, caller)
-    })();
-    child.release();
-    result
-}
+// Tail transitions reuse the common program backend and lexical retention rules.
 
 pub(super) fn invoke<'e, 'i>(
     initial: &Function<'e, 'i>,
@@ -130,7 +40,7 @@ pub(super) fn invoke<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
     validate: bool,
-    #[cfg(feature = "experimental")] input: Option<&crate::execution::input::Input<'_, 'i, '_>>,
+    input: Option<&crate::execution::input::Input<'_, 'i, '_>>,
 ) -> Result<Operand<'e, 'i>, Error> {
     let scope = context.scope.as_ref().expect("lexical runtime");
     let mut pending: Option<Call<'e, 'i>> = None;
@@ -159,8 +69,7 @@ pub(super) fn invoke<'e, 'i>(
             ),
             None => (initial, arguments, offset, validate),
         };
-        #[cfg(feature = "experimental")]
-        crate::execution::call::check(function, caller, offset)?;
+
         if let FunctionKind::Partial {
             target,
             arguments: bound,
@@ -200,21 +109,6 @@ pub(super) fn invoke<'e, 'i>(
             continue;
         }
         let (params, signature, body_depth, tail, focus, wrapped, frame) = match &function.kind {
-            FunctionKind::Lambda {
-                definition,
-                focus,
-                wrapped,
-                frame,
-            } => (
-                &definition.params,
-                &definition.signature,
-                definition.body.depth,
-                definition.tail,
-                focus,
-                wrapped,
-                frame,
-            ),
-            #[cfg(feature = "experimental")]
             FunctionKind::Program {
                 definition,
                 focus,
@@ -270,13 +164,6 @@ pub(super) fn invoke<'e, 'i>(
                 scope: Some(child.clone()),
             };
             match &function.kind {
-                FunctionKind::Lambda { definition, .. } if definition.tail => {
-                    evaluate(&definition.body, &local, caller)
-                }
-                FunctionKind::Lambda { definition, .. } => {
-                    crate::retain::materialize(&definition.body, &local).map(Outcome::Done)
-                }
-                #[cfg(feature = "experimental")]
                 FunctionKind::Program { definition, .. } => {
                     definition.body.run_function(&local, arguments, input)
                 }

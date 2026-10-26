@@ -14,8 +14,8 @@ jx = { git = "https://github.com/jo-cube/jx", rev = "REVIEWED_COMMIT" }
 Registry publication will come later; the crates.io package named `jx` is a different
 project. The library target/import remains `jx`, and APIs are pre-release and can change.
 For checkout development, use `jx = { path = "/path/to/jx/crates/jx" }` instead.
-Default features are empty; [native support](releases.md#optional-native-acceleration)
-is optional and also requires `enable_native()` once before sharing an expression.
+All entry points compile the common IR. `Expression::execution_program()` returns
+a reference to the immutable program; workspaces remain caller-owned.
 
 ## Compile and consume
 
@@ -66,14 +66,14 @@ When several expressions share one input, call `jx::validate` once and pass its
 skip validation, retain specialized capture/execution, and preserve result borrowing
 and lazy failures. For a single expression, `evaluate` can fuse validation with capture.
 
-For repeated static paths, `InputPlan::new(&expressions)` unions bounded demands from
+For repeated static paths, `InputPlan::new(&expressions)` unions query-sized demands from
 independently compiled expressions. `plan.prepare(bytes)` validates and captures in
 one traversal; `prepare_validated(raw)` captures without validating again. The returned
 `PreparedInput` evaluates expressions by their original index, in any order, with
 `evaluate(index)` or `evaluate_with(index, options)`. Results do not borrow the capture
-frame; `as_raw()` exposes the validated root without copying it. Unsupported
-expressions, excess demands and intermediate arrays use ordinary
-validated evaluation. Bindings, focus, randomness and controls retain their existing
+frame; `as_raw()` exposes the validated root without copying it. Static demands
+have no fixed capture-count limit. Dynamic navigation and intermediate arrays
+keep their ordinary IR sequence semantics. Bindings, focus, randomness and controls retain their existing
 per-expression execution. Preparation never runs expressions or effects.
 
 Ordinary results may borrow both the input and compiled expression. Do not recycle the
@@ -184,10 +184,11 @@ fn main() -> Result<(), jx::Error> {
 ```
 
 Controls are optional; no control state allocates unless requested. Work units count
-semantic checkpoints, not instructions. Result counts and compact byte totals are checked
+engine checkpoints, with granularity dependent on lowering rather than stable
+CPU-instruction counts. Result counts and compact byte totals are checked
 before delivery; JSONata function results remain inspectable without a JSON encoding.
-Controls can fail during evaluation or consumption. Controlled planned regions use tree
-execution where needed; empty options preserve the ordinary fast path.
+Controls can fail during evaluation or consumption. The same compiled engine
+honors controls; empty options preserve ordinary execution.
 
 Tokens stay cancelled after `cancel()`. Deadlines/cancellation are cooperative, not
 process timeouts or memory quotas. Complete input validation runs first. Regex/formatting

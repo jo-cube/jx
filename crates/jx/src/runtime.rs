@@ -1,6 +1,6 @@
 mod bridge;
 mod region;
-use crate::{Error, ErrorKind, Value, expression::Node, sequence::Context};
+use crate::{Error, ErrorKind, Value, sequence::Context};
 use std::{
     cell::{Cell, OnceCell, RefCell},
     rc::Rc,
@@ -86,8 +86,7 @@ pub(crate) struct Runtime<'e, 'i> {
     random: RefCell<Option<crate::Random>>,
     control: Option<crate::controls::Control>,
     constants: &'e crate::constant::Bindings,
-    #[cfg(feature = "experimental")]
-    program: bool,
+
     constant_identity: OnceCell<Rc<()>>,
 }
 #[derive(Clone, Debug)]
@@ -96,18 +95,6 @@ pub(crate) struct Scope<'e, 'i> {
     pub frame: usize,
 }
 impl<'e, 'i> Scope<'e, 'i> {
-    #[cfg(feature = "experimental")]
-    pub(crate) fn for_program(mut self) -> Self {
-        Rc::get_mut(&mut self.runtime)
-            .expect("configure before sharing the scope")
-            .program = true;
-        self
-    }
-    #[cfg(feature = "experimental")]
-    pub(crate) fn is_program(&self) -> bool {
-        self.runtime.program
-    }
-
     pub fn configure(
         mut self,
         bindings: BindingValues<'e, 'i>,
@@ -176,8 +163,7 @@ impl<'e, 'i> Scope<'e, 'i> {
                 random: RefCell::new(random.cloned()),
                 control: None,
                 constants: &[],
-                #[cfg(feature = "experimental")]
-                program: false,
+
                 constant_identity: OnceCell::new(),
             }),
             frame: 0,
@@ -355,42 +341,6 @@ fn trim_vacant(frames: &mut Vec<Frame<'_, '_>>, parent: usize) {
     if frames.len() == parent + 2 && frames.last().is_some_and(|f| f.vacant) {
         frames.pop();
     }
-}
-
-pub(crate) fn block<'e, 'i>(
-    nodes: &'e [Node],
-    context: &Context<'e, 'i>,
-) -> Result<Option<Value<'e, 'i>>, Error> {
-    let Some(scope) = &context.scope else {
-        let mut result = None;
-        for node in nodes {
-            result = crate::retain::materialize(node, context)?;
-        }
-        return Ok(result);
-    };
-    scope.retained(|| {
-        let child = scope.child(scope.frame);
-        let context = Context {
-            scope: Some(child.clone()),
-            ..context.clone()
-        };
-        let result = (|| {
-            let mut result = None;
-            if scope.controlled() {
-                for node in nodes {
-                    scope.checkpoint(node.offset)?;
-                    result = crate::retain::materialize(node, &context)?;
-                }
-            } else {
-                for node in nodes {
-                    result = crate::retain::materialize(node, &context)?;
-                }
-            }
-            Ok(result)
-        })();
-        child.release();
-        result
-    })
 }
 
 fn timestamp() -> i64 {

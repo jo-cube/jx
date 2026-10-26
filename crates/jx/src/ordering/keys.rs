@@ -1,4 +1,4 @@
-use crate::{Error, Value, expression::Node};
+use crate::{Error, Value};
 use std::cmp::Ordering;
 
 type Column<'e, 'i> = Vec<Option<Option<Value<'e, 'i>>>>;
@@ -10,13 +10,6 @@ pub(crate) struct Keys<'e, 'i> {
     length: usize,
 }
 impl<'e, 'i> Keys<'e, 'i> {
-    pub fn new(length: usize, terms: &[(Node, bool)]) -> Self {
-        Self::with_terms(
-            length,
-            terms.len(),
-            terms.iter().any(|(term, _)| !term.effects),
-        )
-    }
     pub fn with_terms(length: usize, count: usize, replay_safe: bool) -> Self {
         Self {
             columns: if length > 2 && replay_safe {
@@ -45,24 +38,7 @@ impl<'e, 'i> Keys<'e, 'i> {
         column[index] = Some(value.clone());
         Ok(value)
     }
-    pub fn compare(
-        &mut self,
-        left: usize,
-        right: usize,
-        terms: &'e [(Node, bool)],
-        offset: usize,
-        mut evaluate: impl FnMut(usize, &'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
-    ) -> Result<Ordering, Error> {
-        self.compare_with(
-            left,
-            right,
-            terms
-                .iter()
-                .map(|(term, descending)| (term.effects, *descending)),
-            offset,
-            |index, term| evaluate(index, &terms[term].0),
-        )
-    }
+
     pub fn compare_with(
         &mut self,
         left: usize,

@@ -1,4 +1,3 @@
-#![cfg(feature = "experimental")]
 use jx::{CompileOptions, EvaluationOptions, Value};
 
 fn snapshot(result: Result<jx::Evaluation<'_, '_>, jx::Error>) -> String {
@@ -25,10 +24,10 @@ fn invocation_input_domains_preserve_focus_root_scope_and_identity() {
         "$eval(\"$eval(\\\"{'a':a,'b':b}\\\")\")",
         "($eval(\"$x:=other\");$eval(\"{'a':$x.a,'b':$x.b}\"))",
     ] {
-        let legacy = jx::compile(source).unwrap();
-        let ir = jx::compile_execution(source).unwrap();
+        let ordinary = jx::compile(source).unwrap();
+        let ir = jx::compile(source).unwrap();
         let mut w = jx::execution::Workspace::default();
-        let programs = [ir.clone(), jx::compile_execution("other.a").unwrap()];
+        let programs = [ir.clone(), jx::compile("other.a").unwrap()];
         let plan = jx::InputPlan::new(&programs);
         for bytes in [
             br#" {"a":1,"b":2,"other":{"a":3,"b":4},"items":[{"a":5,"b":6},{"a":7}]} "#.as_slice(),
@@ -36,8 +35,7 @@ fn invocation_input_domains_preserve_focus_root_scope_and_identity() {
             br#"[{"a":1,"b":2},{"a":3}]"#,
             b"{}",
         ] {
-            let expected = snapshot(legacy.evaluate(bytes));
-            assert_eq!(snapshot(ir.evaluate(bytes)), expected, "{source}");
+            let expected = snapshot(ordinary.evaluate(bytes));
             let pending = ir.evaluate_with_workspace(Some(bytes), Default::default(), &mut w);
             w.clear();
             assert_eq!(snapshot(pending), expected, "workspace: {source}");
@@ -55,15 +53,17 @@ fn external_focus_and_root_are_independent_of_acquisition_hints() {
         "$eval(\"{'a':a,'b':b,'r':$$.b}\")",
         "$eval(\"{'a':a,'b':b,'r':$$.b}\",other)",
     ] {
-        let legacy = jx::compile(source).unwrap();
-        let ir = jx::compile_execution(source).unwrap();
+        let ordinary = jx::compile(source).unwrap();
+        let ir = jx::compile(source).unwrap();
         let options = || EvaluationOptions {
             focus: Some(Value::Raw(jx::validate(focus_bytes).unwrap())),
             ..Default::default()
         };
         assert_eq!(
             snapshot(ir.evaluate_with(Some(input), options())),
-            snapshot(legacy.evaluate_with(Some(input), options())),
+            snapshot(
+                ordinary.evaluate_validated_with(Some(jx::validate(input).unwrap()), options())
+            ),
             "{source}"
         );
     }
@@ -71,7 +71,7 @@ fn external_focus_and_root_are_independent_of_acquisition_hints() {
 
 #[test]
 fn prepared_errors_remain_lazy_and_shadowable_with_shared_validation() {
-    fn legacy_validation_error() -> jx::Error {
+    fn ordinary_validation_error() -> jx::Error {
         jx::compile("1")
             .unwrap()
             .evaluate(b"{invalid")
@@ -79,13 +79,18 @@ fn prepared_errors_remain_lazy_and_shadowable_with_shared_validation() {
             .unwrap()
     }
     let options = CompileOptions::default().binding("eval");
-    let ir = options.compile_execution("$eval('broken[')").unwrap();
+    let ir = options.compile("$eval('broken[')").unwrap();
     let error = ir.evaluate(b"{invalid").err().unwrap();
-    assert_eq!(error, legacy_validation_error());
+    assert_eq!(error, ordinary_validation_error());
     // Invalid immutable code must not be inspected before call resolution.
-    let legacy = options.compile("$eval('broken[')").unwrap();
+    let ordinary = options.compile("$eval('broken[')").unwrap();
     assert_eq!(
         snapshot(ir.evaluate(b"{}")),
-        snapshot(legacy.evaluate(b"{}"))
+        snapshot(
+            jx::InputPlan::new([&ordinary])
+                .prepare(b"{}")
+                .unwrap()
+                .evaluate(0)
+        )
     );
 }

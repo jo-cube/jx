@@ -32,8 +32,8 @@ regex, pictures, transforms and dynamic evaluation are supported. See
 
 External bindings, synchronous effectful host callbacks and cooperative resource
 controls are described in the [embedding guide](https://github.com/jo-cube/jx/blob/dev/docs/embedding.md).
-Default features are empty; optional `jit` plus `enable_native()` accelerates eligible
-numeric regions. Normal execution remains available for unsupported regions.
+All public compilation uses the common semantic IR and automatic acquisition.
+There are no engine-selection features or Cranelift dependencies.
 
 [Performance](https://github.com/jo-cube/jx/blob/dev/docs/performance.md) describes allocation,
 traversal and benchmark trade-offs. Public `stream`/`embedding` examples are included;

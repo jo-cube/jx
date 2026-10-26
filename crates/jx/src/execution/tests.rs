@@ -1,8 +1,8 @@
 use super::*;
 fn compare(source: &str, input: &[u8]) {
     let expression = crate::compile(source).unwrap();
-    let program = Program::compile(&expression)
-        .unwrap_or_else(|e| panic!("{source}: {e}: {:?}", expression.root));
+    let program =
+        Program::compile(&expression).unwrap_or_else(|e| panic!("{source}: {e}: {:?}", expression));
     let original = expression.evaluate(input).and_then(|v| v.collect_owned());
     let raw = program
         .evaluate_bytes(input)

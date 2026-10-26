@@ -42,7 +42,6 @@ pub(crate) trait Evaluator<'e, 'i, B: Expression + 'e> {
         output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
     ) -> Walk;
 }
-pub(super) struct Tree;
 impl Expression for Node {
     fn form(&self) -> Form<'_, Self> {
         match &self.kind {
@@ -77,29 +76,6 @@ impl Expression for Node {
         matches!(&self.kind, Kind::Variable(_) | Kind::Sort(..))
             || matches!(&self.kind, Kind::Prepared(p) if p.data.is_shared())
             || matches!(&self.kind, Kind::Path(p) if p.rooted && p.fields.is_empty())
-    }
-}
-impl<'e, 'i> Evaluator<'e, 'i, Node> for Tree {
-    fn run(&self, body: &'e Node, context: &Context<'e, 'i>) -> Result<Operand<'e, 'i>, Error> {
-        body.run(context)
-    }
-    fn filtered(
-        &self,
-        body: &'e Node,
-        tests: &'e [Node],
-        context: &Context<'e, 'i>,
-        output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
-    ) -> Walk {
-        crate::filter::with_filters(body, tests, context, output)
-    }
-    fn prefix(
-        &self,
-        steps: &'e [Step],
-        focus: bool,
-        context: &Context<'e, 'i>,
-        output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
-    ) -> Walk {
-        crate::route::walk(steps, focus, false, context, output)
     }
 }
 pub(super) fn materialize<'e, 'i, B: Expression + 'e>(

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       differential:
-        description: 'Also compare both modes with the pinned upstream implementation'
+        description: 'Compare with the pinned upstream implementation'
         type: boolean
         default: false
   workflow_call:
@@ -66,15 +66,9 @@ jobs:
           RUSTDOCFLAGS: '-D warnings'
         run: |
           cargo doc -p jx --no-deps --locked
-          cargo doc -p jx --features jit --no-deps --locked
           python scripts/check-guides.py
       - name: Allocation and execution smoke checks
         run: cargo bench -p jx --bench throughput --all-features --locked -- --smoke
-      - name: Native allocation and execution smoke checks
-        run: cargo bench -p jx --bench throughput --features jit --locked -- --smoke
-        env:
-          JX_BENCH_NATIVE_ONLY: '1'
-          JX_BENCH_NATIVE: '1'
       - if: inputs.differential
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -89,11 +83,9 @@ jobs:
       - name: Optional upstream differential checks
         if: inputs.differential
         run: |
-          cargo build -p jx-cli --release --features jit --locked
-          for native in '' '1'; do
-            for suite in scripts/check-*.cjs; do
-              JX_DIFFERENTIAL_JIT="$native" node "$suite" target/jsonata-reference target/release/jx
-            done
+          cargo build -p jx-cli --release --locked
+          for suite in scripts/check-*.cjs; do
+            node "$suite" target/jsonata-reference target/release/jx
           done
 
   platforms:
@@ -146,14 +138,6 @@ jobs:
       - name: Default archive and extracted CLI
         run: |
           archive="$(python scripts/package-release.py --target ${{ matrix.target }})"
-          python scripts/smoke-release.py "$archive" --revision "$(git rev-parse HEAD)"
-      - name: Native tests and release build
-        run: |
-          cargo test --workspace --all-features --locked --target ${{ matrix.target }}
-          cargo build -p jx-cli --release --features jit --locked --target ${{ matrix.target }}
-      - name: Native archive and extracted CLI
-        run: |
-          archive="$(python scripts/package-release.py --target ${{ matrix.target }} --variant native)"
           python scripts/smoke-release.py "$archive" --revision "$(git rev-parse HEAD)"
       - name: Upload verified archives
         if: inputs.artifacts

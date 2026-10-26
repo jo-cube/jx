@@ -422,30 +422,3 @@ pub(crate) fn own_clock(kind: &Kind) -> bool {
 
 // Effects control replay; runtime storage is a separate requirement. A prepared
 // eval with no lexical reads/writes, calls or clock can execute without an arena.
-pub(crate) fn requires_runtime(root: &mut Node) -> bool {
-    let mut runtime = false;
-    visit(root, &mut |node| {
-        runtime |= node.clock
-            || matches!(
-                node.kind,
-                Kind::Variable(_)
-                    | Kind::Parent(_)
-                    | Kind::Bind(..)
-                    | Kind::Lambda(_)
-                    | Kind::Transform(_)
-                    | Kind::Call(..)
-                    | Kind::Partial(..)
-                    | Kind::Tuples(..)
-                    | Kind::Binary(Op::Chain, ..)
-                    | Kind::Builtin(Builtin::Runtime(_), _)
-                    | Kind::BuiltinReference(Builtin::Runtime(_))
-            );
-        if let Kind::Eval(call) = &node.kind {
-            runtime |= call.needs_runtime();
-        }
-        if let Kind::Route(steps, _) = &node.kind {
-            runtime |= steps.iter().any(|s| s.bindings.is_some());
-        }
-    });
-    runtime
-}

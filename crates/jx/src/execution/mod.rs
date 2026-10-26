@@ -1,6 +1,5 @@
-//! Opt-in compiled execution foundation. Unsupported semantics are explicit;
-//! programs never retry through the tree evaluator. Calls, retained scopes and
-//! checked value kernels share the engine's semantic infrastructure.
+//! Common semantic IR and execution backend. Calls, retained scopes, acquisition
+//! and checked value kernels share one immutable program representation.
 pub(crate) mod acquisition;
 mod bindings;
 pub(crate) mod call;
@@ -185,7 +184,24 @@ enum Literal {
     Data(Arc<Storage>),
 }
 impl Program {
+    pub(crate) fn needs_clock(&self) -> bool {
+        self.clock
+    }
+
+    pub(crate) fn constant(node: &crate::expression::Node) -> Option<crate::constant::Data> {
+        let program = lower::compile(node, false, Some(true)).ok()?;
+        let value = crate::retain::collect(|emit| {
+            program
+                .evaluate_with(None, Default::default())?
+                .for_each(emit)
+        })
+        .ok()?;
+        crate::constant::Data::capture(&value.unwrap_or(Value::Undefined))
+    }
     pub fn compile(expression: &Expression) -> Result<Self, Unsupported> {
+        Ok((*expression.execution).clone())
+    }
+    pub(crate) fn compile_parsed(expression: &crate::parse::Parsed) -> Result<Self, Unsupported> {
         let mut program = lower::compile(
             &expression.root,
             !expression.constants.is_empty() || !expression.bindings.is_empty(),
@@ -196,7 +212,7 @@ impl Program {
         program.input_template = Some(Arc::new(InputTemplate::new([&program])));
         Ok(program)
     }
-    pub(crate) fn compile_dynamic(expression: &Expression) -> Result<Self, crate::Error> {
+    pub(crate) fn compile_dynamic(expression: &crate::parse::Parsed) -> Result<Self, crate::Error> {
         let mut program = lower::compile(&expression.root, true, None).map_err(|e| {
             let mut error =
                 crate::Error::new(crate::ErrorKind::UnsupportedExpression, e.offset, e.reason);

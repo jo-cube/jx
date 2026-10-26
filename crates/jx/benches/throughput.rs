@@ -1,69 +1,5 @@
-// Unsafe allocation instrumentation is confined to this benchmark; executable
-// invocation lives separately in the optional jx-native boundary.
+// Allocation instrumentation is confined to benchmarks.
 #![allow(unsafe_code)]
-#[path = "workloads/acquisition.rs"]
-mod acquisition;
-#[path = "workloads/aggregates.rs"]
-mod aggregates;
-#[path = "workloads/builtins.rs"]
-mod builtins;
-#[path = "workloads/compatibility.rs"]
-mod compatibility;
-#[path = "workloads/compiler.rs"]
-mod compiler;
-#[path = "workloads/composition.rs"]
-mod composition;
-#[path = "workloads/consolidation.rs"]
-mod consolidation;
-#[path = "workloads/constant_bindings.rs"]
-mod constant_bindings;
-#[path = "workloads/constructors.rs"]
-mod constructors;
-#[path = "workloads/demands.rs"]
-mod demands;
-#[path = "workloads/effects.rs"]
-mod effects;
-#[path = "workloads/embedding.rs"]
-mod embedding;
-#[path = "workloads/execution.rs"]
-mod execution;
-#[path = "workloads/filters.rs"]
-mod filters;
-#[path = "workloads/formatting.rs"]
-mod formatting;
-#[path = "workloads/functions.rs"]
-mod functions;
-#[path = "workloads/helpers.rs"]
-mod helpers;
-#[path = "workloads/lexical.rs"]
-mod lexical;
-#[path = "workloads/matchers.rs"]
-mod matchers;
-#[cfg(feature = "jit")]
-#[path = "workloads/native.rs"]
-mod native;
-#[path = "workloads/navigation.rs"]
-mod navigation;
-#[path = "workloads/plans.rs"]
-mod plans;
-#[path = "workloads/realistic.rs"]
-mod realistic;
-#[path = "workloads/regions.rs"]
-mod regions;
-#[path = "workloads/root_regions.rs"]
-mod root_regions;
-#[path = "workloads/runtime.rs"]
-mod runtime;
-#[path = "workloads/scalars.rs"]
-mod scalars;
-#[path = "workloads/shared_input.rs"]
-mod shared_input;
-#[path = "workloads/string_storage.rs"]
-mod string_storage;
-#[path = "workloads/structure.rs"]
-mod structure;
-#[path = "workloads/tuples.rs"]
-mod tuples;
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     hint::black_box,
@@ -95,10 +31,6 @@ unsafe impl GlobalAlloc for CountingAllocator {
 
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
-
-fn measure(name: &str, bytes: usize, smoke: bool, operation: impl FnMut()) {
-    measure_allocations(name, bytes, smoke, Some(0), operation);
-}
 
 fn measure_allocations(
     name: &str,
@@ -162,230 +94,171 @@ fn measure_allocations(
     }
 }
 
-fn benchmark(label: &str, input: &[u8], smoke: bool) {
-    measure(&format!("{label}/validate"), input.len(), smoke, || {
-        black_box(jx::validate(black_box(input)).unwrap());
-    });
-    for (name, source) in [
-        ("identity", "$"),
-        ("shallow", "id"),
-        ("nested", "customer.id"),
-        ("missing", "absent"),
-        ("array_value", "items"),
-    ] {
-        let expression = jx::compile(source).unwrap();
-        measure(&format!("{label}/{name}"), input.len(), smoke, || {
-            expression
-                .evaluate(black_box(input))
-                .unwrap()
-                .for_each(|value| {
-                    black_box(value.as_raw().unwrap().as_bytes());
-                })
-                .unwrap();
-        });
-    }
-    let expression = jx::compile("$").unwrap();
-    // Reuse a sufficiently sized Vec so this includes actual output copies but
-    // excludes allocator growth and physical I/O.
-    let mut output = Vec::with_capacity(input.len());
-    measure(
-        &format!("{label}/identity_write"),
-        input.len(),
-        smoke,
-        || {
-            output.clear();
-            expression
-                .evaluate(black_box(input))
-                .unwrap()
-                .for_each(|value| {
-                    value.write_compact(&mut output).unwrap();
-                })
-                .unwrap();
-            black_box(&output);
-        },
+fn workload(
+    name: &str,
+    source: &str,
+    input: &[u8],
+    expected: Vec<serde_json::Value>,
+    budget: Option<u64>,
+    smoke: bool,
+) {
+    let options = jx::CompileOptions::default().constant_binding(
+        "vars",
+        jx::OwnedValue::from_json(br#"{"labels":{"k7":"seven"}}"#).unwrap(),
     );
-}
-
-fn array_workload(name: &str, source: &str, input: &str, expected_count: usize, smoke: bool) {
-    let expression = jx::compile(source).unwrap();
-    let mut count = 0;
-    expression
-        .evaluate(input.as_bytes())
-        .unwrap()
-        .for_each(|_| count += 1)
-        .unwrap();
-    assert_eq!(count, expected_count, "{name}");
-    measure(name, input.len(), smoke, || {
+    let expression = options.compile(source).unwrap();
+    let mut output = Vec::with_capacity(input.len().max(65536));
+    let mut run = || {
+        output.clear();
         expression
-            .evaluate(black_box(input.as_bytes()))
+            .evaluate(black_box(input))
             .unwrap()
-            .for_each(|value| {
-                black_box(value.as_raw().unwrap().as_bytes());
+            .for_each(|v| {
+                v.write_compact(&mut output).unwrap();
+                output.push(b'\n');
             })
             .unwrap();
+        black_box(&output);
+    };
+    run();
+    // Every timed shape has an independently constructed expected value.
+    assert_eq!(
+        serde_json::Deserializer::from_slice(&output)
+            .into_iter::<serde_json::Value>()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap(),
+        expected,
+        "{name}"
+    );
+    measure_allocations(name, input.len(), smoke, budget, || {
+        output.clear();
+        expression
+            .evaluate(black_box(input))
+            .unwrap()
+            .for_each(|v| {
+                v.write_compact(&mut output).unwrap();
+                output.push(b'\n');
+            })
+            .unwrap();
+        black_box(&output);
     });
 }
-
-fn arrays(smoke: bool) {
-    for width in [1, 8, 16, 128, 1024, 16384] {
-        let rows = (0..width)
-            .map(|id| {
-                format!(
-                    r#"{{"id":{id},"details":{{"price":42}},"tags":[1,2],"padding":"abcdefgh"}}"#
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(",");
-        let root = format!("[{rows}]");
-        let object = format!(r#"{{"orders":{root}}}"#);
-        array_workload("array/shallow", "orders.id", &object, width, smoke);
-        array_workload(
-            "array/nested",
-            "orders.details.price",
-            &object,
-            width,
-            smoke,
-        );
-        array_workload(
-            "array/flatten",
-            "orders.tags",
-            &object,
-            if width == 1 { 1 } else { width * 2 },
-            smoke,
-        );
-        array_workload("array/missing", "orders.absent", &object, 0, smoke);
-        array_workload("array/root", "id", &root, width, smoke);
-        let expression = jx::compile("orders.id").unwrap();
-        measure("array/cancel_first", object.len(), smoke, || {
-            let result = expression
-                .evaluate(black_box(object.as_bytes()))
-                .unwrap()
-                .try_for_each(|value| {
-                    black_box(value.as_raw().unwrap().as_bytes());
-                    Err(())
-                });
-            assert_eq!(result, Err(jx::ConsumeError::Consumer(())));
-        });
-    }
-    let nested = format!(
-        r#"{{"groups":[{}]}}"#,
-        vec![r#"[{"orders":[{"id":1},{"id":2}]},null,[{"orders":{"id":3}}]]"#; 16].join(",")
-    );
-    array_workload(
-        "array/nested_contexts",
-        "groups.orders.id",
-        &nested,
-        48,
-        smoke,
-    );
-    let sparse = format!(
-        "[{}]",
-        vec![r#"null,{},[],{"id":null},[{"id":1}],[{"id":[2,3]}]"#; 16].join(",")
-    );
-    array_workload("array/sparse", "id", &sparse, 64, smoke);
-    let deep = format!("{}{{\"id\":7}}{}", "[".repeat(64), "]".repeat(64));
-    array_workload("array/deep", "id", &deep, 1, smoke);
-    array_workload("array/empty", "id", "[]", 0, smoke);
-    array_workload("array/singleton", "$.id", r#"[{"id":[1]}]"#, 1, smoke);
-    array_workload(
-        "array/nested_values",
-        "id",
-        r#"[{"id":[[1],[2]]},{"id":[[3]]}]"#,
-        3,
-        smoke,
-    );
-}
-
 fn main() {
     let smoke = std::env::args().any(|arg| arg == "--smoke");
     println!(
-        "workload,input_bytes,sample,records,seconds,records_per_second,input_bytes_per_second,allocations_per_record,allocated_bytes_per_record"
+        "workload,input_bytes,sample,records,seconds,records_s,input_bytes_s,allocations,allocated_bytes"
     );
-    #[cfg(feature = "jit")]
-    if std::env::var_os("JX_BENCH_NATIVE_ONLY").is_some() {
-        native::run(smoke);
-        return;
-    }
-    if std::env::var_os("JX_BENCH_CONSTANT_ONLY").is_some() {
-        constant_bindings::run(smoke);
-        return;
-    }
-    if std::env::var_os("JX_BENCH_SHARED_ONLY").is_some() {
-        shared_input::run(smoke);
-        return;
-    }
-    if std::env::var_os("JX_BENCH_EMBEDDING_ONLY").is_some() {
-        embedding::run(smoke);
-        return;
-    }
-    if std::env::var_os("JX_BENCH_RUNTIME_ONLY").is_some() {
-        runtime::run(smoke);
-        return;
-    }
-    if std::env::var_os("JX_BENCH_ROOT_ONLY").is_some() {
-        root_regions::run(smoke);
-        return;
-    }
-    if std::env::var_os("JX_BENCH_REALISTIC_ONLY").is_some() {
-        realistic::run(smoke);
-        return;
-    }
-    measure_allocations("compile", 0, smoke, None, || {
-        black_box(jx::compile(black_box("customer.id")).unwrap());
+    let input = serde_json::json!({"id":"k7","x":3,"y":4,"name":"Ada","padding":"x".repeat(440)})
+        .to_string();
+    measure_allocations("validate", input.len(), smoke, Some(0), || {
+        black_box(jx::validate(black_box(input.as_bytes())).unwrap());
     });
-    for size in [100, 500, 1024, 10 * 1024, 64 * 1024, 1024 * 1024] {
-        let base = r#"{"id":7,"customer":{"id":42},"items":[1,2,3],"padding":""}"#;
-        let input = base.replace(
-            "\"padding\":\"\"",
-            &format!("\"padding\":\"{}\"", "x".repeat(size - base.len())),
+    measure_allocations("compile", 0, smoke, None, || {
+        black_box(jx::compile(black_box("x*y+x")).unwrap());
+    });
+    for (name, source, expected, budget) in [
+        ("field", "id", serde_json::json!("k7"), Some(0)),
+        ("scalar", "x*y+x", serde_json::json!(15), Some(0)),
+        (
+            "lookup",
+            "$lookup($vars.labels,id)",
+            serde_json::json!("seven"),
+            Some(8),
+        ),
+        (
+            "conditional_call",
+            "($f:=function($r){$r.x*$r.y};flag?$f($):x+y)",
+            serde_json::json!(7),
+            Some(16),
+        ),
+        (
+            "invariant_eval",
+            "$eval('x*y+x')",
+            serde_json::json!(15),
+            Some(32),
+        ),
+    ] {
+        workload(
+            name,
+            source,
+            input.as_bytes(),
+            vec![expected],
+            budget,
+            smoke,
         );
-        assert_eq!(input.len(), size);
-        benchmark("ascii", input.as_bytes(), smoke);
     }
-    let structured = format!(
-        r#"{{"id":7,"customer":{{"id":42}},"items":[{}]}}"#,
-        (0..24)
-            .map(|i| format!(r#"{{"n":{i},"ok":true}}"#))
-            .collect::<Vec<_>>()
-            .join(",")
+    for width in [8, 32, 40, 128] {
+        let input = serde_json::Value::Object(
+            (0..width)
+                .map(|i| (format!("v{i}"), serde_json::json!(i)))
+                .collect(),
+        )
+        .to_string();
+        let source = format!(
+            "{{{}}}",
+            (0..width)
+                .map(|i| format!("'v{i}':v{i}+v{i}"))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let expected = serde_json::Value::Object(
+            (0..width)
+                .map(|i| (format!("v{i}"), serde_json::json!(2 * i)))
+                .collect(),
+        );
+        workload(
+            &format!("projection/{width}"),
+            &source,
+            input.as_bytes(),
+            vec![expected.clone()],
+            Some(16),
+            smoke,
+        );
+        workload(
+            &format!("projection_call/{width}"),
+            &format!(
+                "function($r){{{} }}($)",
+                source.replace(":v", ":$r.v").replace("+v", "+$r.v")
+            ),
+            input.as_bytes(),
+            vec![expected],
+            Some(64),
+            smoke,
+        );
+    }
+    for n in [8, 128, 1024] {
+        let input=serde_json::json!({"rows":(0..n).map(|i|serde_json::json!({"v":i,"w":2})).collect::<Vec<_>>()}).to_string();
+        workload(
+            &format!("fold/{n}"),
+            "$sum(rows.(v*w))",
+            input.as_bytes(),
+            vec![serde_json::json!((0..n).sum::<usize>() * 2)],
+            Some(16),
+            smoke,
+        );
+        workload(
+            &format!("filtered/{n}"),
+            "$sum((rows[v>3]).(v*w+v))",
+            input.as_bytes(),
+            vec![serde_json::json!((4..n).sum::<usize>() * 3)],
+            Some(16),
+            smoke,
+        );
+        workload(
+            &format!("callback/{n}"),
+            "$sum($map(rows,function($r){$r.v*$r.w}))",
+            input.as_bytes(),
+            vec![serde_json::json!((0..n).sum::<usize>() * 2)],
+            None,
+            smoke,
+        );
+    }
+    workload(
+        "context_capture",
+        "groups.items.($p:=%;$map(v,function($n){$p.name & ':' & $string($n)}))",
+        br#"{"groups":[{"name":"g","items":[{"v":[1,2]}]}]}"#,
+        vec![serde_json::json!("g:1"), serde_json::json!("g:2")],
+        None,
+        smoke,
     );
-    benchmark("structured", structured.as_bytes(), smoke);
-    let unicode = format!(
-        r#"{{"\u0069d":7,"customer":{{"\u0069d":42}},"items":[],"text":"{}"}}"#,
-        "é中😀".repeat(100)
-    );
-    benchmark("unicode_escaped_keys", unicode.as_bytes(), smoke);
-    arrays(smoke);
-    scalars::run(smoke);
-    filters::run(smoke);
-    aggregates::run(smoke);
-    constructors::run(smoke);
-    lexical::run(smoke);
-    navigation::run(smoke);
-    compiler::run(smoke);
-    execution::run(smoke);
-    #[cfg(feature = "jit")]
-    native::run(smoke);
-    plans::run(smoke);
-    demands::run(smoke);
-    tuples::run(smoke);
-    builtins::run(smoke);
-    helpers::run(smoke);
-    formatting::run(smoke);
-    functions::run(smoke);
-    effects::run(smoke);
-    composition::run(smoke);
-    matchers::run(smoke);
-    structure::run(smoke);
-    consolidation::run(smoke);
-    regions::run(smoke);
-    acquisition::run(smoke);
-    string_storage::run(smoke);
-    runtime::run(smoke);
-    embedding::run(smoke);
-    shared_input::run(smoke);
-    constant_bindings::run(smoke);
-    compatibility::run(smoke);
-    root_regions::run(smoke);
-    realistic::run(smoke);
 }

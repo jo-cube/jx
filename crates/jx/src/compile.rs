@@ -1,9 +1,7 @@
 use crate::{
-    Value,
     builtin::Builtin,
     constant::{Data, Prepared},
     expression::{Kind, Node, Op},
-    sequence::Context,
 };
 
 // Only context-independent, effect-free expressions are candidates. Evaluate
@@ -51,11 +49,6 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
                 | Kind::BuiltinReference(_)
         )
     {
-        let context = Context {
-            value: Value::Undefined,
-            wrapped: true,
-            scope: None,
-        };
         if let Some(data) = shared_object_route(node) {
             node.kind = Kind::Prepared(Box::new(Prepared {
                 data,
@@ -63,9 +56,7 @@ pub(crate) fn prepare(node: &mut Node) -> bool {
             }));
             node.effects = false;
             node.clock = false;
-        } else if let Ok(value) = crate::retain::materialize(node, &context)
-            && let Some(data) = Data::capture(&value.unwrap_or(Value::Undefined))
-        {
+        } else if let Some(data) = crate::execution::Program::constant(node) {
             let prepared = Prepared {
                 data: data.into(),
                 array_syntax: node.is_array_constructor(),
@@ -179,13 +170,23 @@ fn specialize(node: &mut Node) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn options_test_constants(
+        config: std::sync::Arc<crate::OwnedValue>,
+    ) -> Vec<(Box<str>, std::sync::Arc<crate::OwnedValue>)> {
+        vec![("config".into(), config)]
+    }
     #[test]
     fn nested_immutable_object_storage_is_shared_across_expression_clones() {
         let config = std::sync::Arc::new(
             crate::OwnedValue::from_json(br#"{"labels":{"x":"value"}}"#).unwrap(),
         );
         let options = crate::CompileOptions::default().constant_binding("config", config.clone());
-        let expression = options.compile("$lookup($config.labels,key)").unwrap();
+        let expression = crate::parse::semantic(
+            "$lookup($config.labels,key)",
+            &[],
+            &options_test_constants(config.clone()),
+        )
+        .unwrap();
         let expected = config
             .data
             .find(
@@ -203,7 +204,9 @@ mod tests {
                 "nested immutable table was copied"
             );
             assert_eq!(
-                expression
+                options
+                    .compile("$lookup($config.labels,key)")
+                    .unwrap()
                     .evaluate(br#"{"key":"x"}"#)
                     .unwrap()
                     .single()

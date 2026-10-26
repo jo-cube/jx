@@ -136,7 +136,7 @@ impl<'e, 'i> Value<'e, 'i> {
         };
         match storage {
             Self::Raw(raw) => raw.is_array(),
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => view.raw().is_array(),
             Self::Constant(value) => value.shape().is_some(),
             Self::Array(_) => true,
@@ -150,7 +150,7 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn elements(&self) -> Elements<'_, 'e, 'i> {
         match self {
             Self::Raw(raw) => Elements::Raw(raw.elements()),
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => Elements::Raw(view.raw().elements()),
             Self::Copied(copy) => Elements::Copied(Box::new(copy.source.elements()), copy),
             Self::Constant(c) => Elements::Constant(c, 0),
@@ -161,7 +161,7 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn field(&self, field: &str) -> Option<Self> {
         match self {
             Self::Raw(raw) => raw.field(field).map(Self::Raw),
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => view.field(field),
             Self::Copied(copy) => copy.field(field),
             Self::Constant(c) => c.field(
@@ -184,7 +184,7 @@ impl<'e, 'i> Value<'e, 'i> {
     pub(crate) fn members(&self) -> Members<'_, 'e, 'i> {
         match self {
             Self::Raw(raw) => Members::Raw(raw.members()),
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => Members::Raw(view.raw().members()),
             Self::Copied(copy) => Members::Copied(Box::new(copy.source.members()), copy),
             Self::Constant(c) => Members::Constant(c, 0),
@@ -199,7 +199,7 @@ impl<'e, 'i> Value<'e, 'i> {
         };
         match storage {
             Self::Raw(raw) => raw.as_bytes()[0] == b'{',
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => view.raw().as_bytes()[0] == b'{',
             Self::Constant(value) => value.shape().is_none(),
             Self::Object(_) => true,

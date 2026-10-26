@@ -10,11 +10,16 @@ pub(super) fn run(p: &mut Program) {
     for i in &p.code {
         definitions[i.out] += 1;
     }
-    let mut data = vec![None; p.registers];
+    let mut data: Vec<Option<Arc<Storage>>> = vec![None; p.registers];
     for i in &mut p.code {
         if let Operation::Builtin(Builtin::Lookup, args, _) = &i.kind
             && let [base, key] = args.as_ref()
             && let Some(d) = &data[*base]
+            // The data-only kernel has no source value from which to inherit
+            // container identity. Keep container-valued tables on the ordinary
+            // indexed lookup operation, which retains the bound object token.
+            && matches!(&***d, Data::Object { members, .. }
+                if members.iter().all(|(_, value)| !matches!(value, Data::Array(..) | Data::Object { .. })))
         {
             i.kind = Operation::Lookup(Arc::clone(d), *key);
         }

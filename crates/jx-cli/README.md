@@ -23,11 +23,7 @@ Default limits are 1 MiB per input record and 16 MiB per output result, excludin
 Use `--help` for options. Diagnostics go to stderr. Exit status: 0 success/broken pipe,
 1 input/evaluation/output failure, 2 usage/expression-file/compilation failure.
 
-The normal build is recommended and has no Cranelift dependency. Optional archives add
-`-native` before the extension; both variants contain `jx`/`jx.exe`. Pass `--jit` to enable
-numeric/boolean acceleration and selected folds in that variant. Unsupported regions
-continue through the complete normal runtime; scanning-heavy workloads may gain little.
-Source builds need `--features jit` as well as runtime `--jit`.
+Releases contain one common-IR executable. There is no engine-selection option.
 
 See the [CLI guide](https://github.com/jo-cube/jx/blob/dev/docs/cli.md),
 [compatibility/limits](https://github.com/jo-cube/jx/blob/dev/docs/compatibility.md) and

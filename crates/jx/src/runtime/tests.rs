@@ -6,7 +6,9 @@ fn temporary_captures_release_their_frames_before_record_completion() {
         "$map(a,function($x){($f:=function(){$x};$f()+1)})",
         "$map(a,function($x){($f:=function(){$x};$f())})",
     ] {
-        let expression = crate::compile(source).unwrap();
+        let expression = crate::CompileOptions::default()
+            .compile_program(source)
+            .unwrap();
         let input = crate::validate(b"{\"a\":[1,2,3,4,5,6,7,8]}").unwrap();
         let scope = Scope::with_random(Value::Raw(input), false, None);
         let context = Context {
@@ -14,9 +16,7 @@ fn temporary_captures_release_their_frames_before_record_completion() {
             wrapped: true,
             scope: Some(scope.clone()),
         };
-        let value = crate::retain::materialize(&expression.root, &context)
-            .unwrap()
-            .unwrap();
+        let value = expression.evaluate_region(&context).unwrap().unwrap();
         assert_eq!(value.elements().count(), 8);
         let frames = scope.runtime.frames.borrow();
         assert!(
@@ -30,10 +30,9 @@ fn temporary_captures_release_their_frames_before_record_completion() {
 
 #[test]
 fn an_older_frame_write_keeps_its_new_capture_alive() {
-    let expression = crate::compile("function(){$x}").unwrap();
-    let crate::expression::Kind::Lambda(definition) = &expression.root.kind else {
-        panic!("lambda")
-    };
+    let expression = crate::CompileOptions::default()
+        .compile_program("function(){$x}")
+        .unwrap();
     let scope = Scope::with_random(Value::Null, false, None);
     scope
         .retained(|| {
@@ -44,7 +43,10 @@ fn an_older_frame_write_keeps_its_new_capture_alive() {
                 wrapped: false,
                 scope: Some(child.clone()),
             };
-            scope.bind("saved", crate::Function::lambda(definition, &context));
+            scope.bind(
+                "saved",
+                expression.evaluate_region(&context).unwrap().unwrap(),
+            );
             child.release();
             Ok(None)
         })
@@ -65,10 +67,9 @@ fn an_older_frame_write_keeps_its_new_capture_alive() {
 
 #[test]
 fn closure_focus_is_an_escape_root_even_with_an_older_frame() {
-    let expression = crate::compile("function(){$}").unwrap();
-    let crate::expression::Kind::Lambda(definition) = &expression.root.kind else {
-        panic!("lambda")
-    };
+    let expression = crate::CompileOptions::default()
+        .compile_program("function(){$}")
+        .unwrap();
     let scope = Scope::with_random(Value::Null, false, None);
     let value = scope
         .retained(|| {
@@ -78,13 +79,13 @@ fn closure_focus_is_an_escape_root_even_with_an_older_frame() {
                 wrapped: false,
                 scope: Some(child.clone()),
             };
-            let captured = crate::Function::lambda(definition, &local);
+            let captured = expression.evaluate_region(&local).unwrap().unwrap();
             let older = Context {
                 value: captured,
                 wrapped: false,
                 scope: Some(scope.clone()),
             };
-            let result = crate::Function::lambda(definition, &older);
+            let result = expression.evaluate_region(&older).unwrap().unwrap();
             child.release();
             Ok(Some(result))
         })
@@ -109,13 +110,12 @@ fn closure_focus_is_an_escape_root_even_with_an_older_frame() {
     ));
 }
 
-#[cfg(feature = "experimental")]
 #[test]
 fn compiled_transform_regions_reclaim_discarded_closure_environments() {
     let program = crate::CompileOptions::default()
         .compile_program("($f:=function(){1};$f();1)")
         .unwrap();
-    let scope = Scope::with_random(Value::Null, false, None).for_program();
+    let scope = Scope::with_random(Value::Null, false, None);
     let context = Context {
         value: Value::Null,
         wrapped: false,
@@ -133,10 +133,9 @@ fn compiled_transform_regions_reclaim_discarded_closure_environments() {
     }
 }
 
-#[cfg(feature = "experimental")]
 #[test]
 fn dynamic_program_regions_reclaim_discarded_closure_environments() {
-    let scope = Scope::with_random(Value::Null, false, None).for_program();
+    let scope = Scope::with_random(Value::Null, false, None);
     let context = Context {
         value: Value::Null,
         wrapped: false,
@@ -154,7 +153,6 @@ fn dynamic_program_regions_reclaim_discarded_closure_environments() {
     }
 }
 
-#[cfg(feature = "experimental")]
 #[test]
 fn correlated_regions_reclaim_per_row_captures() {
     let source = "items#$i.($f:=function(){$i};$f())";
@@ -163,7 +161,7 @@ fn correlated_regions_reclaim_per_row_captures() {
         .unwrap();
     let input = format!("{{\"items\":[{}]}}", vec!["0"; 128].join(","));
     let raw = crate::validate(input.as_bytes()).unwrap();
-    let scope = Scope::with_random(Value::Raw(raw), false, None).for_program();
+    let scope = Scope::with_random(Value::Raw(raw), false, None);
     let context = Context {
         value: Value::Raw(raw),
         wrapped: true,

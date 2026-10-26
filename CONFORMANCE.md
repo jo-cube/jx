@@ -49,8 +49,7 @@ helps inspect CLI observations but does not classify them automatically.
 
 JSON syntax/validation, language semantics, CLI behavior and performance budgets have
 separate tests. Regression coverage includes borrowing, retained closures, dynamic
-programs, effect order, demand capture, exact numeric bits/error offsets and native/tree
-fallback. [Robustness testing](fuzz/README.md) adds seeded and coverage-guided boundary
+programs, effect order, demand capture, exact numeric bits/error offsets and common-IR acquisition and delivery. [Robustness testing](fuzz/README.md) adds seeded and coverage-guided boundary
 checks. These are evidence, not a sandbox guarantee.
 
 The optional `scripts/check-*.cjs` suites compare readable and seeded expressions with
@@ -66,15 +65,11 @@ for suite in scripts/check-*.cjs; do
 done
 ```
 
-For native parity, build with `just build-jit` and set `JX_DIFFERENTIAL_JIT=1` for the
-same loop. The helper verifies the upstream revision. Ordinary `just all` and CI use
+The helper verifies the upstream revision. Ordinary `just all` and CI use
 vendored fixtures and need neither Node nor an upstream checkout. Manual CI/release
-preparation can opt into the pinned-upstream differential suites in both modes.
+preparation can opt into the pinned-upstream differential suites.
 
-The opt-in execution foundation has a separate explicit admission inventory in
-`tests/conformance/execution.json`. With `experimental`, the Rust conformance test
-checks every inventory entry and compares admitted raw/validated/prepared results
-and diagnostics with the legacy reference and pinned expectations. Updating that
-inventory is deliberate; use the differential workflow in
-[execution reproduction](benchmarks/execution/reproduce.md). Rejection is not a skip
-or a claim of language support.
+The common execution foundation also has an explicit admission inventory in
+`tests/conformance/execution.json`. Ordinary Rust conformance tests exercise raw,
+validated and prepared input and assert pinned outcomes. Updating the inventory
+requires reviewing every changed outcome; no cases may be silently skipped.

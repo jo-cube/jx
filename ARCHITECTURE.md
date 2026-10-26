@@ -1,145 +1,81 @@
 # Architecture
 
-`crates/jx` owns the language and evaluation. `crates/jx-cli` owns NDJSON framing,
-files and output policy. The optional `crates/jx-native` owns executable code.
-Compiled expressions are immutable `Send + Sync`; evaluation state is local to a caller.
+`crates/jx` owns JSONata semantics, compilation, acquisition and execution.
+`crates/jx-cli` owns NDJSON framing, files and output policy. Both use the same
+execution foundation. No runtime engine selection or AST evaluation is involved.
 
 ```text
-JSONata source
-      |
-      v
-compiled semantic tree + static data
-      |
-      +--> general tree evaluator
-      |
-      +--> bounded optimized plan
-                 |
-                 +--> plan interpreter
-                 +--> optional native numeric kernels
-
-JSON bytes --> complete validation + demand capture --> execution --> results
+source → parser / lexical and ancestry analysis → constant preparation
+       → shared semantic IR → local optimization / acquisition / register layout
+JSON bytes → complete validation + query-sized acquisition → execution → delivery
 ```
 
-## Compilation and traversal
+## Programs and evaluation state
 
-Compilation parses source, resolves lexical/builtin references, derives requested
-ancestry, identifies effects and specializes constants. Static constructors, indexed
-objects, regexes, pictures and known `$eval` programs become immutable expression data.
-Constant failures stay conditional runtime failures; compilation does not move errors
-into unselected branches or bypass input validation.
+`compile` and `CompileOptions::compile` return immutable `Expression` values that
+share an `Arc<execution::Program>`. The parser tree is discarded after lowering.
+Programs are `Send + Sync`; clones share code, immutable bindings and acquisition
+templates. An evaluation owns its lexical arena and retained values. It may borrow
+input bytes and program constants. There is no global mutable cache or input DOM.
 
-Every input byte is validated, including undemanded fields and untaken branches.
-Compact demand metadata captures required raw spans during validation where possible.
-Repeated planned loads, pure call arguments and bounded pure root regions reuse those
-captures. Pure missing tests and fallback branches can share input selection without
-evaluating untaken branches or caching expression results. Pure library arguments and fixed constructor regions, including single-demand expressions,
-use one stack capture frame, sharing scalar/constructor
-operations with tree execution and existing numeric plans. Dynamic contexts, effects and controls stay on their original paths; intermediate
-arrays fall back before region execution. An explicit `InputPlan` unions bounded pure root demands and existing scalar, fold and
-constructor plan demands across compiled expressions. Compile-time slot mappings reuse
-shared spans in each plan without rescanning its source. Its borrowed `PreparedInput`
-contains only validated spans; each evaluation runs independently, and deferred demands
-fall back per expression. Existing expression
-entry points keep their own acquisition fast paths. Runtime contexts and values carry
-no capture metadata. Nested demanded objects can share a scan; arrays and dynamic
-navigation use ordinary traversal.
-Traversal of validated spans locates token boundaries without repeating grammar
-validation. The validator and traversal cursor share path/demand handling; only the
-validator accepts unchecked input. There is no universal input index or per-record cache.
+Ordinary byte evaluation validates the complete input and acquires statically
+demanded fields automatically. `evaluate_validated` skips only validation.
+`InputPlan` joins demands from several expressions and prepares a document once;
+independent indexed evaluations share offsets, never lexical writes or results.
+There is no fixed capture limit. `execution::Workspace` is optional caller-owned
+reusable offset storage. Its exclusive mutable borrow ends before result delivery;
+results can outlive the scratch while still borrowing the input and program.
 
-## Plans and fallback
+## Semantic and physical execution
 
-Plans cover useful pure regions: scalar loads and lookups, arithmetic/comparisons,
-truth tests, forward branches/moves, selected filter/map/numeric folds and fixed
-constructors with computed primitive members. Eligible callback bodies use the same
-operations. Compilation shares repeated demands and computations within these regions. Pure static
-selection and Boolean filters can lower through grouping parentheses. Numeric local
-declarations use registers only when every value and use proves replay-safe; escaping
-values, external writes and unknown lexical reads retain their tree.
-Registers and captures are bounded; ordinary scalar execution uses stack storage.
+The common IR represents focus, root, lexical reads/writes, branches, calls,
+constructors and sequence regions. Structured branch lowering preserves dominance
+and lexical versions. Local CSE and copy/dead-value elimination preserve effects,
+evaluation order and failures. Conservative live intervals assign reusable physical
+cells to logical values, including synchronous child captures and branch joins.
 
-A plan retains its tree source. Unsupported shapes or failed guards fall back before
-publishing output, preserving type errors and evaluation order. Only replay-safe work
-can be retried. Strings, general ownership, provenance, dynamic calls, host functions
-and effects remain in normal Rust evaluation. Controlled execution uses tree regions
-where needed to keep cancellation and work checks effective.
+General and scalar dispatch use those same instructions, identities and layouts.
+Compatible complete sequence consumers may use an IR-derived fused filter/map
+region, sharing row acquisition and scalar operations. Cardinality, effectful,
+controlled and cancellable boundaries retain the general semantic path. No guard
+replays previously executed language work. Physical strategy is chosen before
+execution, rather than by recognizing expression strings or aggregate names.
 
-Legacy lowering is bounded and retains its tree reference. The replacement foundation
-below is the migration target for broader semantics. Native execution has a narrower
-boundary still.
+## Borrowing, contexts and calls
 
-## Values, sequences and retention
+Raw JSON tokens retain their original spelling until computation requires a scalar.
+Input views carry borrowed fragments and demand-sized provenance. Byte/base identity
+checks guard field offsets across lexical aliases, arguments, closures, nested
+programs and ancestor contexts. Unknown origins navigate their actual values.
+There is no unconditional full index or permanent input ancestry graph.
 
-Values can be raw borrowed JSON, expression-owned constants, primitive scalars,
-encoded strings, constructed containers or functions. Constructed containers own
-member lists and share immutable structure; their leaves can still borrow input.
-Decoded unescaped strings borrow, while escape decoding may allocate. Case conversion,
-substring extraction and literal search use UTF-8 directly for unescaped strings;
-escaped strings retain UTF-16 handling, including isolated surrogate units. Bounded
-left-associated concatenation retains converted components on the stack and constructs
-one exactly sized owned string, preserving each operator's evaluation/conversion order.
-JSONata string
-conversion is separate from token-preserving JSON output.
+Correlated regions carry only demanded tuple/index/ancestry metadata. Ordinary
+scalar values have no tuple state. Shared tuple, filter, grouping, ordering,
+conversion and transform kernels consume compiled IR bodies. Parent context is
+expression-path ancestry, not a generic JSON parent pointer.
 
-Missing, null, arrays and result sequences are distinct. Navigation applies JSONata's
-flattening/cardinality rules; pure sequences can stream or replay where safe. Lexical
-bindings, arguments and captured results retain evaluated values once, never recipes
-that could re-run a call or random draw. Filters and aggregates share this sequence
-model. Sorting and grouping retain candidates because their semantics require it.
-Replay-safe sort keys are computed lazily once; effectful comparisons preserve call order.
+Function values refer to compiled definitions and retained lexical arena frames.
+Closures observe live assignments, signatures are checked by the common call ABI,
+and the tail trampoline reuses frames. Dynamic `$eval` compiles through the same
+parser and IR. Invariant source sites retain immutable code or lazy syntax errors;
+actual target resolution, arguments, focus and lexical scope still govern invocation.
+Nested immutable programs propagate acquisition demands through invocation regions.
+Truly dynamic sources have evaluation-local lifetime bridging, not a global cache.
 
-An optional lexical arena holds frames. Closures capture focus and frame indices without
-owning back-edges. Uncaptured frames recycle; completed regions release frames only when
-no returned closure/container or older-frame write can reach them. Tail calls trampoline
-with bounded Rust stack; non-tail calls remain guarded.
+## Delivery and boundaries
 
-`$eval` confines dynamic program ownership to its scope bridge and escaping values.
-It does not make ordinary values universally owned. Parent provenance is derived from
-requested paths, rather than attached to every value. Clone/transform views share
-untouched structure and rebuild changed containers/ancestors. Owned snapshots explicitly
-detach JSON-compatible results; JSONata functions remain evaluation-local.
+Completed results avoid deferred state. Streamed results retain only the state they
+need until consumption; replay, identity, lexical lifetime and effects can require
+materialization. Validation precedes bindings, controls and host effects. Consumer
+cancellation stops delivery immediately. Earlier complete output remains visible
+when later execution fails; complete serialization rolls back incomplete values.
 
-## Runtime boundaries
+Constant preparation executes eligible effect-free nodes through this same IR and
+captures immutable data. Failed folds remain runtime expressions. Source nodes and
+semantic analysis stay compile-time facilities, never executable result bodies.
 
-External names are declared before optimization. Immutable owned external data is shared
-by compile options/expressions and substituted only when scope analysis proves the name
-unchanged. Static object descendants retain their snapshot owner and member positions without
-copying the table or its index. Such views keep the whole snapshot alive; arrays and
-general constant computations still fold through ordinary semantics. Dynamic evaluation,
-rebinding, transforms and identity-sensitive container membership retain a borrowed immutable environment
-beneath evaluation-local frames. Host functions are always effectful,
-synchronous and excluded from pure plans/replay. Randomness initializes lazily;
-timestamps are fixed within an evaluation. Optional controls live in evaluation state,
-not on each value. Diagnostics carry phase, source, offset and nested causes.
-See [embedding](docs/embedding.md) for the public ownership and control contracts.
+Releases contain one interpreted common-IR executable. There are no engine-selection
+features, native installation APIs or Cranelift dependencies.
 
-The CLI compiles once, bounds record/result buffers and applies synchronous backpressure.
-It serializes a result completely before writing its line. Earlier completed results
-remain visible if later work fails; I/O errors can still interrupt a write.
-
-## Optional native backend
-
-The `jit` feature and explicit runtime enablement compile eligible numeric/boolean
-register programs and selected fold bodies with Cranelift. Validation, capture,
-traversal, strings, allocation, normalization and general JSONata semantics stay in Rust.
-Failed compilation/guards keep interpreter/tree fallback available.
-
-Engine and CLI Rust forbid unsafe code. Executable pointer conversion, invocation and
-release are confined to `jx-native/src/executable.rs`. A fixed C ABI uses bounded stack
-buffers; an `Arc` owner keeps immutable code alive through calls/clones. No evaluator
-lock or unsafe sharing trait is needed. Default builds do not depend on Cranelift.
-See [performance](docs/performance.md#optional-native-execution) and [feature/platform policy](docs/releases.md).
-
-## Experimental execution foundation
-
-The opt-in `experimental` feature exposes `execution::Program` and
-`execution::Acquisition`. It shares parsing, semantic preparation, values, lexical
-runtime and checked kernels with the default engine. An owned semantic register
-program supplies both scalar and general execution; unsupported semantics fail
-explicitly without tree replay. Shared acquisition captures query-sized borrowed
-spans during complete validation, independently of the legacy 32-capture limit.
-
-The foundation is incomplete. It does not change `Expression`, CLI or native
-routing, and no legacy subsystem can yet be removed wholesale. See the
-[current execution model and semantic boundaries](docs/execution.md) and
-[validation and benchmark workflow](benchmarks/execution/reproduce.md).
+[Embedding](docs/embedding.md), [compatibility](docs/compatibility.md) and
+[conformance](CONFORMANCE.md) define public contracts and known reference differences.

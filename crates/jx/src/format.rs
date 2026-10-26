@@ -275,26 +275,6 @@ impl Call {
             self.function.constant(&self.args)
         }
     }
-    pub fn evaluate<'e, 'i>(
-        &'e self,
-        context: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<crate::evaluate::Operand<'e, 'i>, Error> {
-        self.evaluate_in(context, context, offset)
-    }
-    pub fn evaluate_in<'e, 'i>(
-        &'e self,
-        context: &Context<'e, 'i>,
-        caller: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<crate::evaluate::Operand<'e, 'i>, Error> {
-        let mut evaluated = [None, None, None];
-        for (i, arg) in self.args.iter().enumerate() {
-            evaluated[i] = crate::retain::materialize(arg, context)?;
-        }
-        self.prepared
-            .values(self.function, &evaluated[..self.args.len()], caller, offset)
-    }
 }
 impl Prepared {
     pub(crate) fn values<'e, 'i>(

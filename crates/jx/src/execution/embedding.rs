@@ -86,7 +86,6 @@ impl Program {
                 self.clock,
                 options.random.as_ref(),
             )
-            .for_program()
             .constants(&self.constants)
             .configure(options.bindings, control.clone());
             scope.checkpoint(self.offset)?;

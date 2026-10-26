@@ -128,11 +128,23 @@ Optional `EvaluationOptions` accepts `Limits`, `Cancellation` and a monotonic de
 Default `Limits` permit one million work checkpoints, intermediate inspected/emitted
 items and results, 16 MiB of compact result bytes across an evaluation, 64 calls and
 one million tail iterations. Stack/tail controls can tighten hard ceilings. Work counts
-are semantic checkpoints, not stable CPU-instruction counts. Controlled planned regions
-use tree execution where needed. Unused optional controls allocate no control state.
+measure engine checkpoints; their granularity can change with lowering and they are
+not CPU-instruction or time quotas. Controls run through the same compiled engine
+and semantic kernels. Unused optional controls allocate no control state.
 
 Validation completes before effects/control failures. Cancellation/deadlines are
 cooperative: regex, formatting and noncooperating host code cannot be interrupted
 mid-call. Output preflight cannot undo construction already performed. These are not
 hard memory/CPU quotas or a sandbox for hostile code. The CLI separately bounds records
 and result lines; `--max-work` enables the other default limits per record.
+
+## Embedding changes in 0.2
+
+All public compilation and evaluation use the common IR with automatic input
+acquisition. The former `experimental`/`jit` features, `compile_execution` aliases,
+`enable_native`, `NativeStats`, `jx-native` crate and native CLI/archive variant are
+removed. Use `compile` or `CompileOptions::compile`, and remove engine-selection
+features and `--jit`. `Expression::execution_program()` now returns `&Program`
+directly. Work-budget checkpoints follow IR execution; exact budget calibration
+is not an instruction-count contract. JSONata and NDJSON delivery contracts remain
+as documented above.

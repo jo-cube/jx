@@ -1,4 +1,4 @@
-use crate::{Error, Value, expression::Node, sequence::Context};
+use crate::Value;
 
 // Ordinary JSONata calls are small. Retention needs owned slots, not a heap
 // allocation; wide calls spill without changing the value representation.
@@ -34,12 +34,5 @@ impl<'e, 'i> Arguments<'e, 'i> {
             Self::Small(values, len) => &values[..*len],
             Self::Large(values) => values,
         }
-    }
-    pub fn evaluate(nodes: &'e [Node], context: &Context<'e, 'i>) -> Result<Self, Error> {
-        let mut args = Self::new(nodes.len());
-        for node in nodes {
-            args.push(crate::retain::materialize(node, context)?);
-        }
-        Ok(args)
     }
 }

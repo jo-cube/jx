@@ -1,5 +1,3 @@
-#![cfg(feature = "experimental")]
-
 use jx::{
     CompileOptions, ConsumeError, ErrorKind, EvaluationOptions, OwnedValue, execution::Acquisition,
 };
@@ -300,12 +298,10 @@ fn tuple_cancellation_and_error_precedence_match_the_reference() {
         assert_eq!(output, b"prefix");
     }
 }
-#[cfg(feature = "jit")]
 #[test]
-fn native_enabled_reference_compiles_to_the_same_opt_in_ir() {
+fn expression_program_reuses_compiled_code() {
     for source in ["n*2+1", "items#$i.{'i':$i,'v':v}", "items.v"] {
-        let mut reference = jx::compile(source).unwrap();
-        reference.enable_native();
+        let reference = jx::compile(source).unwrap();
         let p = jx::execution::Program::compile(&reference).unwrap();
         for input in [br#"{}"#.as_slice(), br#"{"n":3,"items":[{"v":2},{"v":4}]}"#] {
             assert_eq!(

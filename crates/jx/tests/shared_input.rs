@@ -362,15 +362,13 @@ fn excess_demands_fall_back_without_changing_expression_order() {
     }
 }
 
-#[cfg(feature = "jit")]
 #[test]
-fn shared_numeric_plans_preserve_native_execution_and_guard_fallback() {
-    let mut expressions = [
+fn shared_numeric_programs_preserve_shape_errors() {
+    let expressions = [
         jx::compile("(a+b)*(a-b)").unwrap(),
         jx::compile("a+b").unwrap(),
         jx::compile("a=2").unwrap(),
     ];
-    assert!(expressions[0].enable_native().kernels > 0);
     let plan = InputPlan::new(&expressions);
     for input in [
         r#"{"a":2,"b":3}"#,

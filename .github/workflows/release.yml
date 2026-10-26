@@ -10,7 +10,7 @@ on:
         required: true
         default: dev
       differential:
-        description: 'Compare both modes with the pinned upstream implementation'
+        description: 'Compare with the pinned upstream implementation'
         type: boolean
         default: true
 

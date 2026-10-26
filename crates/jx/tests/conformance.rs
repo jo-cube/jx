@@ -70,12 +70,6 @@ fn pinned_upstream_groups_have_explicit_expected_outcomes() {
         } else {
             source
         });
-        #[cfg(feature = "jit")]
-        let compiled = compiled.map(|mut expression| {
-            let stats = expression.enable_native();
-            assert_eq!(stats.failures, 0, "native compilation: {id}");
-            expression
-        });
         match row["status"].as_str().unwrap() {
             "supported" => {
                 counts[0] += 1;
@@ -228,7 +222,7 @@ fn same_json(left: &Value, right: &Value) -> bool {
 
 // Every pinned case has an explicit admission outcome for the opt-in foundation.
 // Coverage changes require a deliberate inventory update after differential checks.
-#[cfg(feature = "experimental")]
+
 #[test]
 fn execution_foundation_has_pinned_admission_and_semantic_outcomes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance");
@@ -353,7 +347,6 @@ fn execution_foundation_has_pinned_admission_and_semantic_outcomes() {
     }
 }
 
-#[cfg(feature = "experimental")]
 fn execution_values(
     evaluation: Result<jx::Evaluation<'_, '_>, jx::Error>,
 ) -> Result<Vec<Value>, jx::Error> {

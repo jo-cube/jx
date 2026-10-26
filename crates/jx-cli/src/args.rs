@@ -27,8 +27,6 @@ pub struct Args {
     pub max_output_bytes: usize,
     pub max_work: Option<usize>,
     pub version: bool,
-    #[cfg(feature = "jit")]
-    pub jit: bool,
 }
 
 impl Args {
@@ -39,8 +37,6 @@ impl Args {
         let mut max_output_bytes = 16 * 1024 * 1024;
         let mut max_work = None;
         let mut version = false;
-        #[cfg(feature = "jit")]
-        let mut jit = false;
         let expression = loop {
             let arg = args.next().ok_or_else(|| HELP.to_owned())?;
             if options && (arg == "--help" || arg == "-h") {
@@ -75,11 +71,6 @@ impl Args {
                 options = false;
                 continue;
             }
-            #[cfg(feature = "jit")]
-            if options && arg == "--jit" {
-                jit = true;
-                continue;
-            }
             if options && arg == "--max-record-bytes" {
                 max_record_bytes = args
                     .next()
@@ -103,8 +94,6 @@ impl Args {
             max_output_bytes,
             max_work,
             version,
-            #[cfg(feature = "jit")]
-            jit,
         }))
     }
 }

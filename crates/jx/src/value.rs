@@ -9,7 +9,6 @@ pub enum Value<'expression, 'input> {
     Raw(RawJson<'input>),
     /// Borrowed input with query-sized navigation metadata. Input bytes and
     /// container identity are unchanged; metadata is shared across value moves.
-    #[cfg(feature = "experimental")]
     InputView(crate::execution::BorrowedInput<'input>),
     Constant(crate::ConstantValue<'expression>),
     Copied(std::rc::Rc<crate::CopiedValue<'expression, 'input>>),
@@ -31,7 +30,7 @@ impl<'i> Value<'_, 'i> {
     pub fn as_raw(&self) -> Option<RawJson<'i>> {
         match self {
             Self::Raw(value) => Some(*value),
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => Some(view.raw()),
             _ => None,
         }
@@ -50,7 +49,7 @@ impl<'i> Value<'_, 'i> {
             Self::Array(array) => array.write_compact(&mut output),
             Self::Object(object) => object.write_compact(&mut output),
             Self::Raw(value) => value.write_compact(output),
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => view.raw().write_compact(output),
             Self::StringLiteral(value) => output.write_all(value.as_bytes()),
             Self::String(value) => output.write_all(value.json.as_bytes()),
@@ -79,7 +78,7 @@ impl<'i> Value<'_, 'i> {
     pub(crate) fn json(&self) -> Option<RawJson<'_>> {
         match self {
             Self::Raw(raw) => Some(*raw),
-            #[cfg(feature = "experimental")]
+
             Self::InputView(view) => Some(view.raw()),
             Self::StringLiteral(raw) => Some(*raw),
             Self::String(value) => Some(RawJson(&value.json)),

@@ -1,4 +1,3 @@
-use super::demand::{Captured, Captures, Demand};
 use super::{RawJson, string};
 use crate::{Error, ErrorKind};
 
@@ -43,25 +42,6 @@ pub(crate) fn select<'a, 'path>(
 }
 
 /// Validate every byte, retaining only the requested raw spans.
-pub(crate) fn capture<'a>(
-    input: &'a [u8],
-    demand: &Demand,
-    output: &mut Captures<'a>,
-) -> Result<RawJson<'a>, Error> {
-    let text = std::str::from_utf8(input).map_err(|error| {
-        Error::new(ErrorKind::InvalidJson, error.valid_up_to(), "invalid UTF-8")
-    })?;
-    let mut scanner = Scanner::<false> { text, at: 0 };
-    scanner.space();
-    let raw = scanner.capture_value(0, demand, output)?;
-    scanner.space();
-    if scanner.at != text.len() {
-        return Err(scanner.error("trailing content after JSON value").into());
-    }
-    Ok(raw)
-}
-
-#[cfg(feature = "experimental")]
 pub(crate) fn capture_schema<'a>(
     input: &'a [u8],
     schema: &crate::execution::acquisition::Schema,
@@ -79,7 +59,7 @@ pub(crate) fn capture_schema<'a>(
     }
     Ok(text)
 }
-#[cfg(feature = "experimental")]
+
 pub(crate) fn schema_each<'i, E>(
     raw: RawJson<'i>,
     schema: &crate::execution::acquisition::Schema,
@@ -105,7 +85,6 @@ pub(crate) fn schema_each<'i, E>(
     Ok(())
 }
 
-#[cfg(feature = "experimental")]
 pub(crate) fn ranges_each<'i, E>(
     raw: RawJson<'i>,
     ranges: &[crate::execution::acquisition::Span],
@@ -117,7 +96,7 @@ pub(crate) fn ranges_each<'i, E>(
     }
     .ranges(ranges, |scanner, index| emit(scanner.raw_value(), index))
 }
-#[cfg(feature = "experimental")]
+
 pub(crate) fn schema_ranges_each<'i, E>(
     raw: RawJson<'i>,
     ranges: &[crate::execution::acquisition::Span],
@@ -137,7 +116,6 @@ pub(crate) fn schema_ranges_each<'i, E>(
     })
 }
 
-#[cfg(feature = "experimental")]
 pub(crate) fn capture_schema_validated(
     raw: RawJson<'_>,
     schema: &crate::execution::acquisition::Schema,
@@ -157,7 +135,6 @@ struct Scanner<'a, const VALIDATED: bool> {
 }
 
 impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
-    #[cfg(feature = "experimental")]
     fn ranges<E>(
         &mut self,
         ranges: &[crate::execution::acquisition::Span],
@@ -178,7 +155,6 @@ impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
         Ok(())
     }
 
-    #[cfg(feature = "experimental")]
     fn schema_value(
         &mut self,
         depth: usize,
@@ -313,41 +289,6 @@ impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
             self.require(b',', "expected ',' or '}'")?;
             self.space();
         }
-    }
-
-    fn capture_value(
-        &mut self,
-        depth: usize,
-        demand: &Demand,
-        output: &mut Captures<'a>,
-    ) -> Result<RawJson<'a>, ScanError> {
-        let start = self.at;
-        // A duplicate parent replaces every descendant, including absent fields.
-        output.fill(demand.subtree & !demand.slots, Captured::Missing);
-        if self.byte() == Some(b'{') && !demand.children.is_empty() {
-            self.open(depth)?;
-            self.object_members(|scanner, key| {
-                if let Some((_, child)) = demand
-                    .children
-                    .iter()
-                    .find(|(name, _)| string::matches(key, name))
-                {
-                    scanner.capture_value(depth + 1, child, output)?;
-                } else {
-                    scanner.value(depth + 1, None)?;
-                }
-                Ok(())
-            })?;
-        } else {
-            let array = self.byte() == Some(b'[');
-            self.value(depth, None)?;
-            if array {
-                output.fill(demand.subtree & !demand.slots, Captured::Deferred);
-            }
-        }
-        let raw = RawJson(&self.text[start..self.at]);
-        output.fill(demand.slots, Captured::Raw(raw));
-        Ok(raw)
     }
 
     fn array(&mut self, depth: usize) -> Result<(), ScanError> {
@@ -737,36 +678,6 @@ impl<'a> RawJson<'a> {
                 at: 1,
             },
         }
-    }
-}
-
-impl<'a> RawJson<'a> {
-    pub(crate) fn capture(self, demand: &Demand, output: &mut Captures<'a>) {
-        Scanner::<true> {
-            text: self.0,
-            at: 0,
-        }
-        .capture_value(0, demand, output)
-        .expect("validated subtree");
-    }
-}
-impl<'a> Elements<'a> {
-    pub(crate) fn next_captured(
-        &mut self,
-        demand: &Demand,
-        output: &mut Captures<'a>,
-    ) -> Option<RawJson<'a>> {
-        self.scanner.space();
-        if self.scanner.byte() == Some(b']') {
-            return None;
-        }
-        let raw = self
-            .scanner
-            .capture_value(0, demand, output)
-            .expect("validated subtree");
-        self.scanner.space();
-        self.scanner.take(b',');
-        Some(raw)
     }
 }
 

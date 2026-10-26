@@ -1,69 +1,6 @@
-use crate::{
-    Error, Value,
-    evaluate::Operand,
-    expression::{Aggregate, Node},
-    sequence::{Context, Halt},
-    value::type_error,
-};
+use crate::{Error, Value, evaluate::Operand, expression::Aggregate, value::type_error};
 
 impl Aggregate {
-    pub(crate) fn evaluate<'e, 'i>(
-        self,
-        args: &'e [Node],
-        input: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<Operand<'e, 'i>, Error> {
-        let [argument] = args else {
-            // Arguments finish evaluating before the function checks its arity.
-            for argument in args {
-                argument.run(input)?;
-            }
-            return Err(type_error(offset));
-        };
-        let mut fold = Fold::new(self);
-        let mut first = None;
-        let mut many = false;
-        let mut consume = |value| {
-            if many {
-                fold.push(value);
-            } else if let Some(pending) = first.take() {
-                many = true;
-                fold.push(pending);
-                fold.push(value);
-            } else {
-                first = Some(value);
-            }
-            Ok(())
-        };
-        let result = argument.consume(input, &mut consume);
-        match result {
-            Err(Halt::Evaluation(error)) => return Err(error),
-            Err(Halt::Stop) => unreachable!("aggregate consumes its complete argument"),
-            Ok(()) => {}
-        }
-        // Retain only the first item until cardinality is known. A sole raw array
-        // is the argument array; arrays inside a multi-item sequence stay members.
-        let defined = many || !matches!(first, None | Some(Value::Undefined));
-        if let Some(value) = first {
-            match value {
-                Value::Undefined => {}
-                value if value.is_array() => {
-                    if let Some(scope) = &input.scope
-                        && scope.controlled()
-                    {
-                        for item in value.elements() {
-                            scope.item(offset)?;
-                            fold.push(item);
-                        }
-                    } else {
-                        value.elements().for_each(|item| fold.push(item));
-                    }
-                }
-                value => fold.push(value),
-            }
-        }
-        fold.finish(defined, offset)
-    }
     pub(crate) fn retained<'e, 'i>(
         self,
         value: Option<Value<'e, 'i>>,
@@ -125,7 +62,7 @@ impl Fold {
         };
         self.number_value(number);
     }
-    #[cfg(feature = "experimental")]
+
     pub(crate) fn push_number(&mut self, number: f64) {
         self.count += 1;
         if !matches!(self.aggregate, Aggregate::Count) {

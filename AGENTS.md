@@ -14,19 +14,17 @@ latency. Typical records are 500 B–1 KiB; large inputs must remain viable. API
 
 ## Design
 
-- `crates/jx` owns language semantics; `jx-cli` owns NDJSON/I/O; optional `jx-native`
-  owns executable code. Rust minimum/toolchain: **1.98.1**, edition 2024.
+- `crates/jx` owns language semantics; `jx-cli` owns NDJSON/I/O. Rust minimum/toolchain: **1.98.1**, edition 2024.
 - Preserve borrowed bytes, primitive values and streaming where semantics allow.
   Retain evaluated values when correctness needs lexical lifetime or construction.
   No convenience input DOM, mandatory collection, worker pool or per-record cache.
 - Keep small cohesive files, explicit data flow and clear ownership. Before a new
   abstraction, identify its concrete semantic requirement or measured benefit.
-- Keep tree evaluation, bounded plans and optional native acceleration separate.
-  Lower only replay-safe regions; preserve effects, validation and error order.
-  Default builds must remain independent of Cranelift; native execution is opt-in.
-- Engine/CLI Rust forbid unsafe. Executable invocation/release stays in
-  `crates/jx-native/src/executable.rs`; allocation instrumentation is benchmark-only.
-  Bounded buffers, code ownership and fallback must remain auditable.
+- Use the common semantic IR and acquisition planner for all execution. Physical
+  strategies derive from that IR; preserve effects, validation and error order.
+  No legacy fallback, second evaluator, global cache or mandatory input DOM.
+- Engine/CLI Rust forbid unsafe. Allocation instrumentation is benchmark-only.
+  Native compatibility requests retain interpreted execution and install no code.
 - Every dependency needs a technical reason. Prefer simplification/deletion over
   speculative IR/JIT expansion, general frameworks, caches or compatibility layers.
 
@@ -39,7 +37,7 @@ latency. Typical records are 500 B–1 KiB; large inputs must remain viable. API
   conformance, regression and performance checks. Add a minimal regression first.
 - Every upstream case has a manifest status and asserted outcome; no silent skips.
   Keep revisions, provenance and licenses. Ordinary CI does not download upstream JS.
-- Run **`just all`** before handoff: formatting, strict Clippy, default/native tests,
+- Run **`just all`** before handoff: formatting, strict Clippy, workspace tests,
   archive tests, guide examples and allocation-asserting benchmark smoke. Run
   `just build` as well.
   Hot-path changes need warmed benchmarks and profiles, not just smoke timing.

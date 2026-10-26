@@ -1,4 +1,3 @@
-#![cfg(feature = "experimental")]
 use jx::{CompileOptions, EvaluationOptions, execution::Workspace};
 
 fn json(e: jx::Evaluation<'_, '_>) -> Vec<u8> {
@@ -13,7 +12,7 @@ fn ordinary_facade_workspace_and_independent_preparations_agree() {
         "items.v",
         "$sum(items[v>0].(v*2))",
     ];
-    let expressions = sources.map(|s| options.compile_execution(s).unwrap());
+    let expressions = sources.map(|s| options.compile(s).unwrap());
     let references = sources.map(|s| options.compile(s).unwrap());
     let plan = jx::InputPlan::new(&expressions);
     let mut workspace = Workspace::default();
@@ -65,9 +64,7 @@ fn ordinary_facade_workspace_and_independent_preparations_agree() {
 
 #[test]
 fn deferred_values_borrow_input_and_survive_workspace_reuse_and_drop() {
-    let e = CompileOptions::default()
-        .compile_execution("items.v")
-        .unwrap();
+    let e = CompileOptions::default().compile("items.v").unwrap();
     let input = br#"{"items":[{"v":{"x":1}},{"v":{"x":2}}]}"#;
     let pending = {
         let mut w = Workspace::default();
@@ -90,9 +87,7 @@ fn deferred_values_borrow_input_and_survive_workspace_reuse_and_drop() {
         json(pending),
         json(jx::compile("items.v").unwrap().evaluate(input).unwrap())
     );
-    let raw_expression = CompileOptions::default()
-        .compile_execution("payload")
-        .unwrap();
+    let raw_expression = CompileOptions::default().compile("payload").unwrap();
     let input = br#"{"payload":{"x":1}}"#;
     let mut w = Workspace::default();
     let value = raw_expression
@@ -118,7 +113,7 @@ fn deferred_values_borrow_input_and_survive_workspace_reuse_and_drop() {
 fn workspace_releases_failure_state_and_keeps_validation_and_effect_order() {
     use jx::{ErrorKind, Value};
     let options = CompileOptions::default().binding("host");
-    let e = options.compile_execution("$host(a)").unwrap();
+    let e = options.compile("$host(a)").unwrap();
     let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let count = calls.clone();
     let host = jx::HostFunction::new(1, move |args, _| {
@@ -171,7 +166,7 @@ fn workspace_releases_failure_state_and_keeps_validation_and_effect_order() {
         ErrorKind::Cancelled
     );
     let failing = CompileOptions::default()
-        .compile_execution("items.($error('failed'))")
+        .compile("items.($error('failed'))")
         .unwrap();
     assert!(
         failing
@@ -205,10 +200,10 @@ fn programs_templates_and_clones_are_concurrent_but_scratch_is_exclusive() {
     let options = CompileOptions::default()
         .constant_binding("table", jx::OwnedValue::from_json(br#"{"a":7}"#).unwrap());
     let e = options
-        .compile_execution("{'x':v+v,'label':$lookup($table,id)}")
+        .compile("{'x':v+v,'label':$lookup($table,id)}")
         .unwrap();
     let e2 = e.clone();
-    let template = e.execution_program().unwrap().input_template().clone();
+    let template = e.execution_program().input_template().clone();
     std::thread::scope(|scope| {
         for e in [&e, &e2] {
             let template = &template;
@@ -229,15 +224,11 @@ fn programs_templates_and_clones_are_concurrent_but_scratch_is_exclusive() {
                         expected
                     );
                     let d = template.prepare(input.as_bytes(), &mut w).unwrap();
-                    assert_eq!(
-                        json(e.execution_program().unwrap().evaluate(&d).unwrap()),
-                        expected
-                    );
+                    assert_eq!(json(e.execution_program().evaluate(&d).unwrap()), expected);
                 }
             });
         }
     });
-    assert!(jx::compile("v").unwrap().execution_program().is_none());
 }
 
 #[test]
@@ -249,9 +240,9 @@ fn mixed_shared_plan_settings_focus_and_cancellation_preserve_delivery() {
         "$eval(source)",
     ];
     let expressions = [
-        options.compile_execution(queries[0]).unwrap(),
+        options.compile(queries[0]).unwrap(),
         options.compile(queries[1]).unwrap(),
-        options.compile_execution(queries[2]).unwrap(),
+        options.compile(queries[2]).unwrap(),
     ];
     let references = queries.map(|q| options.compile(q).unwrap());
     let plan = jx::InputPlan::new(&expressions);
@@ -273,7 +264,7 @@ fn mixed_shared_plan_settings_focus_and_cancellation_preserve_delivery() {
         );
     }
     let e = options
-        .compile_execution("items.($exists(v)?v:$error('later'))")
+        .compile("items.($exists(v)?v:$error('later'))")
         .unwrap();
     let r = options
         .compile("items.($exists(v)?v:$error('later'))")
@@ -301,23 +292,6 @@ fn mixed_shared_plan_settings_focus_and_cancellation_preserve_delivery() {
     );
 }
 
-#[cfg(feature = "jit")]
-#[test]
-fn native_request_is_explicitly_interpreted_and_does_not_change_routing() {
-    let mut e = CompileOptions::default()
-        .compile_execution("a*2+1")
-        .unwrap();
-    for _ in 0..2 {
-        let stats = e.enable_native();
-        assert_eq!((stats.kernels, stats.code_bytes, stats.failures), (0, 0, 0));
-        assert!(e.execution_program().is_some());
-        assert_eq!(
-            json(e.evaluate(br#"{"a":3}"#).unwrap()),
-            b"[OwnedValue { data: Number(7.0) }]"
-        );
-    }
-}
-
 #[test]
 fn facade_preserves_root_array_paths_tail_focus_shadowable_fallbacks_and_budgets() {
     for source in [
@@ -326,7 +300,7 @@ fn facade_preserves_root_array_paths_tail_focus_shadowable_fallbacks_and_budgets
         "($f:=function(){$abs()};n.$f())",
         "($exists:=function($v){false}; a ?? b)",
     ] {
-        let e = jx::compile_execution(source).unwrap();
+        let e = jx::compile(source).unwrap();
         let r = jx::compile(source).unwrap();
         for input in [br#"[{"a":[1]}]"#.as_slice(), br#"{"a":1,"b":2,"n":7}"#] {
             let actual = e.evaluate(input).and_then(|e| e.collect_owned());
@@ -335,7 +309,7 @@ fn facade_preserves_root_array_paths_tail_focus_shadowable_fallbacks_and_budgets
         }
     }
     for source in ["$sum(rows.a)", "$sum(rows)"] {
-        let e = jx::compile_execution(source).unwrap();
+        let e = jx::compile(source).unwrap();
         let input = br#"{"rows":[{"a":1},{"a":2}]}"#;
         let result = e
             .evaluate_with(
@@ -371,7 +345,7 @@ fn preserved_filter_candidates_are_not_normalized_before_construction() {
         "(missing[true])[]",
         "items[true][]",
     ] {
-        let e = jx::compile_execution(source).unwrap();
+        let e = jx::compile(source).unwrap();
         let r = jx::compile(source).unwrap();
         for input in [
             b"{}".as_slice(),
@@ -396,7 +370,7 @@ fn workspace_heap_tracks_demands_and_never_record_size() {
             .collect::<Vec<_>>()
             .join(",")
     );
-    let e = jx::compile_execution(&query).unwrap();
+    let e = jx::compile(&query).unwrap();
     let mut workspace = Workspace::default();
     assert_eq!(workspace.retained_bytes(), 0);
     let small = br#"{"metrics":{"v0":1}}"#;

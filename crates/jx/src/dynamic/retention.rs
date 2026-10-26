@@ -27,28 +27,19 @@ fn loan(v: &Value<'_, '_>) -> Option<(usize, usize)> {
         return None;
     };
     match &f.kind {
-        #[cfg(feature = "experimental")]
         FunctionKind::Program {
             definition, frame, ..
         } => Some((*definition as *const _ as usize, *frame)),
-        FunctionKind::Lambda {
-            definition, frame, ..
-        } => Some((*definition as *const _ as usize, *frame)),
-        #[cfg(feature = "experimental")]
+
         FunctionKind::ProgramTransform { definition, frame } => {
             Some((*definition as *const _ as usize, *frame))
         }
-        FunctionKind::Transform { definition, frame } => {
-            Some((*definition as *const _ as usize, *frame))
-        }
+
         FunctionKind::Dynamic(c) => Some((
             match c.definition.as_ref() {
-                Definition::Lambda(d) => d as *const _ as usize,
-                #[cfg(feature = "experimental")]
                 Definition::Program(d) => d as *const _ as usize,
-                #[cfg(feature = "experimental")]
+
                 Definition::ProgramTransform(d) => &**d as *const _ as usize,
-                Definition::Transform(d) => d as *const _ as usize,
             },
             c.frame,
         )),
@@ -64,16 +55,9 @@ fn same_loan(a: &Value<'_, '_>, b: &Value<'_, '_>) -> bool {
             return None;
         };
         match &f.kind {
-            FunctionKind::Lambda { focus, wrapped, .. } => Some((focus, *wrapped)),
-            #[cfg(feature = "experimental")]
             FunctionKind::Program { focus, wrapped, .. } => Some((focus, *wrapped)),
             FunctionKind::Dynamic(c)
-                if match c.definition.as_ref() {
-                    Definition::Transform(_) => false,
-                    #[cfg(feature = "experimental")]
-                    Definition::ProgramTransform(_) => false,
-                    _ => true,
-                } =>
+                if !matches!(c.definition.as_ref(), Definition::ProgramTransform(_)) =>
             {
                 Some((&c.focus, c.wrapped))
             }
@@ -131,8 +115,6 @@ impl<'e, 'i> Retention<'e, 'i> {
             }
             Value::Copied(c) => self.seed(&c.source),
             Value::Function(f) => match &f.kind {
-                FunctionKind::Lambda { focus, .. } => self.seed(focus),
-                #[cfg(feature = "experimental")]
                 FunctionKind::Program { focus, .. } => self.seed(focus),
                 FunctionKind::Dynamic(c) => self.seed(&c.focus),
                 FunctionKind::Partial { target, arguments } => {
@@ -168,7 +150,7 @@ impl<'e, 'i> Retention<'e, 'i> {
         }
         let result = match v {
             Value::Raw(v) => Value::Raw(*v),
-            #[cfg(feature = "experimental")]
+
             Value::InputView(view) => Value::InputView(view.clone()),
             Value::Number(v) => Value::Number(*v),
             Value::Boolean(v) => Value::Boolean(*v),
@@ -213,7 +195,7 @@ impl<'e, 'i> Retention<'e, 'i> {
                 kind: match &f.kind {
                     FunctionKind::Builtin(b) => FunctionKind::Builtin(*b),
                     FunctionKind::Host(f) => FunctionKind::Host(f.clone()),
-                    #[cfg(feature = "experimental")]
+
                     FunctionKind::Program {
                         definition,
                         focus,
@@ -225,18 +207,7 @@ impl<'e, 'i> Retention<'e, 'i> {
                         wrapped: *wrapped,
                         frame: *frame,
                     })),
-                    FunctionKind::Lambda {
-                        definition,
-                        focus,
-                        wrapped,
-                        frame,
-                    } => FunctionKind::Dynamic(Box::new(Callable {
-                        definition: Rc::new(Definition::Lambda((*definition).clone())),
-                        focus: self.value(focus),
-                        wrapped: *wrapped,
-                        frame: *frame,
-                    })),
-                    #[cfg(feature = "experimental")]
+
                     FunctionKind::ProgramTransform { definition, frame } => {
                         FunctionKind::Dynamic(Box::new(Callable {
                             definition: Rc::new(Definition::ProgramTransform(Box::new(
@@ -247,14 +218,7 @@ impl<'e, 'i> Retention<'e, 'i> {
                             frame: *frame,
                         }))
                     }
-                    FunctionKind::Transform { definition, frame } => {
-                        FunctionKind::Dynamic(Box::new(Callable {
-                            definition: Rc::new(Definition::Transform((*definition).clone())),
-                            focus: Value::Undefined,
-                            wrapped: false,
-                            frame: *frame,
-                        }))
-                    }
+
                     FunctionKind::Dynamic(c) => FunctionKind::Dynamic(Box::new(Callable {
                         definition: c.definition.clone(),
                         focus: self.value(&c.focus),

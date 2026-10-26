@@ -53,7 +53,7 @@ fn seeded_parser_scanner_and_serialization_mutations() {
 }
 
 #[test]
-fn fallback_and_shared_expression_ownership_survive_adversarial_shapes() {
+fn shared_expression_ownership_survives_adversarial_shapes() {
     let atoms = [
         "null",
         "false",
@@ -69,25 +69,21 @@ fn fallback_and_shared_expression_ownership_survive_adversarial_shapes() {
     ];
     for source in [&common::EXPRESSIONS[3..6], &common::EXPRESSIONS[7..8]].concat() {
         let interpreted = jx::compile(source).unwrap();
-        let mut accelerated = interpreted.clone();
-        #[cfg(feature = "jit")]
-        accelerated.enable_native();
-        #[cfg(not(feature = "jit"))]
-        let _ = &mut accelerated;
-        let accelerated_copy = accelerated.clone();
-        drop(accelerated);
+        let cloned = interpreted.clone();
+        let survivor = cloned.clone();
+        drop(cloned);
         for a in atoms {
             for b in atoms {
                 let input =
                     format!(r#"{{"a":{a},"b":{b},"flag":{a},"rows":[{{"n":{a}}},{{"n":{b}}}]}}"#);
                 assert_eq!(
                     common::snapshot(&interpreted, input.as_bytes()),
-                    common::snapshot(&accelerated_copy, input.as_bytes()),
+                    common::snapshot(&survivor, input.as_bytes()),
                     "{source}: {input}"
                 );
             }
         }
-        let expr = accelerated_copy.clone();
+        let expr = survivor.clone();
         std::thread::spawn(move || common::snapshot(&expr, b"{\"a\":2,\"b\":3}"))
             .join()
             .unwrap();
@@ -113,14 +109,10 @@ fn host_failure_deadline_and_cancellation_do_not_leak_into_later_evaluations() {
         }
         Ok(args.first().cloned().flatten())
     });
-    let mut expr = CompileOptions::default()
+    let expr = CompileOptions::default()
         .binding("host")
         .compile("$map([1..100],function($n){$host($n)})")
         .unwrap();
-    #[cfg(feature = "jit")]
-    expr.enable_native();
-    #[cfg(not(feature = "jit"))]
-    let _ = &mut expr;
     let options = EvaluationOptions {
         bindings: vec![("host", host.value())],
         cancellation: Some(token),

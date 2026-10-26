@@ -15,8 +15,7 @@ pub(crate) fn collect(v: &Value<'_, '_>, definitions: &mut Vec<Rc<Definition>>) 
                 }
                 collect(&c.focus, definitions);
             }
-            FunctionKind::Lambda { focus, .. } => collect(focus, definitions),
-            #[cfg(feature = "experimental")]
+
             FunctionKind::Program { focus, .. } => collect(focus, definitions),
             FunctionKind::Partial { target, arguments } => {
                 collect(&Value::Function(target.clone()), definitions);
@@ -50,8 +49,7 @@ pub(crate) fn contains(v: &Value<'_, '_>) -> bool {
     match v {
         Value::Function(f) => match &f.kind {
             FunctionKind::Dynamic(_) => true,
-            FunctionKind::Lambda { focus, .. } => contains(focus),
-            #[cfg(feature = "experimental")]
+
             FunctionKind::Program { focus, .. } => contains(focus),
             FunctionKind::Partial { target, arguments } => {
                 contains(&Value::Function(target.clone()))
@@ -88,33 +86,22 @@ pub(crate) fn value<'d, 'e: 'd, 'i>(
                         .find(|d| Rc::ptr_eq(d, &c.definition))
                         .expect("collected dynamic definition");
                     match d.as_ref() {
-                        #[cfg(feature = "experimental")]
                         Definition::Program(definition) => FunctionKind::Program {
                             definition,
                             focus: value(&c.focus, definitions),
                             wrapped: c.wrapped,
                             frame: c.frame,
                         },
-                        Definition::Lambda(definition) => FunctionKind::Lambda {
-                            definition,
-                            focus: value(&c.focus, definitions),
-                            wrapped: c.wrapped,
-                            frame: c.frame,
-                        },
-                        #[cfg(feature = "experimental")]
+
                         Definition::ProgramTransform(definition) => {
                             FunctionKind::ProgramTransform {
                                 definition,
                                 frame: c.frame,
                             }
                         }
-                        Definition::Transform(definition) => FunctionKind::Transform {
-                            definition,
-                            frame: c.frame,
-                        },
                     }
                 }
-                #[cfg(feature = "experimental")]
+
                 FunctionKind::Program {
                     definition,
                     focus,
@@ -126,17 +113,7 @@ pub(crate) fn value<'d, 'e: 'd, 'i>(
                     wrapped: *wrapped,
                     frame: *frame,
                 },
-                FunctionKind::Lambda {
-                    definition,
-                    focus,
-                    wrapped,
-                    frame,
-                } => FunctionKind::Lambda {
-                    definition,
-                    focus: value(focus, definitions),
-                    wrapped: *wrapped,
-                    frame: *frame,
-                },
+
                 FunctionKind::Partial { target, arguments } => FunctionKind::Partial {
                     target: function(target, definitions),
                     arguments: arguments

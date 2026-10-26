@@ -39,7 +39,7 @@ pub(super) fn run(options: &CompileOptions) {
     for alias in [false, true] {
         let expr = options.compile(&projection(24, alias)).unwrap();
         let program = options.compile_program(&projection(24, alias)).unwrap();
-        let facade = options.compile_execution(&projection(24, alias)).unwrap();
+        let facade = options.compile(&projection(24, alias)).unwrap();
         let facade_plan = InputPlan::new([&facade]);
         let mut workspace = jx::execution::Workspace::default();
         let mut acquisition = jx::execution::Acquisition::new([&program]);

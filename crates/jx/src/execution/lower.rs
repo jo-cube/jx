@@ -281,7 +281,6 @@ impl<'e> Lower<'e> {
         }
     }
     fn callback(&self, node: &'e Node) -> Result<Program, Unsupported> {
-        let node = source(node);
         let Kind::Lambda(d) = &node.kind else {
             return Err(unsupported(node, "immediate lambda required"));
         };
@@ -320,7 +319,7 @@ impl<'e> Lower<'e> {
             .map(|node| {
                 Ok(navigation::Predicate {
                     body: self.predicate(node)?,
-                    position: match source(node).kind {
+                    position: match node.kind {
                         Kind::Number(n) => Some(n),
                         _ => None,
                     },
@@ -365,14 +364,14 @@ impl<'e> Lower<'e> {
             candidate: programs.first().is_some_and(|p| !facts::truth_predicate(p)),
             positional: predicates
                 .first()
-                .is_some_and(|p| matches!(source(p).kind, Kind::Number(_))),
+                .is_some_and(|p| matches!(p.kind, Kind::Number(_))),
             preflight: predicates.iter().any(|p| p.effects),
             eager: false,
             predicates: programs.into(),
         })
     }
     fn route_source(&self, step: &crate::expression::Step) -> bool {
-        match &source(&step.node).kind {
+        match &step.node.kind {
             Kind::Variable(_) => true,
             Kind::Path(path) if path.rooted && path.fields.is_empty() => true,
             Kind::Path(_) => step.lookup && self.wrapped_focus == Some(true),
@@ -380,7 +379,6 @@ impl<'e> Lower<'e> {
         }
     }
     fn projection(&mut self, node: &'e Node) -> Result<selection::Selection, Unsupported> {
-        let node = source(node);
         if let Kind::Route(steps, false) = &node.kind
             && steps.len() == 2
             && self.route_source(&steps[0])
@@ -427,7 +425,6 @@ impl<'e> Lower<'e> {
         self.node_in(node, false)
     }
     fn node_in(&mut self, node: &'e Node, tail: bool) -> Result<usize, Unsupported> {
-        let node = source(node);
         let offset = node.offset;
         if crate::tuple::active(node) && !matches!(node.kind, Kind::Keep(..)) {
             let region = context::Region::compile(node)?;
@@ -593,7 +590,7 @@ impl<'e> Lower<'e> {
                     if tail && node.tail_call {
                         None
                     } else {
-                        crate::dynamic::PreparedProgram::new(&call.args)
+                        call.program.clone()
                     },
                 )
             }
@@ -616,7 +613,6 @@ impl<'e> Lower<'e> {
             }
             Kind::Binary(Op::Chain, left, right) => {
                 let left = self.node(left)?;
-                let right = source(right);
                 if let Kind::Call(target, args) = &right.kind {
                     let target = self.node(target)?;
                     let mut registers = vec![left];
@@ -781,7 +777,7 @@ impl<'e> Lower<'e> {
             }
             Kind::Keep(child, path) => {
                 if !*path
-                    && let Kind::Path(field) = &source(child).kind
+                    && let Kind::Path(field) = &child.kind
                     && !field.rooted
                     && field.fields.len() == 1
                 {
@@ -791,7 +787,7 @@ impl<'e> Lower<'e> {
                         offset,
                     ));
                 }
-                let force = matches!(&source(child).kind, Kind::Route(..) | Kind::Tuples(..))
+                let force = matches!(&child.kind, Kind::Route(..) | Kind::Tuples(..))
                     || (*path && path_value(child));
                 let reg = self.node(child)?;
                 // An eager copy does not own cardinality. Preserve the native
@@ -826,7 +822,7 @@ impl<'e> Lower<'e> {
                 // Postfix retention consumes a native call result before ordinary
                 // call normalization; parentheses already crossed that boundary.
                 if matches!(
-                    source(child).kind,
+                    child.kind,
                     Kind::Builtin(..) | Kind::Call(..) | Kind::Binary(Op::Chain, ..)
                 ) && let Some(i) = self.code.iter_mut().rev().find(|i| i.out == reg)
                 {
@@ -867,7 +863,7 @@ impl<'e> Lower<'e> {
             }
             Kind::Builtin(Builtin::Library(lib @ (Library::Map | Library::Filter)), args)
                 if args.len() == 2
-                    && matches!(&source(&args[1]).kind, Kind::Lambda(d)
+                    && matches!(&args[1].kind, Kind::Lambda(d)
                         if d.signature.is_none() && d.params.len() <= 3
                             && d.params.iter().all(|p| &**p != "$")
                             && !needs_scope(&d.body)) =>
@@ -910,11 +906,11 @@ impl<'e> Lower<'e> {
                         .all(|s| s.bindings.is_none() && s.predicates.is_empty())
                     && steps[1..]
                         .iter()
-                        .all(|s| matches!(source(&s.node).kind, Kind::Path(_))) =>
+                        .all(|s| matches!(s.node.kind, Kind::Path(_))) =>
             {
                 let mut reg = self.node(&steps[0].node)?;
                 for step in &steps[1..] {
-                    let Kind::Path(path) = &source(&step.node).kind else {
+                    let Kind::Path(path) = &step.node.kind else {
                         unreachable!()
                     };
                     reg = self.field(reg, &path.fields, false, step.node.offset);
@@ -948,7 +944,7 @@ impl<'e> Lower<'e> {
                         effects: step.effects,
                     });
                 }
-                let variable = steps.first().is_some_and(|s| match &source(&s.node).kind {
+                let variable = steps.first().is_some_and(|s| match &s.node.kind {
                     Kind::Variable(_) | Kind::Sort(..) => true,
                     Kind::Prepared(p) => p.data.is_shared(),
                     Kind::Path(p) => p.rooted && p.fields.is_empty(),
@@ -1031,7 +1027,7 @@ impl<'e> Lower<'e> {
         tail: bool,
     ) -> Result<usize, Unsupported> {
         let yes = if op == Op::Coalesce {
-            let args = match &source(test).kind {
+            let args = match &test.kind {
                 Kind::Builtin(Builtin::Exists, args) | Kind::Call(_, args) => args,
                 _ => return Err(unsupported(node, "coalescing test must be a call")),
             };
@@ -1042,6 +1038,32 @@ impl<'e> Lower<'e> {
         } else {
             test
         };
+        // Proven replay-safe primaries need one value port, not a duplicated
+        // branch tree. Shadowable $exists and effects retain ordinary calls.
+        if !yes.effects {
+            if op == Op::Default {
+                let value = self.node(test)?;
+                return self.branch(
+                    value,
+                    node.offset,
+                    |_| Ok(value),
+                    |lower| lower.node_in(no, tail),
+                );
+            }
+            if matches!(&test.kind, Kind::Builtin(Builtin::Exists, _)) {
+                let value = self.node(yes)?;
+                let condition = self.emit(
+                    Operation::Builtin(Builtin::Exists, vec![value].into(), false),
+                    test.offset,
+                );
+                return self.branch(
+                    condition,
+                    node.offset,
+                    |_| Ok(value),
+                    |lower| lower.node_in(no, tail),
+                );
+            }
+        }
         let condition = self.node(test)?;
         // Both operators re-evaluate their selected primary. Common pure CSE is
         // still legal, while effects and shadowable $exists retain normal calls.
@@ -1122,12 +1144,6 @@ impl<'e> Lower<'e> {
         })
     }
 }
-fn source(mut node: &Node) -> &Node {
-    while let Kind::Plan(p) = &node.kind {
-        node = p.source();
-    }
-    node
-}
 fn unsupported(node: &Node, reason: &'static str) -> Unsupported {
     Unsupported {
         offset: node.offset,
@@ -1164,7 +1180,7 @@ fn needs_scope(node: &Node) -> bool {
         items.fold((false, false), |(a, b), (c, d)| (a || c, b || d))
     }
     fn analyze(node: &Node) -> (bool, bool) {
-        match &source(node).kind {
+        match &node.kind {
             Kind::Regex(_) => (false, false),
             Kind::Transform(_) | Kind::Tuples(..) | Kind::Parent(_) => (true, false),
             Kind::Eval(call) => (true, merge(call.args.iter().map(analyze)).1),
@@ -1182,7 +1198,7 @@ fn needs_scope(node: &Node) -> bool {
             Kind::Builtin(Builtin::Library(Library::Map | Library::Filter), args)
                 if args.len() == 2 =>
             {
-                if let Kind::Lambda(d) = &source(&args[1]).kind {
+                if let Kind::Lambda(d) = &args[1].kind {
                     let (outer, writes) = analyze(&args[0]);
                     (
                         outer
@@ -1264,10 +1280,10 @@ fn needs_scope(node: &Node) -> bool {
 // Delivery is a language/API property, independent of kernel selection. Effectful
 // paths and lexical blocks complete before external consumption, as in JSONata.
 fn streamable(node: &Node) -> bool {
-    if node.effects && !matches!(source(node).kind, Kind::Tuples(..)) {
+    if node.effects && !matches!(node.kind, Kind::Tuples(..)) {
         return false;
     }
-    match &source(node).kind {
+    match &node.kind {
         Kind::Path(p) => !p.fields.is_empty(),
         Kind::Route(..)
         | Kind::Tuples(..)
@@ -1283,14 +1299,14 @@ fn streamable_options(node: &Node) -> bool {
     if node.effects {
         return false;
     }
-    match &source(node).kind {
+    match &node.kind {
         Kind::Group(n) => streamable_options(n),
         _ => streamable(node),
     }
 }
 
 fn path_value(node: &Node) -> bool {
-    match &source(node).kind {
+    match &node.kind {
         Kind::Path(path) => !path.fields.is_empty(),
         Kind::Keep(child, _) => path_value(child),
         Kind::Wildcard | Kind::Sort(..) => true,

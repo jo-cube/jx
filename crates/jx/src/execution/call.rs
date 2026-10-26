@@ -120,7 +120,6 @@ impl Program {
                 self.clock,
                 random,
             )
-            .for_program()
             .constants(&self.constants)
         })
     }
@@ -268,45 +267,5 @@ pub(super) fn builtin_writes_caller(
             .enumerate()
             .any(|(i, r)| l.callback_argument(args.len(), i) && writes_caller(code, *r)),
         _ => false,
-    }
-}
-
-// Value-based kernels share the function ABI with the reference engine. A
-// program domain must never enter AST-backed definitions,
-// including through unbound declared names, host results, partials or callbacks.
-// Dynamic source compilation selects IR before executing any expression body.
-pub(crate) fn check(
-    function: &crate::Function<'_, '_>,
-    context: &Context<'_, '_>,
-    offset: usize,
-) -> Result<(), Error> {
-    use crate::function::FunctionKind;
-    if !context.scope.as_ref().is_some_and(Scope::is_program) {
-        return Ok(());
-    }
-    let supported = match &function.kind {
-        FunctionKind::ProgramTransform { .. }
-        | FunctionKind::Program { .. }
-        | FunctionKind::Host(_)
-        | FunctionKind::Matcher(_)
-        | FunctionKind::MatchNext(_)
-        | FunctionKind::Partial { .. }
-        | FunctionKind::Chain(..) => true,
-        FunctionKind::Builtin(_) => true,
-        FunctionKind::Dynamic(c) => matches!(
-            c.definition.as_ref(),
-            crate::dynamic::Definition::Program(_)
-                | crate::dynamic::Definition::ProgramTransform(_)
-        ),
-        FunctionKind::Lambda { .. } | FunctionKind::Transform { .. } => false,
-    };
-    if supported {
-        Ok(())
-    } else {
-        Err(Error::new(
-            crate::ErrorKind::UnsupportedExpression,
-            offset,
-            "call target is outside the execution foundation",
-        ))
     }
 }

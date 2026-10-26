@@ -66,12 +66,10 @@ fn reaches(value: &Value<'_, '_>, start: usize) -> bool {
 }
 fn function(f: &crate::Function<'_, '_>, start: usize) -> bool {
     match &f.kind {
-        #[cfg(feature = "experimental")]
         FunctionKind::Program { frame, focus, .. } => *frame >= start || reaches(focus, start),
-        FunctionKind::Lambda { frame, focus, .. } => *frame >= start || reaches(focus, start),
-        #[cfg(feature = "experimental")]
+
         FunctionKind::ProgramTransform { frame, .. } => *frame >= start,
-        FunctionKind::Transform { frame, .. } => *frame >= start,
+
         FunctionKind::Dynamic(c) => c.frame >= start || reaches(&c.focus, start),
         FunctionKind::Partial { target, arguments } => {
             function(target, start)

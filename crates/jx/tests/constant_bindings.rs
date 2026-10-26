@@ -399,24 +399,6 @@ fn declared_constant_names_shadow_builtins_even_when_missing() {
     }
 }
 
-#[cfg(feature = "jit")]
-#[test]
-fn native_constants_and_guard_fallback_preserve_results_and_errors() {
-    let mut expression = compile("price*$config.n+quantity>5");
-    assert!(expression.enable_native().kernels > 0, "{expression:#?}");
-    let control = compile("price*$config.n+quantity>5");
-    for input in [
-        br#"{"price":2,"quantity":4}"#.as_slice(),
-        br#"{"price":"bad","quantity":4}"#,
-        b"[]",
-    ] {
-        assert_eq!(
-            expression.evaluate(input).and_then(output),
-            control.evaluate(input).and_then(output)
-        );
-    }
-}
-
 #[test]
 fn dynamically_returned_binding_keeps_its_owned_storage() {
     let config = std::sync::Arc::new(binding());
@@ -550,6 +532,32 @@ fn primitive_membership_keeps_constant_substitution_and_matches_runtime() {
             assert_eq!(
                 output(constant.compile(source).unwrap().evaluate(input).unwrap()).unwrap(),
                 expected,
+                "{source}"
+            );
+        }
+    }
+}
+
+#[test]
+fn local_lookup_reuses_bound_container_identity() {
+    for source in [
+        "($config:={'nested':{'n':4}};$lookup($config,'nested') in [$lookup($config,'nested')])",
+        "($config:={'nested':{'n':4}};$lookup($config,'nested') in [$config.nested])",
+        "($config:={'nested':{'n':4}};$key:='nested';$lookup($config,$key) in [$config.nested])",
+        "($config:={'nested':[{'n':4}]};$lookup($config,'nested')[0] in [$config.nested[0]])",
+    ] {
+        let expression = jx::compile(source).unwrap();
+        for _ in 0..2 {
+            assert_eq!(
+                output(expression.evaluate(b"null").unwrap()).unwrap(),
+                ["true"],
+                "{source}"
+            );
+            let plan = jx::InputPlan::new(std::slice::from_ref(&expression));
+            let input = plan.prepare(b"null").unwrap();
+            assert_eq!(
+                output(input.evaluate(0).unwrap()).unwrap(),
+                ["true"],
                 "{source}"
             );
         }

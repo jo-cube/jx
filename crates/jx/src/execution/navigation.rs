@@ -16,6 +16,20 @@ pub(super) struct Predicate {
     pub position: Option<f64>,
     pub effects: bool,
 }
+impl Predicate {
+    // Finish activation before invoking a downstream consumer. Recursive views
+    // must not retain the interpreter's activation stack for completed predicates.
+    #[inline(never)]
+    fn evaluate<'e, 'i>(
+        &'e self,
+        a: Activation<'_, 'e, 'i, '_>,
+        frame: &std::cell::RefCell<Frame<'e, 'i>>,
+    ) -> Result<Operand<'e, 'i>, crate::Error> {
+        self.body
+            .run(a, &mut frame.borrow_mut())
+            .map(|v| v.operand(a.input))
+    }
+}
 #[derive(Clone, Debug)]
 pub(super) struct Step {
     pub body: Program,
@@ -37,31 +51,45 @@ pub(super) fn filters<'e, 'i>(
     a: Activation<'_, 'e, 'i, '_>,
     emit: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
 ) -> Walk {
+    filter_stages(
+        input_view,
+        predicates,
+        a,
+        &std::cell::RefCell::new(Frame::repeated()),
+        emit,
+    )
+}
+fn filter_stages<'e, 'i>(
+    input_view: View<'_, 'e, 'i>,
+    predicates: &'e [Predicate],
+    a: Activation<'_, 'e, 'i, '_>,
+    frame: &std::cell::RefCell<Frame<'e, 'i>>,
+    emit: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
+) -> Walk {
     let Some((p, rest)) = predicates.split_first() else {
         return emit(input_view);
     };
     if let Some(index) = p.position {
         return crate::filter::position(input_view, index, &mut |view| {
-            filters(view, rest, a, emit)
+            filter_stages(view, rest, a, frame, emit)
         });
     }
     let length = std::cell::Cell::new(None);
     let filtered = |output: &mut Output<'_, 'e, 'i>| {
         let mut index = 0;
-        let mut frame = Frame::repeated();
         let mut test =
             |input: &Input<'_, 'i, '_>, focus: Cell<'e, 'i>, output: &mut Output<'_, 'e, 'i>| {
-                let predicate = p.body.run(
+                let predicate = p.evaluate(
                     Activation {
                         input,
                         focus: &focus,
                         wrapped: false,
                         ..a
                     },
-                    &mut frame,
+                    frame,
                 )?;
                 crate::filter::select(
-                    &predicate.operand(input),
+                    &predicate,
                     p.body.offset,
                     index,
                     || {
@@ -126,17 +154,18 @@ pub(super) fn filters<'e, 'i>(
             values.push(v);
             Ok(())
         })?;
-        filters(View::Items(&values), rest, a, emit)
+        filter_stages(View::Items(&values), rest, a, frame, emit)
     } else {
-        filters(View::Producer(&filtered), rest, a, emit)
+        filter_stages(View::Producer(&filtered), rest, a, frame, emit)
     }
 }
 impl Navigation {
-    pub(super) fn walk<'e, 'i>(
+    fn walk_in<'e, 'i>(
         &'e self,
         a: Activation<'_, 'e, 'i, '_>,
         output: &mut Output<'_, 'e, 'i>,
         complete: bool,
+        boundary: &std::cell::Cell<bool>,
     ) -> Walk {
         // Select a physical strategy before executing any expression. Array
         // focus and controlled/cancellable evaluation keep their general path;
@@ -155,8 +184,13 @@ impl Navigation {
             a: Activation<'_, 'e, 'i, '_>,
             output: &mut Output<'_, 'e, 'i>,
             complete: bool,
+            boundary: &std::cell::Cell<bool>,
         ) -> Walk {
             let Some((step, rest)) = steps.split_first() else {
+                if matches!(input, View::Operand(Operand::One(v)) if v.is_array() && !v.is_sequence())
+                {
+                    boundary.set(true);
+                }
                 return input.walk(output);
             };
             let mapped = |out: &mut Output<'_, 'e, 'i>| {
@@ -193,6 +227,9 @@ impl Navigation {
                         )
                     })?;
                 if let Some(value) = pending {
+                    if rest.is_empty() {
+                        boundary.set(true);
+                    }
                     out(value)?;
                 }
                 Ok(())
@@ -203,9 +240,9 @@ impl Navigation {
                     values.push(v);
                     Ok(())
                 })?;
-                stages(View::Items(&values), rest, a, output, complete)
+                stages(View::Items(&values), rest, a, output, complete, boundary)
             } else {
-                stages(View::Producer(&mapped), rest, a, output, complete)
+                stages(View::Producer(&mapped), rest, a, output, complete, boundary)
             }
         }
         if self.array_focus {
@@ -231,7 +268,7 @@ impl Navigation {
                             return view.walk(output);
                         }
                     }
-                    stages(view, &self.steps[1..], a, output, complete)
+                    stages(view, &self.steps[1..], a, output, complete, boundary)
                 },
             );
         }
@@ -243,6 +280,7 @@ impl Navigation {
                 a,
                 output,
                 complete,
+                boundary,
             )
         } else {
             stages(
@@ -251,6 +289,7 @@ impl Navigation {
                 a,
                 output,
                 complete,
+                boundary,
             )
         }
     }
@@ -263,14 +302,39 @@ pub(super) fn walk<'e, 'i>(
     output: &mut Output<'_, 'e, 'i>,
     complete: bool,
 ) -> Walk {
+    walk_retained(
+        op,
+        a,
+        frame,
+        offset,
+        output,
+        complete,
+        &std::cell::Cell::new(false),
+    )
+}
+pub(super) fn walk_retained<'e, 'i>(
+    op: &'e Operation,
+    a: Activation<'_, 'e, 'i, '_>,
+    frame: frame::Registers<'_, 'e, 'i>,
+    offset: usize,
+    output: &mut Output<'_, 'e, 'i>,
+    complete: bool,
+    boundary: &std::cell::Cell<bool>,
+) -> Walk {
     match op {
         Operation::Correlate(region) => context::walk(region, a, output),
-        Operation::Navigate(n) => n.walk(a, output, complete),
+        Operation::Navigate(n) => n.walk_in(a, output, complete, boundary),
         Operation::Select(source, predicates) => filters(
             View::Operand(&frame[*source].operand(a.input)),
             predicates,
             a,
-            &mut |view| view.walk(output),
+            &mut |view| {
+                if matches!(view, View::Operand(Operand::One(v)) if v.is_array() && !v.is_sequence())
+                {
+                    boundary.set(true);
+                }
+                view.walk(output)
+            },
         ),
         Operation::Range(a_reg, b) => crate::navigate::range_values(
             frame[*a_reg].operand(a.input),
@@ -298,18 +362,32 @@ pub(super) fn consume<'e, 'i, E>(
     complete: bool,
 ) -> Result<(), crate::ConsumeError<E>> {
     let mut consumer = None;
+    let mut pending = None;
+    let mut first = true;
+    let mut deliver = |v| match output(v) {
+        Ok(()) => Ok(()),
+        Err(crate::ConsumeError::Evaluation(e)) => Err(Halt::Evaluation(e)),
+        Err(crate::ConsumeError::Consumer(e)) => {
+            consumer = Some(e);
+            Err(Halt::Stop)
+        }
+    };
     let result = walk(
         op,
         a,
         frame,
         offset,
-        &mut |v| match output(v) {
-            Ok(()) => Ok(()),
-            Err(crate::ConsumeError::Evaluation(e)) => Err(Halt::Evaluation(e)),
-            Err(crate::ConsumeError::Consumer(e)) => {
-                consumer = Some(e);
-                Err(Halt::Stop)
+        &mut |v| {
+            if first && matches!(v, Value::Undefined) {
+                first = false;
+                pending = Some(v);
+                return Ok(());
             }
+            first = false;
+            if let Some(v) = pending.take() {
+                deliver(v)?;
+            }
+            deliver(v)
         },
         complete,
     );

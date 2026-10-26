@@ -1,44 +1,10 @@
 use crate::{
     Value,
     evaluate::Operand,
-    expression::{Kind, Node},
-    sequence::{Context, Halt, Output, View, Walk},
+    sequence::{Halt, View, Walk},
     value::range_error,
 };
-use std::cell::Cell;
 
-pub(crate) fn with_filters<'e, 'i>(
-    base: &'e Node,
-    predicates: &'e [Node],
-    context: &Context<'e, 'i>,
-    output: &mut dyn FnMut(View<'_, 'e, 'i>) -> Walk,
-) -> Walk {
-    let Some((predicate, previous)) = predicates.split_last() else {
-        return output(View::Operand(&base.run(context)?));
-    };
-    with_filters(base, previous, context, &mut |input| {
-        if let Kind::Number(index) = predicate.kind {
-            position(input, index, output)
-        } else {
-            let filter = Filter {
-                input,
-                predicate,
-                length: Cell::new(None),
-                context,
-            };
-            if predicate.effects {
-                let mut items = Vec::new();
-                filter.walk(&mut |value| {
-                    items.push(value);
-                    Ok(())
-                })?;
-                output(View::Items(&items))
-            } else {
-                output(View::Filter(&filter))
-            }
-        }
-    })
-}
 pub(crate) fn position<'e, 'i>(
     input: View<'_, 'e, 'i>,
     index: f64,
@@ -74,49 +40,6 @@ pub(crate) fn position<'e, 'i>(
     }
 }
 
-pub(crate) struct Filter<'s, 'e, 'i> {
-    input: View<'s, 'e, 'i>,
-    predicate: &'e Node,
-    length: Cell<Option<usize>>,
-    context: &'s Context<'e, 'i>,
-}
-impl<'e, 'i> Filter<'_, 'e, 'i> {
-    pub fn walk(&self, output: &mut Output<'_, 'e, 'i>) -> Walk {
-        let mut index = 0;
-        self.input.transform(true, output, |value, output| {
-            let context = Context {
-                value,
-                wrapped: false,
-                scope: self.context.scope.clone(),
-            };
-            let predicate = self.predicate.run(&context)?;
-            select(
-                &predicate,
-                self.predicate.offset,
-                index,
-                || self.length(),
-                &mut || output(context.value.clone()),
-            )?;
-            index += 1;
-            Ok(())
-        })
-    }
-    fn length(&self) -> Result<usize, Halt> {
-        if let Some(length) = self.length.get() {
-            return Ok(length);
-        }
-        let mut length = 0;
-        self.input.candidates(true, &mut |_| {
-            length += 1;
-            Ok(())
-        })?;
-        self.length.set(Some(length));
-        Ok(length)
-    }
-}
-
-// Numeric lists preserve duplicate matching positions. Inspect the entire list
-// before choosing positional versus effective-boolean semantics (mixed lists).
 fn numbers(
     operand: &Operand<'_, '_>,
     offset: usize,
@@ -151,6 +74,31 @@ pub(crate) fn select(
     mut length: impl FnMut() -> Result<usize, Halt>,
     output: &mut dyn FnMut() -> Walk,
 ) -> Walk {
+    // Scalar positions finish checking before invoking the consumer. They do
+    // not need the array-position enumerator's recursive callback activation.
+    if let Operand::One(value) = predicate
+        && !value.is_array()
+    {
+        match value.atomic() {
+            Value::Number(n) if n.is_infinite() => return Err(range_error(offset).into()),
+            Value::Number(n) if !n.is_nan() => {
+                let n = n.floor();
+                let target = if n < 0.0 { length()? as f64 + n } else { n };
+                return if target == index as f64 {
+                    output()
+                } else {
+                    Ok(())
+                };
+            }
+            _ => {
+                return if predicate.truth(offset)? {
+                    output()
+                } else {
+                    Ok(())
+                };
+            }
+        }
+    }
     if numbers(predicate, offset, &mut |_| Ok(()))? {
         numbers(predicate, offset, &mut |number| {
             let number = number.floor();

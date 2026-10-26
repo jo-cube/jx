@@ -26,6 +26,9 @@ pub(super) fn execute<'e, 'i>(
     let value = match &instruction.kind {
         Operation::Collect(producer) => {
             let mut values = Vec::new();
+            let boundary = std::cell::Cell::new(
+                matches!(&**producer, Operation::Path(p) if !p.identity() || p.positional),
+            );
             let result = match &**producer {
                 Operation::Path(path) => path
                     .walk(activation, &frame[path.source], offset, &mut |v| {
@@ -36,7 +39,7 @@ pub(super) fn execute<'e, 'i>(
                         crate::ConsumeError::Evaluation(e) => crate::sequence::Halt::Evaluation(e),
                         crate::ConsumeError::Consumer(e) => match e {},
                     }),
-                _ => navigation::walk(
+                _ => navigation::walk_retained(
                     producer,
                     activation,
                     frame,
@@ -46,6 +49,7 @@ pub(super) fn execute<'e, 'i>(
                         Ok(())
                     },
                     true,
+                    &boundary,
                 ),
             };
             result.map_err(|e| match e {
@@ -54,7 +58,11 @@ pub(super) fn execute<'e, 'i>(
             })?;
             if values.is_empty() {
                 Cell::Missing
-            } else if values.len() == 1 && values[0].is_array() && !values[0].preserves_array() {
+            } else if values.len() == 1
+                && values[0].is_array()
+                && !values[0].preserves_array()
+                && boundary.get()
+            {
                 Cell::Value(values.pop().unwrap())
             } else {
                 Cell::Value(Value::kept(values))
@@ -348,9 +356,6 @@ impl<'e, 'i> Reduction<'e, 'i> {
         self.fold.push_number(value);
     }
     fn push(&mut self, value: Value<'e, 'i>) {
-        if matches!(value, Value::Undefined) {
-            return;
-        }
         if self.many {
             self.fold.push(value);
         } else if let Some(first) = self.first.take() {
@@ -362,8 +367,13 @@ impl<'e, 'i> Reduction<'e, 'i> {
         }
     }
     fn finish(mut self, offset: usize) -> Result<Operand<'e, 'i>, Error> {
-        let defined = self.numeric || self.many || self.first.is_some();
-        if let Some(value) = self.first {
+        let defined = self.numeric
+            || self.many
+            || self
+                .first
+                .as_ref()
+                .is_some_and(|v| !matches!(v, Value::Undefined));
+        if let Some(value) = self.first.filter(|v| !matches!(v, Value::Undefined)) {
             if value.is_array() {
                 value.elements().for_each(|v| self.fold.push(v));
             } else {

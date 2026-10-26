@@ -13,10 +13,6 @@ fn main() -> ExitCode {
         Ok(Some(args)) => args,
         Ok(None) => {
             print!("{}", args::HELP);
-            #[cfg(feature = "jit")]
-            println!(
-                "--jit enables bounded native numeric plans; other regions keep the interpreter."
-            );
             return ExitCode::SUCCESS;
         }
         Err(error) => {
@@ -38,14 +34,6 @@ fn main() -> ExitCode {
             eprintln!("jx: expression:{location}: {:?}: {error}", error.phase);
             return ExitCode::from(2);
         }
-    };
-    #[cfg(feature = "jit")]
-    let expression = if args.jit {
-        let mut expression = expression;
-        expression.enable_native();
-        expression
-    } else {
-        expression
     };
     match run(args, &expression) {
         Ok(()) => ExitCode::SUCCESS,
