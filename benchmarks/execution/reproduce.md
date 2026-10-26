@@ -1,22 +1,22 @@
-# Validate and measure experimental execution
+# Validate and measure common-IR execution
 
 Use Rust 1.98.1 and the workspace release profile (thin LTO, one codegen unit).
 Keep builds, profiles and allocation probes outside throughput windows. Run timings
 sequentially on a quiet host; record source, environment and executable identities.
-Legacy execution remains default. Ordinary CI downloads no upstream JavaScript.
+Ordinary public compilation and the CLI use the common IR. Ordinary CI downloads no upstream JavaScript.
 
 ## Correctness
 
 ```sh
 just all
 just build
-cargo build -p jx --features experimental --example architecture_probe --release --locked
+cargo build -p jx --example architecture_probe --release --locked
 node scripts/execution-inventory.cjs target/release/examples/architecture_probe target/execution-upstream.json
 python3 scripts/execution-coverage.py target/execution-upstream.json target/execution-capabilities.json --entry-inventory target/execution-upstream.json
 ```
 
 All 1,679 vendored ids have asserted admission/outcomes in
-`tests/conformance/execution.json`; `just all` checks them with `experimental`.
+`tests/conformance/execution.json`; `just all` checks raw, validated and prepared input modes.
 The inventory checker emits rejection reasons. Supply a saved `--entry-inventory`
 for a cohort comparison. Add `--gate tests/conformance/execution.json` only for a
 deliberate reviewed update. Normal validation does not change the gate.
@@ -38,13 +38,14 @@ JSON output. Unsupported cases are never silently skipped.
 ## Runtime and memory
 
 ```sh
-cargo bench -p jx --features experimental --bench architecture --no-run --locked
+cargo bench -p jx --bench architecture --no-run --locked
 ```
 
 Cargo prints the executable path. Save an immutable copy under target and its
 SHA-256. Build compared sources with identical toolchain, profile, features and
 benchmark fixtures; save them as BEFORE and AFTER. Both must support selected
-cases. The driver also measures legacy execution from AFTER:
+cases. The driver retains historical entry-point labels. In current sources they all
+compile the common IR; only BEFORE versus AFTER compares engine revisions:
 
 ```sh
 python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-core --ordinary --entry-engine --cases benchmarks/execution/workloads.json
@@ -56,24 +57,23 @@ python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-pipelines -
 ARCH_MEMORY=1 AFTER
 ```
 
-`--expanded` compares only legacy/AFTER when BEFORE lacks coverage. Each version
+`--expanded` omits BEFORE when it lacks coverage. Each version
 gets fourteen warmed observations in two reversed process orders, seven/process,
 at least 200 ms each. `--ordinary` disables allocation instrumentation during timing;
-allocation/heap probes run separately. `--entry-engine` also retains a source-level
-legacy control. Raw samples, summaries and identities are
+allocation/heap probes run separately. `--entry-engine` also retains the public-entry-point control. Raw samples, summaries and identities are
 saved. `--raw` adds separately labelled validated-input execution.
 
 Independent default-engine controls:
 
 ```sh
-JX_BENCH_REALISTIC_ONLY=1 just bench
-JX_BENCH_REALISTIC_ONLY=1 just bench-runtime-memory
+just bench
+just bench-runtime-memory
 ```
 
 ## Compiler scaling and profiles
 
 ```sh
-cargo build -p jx --features experimental --release --locked
+cargo build -p jx --release --locked
 rustc -O -C lto=thin -C codegen-units=1 --edition=2024 crates/jx/benches/architecture/scaling.rs --extern jx=target/release/libjx.rlib -L dependency=target/release/deps -o target/execution-scaling
 SCALE_MAX=192 target/execution-scaling
 ARCH_EXPANDED=1 python3 scripts/profile-execution.py AFTER target/execution-profile --cases benchmarks/execution/profile-cases.json
@@ -98,10 +98,8 @@ python3 scripts/benchmark-jkq-execution.py target/execution-jkq/worker target/ex
 ```
 
 The generator copies actual sibling worker modules under target and adapts only
-the foundation API. It does not modify the sibling or involve broker/network work.
-Record the sibling revision and check cleanliness before/after. Known compatible
-worker source is revision `7eff087645f1c11e6c0754c7a7f239c3decb34a2`; the generator
-records source hashes. Sibling changes may require adapter review. Validation,
+the lower-level common-IR API. It does not modify the sibling or involve broker/network work.
+Record the sibling revision and check cleanliness before/after. The generator records the actual sibling revision and source hashes. Sibling changes may require adapter review. Validation,
 drop/tombstone ordering, immutable lookup setup, payload ownership and complete
 serialization must continue to match. Use `--entry BEFORE_WORKER` for a matched
 saved-worker comparison.
@@ -114,7 +112,7 @@ Borrowed-provenance and cardinality controls use the existing architecture harne
 captured calls, returned parents, callback and argument forms. Compare matching
 fixtures with `scripts/benchmark-execution.py ENTRY CURRENT OUTPUT --ordinary
 --entry-engine --calls --cases CASES.json`; use `--expanded` only for fixtures
-absent from ENTRY (legacy/current comparison). `numeric_stages/{8,1024}/48/path`
+absent from ENTRY (current entry-point comparison). `numeric_stages/{8,1024}/48/path`
 and the actual-worker `array/8/fold` include complete validation and reduction;
 allocation probes run separately from ordinary timing. Raw samples, source hashes
 and profiles belong in ignored target storage, not the committed benchmark suite.
@@ -124,5 +122,6 @@ from zero to 8,192, record size (48/500 B), alternating selection and all/none
 selection, with direct, grouped, lexical, function and callback forms. The compact
 manifest selects representative points. Build both engines with these same fixtures;
 use a source snapshot plus the shared benchmark files when an older saved binary
-lacks them. Keep fixture/source hashes with the raw measurements. These controls exercise separate predicate/mapper activations and cardinality
-boundaries; they do not imply a fused physical loop.
+lacks them. Keep fixture/source hashes with the raw measurements. These controls exercise predicate/mapper composition and cardinality boundaries.
+Only complete eligible regions fuse; general calls and effectful boundaries keep
+their semantic activation and retention requirements.

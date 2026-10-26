@@ -1,5 +1,5 @@
 # Performance
 
-The [performance guide](docs/performance.md) describes current measurements, efficiency
-properties, allocation/traversal limits, optional native execution and reproduction.
-Experimental controls and reproduction are in [benchmarks/execution](benchmarks/execution).
+The [performance guide](docs/performance.md) defines the current controls, allocation
+and memory measurements. [Execution fixtures](benchmarks/execution/README.md) and the
+[absolute harness](benchmarks/absolute/README.md) provide reproducible workloads.

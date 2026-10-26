@@ -1,4 +1,4 @@
-//! Default-feature, non-native actual-worker control. No experimental API is linked.
+//! Default-feature public API and actual-worker controls. No backend-selection API.
 #![allow(unsafe_code, dead_code)]
 mod fixtures;
 mod handwritten;
@@ -61,7 +61,7 @@ fn run(case: &Case, vars: &str, labels: &HashMap<String, String>) {
     let mut i = 0;
     metrics::measure(
         &case.name,
-        "default-legacy",
+        "public",
         "worker",
         case.inputs.iter().flatten().map(Vec::len).sum::<usize>() as f64 / case.inputs.len() as f64,
         || {
@@ -111,6 +111,47 @@ fn run(case: &Case, vars: &str, labels: &HashMap<String, String>) {
         },
     );
 }
+fn expression(case: &Case, vars: &str) {
+    let options = jx::CompileOptions::default()
+        .constant_binding("vars", jx::OwnedValue::from_json(vars.as_bytes()).unwrap());
+    let expression = options.compile(&case.source).unwrap();
+    let mut output = Vec::with_capacity(4096);
+    let mut i = 0;
+    let phase = std::env::var("ABS_PHASE").unwrap_or_else(|_| "full".into());
+    if phase == "compile" {
+        metrics::measure(&case.name, "public", "compile", 0.0, || {
+            black_box(options.compile(black_box(&case.source)).unwrap());
+            0
+        });
+        return;
+    }
+    metrics::measure_cycle(
+        &case.name,
+        "public",
+        "full",
+        case.inputs.iter().flatten().map(Vec::len).sum::<usize>() as f64 / case.inputs.len() as f64,
+        case.inputs.len(),
+        || {
+            let input = case.inputs[i % case.inputs.len()].as_ref().unwrap();
+            i += 1;
+            output.clear();
+            if case.kind == Kind::Validate {
+                black_box(jx::validate(black_box(input)).unwrap());
+            } else {
+                expression
+                    .evaluate(black_box(input))
+                    .unwrap()
+                    .for_each(|value| {
+                        value.write_compact(&mut output).unwrap();
+                        output.push(b'\n');
+                    })
+                    .unwrap();
+            }
+            black_box(&output);
+            output.len()
+        },
+    );
+}
 fn main() {
     let labels = (0..4096)
         .map(|i| (format!("k{i}"), format!("label-{i}")))
@@ -119,7 +160,24 @@ fn main() {
     println!(
         "case,mode,phase,sample,records,wall_seconds,cpu_seconds,input_bytes,output_bytes,allocations,allocated_bytes,peak_heap,probe_output_bytes"
     );
-    for case in fixtures::cases().into_iter().filter(|c| c.worker) {
-        run(&case, &vars, &labels)
+    expression(
+        &Case {
+            name: "field/500".into(),
+            kind: Kind::Scalar,
+            source: "id".into(),
+            width: 0,
+            rows: 0,
+            keys: vec![],
+            inputs: vec![Some(fixtures::record(500, 8, 0, false))],
+            worker: false,
+        },
+        &vars,
+    );
+    for case in fixtures::cases() {
+        if case.worker {
+            run(&case, &vars, &labels)
+        } else {
+            expression(&case, &vars)
+        }
     }
 }

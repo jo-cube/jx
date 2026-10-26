@@ -2,9 +2,8 @@
 
 The CLI executable and Rust library import are both `jx`. CLI binaries are distributed
 through [GitHub Releases](https://github.com/jo-cube/jx/releases); registry publication
-is deferred. The repository is still private and no release is published: downloads
-apply once public assets are available. [Source installation](#source-builds) requires
-repository access for now.
+is deferred. Use [source installation](#source-builds) when the requested version
+has not yet been published.
 
 ## Platforms
 
@@ -18,7 +17,7 @@ Use the target name matching your operating system and architecture:
 | macOS Apple Silicon | `aarch64-apple-darwin` | macOS 11+ |
 | Windows x86-64 | `x86_64-pc-windows-msvc` | MSVC runtime |
 
-CI is configured to run normal/native tests and extracted CLI archives on all five
+CI is configured to run workspace tests and extracted CLI archives on all five
 hosts. Verify successful jobs at the candidate revision before distributing their
 assets; Windows runtime validation remains pending until its job passes. macOS binaries
 are unsigned and unnotarized. Other Rust targets may support the normal engine but have
@@ -26,11 +25,11 @@ no release archive here.
 
 ## Download and install
 
-The **normal build is recommended**. Choose a published version and target from the
+Use the common-IR release binary. Choose a published version and target from the
 table. Linux example:
 
 ```sh
-version=0.1.0
+version=0.2.0
 target=x86_64-unknown-linux-gnu
 name="jx-v${version}-${target}"
 archive="$name.tar.gz"
@@ -50,7 +49,7 @@ The checksum verifies downloaded bytes; obtain both files from the intended rele
 Windows PowerShell example; add the extracted directory to your user PATH:
 
 ```powershell
-$version = '0.1.0'
+$version = '0.2.0'
 $name = "jx-v$version-x86_64-pc-windows-msvc"
 $archive = "$name.zip"
 $url = "https://github.com/jo-cube/jx/releases/download/v$version"
@@ -72,25 +71,14 @@ with version, revision, target, variant, features and source timestamp. Names ar
 | Variant | Linux/macOS | Windows |
 | --- | --- | --- |
 | Normal | `jx-vVERSION-TARGET.tar.gz` | `jx-vVERSION-TARGET.zip` |
-| Native-capable | `jx-vVERSION-TARGET-native.tar.gz` | `jx-vVERSION-TARGET-native.zip` |
 
 Each has an adjacent `.sha256` file and an equally named top-level directory.
-Both variants install the same executable name, `jx` (or `jx.exe`).
+The executable name is `jx` (or `jx.exe`).
 
-## Optional native acceleration
+## Execution features
 
-The normal build contains the complete general runtime and has no Cranelift dependency.
-The native-capable build adds acceleration for eligible numeric/boolean regions and
-selected folds. It remains opt-in at execution time:
-
-```sh
-jx --jit 'price * quantity' records.ndjson
-```
-
-For that variant, append `-native` to `name` in the download examples. Unsupported regions
-continue through ordinary execution. Native acceleration is most useful for heavily reused
-numeric expressions; scanning-heavy workloads may gain little. Use the normal build when
-you do not need it. See [performance](performance.md) for measured examples and limits.
+Releases contain one common-IR interpreter. There is no native archive variant
+or engine-selection feature.
 
 ## Source builds
 
@@ -103,21 +91,17 @@ git checkout REVIEWED_COMMIT
 cargo install --path crates/jx-cli --locked
 ```
 
-Default features are empty. A native-capable source install uses
-`cargo install --path crates/jx-cli --features jit --locked`, then runtime `--jit`.
-Unsupported native targets fail with a compile-time diagnostic.
-`cargo build --release --locked` builds the default engine/CLI; `cargo build --workspace`
-also builds the separate native crate. Library users should follow the
-[pinned Git dependency guide](embedding.md), enabling `jit` and calling `enable_native()`
-only when desired. APIs are pre-release and can change.
+Default features are empty. `cargo build --release --locked` builds the engine
+and CLI. Library users should follow the [pinned dependency guide](embedding.md).
+APIs are pre-release and can change.
 
 ## Preparing release archives
 
 The manually dispatched **Release artifacts** workflow reuses **CI** at an existing
 ref, resolved once to a commit. Repository checks run on Linux; five platform jobs each
-test/build the normal variant, then the optional native variant. Both archives are
+test/build the common-IR executable. Archives are
 checksummed, inspected, extracted and executed on the matching host, including Windows.
-Each run artifact named `jx-TARGET` contains both verified archives and their checksums.
+Each run artifact named `jx-TARGET` contains the verified archive and their checksums.
 
 Release preparation enables pinned-upstream differential checks in both modes by default;
 the dispatch option can disable them. Ordinary push/PR CI uses the vendored language
@@ -135,13 +119,9 @@ export RUSTFLAGS="--remap-path-prefix=$PWD=."
 cargo build -p jx-cli --release --locked --target aarch64-apple-darwin
 archive="$(python3 scripts/package-release.py --target aarch64-apple-darwin)"
 just release-smoke "$archive"
-# Native variant:
-cargo build -p jx-cli --release --features jit --locked --target aarch64-apple-darwin
-archive="$(python3 scripts/package-release.py --target aarch64-apple-darwin --variant native)"
-just release-smoke "$archive"
 ```
 
-The tool checks binary version/native capability before packaging. Stable member ordering,
+The tool checks binary version and execution variant before packaging. Stable member ordering,
 modes, owner IDs and commit timestamps make archives deterministic for identical contents
 and metadata with the same Python/zlib. Locked dependencies, path remapping, thin LTO
 and one codegen unit support reproducibility; different OS/linker combinations may produce different bytes.
@@ -149,11 +129,10 @@ and one codegen unit support reproducibility; different OS/linker combinations m
 Run `just all`, `just build`, source package checks, documentation/examples and relevant
 platform checks. Verify checksums, inspect archive contents and smoke-test extracted binaries
 with `just release-smoke ARCHIVE`: version/help, stdin/files, expression files, cardinality,
-limits, failure exit codes, line atomicity and native execution/fallback. The checker
+limits, failure exit codes, line atomicity and compatibility-feature behavior. The checker
 verifies the adjacent checksum and exact archive layout before running extracted bytes.
-Review notices after dependency or toolchain changes: `THIRD_PARTY_LICENSES` covers normal releases, and
-`python3 scripts/update-native-notices.py` refreshes `THIRD_PARTY_LICENSES_NATIVE` from the
-locked native dependency graph. Both include the Rust standard library notice.
+Review `THIRD_PARTY_LICENSES` after dependency or toolchain changes; it includes
+the Rust standard library notice. Native-only dependencies and notices are absent.
 
 ## Future registry publication
 

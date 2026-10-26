@@ -31,7 +31,7 @@ for module in ['reference','foundation']:
 shutil.copytree(build/'src/reference',build/'src/facade_worker',dirs_exist_ok=True,copy_function=shutil.copyfile)
 for name in ['mod.rs','jsonata/tests.rs']:
     p=build/'src/facade_worker'/name
-    p.write_text(p.read_text().replace('.compile(source)', '.compile_execution(source)').replace('crate::reference::build_plan','crate::facade_worker::build_plan'))
+    p.write_text(p.read_text().replace('crate::reference::build_plan','crate::facade_worker::build_plan'))
 (build/'src/simd_metrics.rs').write_text((root/'benchmarks/absolute/metrics.rs').read_text()+'\npub fn live_bytes()->i64 { LIVE.load(Relaxed) }\n')
 # The independently built crate keeps benchmark dependencies out of production Cargo manifests.
 (build/'Cargo.toml').write_text(f'''[package]
@@ -40,7 +40,7 @@ version="0.0.0"
 edition="2024"
 [workspace]
 [dependencies]
-jx={{path={json.dumps(str(root/'crates/jx'))},features=["experimental"]}}
+jx={{path={json.dumps(str(root/'crates/jx'))}}}
 serde={{version="=1.0.228",features=["derive"]}}
 serde_json={{version="=1.0.150",features=["raw_value"]}}
 libc="=0.2.186"

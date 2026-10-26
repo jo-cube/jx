@@ -1,17 +1,17 @@
-# Experimental execution controls
+# Common execution controls
 
-The `experimental` feature adds the shared semantic execution foundation. Legacy
-`Expression`, CLI and native routing remain the default. Unsupported syntax, callee
-domains and input shapes fail explicitly; there is no compatibility replay. See
-[the execution model](../../docs/execution.md) and [reproduction](reproduce.md).
+Ordinary `compile`, evaluation, prepared inputs and the CLI use the same semantic
+IR; there is no engine-selection API.
+[Execution contracts](../../docs/execution.md) and [reproduction](reproduce.md)
+describe current acquisition, delivery, workspace and ownership behavior.
 
-The pinned gate admits 1,638 of 1,679 cases: all 1,390 legacy-success outcomes,
+The pinned gate admits 1,638 of 1,679 cases: all 1,390 successful outcomes from the migration reference,
 247 expected errors and one limit. The remaining 38 compile rejections and three
 parser errors are expected-error cases, not missing successful tuple semantics.
 Generated controls exercise correlated stages, ancestry, retained callbacks and
 valid fold-array shapes. They separately assert inherited transform-alias differences,
 upstream empty-tuple grouping exceptions and the direct-regex coercion boundary.
-Admission does not establish complete public API, host/coercion or native parity.
+Admission is distinct from complete public API and upstream compatibility.
 
 ## Retained fixtures
 
@@ -26,7 +26,7 @@ Admission does not establish complete public API, host/coercion or native parity
 | `architecture/scaling.rs` | Compilation time, allocations, retained/peak heap and program size by complexity |
 | `architecture/memory.rs` | Separate compilation, acquisition and execution heap probes |
 | `architecture/jkq.rs` | Actual-worker driver for an isolated read-only sibling experiment |
-| `workloads/realistic.rs` and `realistic_memory.rs` | Default-engine strings, immutable tables, projections, predicates and equivalent forms |
+| `throughput.rs` and `workloads/realistic_memory.rs` | Compact public-API throughput and retained-heap controls |
 
 JSON selectors keep ordinary, call, sequence and worker controls separate. Fixtures
 are generated deterministically before timing; no generated input corpus is needed.
@@ -54,12 +54,11 @@ them would improve timings. Dynamic
 calls, conservative scope promotion and aliases retain acquisition/materialization
 cliffs. Constructors add compilation cost; grouping/order retain candidates. Warm
 state and link layout can materially affect rates. Preserve raw samples and binary
-identities; investigate broad regressions before default adoption.
+identities; investigate broad regressions before release.
 
-Opt-in `compile_execution` facade controls include automatic acquisition, workspaces
-and the immutable shared-input API. `scripts/check-execution-facade.py` replays the
-public contracts with documented interpreter-only native requests. Default/CLI
-migration and compatibility validation remain necessary. No legacy
-subsystem can yet be retired wholesale. Historical reports, profiles, trial variants and raw evidence
-bundles are review artifacts, not build/CI inputs. New measurements belong under
-ignored `target/` or external review storage.
+Ordinary compilation automatically uses acquisition. Public contract tests cover
+workspaces, cloning/concurrency, borrowed and owned delivery, immutable bindings,
+errors and cancellation. Historical engine labels in the diagnostic harness now
+name entry points to the same engine; compare separate source-revision binaries
+for a real before/after measurement. See [absolute public controls](../absolute/README.md)
+for a small release comparison without backend-selection instrumentation.

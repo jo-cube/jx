@@ -58,13 +58,13 @@ pub fn run(options: &jx::CompileOptions, vars: &str) {
             super::api_worker(c, vars, &mode);
             continue;
         }
-        let e = options.compile_execution(&c.source).unwrap();
+        let e = options.compile(&c.source).unwrap();
         if let Ok(threads) = std::env::var("ABS_API_THREADS") {
             parallel(c, &e, threads.parse().unwrap(), &mode);
             continue;
         }
         let old = options.compile(&c.source).unwrap();
-        let p = e.execution_program().unwrap();
+        let p = e.execution_program();
         let plan = jx::InputPlan::new([&e]);
         let mut workspace = jx::execution::Workspace::default();
         let mut acquisition = jx::execution::Acquisition::new([p]);
@@ -164,7 +164,7 @@ pub fn run(options: &jx::CompileOptions, vars: &str) {
                 } else if mode == "program" {
                     black_box(options.compile_program(&c.source).unwrap());
                 } else {
-                    black_box(options.compile_execution(&c.source).unwrap());
+                    black_box(options.compile(&c.source).unwrap());
                 }
                 0
             });

@@ -15,5 +15,5 @@ engine has no interruptible timeout. Keep discovered minimal regressions in ordi
 tests. Generated corpus/artifacts and optional fuzz dependencies stay outside CI.
 
 `JX_FUZZ_ITERATIONS=100000 just robustness` extends the reproducible mutation run.
-Native/interpreter adversarial-shape parity and embedding failure tests run with
-`just robustness`; executable buffers/code lifetime have separate native unit tests.
+Adversarial input-shape, cloning and embedding failure checks run with
+`just robustness`.
