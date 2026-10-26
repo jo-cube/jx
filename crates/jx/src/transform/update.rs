@@ -1,7 +1,8 @@
 use super::*;
 pub(super) fn key_value<'e, 'i>(object: &Value<'e, 'i>, body: &str) -> Value<'e, 'i> {
     match object {
-        Value::Raw(raw) => {
+        _ if object.as_raw().is_some() => {
+            let raw = object.as_raw().unwrap();
             let at = body.as_ptr() as usize - raw.as_bytes().as_ptr() as usize;
             Value::Raw(crate::RawJson(&raw.as_str()[at - 1..at + body.len() + 1]))
         }

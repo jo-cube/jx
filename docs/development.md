@@ -8,7 +8,6 @@ JavaScript implementation or external corpus once dependencies are cached.
 
 - `crates/jx`: reusable parser, compiler and runtime; public examples and benchmarks.
 - `crates/jx-cli`: synchronous NDJSON reader/writer and CLI policy.
-- `crates/jx-native`: optional bounded Cranelift backend; excluded from default builds.
 - `tests/semantics`: small readable behavior/regression cases.
 - `tests/conformance`: pinned upstream corpus, license and reviewed manifest.
 - `scripts`: import/differential checks and deterministic archive tooling.
@@ -24,25 +23,24 @@ a semantic bug; do not emulate unsupported behavior silently.
 | Command | Purpose |
 | --- | --- |
 | `just build` | Locked release engine/CLI build, without native dependencies |
-| `just build-jit` | Explicit native-enabled release CLI |
 | `just check` | Default engine/CLI and all target kinds |
 | `just fmt` | Format Rust |
 | `just clippy` | Strict all-feature workspace Clippy |
 | `just test` | All-feature workspace tests |
 | `just conformance` | Pinned language inventory |
-| `just robustness` | Seeded boundary properties and native safety tests |
-| `just all` / `just ci` | Formatting, strict Clippy, default/native tests, archive tests, guide examples and benchmark smoke |
+| `just robustness` | Seeded boundary and embedding properties |
+| `just all` / `just ci` | Formatting, strict Clippy, workspace tests, archive tests, guide examples and benchmark smoke |
 | `just bench` | Warmed execution/compilation and allocation measurements |
 | `just package` | Assemble and verify source archives, without publishing |
 | `just guides` | Check documentation links and execute Rust guide examples offline |
 | `just release-smoke ARCHIVE` | Verify checksum/contents and execute an extracted CLI |
 
-`just all` deliberately exercises the optional backend as well as default builds.
-Default-only checks are `cargo test --locked` and `cargo clippy --all-targets --locked -- -D warnings`.
+`just all` exercises the single execution backend. Focused checks are
+`cargo test --locked` and `cargo clippy --all-targets --locked -- -D warnings`.
 Use a supported native host for the full workflow. **CI** keeps formatting, strict
 Clippy, source packaging, Rustdoc, guide examples, archive tooling and allocation smoke
-in one Linux job. Five host jobs run default/native tests and release-archive smoke in
-separate steps; both modes include all 1,679 conformance outcomes and robustness checks.
+in one Linux job. Five host jobs run workspace tests and release-archive smoke; each includes all
+1,679 conformance outcomes and robustness checks.
 Windows executes the extracted `.exe`, not a cross-built placeholder.
 
 The same workflow serves manual **Release artifacts** preparation. Its candidate ref
@@ -52,7 +50,7 @@ Platform jobs are configured coverage, not evidence of a completed run.
 
 Optional differential checks are available through the CI dispatch checkbox and enabled
 by default for release preparation. They fetch the pinned JSONata revision and compare
-both normal/native CLI modes. Ordinary push/PR CI and `just all` use vendored fixtures
+the release CLI. Ordinary push/PR CI and `just all` use vendored fixtures
 and do not require Node or an upstream checkout.
 
 ```sh
@@ -74,3 +72,15 @@ platform checks. Packaging a working tree for review uses
 `cargo package --workspace --locked --allow-dirty`. Inspect extracted archives rather
 than relying only on in-workspace builds. [Release preparation](releases.md) covers
 platforms, feature policy, checksums, licenses and reproducibility.
+
+Representative predicate/projection, immutable-table, repeated-field, string and
+expression-form comparisons use `JX_BENCH_FILTER=projection just bench`.
+`JX_BENCH_REALISTIC_ONLY=1 just bench-runtime-memory` selects realistic compile/clone
+retention and evaluation-peak controls.
+Optional `node scripts/check-optimizing.cjs UPSTREAM_CHECKOUT CLI_BINARY` checks grouping,
+numeric declarations, UTF-8 operations and membership against the pinned reference.
+
+The common foundation uses `cargo bench -p jx --bench architecture`.
+Run the shared-input example with `cargo run -p jx --example execution`.
+[Execution contracts](execution.md) and the [performance guide](performance.md)
+describe the same engine used by ordinary compilation and the CLI.

@@ -1,10 +1,10 @@
-mod demand;
 mod scan;
+
+pub(crate) use scan::{capture_schema, capture_schema_validated, schema_each};
 pub(crate) mod string;
 
-pub(crate) use demand::{CAPTURE_SLOTS, Captured, Captures, Demand};
 pub use scan::MAX_DEPTH;
-pub(crate) use scan::{Elements, Members, Selection, capture, select};
+pub(crate) use scan::{Elements, Members, Selection, select};
 
 /// A validated JSON value borrowing its original UTF-8 encoding.
 /// Arrays here are JSON values, not JSONata result sequences.
@@ -53,3 +53,5 @@ pub fn validate(input: &[u8]) -> Result<RawJson<'_>, crate::Error> {
         _ => unreachable!("identity selects the validated root"),
     }
 }
+
+pub(crate) use scan::{ranges_each, schema_ranges_each};

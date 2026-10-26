@@ -1,4 +1,4 @@
-use crate::{Error, Value, expression::Node};
+use crate::{Error, Value};
 use std::cmp::Ordering;
 
 type Column<'e, 'i> = Vec<Option<Option<Value<'e, 'i>>>>;
@@ -10,10 +10,10 @@ pub(crate) struct Keys<'e, 'i> {
     length: usize,
 }
 impl<'e, 'i> Keys<'e, 'i> {
-    pub fn new(length: usize, terms: &[(Node, bool)]) -> Self {
+    pub fn with_terms(length: usize, count: usize, replay_safe: bool) -> Self {
         Self {
-            columns: if length > 2 && terms.iter().any(|(term, _)| !term.effects) {
-                (0..terms.len()).map(|_| None).collect()
+            columns: if length > 2 && replay_safe {
+                (0..count).map(|_| None).collect()
             } else {
                 Vec::new()
             },
@@ -24,35 +24,36 @@ impl<'e, 'i> Keys<'e, 'i> {
         &mut self,
         index: usize,
         term_index: usize,
-        term: &'e Node,
-        evaluate: &mut impl FnMut(usize, &'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
+        effects: bool,
+        evaluate: &mut impl FnMut(usize, usize) -> Result<Option<Value<'e, 'i>>, Error>,
     ) -> Result<Option<Value<'e, 'i>>, Error> {
-        if term.effects || self.columns.is_empty() {
-            return evaluate(index, term);
+        if effects || self.columns.is_empty() {
+            return evaluate(index, term_index);
         }
         let column = self.columns[term_index].get_or_insert_with(|| vec![None; self.length]);
         if let Some(value) = &column[index] {
             return Ok(value.clone());
         }
-        let value = evaluate(index, term)?.map(|value| value.atomic());
+        let value = evaluate(index, term_index)?.map(|value| value.atomic());
         column[index] = Some(value.clone());
         Ok(value)
     }
-    pub fn compare(
+
+    pub fn compare_with(
         &mut self,
         left: usize,
         right: usize,
-        terms: &'e [(Node, bool)],
+        terms: impl Iterator<Item = (bool, bool)>,
         offset: usize,
-        mut evaluate: impl FnMut(usize, &'e Node) -> Result<Option<Value<'e, 'i>>, Error>,
+        mut evaluate: impl FnMut(usize, usize) -> Result<Option<Value<'e, 'i>>, Error>,
     ) -> Result<Ordering, Error> {
-        for (i, (term, descending)) in terms.iter().enumerate() {
-            let a = self.get(left, i, term, &mut evaluate)?;
-            let b = self.get(right, i, term, &mut evaluate)?;
+        for (i, (effects, descending)) in terms.enumerate() {
+            let a = self.get(left, i, effects, &mut evaluate)?;
+            let b = self.get(right, i, effects, &mut evaluate)?;
             let missing = a.is_none() || b.is_none();
             let order = super::values(a, b, offset)?;
             if order != Ordering::Equal {
-                return Ok(if *descending && !missing {
+                return Ok(if descending && !missing {
                     order.reverse()
                 } else {
                     order

@@ -76,7 +76,6 @@ retained engine values can require additional memory.
 | `--max-record-bytes N` | Positive per-record input limit; default 1,048,576 |
 | `--max-output-bytes N` | Positive per-result serialized byte limit; default 16,777,216 |
 | `--max-work N` | Cooperative work budget plus other default evaluation limits, per input record |
-| `--jit` | Enable eligible native kernels; available only in a `jit` feature build |
 | `-h`, `--help` | Print usage and options |
 | `--version` | Print package version |
 
@@ -89,10 +88,8 @@ Work units are semantic checkpoints, not CPU instructions. Controls are cooperat
 validation finishes first and regex/host calls cannot be interrupted mid-call.
 See [compatibility and resource limits](https://github.com/jo-cube/jx/blob/dev/docs/compatibility.md).
 
-The recommended normal binary has no native backend. An optional `-native` release
-adds eligible numeric/boolean acceleration and selected folds; pass `--jit` to enable it.
-Source builds use `--features jit`. Unsupported regions continue through normal execution;
-scanning-heavy work may gain little. See [native installation](https://github.com/jo-cube/jx/blob/dev/docs/releases.md#optional-native-acceleration).
+All builds use the common IR. Releases contain one executable variant; there is
+no native backend or engine-selection option.
 
 ## Errors and exit status
 

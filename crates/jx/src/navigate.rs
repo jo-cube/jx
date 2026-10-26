@@ -1,8 +1,7 @@
 use crate::{
     Error, Value,
     evaluate::Operand,
-    expression::{Kind, Node},
-    sequence::{Context, Output, Walk},
+    sequence::{Output, Walk},
     value::{range_error, type_error},
 };
 
@@ -69,10 +68,9 @@ pub(crate) fn descendants<'e, 'i>(value: Value<'e, 'i>, output: &mut Output<'_, 
     Ok(())
 }
 
-pub(crate) fn range<'e, 'i>(
-    left: &'e Node,
-    right: &'e Node,
-    input: &Context<'e, 'i>,
+pub(crate) fn range_values<'e, 'i>(
+    lhs: Operand<'e, 'i>,
+    rhs: Operand<'e, 'i>,
     offset: usize,
     output: &mut Output<'_, 'e, 'i>,
 ) -> Walk {
@@ -86,8 +84,6 @@ pub(crate) fn range<'e, 'i>(
             _ => Err(type_error(offset)),
         }
     }
-    let lhs = left.run(input)?;
-    let rhs = right.run(input)?;
     let lhs = integer(lhs, offset)?;
     let rhs = integer(rhs, offset)?;
     let (Some(lhs), Some(rhs)) = (lhs, rhs) else {
@@ -109,115 +105,4 @@ pub(crate) fn range<'e, 'i>(
         output(Value::Number(lhs + f64::from(at)))?;
     }
     Ok(())
-}
-
-pub(crate) fn keep<'e, 'i>(
-    node: &'e Node,
-    path: bool,
-    input: &Context<'e, 'i>,
-) -> Result<Operand<'e, 'i>, Error> {
-    if let Kind::Tuples(steps, focus) = &node.kind {
-        let mut items = Vec::new();
-        match crate::tuple::route_values(steps, *focus, input, &mut |value| {
-            items.push(value);
-            Ok(())
-        }) {
-            Err(crate::sequence::Halt::Evaluation(error)) => return Err(error),
-            Err(crate::sequence::Halt::Stop) => unreachable!(),
-            Ok(()) => {}
-        }
-        return Ok(if items.is_empty() {
-            Operand::Missing
-        } else {
-            Operand::One(Value::kept(items))
-        });
-    }
-    if let Kind::Route(steps, focus) = &node.kind {
-        return crate::route::keep(steps, *focus, input);
-    }
-    if let Kind::Filter(base, predicates) = &node.kind {
-        let mut result = Operand::Missing;
-        let walk = crate::filter::with_filters(base, predicates, input, &mut |view| {
-            if let crate::sequence::View::Operand(Operand::One(value)) = view
-                && value.is_array()
-                && !value.is_sequence()
-            {
-                result = Operand::One(value.clone());
-            } else {
-                let mut items = Vec::new();
-                view.walk(&mut |value| {
-                    items.push(value);
-                    Ok(())
-                })?;
-                if !items.is_empty() {
-                    result = Operand::One(Value::kept(items));
-                }
-            }
-            Ok(())
-        });
-        return match walk {
-            Ok(()) => Ok(result),
-            Err(crate::sequence::Halt::Evaluation(e)) => Err(e),
-            Err(crate::sequence::Halt::Stop) => unreachable!(),
-        };
-    }
-    if !path
-        && let Kind::Path(field) = &node.kind
-        && !field.rooted
-        && field.fields.len() == 1
-        && input.value.is_array()
-    {
-        let mut items = Vec::new();
-        crate::path::lookup(&input.value, &field.fields[0], &mut |value| {
-            items.push(value);
-            Ok::<_, Error>(())
-        })?;
-        return Ok(if items.is_empty() {
-            Operand::Missing
-        } else {
-            Operand::One(Value::kept(items))
-        });
-    }
-    fn is_path(node: &Node) -> bool {
-        match &node.kind {
-            Kind::Path(path) => !path.fields.is_empty(),
-            Kind::Keep(child, _) => is_path(child),
-            Kind::Wildcard | Kind::Sort(..) => true,
-            _ => false,
-        }
-    }
-    let force = path && is_path(node);
-    // A call's sequence is normalized after this postfix operator, while a
-    // parenthesized/retained value has already crossed that boundary.
-    let result = match &node.kind {
-        Kind::Builtin(builtin, args) => builtin.evaluate(args, input, node.offset)?,
-        Kind::Call(target, args) => crate::function::call(target, args, input, node.offset)?,
-        Kind::Binary(crate::expression::Op::Chain, left, right) => {
-            crate::function::chain(left, right, input, node.offset)?
-        }
-        _ => node.run(input)?,
-    };
-    Ok(match result {
-        Operand::Missing => Operand::Missing,
-        Operand::One(value) if force && (!value.is_array() || value.preserves_array()) => {
-            Operand::One(Value::kept(vec![value]))
-        }
-        Operand::One(value) if value.unpacks_sequence() => {
-            let items: Vec<_> = value.elements().collect();
-            if items.is_empty() {
-                Operand::Missing
-            } else {
-                Operand::One(Value::kept(items))
-            }
-        }
-        Operand::Many(stream) => {
-            let mut items = Vec::new();
-            stream.visit(|v| {
-                items.push(v);
-                Ok(())
-            })?;
-            Operand::One(Value::kept(items))
-        }
-        other => other,
-    })
 }

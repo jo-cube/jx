@@ -101,6 +101,29 @@ impl Param {
     }
 }
 impl Library {
+    // Pattern values may be user matchers; function parameters may invoke host or
+    // lexical callbacks. Without a narrower argument proof these kernels are
+    // effectful, even when their final result is a scalar.
+
+    pub(crate) fn calls_functions(self) -> bool {
+        self.signature()
+            .0
+            .iter()
+            .any(|p| matches!(p, Param::Function | Param::Pattern))
+    }
+    // Contextual signatures can shift a callback left by one argument. The
+    // runtime decides the actual shift after type validation; effect analysis
+    // conservatively considers both positions, without evaluating arguments.
+
+    pub(crate) fn callback_argument(self, argc: usize, index: usize) -> bool {
+        let (params, _, context) = self.signature();
+        let callback = |i| {
+            params
+                .get(i)
+                .is_some_and(|p| matches!(p, Param::Function | Param::Pattern))
+        };
+        callback(index) || context && argc < params.len() && callback(index + 1)
+    }
     pub fn uses_clock(self) -> bool {
         matches!(self, Self::ToMillis | Self::Now | Self::Millis)
     }
@@ -348,45 +371,7 @@ impl Library {
         let (params, _, context) = self.signature();
         context && argc < params.len()
     }
-    pub fn evaluate_in<'e, 'i>(
-        self,
-        args: &'e [Node],
-        context: &Context<'e, 'i>,
-        caller: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<Operand<'e, 'i>, Error> {
-        if self == Self::Zip {
-            let values = args
-                .iter()
-                .map(|arg| crate::retain::materialize(arg, context))
-                .collect::<Result<Vec<_>, _>>()?;
-            return self.values(&values, caller, offset);
-        }
-        if self == Self::Replace {
-            let mut values = [None, None, None, None];
-            for (i, arg) in args.iter().enumerate() {
-                let value = crate::retain::materialize(arg, context)?;
-                if i < values.len() {
-                    values[i] = value;
-                }
-            }
-            if args.len() > values.len() {
-                return Err(type_error(offset));
-            }
-            return self.values(&values[..args.len()], caller, offset);
-        }
-        let mut values = [None, None, None];
-        for (i, arg) in args.iter().enumerate() {
-            let value = crate::retain::materialize(arg, context)?;
-            if i < values.len() {
-                values[i] = value;
-            }
-        }
-        if args.len() > values.len() {
-            return Err(type_error(offset));
-        }
-        self.values(&values[..args.len()], caller, offset)
-    }
+
     pub fn values<'e, 'i>(
         self,
         args: &[Option<Value<'e, 'i>>],

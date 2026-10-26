@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archive an already-built CLI variant; never builds, uploads or publishes."""
+"""Archive an already-built common-IR CLI; never builds, uploads or publishes."""
 import argparse
 import gzip
 import hashlib
@@ -20,13 +20,13 @@ TARGETS = (
 
 
 def archive(binary, target, version, revision, epoch, output, root=ROOT, variant="default"):
-    if variant not in ('default', 'native'):
+    if variant != 'default':
         raise ValueError('unsupported release variant')
     if target not in TARGETS or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.-]+)?', version):
         raise ValueError('unsupported target or invalid version')
-    name = f'jx-v{version}-{target}' + ('-native' if variant == 'native' else '')
-    notices = 'THIRD_PARTY_LICENSES_NATIVE' if variant == 'native' else 'THIRD_PARTY_LICENSES'
-    features = 'jit (execution requires --jit)' if variant == 'native' else 'default (no native backend)'
+    name = f'jx-v{version}-{target}'
+    notices = 'THIRD_PARTY_LICENSES'
+    features = 'common-ir'
     files = {
         'jx.exe' if target.endswith('msvc') else 'jx': binary.read_bytes(),
         'README.md': (root / 'crates/jx-cli/README.md').read_bytes(),
@@ -66,7 +66,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--target', required=True, choices=TARGETS)
     parser.add_argument('--output', type=Path, default=ROOT / 'dist')
-    parser.add_argument('--variant', choices=('default', 'native'), default='default')
+    parser.add_argument('--variant', choices=('default',), default='default')
     args = parser.parse_args()
     status = subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT)
     if status:
@@ -82,8 +82,8 @@ def main():
     if actual != f'jx {version}':
         parser.error(f'binary version mismatch: {actual}')
     help_text = subprocess.check_output([binary, '--help'], text=True)
-    if ('--jit' in help_text) != (args.variant == 'native'):
-        parser.error('binary native support does not match the requested release variant')
+    if '--jit' in help_text:
+        parser.error('release archives require the default feature set')
     print(archive(binary, args.target, version, revision, epoch, args.output, variant=args.variant))
 
 

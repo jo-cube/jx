@@ -40,13 +40,9 @@ fn traversal_preserves_raw_tokens_and_escaped_boundaries() {
 }
 
 #[test]
-fn validated_paths_and_captures_agree_with_the_input_scanner() {
+fn validated_paths_agree_with_the_input_scanner() {
     let fields = ["a", "a.x", "a.x.y", "b", "missing"]
         .map(|path| path.split('.').map(Box::<str>::from).collect::<Vec<_>>());
-    let mut demand = Demand::default();
-    for (slot, path) in fields.iter().enumerate() {
-        demand.insert(path, slot);
-    }
     for input in [
         r#"{"a":{"x":{"y":"[}]\"\\é"}},"b":[true,null,-0,1e999]}"#,
         r#"{"a":{"x":1},"\u0061":{"x":{"y":2}}}"#,
@@ -61,12 +57,8 @@ fn validated_paths_and_captures_agree_with_the_input_scanner() {
         "-1.2e+30",
         r#""[}]\\\"""#,
     ] {
-        let mut expected = Captures::default();
-        let raw = capture(input.as_bytes(), &demand, &mut expected).unwrap();
-        let mut actual = Captures::default();
-        raw.capture(&demand, &mut actual);
-        for (slot, path) in fields.iter().enumerate() {
-            assert_eq!(actual.get(slot), expected.get(slot), "{input}: {path:?}");
+        let raw = crate::validate(input.as_bytes()).unwrap();
+        for path in &fields {
             assert_eq!(
                 raw.select(path),
                 select(input.as_bytes(), path).unwrap(),
@@ -77,15 +69,9 @@ fn validated_paths_and_captures_agree_with_the_input_scanner() {
         let raw = crate::validate(array.as_bytes()).unwrap();
         let mut items = raw.elements();
         for _ in 0..2 {
-            assert_eq!(
-                items.next_captured(&demand, &mut actual).unwrap().as_str(),
-                input
-            );
-            for slot in 0..fields.len() {
-                assert_eq!(actual.get(slot), expected.get(slot), "{input}");
-            }
+            assert_eq!(items.next().unwrap().as_str(), input);
         }
-        assert!(items.next_captured(&demand, &mut actual).is_none());
+        assert!(items.next().is_none());
     }
 }
 
@@ -181,8 +167,6 @@ fn generated_containers_match_decoded_json_after_validation() {
 #[test]
 fn long_strings_preserve_escaped_and_nested_subtree_boundaries() {
     let fields = vec![Box::<str>::from("id")];
-    let mut demand = Demand::default();
-    demand.insert(&fields, 0);
     for length in (0..40).chain([127, 128, 129, 1023, 1024, 1025]) {
         let padding = "x".repeat(length);
         for body in [
@@ -220,11 +204,6 @@ fn long_strings_preserve_escaped_and_nested_subtree_boundaries() {
                 raw.select(&fields),
                 select(input.as_bytes(), &fields).unwrap()
             );
-            let mut expected = Captures::default();
-            capture(input.as_bytes(), &demand, &mut expected).unwrap();
-            let mut actual = Captures::default();
-            raw.capture(&demand, &mut actual);
-            assert_eq!(actual.get(0), expected.get(0));
         }
     }
 }

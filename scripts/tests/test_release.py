@@ -21,13 +21,13 @@ class ReleaseArchive(unittest.TestCase):
             binary = root / 'binary'
             binary.write_bytes(b'fixed binary bytes\x00')
             for target in release.TARGETS:
-                for variant in ('default', 'native'):
+                for variant in ('default',):
                     with self.subTest(target=target, variant=variant):
                         first = release.archive(binary, target, '0.1.0', 'abc', 1750000000,
                                                 root / 'a', variant=variant)
                         second = release.archive(binary, target, '0.1.0', 'abc', 1750000000,
                                                  root / 'b', variant=variant)
-                        name = f'jx-v0.1.0-{target}' + ('-native' if variant == 'native' else '')
+                        name = f'jx-v0.1.0-{target}'
                         suffix = '.zip' if target.endswith('msvc') else '.tar.gz'
                         self.assertEqual(first.name, name + suffix)
                         self.assertEqual(first.read_bytes(), second.read_bytes())
@@ -53,10 +53,10 @@ class ReleaseArchive(unittest.TestCase):
                         self.assertEqual(contents[exe], binary.read_bytes())
                         self.assertEqual(set(contents), {exe, 'README.md', 'LICENSE', 'CLI.md',
                                                         'COMPATIBILITY.md', 'BUILD.txt', 'THIRD_PARTY_LICENSES'})
-                        features = 'jit (execution requires --jit)' if variant == 'native' else 'default (no native backend)'
+                        features = 'common-ir'
                         self.assertIn(f'variant={variant}'.encode(), contents['BUILD.txt'])
                         self.assertIn(f'features={features}'.encode(), contents['BUILD.txt'])
-                        notices = 'THIRD_PARTY_LICENSES_NATIVE' if variant == 'native' else 'THIRD_PARTY_LICENSES'
+                        notices = 'THIRD_PARTY_LICENSES'
                         self.assertEqual(contents['THIRD_PARTY_LICENSES'], (release.ROOT / notices).read_bytes())
 
     def test_smoke_rejects_wrong_checksums_and_revisions(self):
@@ -85,7 +85,7 @@ class ReleaseArchive(unittest.TestCase):
                 smoke.inspect_archive(packed)
 
     def test_package_licenses_match_root(self):
-        for name in ['jx', 'jx-cli', 'jx-native']:
+        for name in ['jx', 'jx-cli']:
             self.assertEqual((release.ROOT / f'crates/{name}/LICENSE').read_bytes(), (release.ROOT / 'LICENSE').read_bytes())
 
     def test_rejects_unsafe_names(self):

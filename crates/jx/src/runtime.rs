@@ -1,6 +1,6 @@
 mod bridge;
 mod region;
-use crate::{Error, ErrorKind, Value, expression::Node, sequence::Context};
+use crate::{Error, ErrorKind, Value, sequence::Context};
 use std::{
     cell::{Cell, OnceCell, RefCell},
     rc::Rc,
@@ -86,6 +86,7 @@ pub(crate) struct Runtime<'e, 'i> {
     random: RefCell<Option<crate::Random>>,
     control: Option<crate::controls::Control>,
     constants: &'e crate::constant::Bindings,
+
     constant_identity: OnceCell<Rc<()>>,
 }
 #[derive(Clone, Debug)]
@@ -162,6 +163,7 @@ impl<'e, 'i> Scope<'e, 'i> {
                 random: RefCell::new(random.cloned()),
                 control: None,
                 constants: &[],
+
                 constant_identity: OnceCell::new(),
             }),
             frame: 0,
@@ -325,13 +327,7 @@ impl<'e, 'i> Scope<'e, 'i> {
         } else {
             64
         };
-        if depth >= max_calls || tree_depth + body_depth > 512 {
-            return Err(Error::new(
-                ErrorKind::DepthLimit,
-                offset,
-                "function call depth or expression stack limit exceeded",
-            ));
-        }
+        check_call(depth, tree_depth, body_depth, max_calls, offset)?;
         self.runtime.depth.set(depth + 1);
         self.runtime.tree_depth.set(tree_depth + body_depth);
         let result = body();
@@ -347,42 +343,6 @@ fn trim_vacant(frames: &mut Vec<Frame<'_, '_>>, parent: usize) {
     }
 }
 
-pub(crate) fn block<'e, 'i>(
-    nodes: &'e [Node],
-    context: &Context<'e, 'i>,
-) -> Result<Option<Value<'e, 'i>>, Error> {
-    let Some(scope) = &context.scope else {
-        let mut result = None;
-        for node in nodes {
-            result = crate::retain::materialize(node, context)?;
-        }
-        return Ok(result);
-    };
-    scope.retained(|| {
-        let child = scope.child(scope.frame);
-        let context = Context {
-            scope: Some(child.clone()),
-            ..context.clone()
-        };
-        let result = (|| {
-            let mut result = None;
-            if scope.controlled() {
-                for node in nodes {
-                    scope.checkpoint(node.offset)?;
-                    result = crate::retain::materialize(node, &context)?;
-                }
-            } else {
-                for node in nodes {
-                    result = crate::retain::materialize(node, &context)?;
-                }
-            }
-            Ok(result)
-        })();
-        child.release();
-        result
-    })
-}
-
 fn timestamp() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -394,3 +354,22 @@ fn timestamp() -> i64 {
 
 #[cfg(test)]
 mod tests;
+
+// Shared by lexical calls and SSA callbacks that need no retained frame.
+pub(crate) fn check_call(
+    depth: usize,
+    tree: usize,
+    body: usize,
+    maximum: usize,
+    offset: usize,
+) -> Result<(), Error> {
+    if depth >= maximum || tree + body > 512 {
+        Err(Error::new(
+            ErrorKind::DepthLimit,
+            offset,
+            "function call depth or expression stack limit exceeded",
+        ))
+    } else {
+        Ok(())
+    }
+}

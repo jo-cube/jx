@@ -1,0 +1,127 @@
+# Validate and measure common-IR execution
+
+Use Rust 1.98.1 and the workspace release profile (thin LTO, one codegen unit).
+Keep builds, profiles and allocation probes outside throughput windows. Run timings
+sequentially on a quiet host; record source, environment and executable identities.
+Ordinary public compilation and the CLI use the common IR. Ordinary CI downloads no upstream JavaScript.
+
+## Correctness
+
+```sh
+just all
+just build
+cargo build -p jx --example architecture_probe --release --locked
+node scripts/execution-inventory.cjs target/release/examples/architecture_probe target/execution-upstream.json
+python3 scripts/execution-coverage.py target/execution-upstream.json target/execution-capabilities.json --entry-inventory target/execution-upstream.json
+```
+
+All 1,679 vendored ids have asserted admission/outcomes in
+`tests/conformance/execution.json`; `just all` checks raw, validated and prepared input modes.
+The inventory checker emits rejection reasons. Supply a saved `--entry-inventory`
+for a cohort comparison. Add `--gate tests/conformance/execution.json` only for a
+deliberate reviewed update. Normal validation does not change the gate.
+
+Optional live-reference checks require an existing jsonata-js checkout pinned at
+`8ee4476f8a228bfc7a62979ae0a9c13a4043cd03`; see
+[conformance setup](../../CONFORMANCE.md#regression-and-differential-checks).
+
+```sh
+node scripts/execution-differential.cjs target/jsonata-reference target/release/examples/architecture_probe target/execution-generated.json
+node scripts/check-execution.cjs target/jsonata-reference target/release/jx
+node scripts/check-optimizing.cjs target/jsonata-reference target/release/jx
+```
+
+The original CLI numeric checks and foundation admission/generated checks are
+separate. Generated comparisons assert values, errors, rejection status and complete
+JSON output. Unsupported cases are never silently skipped.
+
+## Runtime and memory
+
+```sh
+cargo bench -p jx --bench architecture --no-run --locked
+```
+
+Cargo prints the executable path. Save an immutable copy under target and its
+SHA-256. Build compared sources with identical toolchain, profile, features and
+benchmark fixtures; save them as BEFORE and AFTER. Both must support selected
+cases. The driver retains historical entry-point labels. In current sources they all
+compile the common IR; only BEFORE versus AFTER compares engine revisions:
+
+```sh
+python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-core --ordinary --entry-engine --cases benchmarks/execution/workloads.json
+python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-calls --ordinary --calls --cases benchmarks/execution/call-cases.json
+ARCH_CONVERGENCE=1 python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-sequences --ordinary --expanded --cases benchmarks/execution/sequence-cases.json
+ARCH_CONTEXT=1 python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-context --ordinary --expanded --cases benchmarks/execution/context-cases.json
+ARCH_CONVERGENCE=1 python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-semantics --ordinary --expanded --cases benchmarks/execution/semantic-cases.json
+python3 scripts/benchmark-execution.py BEFORE AFTER target/execution-pipelines --ordinary --entry-engine --cases benchmarks/execution/pipeline-cases.json
+ARCH_MEMORY=1 AFTER
+```
+
+`--expanded` omits BEFORE when it lacks coverage. Each version
+gets fourteen warmed observations in two reversed process orders, seven/process,
+at least 200 ms each. `--ordinary` disables allocation instrumentation during timing;
+allocation/heap probes run separately. `--entry-engine` also retains the public-entry-point control. Raw samples, summaries and identities are
+saved. `--raw` adds separately labelled validated-input execution.
+
+Independent default-engine controls:
+
+```sh
+just bench
+just bench-runtime-memory
+```
+
+## Compiler scaling and profiles
+
+```sh
+cargo build -p jx --release --locked
+rustc -O -C lto=thin -C codegen-units=1 --edition=2024 crates/jx/benches/architecture/scaling.rs --extern jx=target/release/libjx.rlib -L dependency=target/release/deps -o target/execution-scaling
+SCALE_MAX=192 target/execution-scaling
+ARCH_EXPANDED=1 python3 scripts/profile-execution.py AFTER target/execution-profile --cases benchmarks/execution/profile-cases.json
+```
+
+Compile the same scaling source against each library. Repeat processes; retain
+parser rejections and allocations/retained/peak totals. Top-level instruction counts
+exclude nested bodies. Do not execute the call-fanout family: runtime work grows
+exponentially even when compilation does not. Scaling instrumentation affects
+timing; ordinary warmed compilation is a separate control.
+
+The profile driver uses macOS `sample` after readiness/warmup. Sample counts are not
+throughput or precise cycle attribution. Other hosts can profile the same filtered
+executable with their native sampling tools.
+
+## Isolated actual worker
+
+```sh
+python3 scripts/check-jkq-execution.py ../jkq target/execution-jkq
+JKQ_CHECK=1 target/execution-jkq/worker
+python3 scripts/benchmark-jkq-execution.py target/execution-jkq/worker target/execution-worker --cases benchmarks/execution/worker-cases.json
+```
+
+The generator copies actual sibling worker modules under target and adapts only
+the lower-level common-IR API. It does not modify the sibling or involve broker/network work.
+Record the sibling revision and check cleanliness before/after. The generator records the actual sibling revision and source hashes. Sibling changes may require adapter review. Validation,
+drop/tombstone ordering, immutable lookup setup, payload ownership and complete
+serialization must continue to match. Use `--entry BEFORE_WORKER` for a matched
+saved-worker comparison.
+
+Builds, copied workers, snapshots, raw samples, profiles and intermediate logs
+belong under ignored target or external review storage, not in source commits.
+
+Borrowed-provenance and cardinality controls use the existing architecture harness:
+`ARCH_CONTEXT=1` enables root/nested ancestor fixtures; `ARCH_EXPANDED=1` enables
+captured calls, returned parents, callback and argument forms. Compare matching
+fixtures with `scripts/benchmark-execution.py ENTRY CURRENT OUTPUT --ordinary
+--entry-engine --calls --cases CASES.json`; use `--expanded` only for fixtures
+absent from ENTRY (current entry-point comparison). `numeric_stages/{8,1024}/48/path`
+and the actual-worker `array/8/fold` include complete validation and reduction;
+allocation probes run separately from ordinary timing. Raw samples, source hashes
+and profiles belong in ignored target storage, not the committed benchmark suite.
+
+Pipeline fixtures are generated by `architecture/sequences.rs`. They vary length
+from zero to 8,192, record size (48/500 B), alternating selection and all/none
+selection, with direct, grouped, lexical, function and callback forms. The compact
+manifest selects representative points. Build both engines with these same fixtures;
+use a source snapshot plus the shared benchmark files when an older saved binary
+lacks them. Keep fixture/source hashes with the raw measurements. These controls exercise predicate/mapper composition and cardinality boundaries.
+Only complete eligible regions fuse; general calls and effectful boundaries keep
+their semantic activation and retention requirements.

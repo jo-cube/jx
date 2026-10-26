@@ -1,0 +1,22 @@
+[
+  [
+    "calls/wide_projection",
+    "foundation"
+  ],
+  [
+    "calls/wide_parameter",
+    "foundation"
+  ],
+  [
+    "calls/wide_dynamic_projection",
+    "foundation"
+  ],
+  [
+    "numeric_stages/1024/48/map",
+    "foundation"
+  ],
+  [
+    "calls/1024/row_closure",
+    "foundation"
+  ]
+]

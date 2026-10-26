@@ -1,3 +1,4 @@
+mod model;
 mod reduce;
 mod stages;
 use crate::{
@@ -6,6 +7,8 @@ use crate::{
     expression::{Kind, Node, Step},
     sequence::{Context, Halt, Output, View, Walk},
 };
+use model::materialize;
+pub(crate) use model::{Evaluator, Expression, Form};
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
@@ -84,55 +87,37 @@ impl<'e, 'i> Row<'e, 'i> {
 }
 
 pub(crate) fn active(node: &Node) -> bool {
-    match &node.kind {
-        Kind::Tuples(..) => true,
-        Kind::Sort(base, _) | Kind::Keep(base, _) | Kind::Filter(base, _) => active(base),
-        Kind::Group(base) => crate::provenance::captured(base),
-        Kind::Block(items) => items.last().is_some_and(crate::provenance::captured),
-        _ => false,
-    }
+    correlated(node)
 }
-
+pub(crate) fn correlated<B: Expression>(node: &B) -> bool {
+    !matches!(node.form(), Form::Value)
+}
 // A stage finishes its input even after its own evaluation fails, preserving
 // earlier-stage error precedence. Consumer cancellation always stops immediately.
-fn transform<'e, 'i>(
-    input: &mut Source<'_, 'e, 'i>,
-    mut apply: impl FnMut(Row<'e, 'i>) -> Walk,
-) -> Walk {
-    let mut error = None;
-    input(&mut |row| {
-        if error.is_some() {
-            return Ok(());
-        }
-        match apply(row) {
-            Err(Halt::Evaluation(e)) => {
-                error = Some(e);
-                Ok(())
-            }
-            result => result,
-        }
-    })?;
-    error.map_or(Ok(()), |e| Err(Halt::Evaluation(e)))
-}
 
-fn walk<'e, 'i>(node: &'e Node, context: &Context<'e, 'i>, output: &mut Emit<'_, 'e, 'i>) -> Walk {
-    match &node.kind {
-        Kind::Tuples(steps, focus) => route(steps, *focus, context, output),
-        Kind::Keep(base, _) => walk(base, context, output),
-        Kind::Group(base) => block(std::slice::from_ref(base), context, output),
-        Kind::Block(items) => block(items, context, output),
-        Kind::Filter(base, predicates) => {
-            let mut input = |emit: &mut Emit<'_, 'e, 'i>| walk(base, context, emit);
-            stages::postfilters(&mut input, predicates, context, output)
-        }
-        Kind::Sort(base, terms) => ordered(base, terms, context, node.offset, output),
-        _ => unreachable!("tuple path boundary"),
-    }
-}
-fn block<'e, 'i>(
-    nodes: &'e [Node],
+fn walk<'e, 'i, B: Expression + 'e>(
+    node: &'e B,
     context: &Context<'e, 'i>,
     output: &mut Emit<'_, 'e, 'i>,
+    evaluator: &impl Evaluator<'e, 'i, B>,
+) -> Walk {
+    match node.form() {
+        Form::Route(steps, focus) => route(steps, focus, context, output, evaluator),
+        Form::Keep(base) => walk(base, context, output, evaluator),
+        Form::Scope(items) => block(items, context, output, evaluator),
+        Form::Filter(base, predicates) => {
+            let mut input = |emit: &mut Emit<'_, 'e, 'i>| walk(base, context, emit, evaluator);
+            stages::postfilters(&mut input, predicates, context, output, evaluator)
+        }
+        Form::Order(base, terms) => ordered(base, terms, context, node.offset(), output, evaluator),
+        Form::Value => unreachable!("tuple path boundary"),
+    }
+}
+fn block<'e, 'i, B: Expression + 'e>(
+    nodes: &'e [B],
+    context: &Context<'e, 'i>,
+    output: &mut Emit<'_, 'e, 'i>,
+    evaluator: &impl Evaluator<'e, 'i, B>,
 ) -> Walk {
     let scope = context.scope.as_ref().expect("scoped path runtime");
     let child = scope.child(scope.frame);
@@ -145,29 +130,35 @@ fn block<'e, 'i>(
             return Ok(());
         };
         for node in prefix {
-            crate::retain::materialize(node, &local)?;
+            materialize(node, &local, evaluator)?;
         }
-        walk(last, &local, &mut |mut row| {
-            if row.bindings.iter().any(|(name, _)| !name.starts_with('!')) {
-                Rc::make_mut(&mut row.bindings).retain(|(name, _)| name.starts_with('!'));
-            }
-            output(row)
-        })
+        walk(
+            last,
+            &local,
+            &mut |mut row| {
+                if row.bindings.iter().any(|(name, _)| !name.starts_with('!')) {
+                    Rc::make_mut(&mut row.bindings).retain(|(name, _)| name.starts_with('!'));
+                }
+                output(row)
+            },
+            evaluator,
+        )
     })();
     child.release();
     result
 }
 
-fn source<'e, 'i>(
-    node: &'e Node,
+fn source<'e, 'i, B: Expression + 'e>(
+    node: &'e B,
     context: &Context<'e, 'i>,
     output: &mut Emit<'_, 'e, 'i>,
+    evaluator: &impl Evaluator<'e, 'i, B>,
 ) -> Walk {
-    if active(node) {
-        return walk(node, context, output);
+    if correlated(node) {
+        return walk(node, context, output, evaluator);
     }
     let bindings = Rc::new(Vec::new());
-    View::Operand(&node.run(context)?).candidates(false, &mut |value| {
+    View::Operand(&evaluator.run(node, context)?).candidates(false, &mut |value| {
         output(Row {
             value,
             object_context: false,
@@ -176,38 +167,34 @@ fn source<'e, 'i>(
     })
 }
 
-fn route<'e, 'i>(
-    steps: &'e [Step],
+fn route<'e, 'i, B: Expression + 'e>(
+    steps: &'e [Step<B>],
     focus: bool,
     context: &Context<'e, 'i>,
     output: &mut Emit<'_, 'e, 'i>,
+    evaluator: &impl Evaluator<'e, 'i, B>,
 ) -> Walk {
     let start = steps
         .iter()
-        .position(|s| s.bindings.is_some() || active(&s.node))
+        .position(|s| s.bindings.is_some() || correlated(&s.node))
         .unwrap();
     let start = if focus && start == 0 { 1 } else { start };
     let bindings = Rc::new(Vec::new());
     let mut seed = |emit: &mut Emit<'_, 'e, 'i>| {
         if focus && start == 1 {
-            crate::filter::with_filters(
-                &steps[0].node,
-                &steps[0].predicates,
-                context,
-                &mut |view| {
-                    view.candidates(false, &mut |value| {
-                        emit(Row {
-                            value,
-                            object_context: false,
-                            bindings: bindings.clone(),
-                        })
+            evaluator.filtered(&steps[0].node, &steps[0].predicates, context, &mut |view| {
+                view.candidates(false, &mut |value| {
+                    emit(Row {
+                        value,
+                        object_context: false,
+                        bindings: bindings.clone(),
                     })
-                },
-            )
+                })
+            })
         } else if start > 0 {
             let mut pending = None;
             let mut multiple = false;
-            crate::route::walk(&steps[..start], focus, false, context, &mut |view| {
+            evaluator.prefix(&steps[..start], focus, context, &mut |view| {
                 view.walk(&mut |value| {
                     if multiple {
                         return emit(Row {
@@ -245,9 +232,7 @@ fn route<'e, 'i>(
             }
             Ok(())
         } else {
-            let absolute = matches!(&steps[0].node.kind, Kind::Variable(_) | Kind::Sort(..))
-                || matches!(&steps[0].node.kind, Kind::Prepared(p) if matches!(p.data, crate::constant::Storage::Shared(_)))
-                || matches!(&steps[0].node.kind, Kind::Path(p) if p.rooted && p.fields.is_empty());
+            let absolute = steps[0].node.absolute();
             if context.wrapped || absolute || focus {
                 emit(Row {
                     value: context.value.clone(),
@@ -268,45 +253,67 @@ fn route<'e, 'i>(
             }
         }
     };
-    stages::pipeline(&mut seed, &steps[start..], context, output)
+    stages::pipeline(&mut seed, &steps[start..], context, output, evaluator)
 }
 
-pub(crate) fn group<'e, 'i>(
-    base: &'e Node,
-    pairs: &'e [(Node, Node)],
+pub(crate) fn group_with<'e, 'i, B: Expression + 'e>(
+    base: &'e B,
+    pairs: &'e [(B, B)],
     context: &Context<'e, 'i>,
     offset: usize,
+    evaluator: &impl Evaluator<'e, 'i, B>,
 ) -> Result<Value<'e, 'i>, Error> {
-    reduce::evaluate(base, pairs, context, offset)
+    reduce::evaluate(base, pairs, context, offset, evaluator)
 }
 
-pub(crate) fn route_values<'e, 'i>(
-    steps: &'e [Step],
-    focus: bool,
+pub(crate) fn values<'e, 'i, B: Expression + 'e>(
+    node: &'e B,
     context: &Context<'e, 'i>,
     output: &mut Output<'_, 'e, 'i>,
+    evaluator: &impl Evaluator<'e, 'i, B>,
 ) -> Walk {
-    route(steps, focus, context, &mut |row| output(row.value))
+    walk(node, context, &mut |row| output(row.value), evaluator)
 }
-fn ordered<'e, 'i>(
-    base: &'e Node,
-    terms: &'e [(Node, bool)],
+
+fn ordered<'e, 'i, B: Expression + 'e>(
+    base: &'e B,
+    terms: &'e [(B, bool)],
     context: &Context<'e, 'i>,
     offset: usize,
     output: &mut Emit<'_, 'e, 'i>,
+    evaluator: &impl Evaluator<'e, 'i, B>,
 ) -> Walk {
     let mut rows = Vec::new();
-    source(base, context, &mut |row| {
-        rows.push(row);
-        Ok(())
-    })?;
-    let mut keys = crate::ordering::Keys::new(rows.len(), terms);
+    source(
+        base,
+        context,
+        &mut |row| {
+            rows.push(row);
+            Ok(())
+        },
+        evaluator,
+    )?;
+    let mut keys = crate::ordering::Keys::with_terms(
+        rows.len(),
+        terms.len(),
+        terms.iter().any(|(t, _)| !t.effects()),
+    );
     let indices = crate::ordering::indices(rows.len(), |a, b| {
         rows[a].stage(context, |left| {
             rows[b].stage(context, |right| {
-                keys.compare(a, b, terms, offset, |index, term| {
-                    crate::retain::materialize(term, if index == a { left } else { right })
-                })
+                keys.compare_with(
+                    a,
+                    b,
+                    terms.iter().map(|(term, desc)| (term.effects(), *desc)),
+                    offset,
+                    |index, term| {
+                        materialize(
+                            &terms[term].0,
+                            if index == a { left } else { right },
+                            evaluator,
+                        )
+                    },
+                )
             })
         })
     })?;
@@ -320,33 +327,23 @@ fn ordered<'e, 'i>(
     }
     Ok(())
 }
-pub(crate) fn sorted<'e, 'i>(
-    base: &'e Node,
-    terms: &'e [(Node, bool)],
-    context: &Context<'e, 'i>,
-    offset: usize,
-) -> Result<Operand<'e, 'i>, Error> {
-    crate::retain::collect(|emit| {
-        match ordered(base, terms, context, offset, &mut |row| {
-            emit(row.value);
-            Ok(())
-        }) {
-            Ok(()) => Ok(()),
-            Err(Halt::Evaluation(error)) => Err(error),
-            Err(Halt::Stop) => unreachable!("sorting is fully consumed"),
-        }
-    })
-    .map(|value| value.map_or(Operand::Missing, Operand::One))
-}
 
-pub(crate) fn filtered_values<'e, 'i>(
-    base: &'e Node,
-    predicates: &'e [Node],
-    context: &Context<'e, 'i>,
-    output: &mut Output<'_, 'e, 'i>,
+fn transform<'e, 'i>(
+    input: &mut Source<'_, 'e, 'i>,
+    mut apply: impl FnMut(Row<'e, 'i>) -> Walk,
 ) -> Walk {
-    let mut source = |emit: &mut Emit<'_, 'e, 'i>| walk(base, context, emit);
-    stages::postfilters(&mut source, predicates, context, &mut |row| {
-        output(row.value)
-    })
+    let mut error = None;
+    input(&mut |row| {
+        if error.is_some() {
+            return Ok(());
+        }
+        match apply(row) {
+            Err(Halt::Evaluation(e)) => {
+                error = Some(e);
+                Ok(())
+            }
+            result => result,
+        }
+    })?;
+    error.map_or(Ok(()), |e| Err(Halt::Evaluation(e)))
 }

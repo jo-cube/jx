@@ -36,13 +36,12 @@ def inspect_archive(path, revision=None):
     require(len(build) == len(lines) and set(build) == {
         'version', 'revision', 'target', 'rust', 'variant', 'features', 'source_date_epoch',
     }, 'invalid build metadata')
-    require(build['variant'] in ('default', 'native'), 'unknown build variant')
-    native = build['variant'] == 'native'
-    features = 'jit (execution requires --jit)' if native else 'default (no native backend)'
+    require(build['variant'] == 'default', 'unknown build variant')
+    features = 'common-ir'
     require(build['features'] == features, 'inconsistent feature metadata')
     if revision is not None:
         require(build['revision'] == revision, 'unexpected source revision')
-    name = f"jx-v{build['version']}-{build['target']}" + ('-native' if native else '')
+    name = f"jx-v{build['version']}-{build['target']}"
     windows = build['target'].endswith('msvc')
     require(path.name == name + ('.zip' if windows else '.tar.gz'), 'unexpected archive name')
     executable = 'jx.exe' if windows else 'jx'
@@ -54,7 +53,6 @@ def inspect_archive(path, revision=None):
 
 def smoke(path, revision=None):
     build, files = inspect_archive(path, revision)
-    native = build['variant'] == 'native'
     with tempfile.TemporaryDirectory(prefix='jx-release-') as temporary:
         root = Path(temporary)
         for name, data in files.items():
@@ -78,7 +76,7 @@ def smoke(path, revision=None):
         version = run(['--version']).decode('utf-8').strip()
         require(version == f"jx {build['version']}", 'binary version mismatch')
         help_text = run(['--help'])
-        require((b'--jit' in help_text) == native, 'binary native capability mismatch')
+        require(b'--jit' not in help_text, 'release requires the default feature set')
         run(['a'], b'\r\n{}\n{"a":null}\r\n{"a":[1,2]}\n{"a":3}',
             output=b'null\n[1,2]\n3\n')
         run(['a.b'], b'{"a":[{"b":1},{"b":2}]}\n', output=b'1\n2\n')
@@ -89,6 +87,14 @@ def smoke(path, revision=None):
         expression.write_text('/* example */\n{"total":$sum(items.(price*quantity))}', encoding='utf-8')
         data = b'{"items":[{"price":2.5,"quantity":3}]}\n'
         run(['-f', expression], data, output=b'{"total":7.5}\n')
+        run(["($c:={'v':{'n':4}};$lookup($c,'v') in [$c.v])"], b'{}\n', output=b'true\n')
+        run(["$eval('v+1')"], b'{"v":2}\n', output=b'3\n')
+        run(['$map(items,function($x){$x.v+1})'],
+            b'{"items":[{"v":1},{"v":2}]}\n', output=b'2\n3\n')
+        run(['[$map(items,function($x){$x.v+1})]'],
+            b'{"items":[{"v":1},{"v":2}]}\n', output=b'[2,3]\n')
+        run(["items@$row#$i.{'i':$i,'v':$row.v}"],
+            b'{"items":[{"v":1},{"v":2}]}\n', output=b'{"i":0,"v":1}\n{"i":1,"v":2}\n')
         run(['--not-an-option'], status=2, output=b'')
         run(['a['], status=2, output=b'', error=b'Compilation')
         run(['-f', root / 'absent.jsonata'], status=2, output=b'')
@@ -102,12 +108,7 @@ def smoke(path, revision=None):
             output=b'', error=b'max-output-bytes')
         run(['--max-work', '1', '$map([1..20],function($n){$n+1})'], b'{}\n',
             status=1, output=b'', error=b'EvaluationLimit')
-        if native:
-            run(['--jit', 'price*quantity'], b'{"price":2.5,"quantity":3}\n', output=b'7.5\n')
-            run(['--jit', '$sum(rows[$>2].($*$))'], b'{"rows":[1,2,3,4]}\n', output=b'25\n')
-            run(['--jit', 'a+1'], b'{"a":null}\n', status=1, output=b'', error=b'TypeError')
-        else:
-            run(['--jit', '$'], status=2, output=b'')
+        run(['--jit', '$'], status=2, output=b'')
     print(f'{path.name}: checksum, contents and extracted CLI smoke passed')
 
 

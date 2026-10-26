@@ -19,7 +19,6 @@ pub(crate) struct Node {
 
 #[derive(Clone, Debug)]
 pub(crate) enum Kind {
-    Plan(Box<crate::plan::Plan>),
     Path(Path),
     Prepared(Box<crate::constant::Prepared>),
     StaticLookup(Box<crate::constant::Storage>, Box<Node>),
@@ -103,9 +102,9 @@ impl Op {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct Step {
-    pub node: Node,
-    pub predicates: Box<[Node]>,
+pub(crate) struct Step<B = Node> {
+    pub node: B,
+    pub predicates: Box<[B]>,
     pub bindings: Option<Box<crate::tuple::Bindings>>,
     pub lookup: bool,
     pub effects: bool,

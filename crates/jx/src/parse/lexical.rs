@@ -124,7 +124,6 @@ impl Parser<'_> {
             body,
             signature,
             tail: false,
-            plan: None,
         })))
     }
 

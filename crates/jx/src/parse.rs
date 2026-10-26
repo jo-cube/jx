@@ -3,27 +3,33 @@ mod lexical;
 mod navigation;
 mod reduce;
 use crate::{
-    Error, ErrorKind, Expression,
+    Error, ErrorKind,
     expression::{Kind, Node, Op, Path, Step},
 };
 use lex::{Lexer, Token, error};
 pub(crate) const MAX_DEPTH: usize = 128;
 
-pub(crate) fn expression(source: &str) -> Result<Expression, Error> {
-    parse(source, false, &[], &[])
+#[derive(Clone, Debug)]
+pub(crate) struct Parsed {
+    pub root: Node,
+    pub bindings: Box<[Box<str>]>,
+    pub constants: Box<crate::constant::Bindings>,
 }
-pub(crate) fn dynamic(source: &str) -> Result<Expression, Error> {
+pub(crate) fn dynamic(source: &str) -> Result<Parsed, Error> {
     parse(source, true, &[], &[]).map_err(|mut e| {
         e.phase = crate::Phase::Compilation;
         e.source = crate::Source::DynamicExpression;
         e
     })
 }
-pub(crate) fn configured(
+pub(crate) fn dynamic_semantic(source: &str) -> Result<Parsed, Error> {
+    dynamic(source)
+}
+pub(crate) fn semantic(
     source: &str,
     bindings: &[Box<str>],
     constants: &crate::constant::Bindings,
-) -> Result<Expression, Error> {
+) -> Result<Parsed, Error> {
     parse(source, false, bindings, constants)
 }
 fn parse(
@@ -31,7 +37,7 @@ fn parse(
     dynamic: bool,
     bindings: &[Box<str>],
     constants: &crate::constant::Bindings,
-) -> Result<Expression, Error> {
+) -> Result<Parsed, Error> {
     let mut lexer = Lexer { source, at: 0 };
     let (token, offset) = lexer.next()?;
     let mut parser = Parser {
@@ -51,19 +57,8 @@ fn parse(
         Box::default()
     };
     crate::compile::prepare(&mut root);
-    crate::plan::prepare(&mut root);
-    let runtime = !constants.is_empty() || crate::analysis::requires_runtime(&mut root);
-    let acquisition = crate::function::acquire::prepare(&root);
-    let region = if runtime {
-        None
-    } else {
-        crate::acquire::Region::prepare(&root)
-    };
-    Ok(Expression {
+    Ok(Parsed {
         root,
-        runtime,
-        acquisition,
-        region,
         bindings: bindings.into(),
         constants,
     })
@@ -186,7 +181,13 @@ impl<'a> Parser<'a> {
                     .max()
                     .unwrap_or(0)
             }
-            Kind::Transform(definition) => 1 + definition.depth(),
+            Kind::Transform(definition) => {
+                1 + definition
+                    .pattern
+                    .depth
+                    .max(definition.update.depth)
+                    .max(definition.delete.as_ref().map_or(0, |d| d.depth))
+            }
             Kind::Array(args, _) | Kind::Block(args) => {
                 1 + args.iter().map(|n| n.depth).max().unwrap_or(0)
             }

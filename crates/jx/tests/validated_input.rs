@@ -73,12 +73,6 @@ fn captured_and_planned_expressions_preserve_results_and_fallback_errors() {
             }
         };
         check(&expression);
-        #[cfg(feature = "jit")]
-        {
-            let mut native = expression.clone();
-            native.enable_native();
-            check(&native);
-        }
     }
 }
 

@@ -362,15 +362,13 @@ fn excess_demands_fall_back_without_changing_expression_order() {
     }
 }
 
-#[cfg(feature = "jit")]
 #[test]
-fn shared_numeric_plans_preserve_native_execution_and_guard_fallback() {
-    let mut expressions = [
+fn shared_numeric_programs_preserve_shape_errors() {
+    let expressions = [
         jx::compile("(a+b)*(a-b)").unwrap(),
         jx::compile("a+b").unwrap(),
         jx::compile("a=2").unwrap(),
     ];
-    assert!(expressions[0].enable_native().kernels > 0);
     let plan = InputPlan::new(&expressions);
     for input in [
         r#"{"a":2,"b":3}"#,
@@ -525,6 +523,63 @@ fn missing_fallbacks_keep_primary_reexecution_effect_order_and_exists_shadowing(
                     .unwrap()
                     .and_then(|v| v.as_number()),
                 expected
+            );
+        }
+    }
+}
+
+#[test]
+fn shared_fold_and_constructor_demands_preserve_fallback_and_controls() {
+    let expressions = [
+        "id=1",
+        "$sum(rows[x>0].(x*y+x))",
+        "$sum((rows[x>0]).(x*y+x))",
+        "{'x':(x+y)*(x+y),'y':(x+y)*(x+y)+1}",
+    ]
+    .map(|source| jx::compile(source).unwrap());
+    let plan = InputPlan::new(&expressions);
+    for input in [
+        r#"{"id":1,"x":2,"y":3,"rows":[{"x":2,"y":3}]}"#,
+        r#"{"rows":[{"x":2,"y":3},{"x":2,"y":null}],"x":[1],"y":2}"#,
+        r#"{"rows":[{"x":2,"y":3},[{"x":4,"y":5}]],"x":1e999,"y":2}"#,
+        r#"{"rows":[{"x":2,"y":3}],"rows":{},"x":2,"y":3}"#,
+        r#"[{"rows":[{"x":2,"y":3}],"x":2,"y":3}]"#,
+        "{}",
+    ] {
+        let raw = jx::validate(input.as_bytes()).unwrap();
+        let prepared = plan.prepare(input.as_bytes()).unwrap();
+        let validated = plan.prepare_validated(raw);
+        for (index, expression) in expressions.iter().enumerate() {
+            let expected = outcome(expression.evaluate(input.as_bytes()));
+            assert_eq!(
+                outcome(prepared.evaluate(index)),
+                expected,
+                "{index}: {input}"
+            );
+            assert_eq!(
+                outcome(validated.evaluate(index)),
+                expected,
+                "{index}: {input}"
+            );
+            assert_eq!(
+                outcome(prepared.evaluate(index)),
+                expected,
+                "repeat {index}: {input}"
+            );
+            let cancellation = jx::Cancellation::default();
+            cancellation.cancel();
+            assert_eq!(
+                prepared
+                    .evaluate_with(
+                        index,
+                        EvaluationOptions {
+                            cancellation: Some(cancellation),
+                            ..Default::default()
+                        }
+                    )
+                    .unwrap_err()
+                    .kind,
+                jx::ErrorKind::Cancelled
             );
         }
     }

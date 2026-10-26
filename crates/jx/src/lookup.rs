@@ -1,33 +1,4 @@
-use crate::{
-    Error, Value, evaluate::Operand, expression::Node, json::string, sequence::Context,
-    value::type_error,
-};
-
-pub(crate) fn evaluate_in<'e, 'i>(
-    args: &'e [Node],
-    input: &Context<'e, 'i>,
-    caller: &Context<'e, 'i>,
-    offset: usize,
-) -> Result<Operand<'e, 'i>, Error> {
-    let (object, key) = match args {
-        [key] => (
-            Some(caller.value.clone()),
-            crate::retain::materialize(key, input)?,
-        ),
-        [object, key] => {
-            let object = crate::retain::materialize(object, input)?;
-            let key = crate::retain::materialize(key, input)?;
-            (object, key)
-        }
-        _ => {
-            for arg in args {
-                crate::retain::materialize(arg, input)?;
-            }
-            return Err(type_error(offset));
-        }
-    };
-    values(object, key, offset)
-}
+use crate::{Error, Value, evaluate::Operand, json::string, value::type_error};
 
 pub(crate) fn values<'e, 'i>(
     object: Option<Value<'e, 'i>>,
@@ -109,30 +80,4 @@ pub(crate) fn constant_data<'e, 'i>(
 ) -> Result<Option<&'e crate::constant::Data>, Error> {
     let key = key_body(&key, offset)?;
     Ok(data.find(|| string::fingerprint(key), |name| string::equal(name, key)))
-}
-
-pub(crate) fn select<'e, 'i>(
-    data: &'e crate::constant::Data,
-    path: &'e crate::expression::Path,
-    input: &'i [u8],
-    offset: usize,
-) -> Result<crate::Evaluation<'e, 'i>, Error> {
-    // Reuse validating path capture: no second record scan or lexical context.
-    selected(data, path.select(input)?, offset)
-}
-
-#[inline]
-pub(crate) fn selected<'e, 'i>(
-    data: &'e crate::constant::Data,
-    selected: crate::path::PathEvaluation<'e, 'i>,
-    offset: usize,
-) -> Result<crate::Evaluation<'e, 'i>, Error> {
-    let key = match selected.operand()? {
-        Operand::Missing => None,
-        Operand::One(value) => Some(value),
-        Operand::Many(_) => return Err(type_error(offset)),
-    };
-    Ok(crate::Evaluation {
-        result: crate::evaluate::Results::Scalar(constant(data, key, offset)?),
-    })
 }

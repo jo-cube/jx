@@ -70,9 +70,25 @@ pub(crate) fn prepare(
     // Dynamic evaluation can read/rebind any external name; transforms can observe
     // container identity. Both retain the immutable lexical environment.
     let mut identity = false;
+    let mut membership = false;
+    let mut containers = false;
     visit(root, &mut |node| {
-        identity |= matches!(node.kind, Kind::Transform(_) | Kind::Parent(_))
+        identity |= matches!(node.kind, Kind::Transform(_) | Kind::Parent(_));
+        if let Kind::Binary(Op::In, left, right) = &node.kind {
+            membership |= !primitive_value(left, constants, &bound)
+                && !primitive_membership(right, constants, &bound);
+        }
+        if let Kind::Variable(name) = &node.kind {
+            containers |= constants.iter().any(|(n, value)| {
+                n == name
+                    && matches!(
+                        value.data,
+                        crate::constant::Data::Array(..) | crate::constant::Data::Object { .. }
+                    )
+            });
+        }
     });
+    identity |= membership && containers;
     let mut environment = eval || identity;
     visit(root, &mut |node| {
         if let Kind::Variable(name) = &node.kind
@@ -279,6 +295,78 @@ pub(crate) fn children(node: &mut Node, f: &mut impl FnMut(&mut Node)) {
     }
 }
 
+// Container `in` observes references. JSON capture/substitution is safe only
+// when a known primitive operand makes identity irrelevant to that comparison.
+fn primitive_value(
+    node: &Node,
+    constants: &crate::constant::Bindings,
+    bound: &HashSet<String>,
+) -> bool {
+    match &node.kind {
+        Kind::Number(_) | Kind::Boolean(_) | Kind::Null | Kind::String(_) | Kind::Missing => true,
+        Kind::Group(child) => primitive_value(child, constants, bound),
+        _ => constant_data(node, constants, bound).is_some_and(primitive_data),
+    }
+}
+fn primitive_data(data: &crate::constant::Data) -> bool {
+    !matches!(
+        data,
+        crate::constant::Data::Array(..) | crate::constant::Data::Object { .. }
+    )
+}
+fn primitive_membership(
+    node: &Node,
+    constants: &crate::constant::Bindings,
+    bound: &HashSet<String>,
+) -> bool {
+    match &node.kind {
+        Kind::Group(child) => primitive_membership(child, constants, bound),
+        Kind::Array(items, _) => items
+            .iter()
+            .all(|item| primitive_value(item, constants, bound)),
+        _ => {
+            primitive_value(node, constants, bound)
+                || matches!(constant_data(node, constants, bound), Some(crate::constant::Data::Array(items, _)) if items.iter().all(primitive_data))
+        }
+    }
+}
+fn constant_data<'a>(
+    node: &Node,
+    constants: &'a crate::constant::Bindings,
+    bound: &HashSet<String>,
+) -> Option<&'a crate::constant::Data> {
+    match &node.kind {
+        Kind::Variable(name) if !bound.contains(name.as_ref()) => constants
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, value)| &value.data),
+        Kind::Group(child) => constant_data(child, constants, bound),
+        Kind::Route(steps, _)
+            if steps
+                .iter()
+                .all(|step| step.bindings.is_none() && step.predicates.is_empty()) =>
+        {
+            let mut data = constant_data(&steps.first()?.node, constants, bound)?;
+            for step in &steps[1..] {
+                let Kind::Path(path) = &step.node.kind else {
+                    return None;
+                };
+                if path.rooted {
+                    return None;
+                }
+                for field in &path.fields {
+                    data = data.find(
+                        || crate::json::string::fingerprint_units(field.encode_utf16()),
+                        |key| crate::json::string::matches(key, field),
+                    )?;
+                }
+            }
+            Some(data)
+        }
+        _ => None,
+    }
+}
+
 fn mutates_scope(node: &Node) -> bool {
     match &node.kind {
         Kind::Bind(..) => true,
@@ -334,30 +422,3 @@ pub(crate) fn own_clock(kind: &Kind) -> bool {
 
 // Effects control replay; runtime storage is a separate requirement. A prepared
 // eval with no lexical reads/writes, calls or clock can execute without an arena.
-pub(crate) fn requires_runtime(root: &mut Node) -> bool {
-    let mut runtime = false;
-    visit(root, &mut |node| {
-        runtime |= node.clock
-            || matches!(
-                node.kind,
-                Kind::Variable(_)
-                    | Kind::Parent(_)
-                    | Kind::Bind(..)
-                    | Kind::Lambda(_)
-                    | Kind::Transform(_)
-                    | Kind::Call(..)
-                    | Kind::Partial(..)
-                    | Kind::Tuples(..)
-                    | Kind::Binary(Op::Chain, ..)
-                    | Kind::Builtin(Builtin::Runtime(_), _)
-                    | Kind::BuiltinReference(Builtin::Runtime(_))
-            );
-        if let Kind::Eval(call) = &node.kind {
-            runtime |= call.needs_runtime();
-        }
-        if let Kind::Route(steps, _) = &node.kind {
-            runtime |= steps.iter().any(|s| s.bindings.is_some());
-        }
-    });
-    runtime
-}

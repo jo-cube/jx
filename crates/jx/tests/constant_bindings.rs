@@ -399,24 +399,6 @@ fn declared_constant_names_shadow_builtins_even_when_missing() {
     }
 }
 
-#[cfg(feature = "jit")]
-#[test]
-fn native_constants_and_guard_fallback_preserve_results_and_errors() {
-    let mut expression = compile("price*$config.n+quantity>5");
-    assert!(expression.enable_native().kernels > 0, "{expression:#?}");
-    let control = compile("price*$config.n+quantity>5");
-    for input in [
-        br#"{"price":2,"quantity":4}"#.as_slice(),
-        br#"{"price":"bad","quantity":4}"#,
-        b"[]",
-    ] {
-        assert_eq!(
-            expression.evaluate(input).and_then(output),
-            control.evaluate(input).and_then(output)
-        );
-    }
-}
-
 #[test]
 fn dynamically_returned_binding_keeps_its_owned_storage() {
     let config = std::sync::Arc::new(binding());
@@ -466,5 +448,118 @@ fn dynamic_lookup_guard_failures_retain_source_diagnostics() {
             constant.evaluate(input).and_then(output).unwrap_err(),
             expected
         );
+    }
+}
+
+#[test]
+fn immutable_container_membership_preserves_reference_identity() {
+    let config = binding();
+    let constants = CompileOptions::default().constant_binding("config", config.clone());
+    let runtime = CompileOptions::default().binding("config");
+    for source in [
+        "$config.nested in [$config.nested]",
+        "$config.rows in [$config.rows]",
+        "$config in [$config]",
+        "$lookup($config,'nested') in [$lookup($config,'nested')]",
+        "($x:=$config.nested;$x in [$config.nested])",
+    ] {
+        let expected = output(
+            runtime
+                .compile(source)
+                .unwrap()
+                .evaluate_with(
+                    Some(b"null"),
+                    EvaluationOptions {
+                        bindings: vec![("config", config.as_value())],
+                        ..Default::default()
+                    },
+                )
+                .unwrap(),
+        )
+        .unwrap();
+        if !source.contains("rows") {
+            assert_eq!(expected, ["true"], "{source}");
+        }
+        assert_eq!(
+            output(
+                constants
+                    .compile(source)
+                    .unwrap()
+                    .evaluate(b"null")
+                    .unwrap()
+            )
+            .unwrap(),
+            expected,
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn primitive_membership_keeps_constant_substitution_and_matches_runtime() {
+    let config =
+        OwnedValue::from_json(br#"{"allowed":["a","b"],"n":3,"label":"a","objects":[{"x":1}]}"#)
+            .unwrap();
+    let constant = CompileOptions::default().constant_binding("config", config.clone());
+    let runtime = CompileOptions::default().binding("config");
+    for source in [
+        "id in $config.allowed",
+        "$config.n in [1,3]",
+        "$config.label in values",
+        "$config in [1,3]",
+        "$config.objects[0] in $config.objects",
+        "($x:=$config;$x in [$x])",
+    ] {
+        for input in [
+            br#"{"id":"a","values":["a","b"]}"#.as_slice(),
+            b"{}",
+            b"null",
+        ] {
+            let expected = output(
+                runtime
+                    .compile(source)
+                    .unwrap()
+                    .evaluate_with(
+                        Some(input),
+                        EvaluationOptions {
+                            bindings: vec![("config", config.as_value())],
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                output(constant.compile(source).unwrap().evaluate(input).unwrap()).unwrap(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+}
+
+#[test]
+fn local_lookup_reuses_bound_container_identity() {
+    for source in [
+        "($config:={'nested':{'n':4}};$lookup($config,'nested') in [$lookup($config,'nested')])",
+        "($config:={'nested':{'n':4}};$lookup($config,'nested') in [$config.nested])",
+        "($config:={'nested':{'n':4}};$key:='nested';$lookup($config,$key) in [$config.nested])",
+        "($config:={'nested':[{'n':4}]};$lookup($config,'nested')[0] in [$config.nested[0]])",
+    ] {
+        let expression = jx::compile(source).unwrap();
+        for _ in 0..2 {
+            assert_eq!(
+                output(expression.evaluate(b"null").unwrap()).unwrap(),
+                ["true"],
+                "{source}"
+            );
+            let plan = jx::InputPlan::new(std::slice::from_ref(&expression));
+            let input = plan.prepare(b"null").unwrap();
+            assert_eq!(
+                output(input.evaluate(0).unwrap()).unwrap(),
+                ["true"],
+                "{source}"
+            );
+        }
     }
 }

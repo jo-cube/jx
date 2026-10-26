@@ -7,32 +7,32 @@ pub(crate) use copy::clone;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
-pub(crate) struct Definition {
-    pub pattern: Node,
-    pub update: Node,
-    pub delete: Option<Node>,
+pub(crate) struct Definition<B = Node> {
+    pub pattern: B,
+    pub update: B,
+    pub delete: Option<B>,
 }
-impl Definition {
+// Selection, update and deletion are evaluated by their owning backend. Identity,
+// copy membership, rewrite order and validation stay in these common kernels.
+pub(crate) trait Body {
+    fn offset(&self) -> usize;
+    fn depth(&self) -> usize;
+    fn evaluate<'e, 'i>(
+        &'e self,
+        context: &Context<'e, 'i>,
+    ) -> Result<Option<Value<'e, 'i>>, Error>;
+}
+impl<B: Body> Definition<B> {
     pub fn depth(&self) -> usize {
         self.pattern
-            .depth
-            .max(self.update.depth)
-            .max(self.delete.as_ref().map_or(0, |d| d.depth))
+            .depth()
+            .max(self.update.depth())
+            .max(self.delete.as_ref().map_or(0, |d| d.depth()))
     }
 }
-pub(crate) fn literal<'e, 'i>(
-    definition: &'e Definition,
-    context: &Context<'e, 'i>,
-) -> Value<'e, 'i> {
-    Value::Function(Rc::new(crate::Function {
-        kind: crate::function::FunctionKind::Transform {
-            definition,
-            frame: context.scope.as_ref().expect("transform runtime").capture(),
-        },
-    }))
-}
-pub(crate) fn invoke<'e, 'i>(
-    definition: &'e Definition,
+
+pub(crate) fn invoke<'e, 'i, B: Body>(
+    definition: &'e Definition<B>,
     frame: usize,
     args: &[Option<Value<'e, 'i>>],
     context: &Context<'e, 'i>,

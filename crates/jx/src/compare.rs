@@ -185,8 +185,12 @@ pub(crate) fn includes(left: Operand<'_, '_>, right: Operand<'_, '_>) -> Result<
             (Value::Constant(a), Value::Constant(b)) => a.same(b),
             (Value::Array(a), Value::Array(b)) => std::rc::Rc::ptr_eq(a, b),
             (Value::Object(a), Value::Object(b)) => std::rc::Rc::ptr_eq(a, b),
-            (Value::Raw(a), Value::Raw(b)) if left.is_array() || left.is_object() => {
-                a.as_bytes().as_ptr() == b.as_bytes().as_ptr()
+            _ if left.as_raw().is_some()
+                && right.as_raw().is_some()
+                && (left.is_array() || left.is_object()) =>
+            {
+                left.as_raw().unwrap().as_bytes().as_ptr()
+                    == right.as_raw().unwrap().as_bytes().as_ptr()
             }
             _ if left.is_array() || left.is_object() || right.is_array() || right.is_object() => {
                 false

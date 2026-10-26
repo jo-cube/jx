@@ -1,0 +1,19 @@
+[
+  "pipelines/8/500/50/direct",
+  "pipelines/8/500/50/group",
+  "pipelines/8/500/50/alias",
+  "pipelines/8/500/50/call",
+  "pipelines/8/500/50/callbacks",
+  "pipelines/1024/500/50/direct",
+  "pipelines/1024/500/50/group",
+  "pipelines/1024/500/50/alias",
+  "pipelines/1024/500/50/call",
+  "pipelines/1024/500/50/callbacks",
+  "pipelines/0/48/50/group",
+  "pipelines/1/48/50/group",
+  "pipelines/2/48/50/group",
+  "pipelines/128/48/50/group",
+  "pipelines/8192/48/50/group",
+  "pipelines/8/48/0/group",
+  "pipelines/8/48/100/group"
+]

@@ -121,3 +121,17 @@ fn filters_have_bounded_depth_and_keep_deferred_syntax_explicit() {
         .unwrap();
     assert_eq!(count, 1);
 }
+
+#[test]
+fn deep_computed_position_stages_share_scratch_and_preserve_candidate_shape() {
+    for predicate in ["[-(1+0)]", "[$count($)-2]", "[[-1]]"] {
+        let expression = jx::compile(&format!("a{}", predicate.repeat(100))).unwrap();
+        let value = expression
+            .evaluate(br#"{"a":[1,2,3]}"#)
+            .unwrap()
+            .single()
+            .unwrap()
+            .unwrap();
+        assert_eq!(value.as_number(), Some(3.0));
+    }
+}

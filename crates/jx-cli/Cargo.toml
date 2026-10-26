@@ -16,12 +16,9 @@ include = ["src/**", "examples/**", "README.md", "LICENSE"]
 name = "jx"
 path = "src/main.rs"
 
-[features]
-default = []
-jit = ["jx/jit"]
 
 [dependencies]
-jx = { version = "=0.1.0", path = "../jx" }
+jx = { version = "=0.2.0", path = "../jx" }
 
 [lints]
 workspace = true

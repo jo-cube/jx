@@ -90,7 +90,7 @@ fn limits_stop_retention_and_consumption_and_validation_still_precedes_effects()
 }
 
 #[test]
-fn tightening_stack_and_tail_limits_is_explicit_and_native_plans_keep_safe_fallback() {
+fn tightening_stack_and_tail_limits_is_explicit_with_host_calls() {
     let expr = jx::compile("($f:=function($n){$n=0?0:1+$f($n-1)};$f(10))").unwrap();
     let options = EvaluationOptions {
         limits: Some(Limits {
@@ -115,14 +115,12 @@ fn tightening_stack_and_tail_limits_is_explicit_and_native_plans_keep_safe_fallb
         items(&expr, None, options).unwrap_err().kind,
         ErrorKind::EvaluationLimit
     );
-    #[cfg(feature = "jit")]
     {
         let host = jx::HostFunction::new(1, |args, _| Ok(args.first().cloned().flatten()));
-        let mut expr = CompileOptions::default()
+        let expr = CompileOptions::default()
             .binding("host")
             .compile("[$host(2),a*a+1]")
             .unwrap();
-        expr.enable_native();
         let options = EvaluationOptions {
             limits: Some(Limits::default()),
             ..binding("host", host.value())
@@ -190,7 +188,7 @@ fn limits_do_not_require_json_encodable_results() {
 }
 
 #[test]
-fn controls_and_external_bindings_compose_without_native_support() {
+fn controls_and_external_bindings_compose() {
     let expression = CompileOptions::default()
         .binding("n")
         .compile("$n+a")

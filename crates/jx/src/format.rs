@@ -192,6 +192,11 @@ fn base(args: &[Option<Value<'_, '_>>; 3], offset: usize) -> Result<String, Erro
 pub(crate) struct Call {
     pub function: Library,
     pub args: Box<[crate::expression::Node]>,
+    pub(crate) prepared: Prepared,
+}
+// Picture code has no executable AST and can be shared by either backend.
+#[derive(Clone, Debug)]
+pub(crate) struct Prepared {
     picture_index: Option<usize>,
     program: Result<Program, Error>,
 }
@@ -248,14 +253,16 @@ impl Call {
         Some(Self {
             function,
             args: std::mem::take(args),
-            picture_index: index,
-            program: prepared,
+            prepared: Prepared {
+                picture_index: index,
+                program: prepared,
+            },
         })
     }
     pub fn needs_clock(&self) -> bool {
         match self.function {
             Library::ToMillis => {
-                matches!(&self.program,Ok(Program(Spec::ParseDate(parser))) if parser.needs_clock())
+                matches!(&self.prepared.program,Ok(Program(Spec::ParseDate(parser))) if parser.needs_clock())
             }
             Library::Now => true,
             _ => false,
@@ -268,38 +275,25 @@ impl Call {
             self.function.constant(&self.args)
         }
     }
-    pub fn evaluate<'e, 'i>(
-        &'e self,
-        context: &Context<'e, 'i>,
-        offset: usize,
-    ) -> Result<crate::evaluate::Operand<'e, 'i>, Error> {
-        self.evaluate_in(context, context, offset)
-    }
-    pub fn evaluate_in<'e, 'i>(
-        &'e self,
-        context: &Context<'e, 'i>,
+}
+impl Prepared {
+    pub(crate) fn values<'e, 'i>(
+        &self,
+        function: Library,
+        arguments: &[Option<Value<'e, 'i>>],
         caller: &Context<'e, 'i>,
         offset: usize,
     ) -> Result<crate::evaluate::Operand<'e, 'i>, Error> {
-        let mut evaluated = [None, None, None];
-        for (i, arg) in self.args.iter().enumerate() {
-            evaluated[i] = crate::retain::materialize(arg, context)?;
-        }
         let mut values = [None, None, None];
-        let skip = self.function.arguments::<3>(
-            &evaluated[..self.args.len()],
-            caller,
-            offset,
-            &mut values,
-        )?;
-        let parameter = usize::from(self.function != Library::Now);
-        let actual_index = if parameter >= skip && self.args.len() > parameter - skip {
+        let skip = function.arguments::<3>(arguments, caller, offset, &mut values)?;
+        let parameter = usize::from(function != Library::Now);
+        let actual_index = if parameter >= skip && arguments.len() > parameter - skip {
             Some(parameter - skip)
         } else {
             None
         };
         let prepared = (actual_index == self.picture_index).then_some(&self.program);
-        call(self.function, &values, caller, offset, prepared).map(|v| {
+        call(function, &values, caller, offset, prepared).map(|v| {
             v.map_or(
                 crate::evaluate::Operand::Missing,
                 crate::evaluate::Operand::One,

@@ -5,18 +5,17 @@ use crate::{
     expression::{Kind, Node},
     runtime::Scope,
     sequence::Context,
-    value::type_error,
 };
 use std::rc::Rc;
 
-pub(super) struct Call<'e, 'i> {
+pub(crate) struct Call<'e, 'i> {
     pub function: Rc<Function<'e, 'i>>,
     pub arguments: Arguments<'e, 'i>,
     pub offset: usize,
     pub validate: bool,
     pub null_focus: bool,
 }
-pub(super) enum Outcome<'e, 'i> {
+pub(crate) enum Outcome<'e, 'i> {
     Done(Option<Value<'e, 'i>>),
     Call(Call<'e, 'i>),
 }
@@ -33,96 +32,7 @@ pub(crate) fn possible(node: &Node) -> bool {
     }
 }
 
-// Evaluate only tail control flow here. Expressions, tests, arguments and
-// terminal results continue through the ordinary evaluator and retention rules.
-fn evaluate<'e, 'i>(
-    node: &'e Node,
-    context: &Context<'e, 'i>,
-    caller: &Context<'e, 'i>,
-) -> Result<Outcome<'e, 'i>, Error> {
-    match &node.kind {
-        Kind::Group(body) => block(std::slice::from_ref(body.as_ref()), context, caller),
-        Kind::Block(nodes) => block(nodes, context, caller),
-        Kind::Conditional(test, yes, no) => {
-            if test.run(context)?.truth(node.offset)? {
-                evaluate(yes, context, caller)
-            } else if let Some(no) = no {
-                evaluate(no, context, caller)
-            } else {
-                Ok(Outcome::Done(None))
-            }
-        }
-        Kind::Call(target, nodes) => {
-            let target = crate::retain::materialize(target, context)?;
-            let arguments = Arguments::evaluate(nodes, context)?;
-            let Some(Value::Function(function)) = target else {
-                return Err(type_error(node.offset));
-            };
-            Ok(Outcome::Call(Call {
-                function,
-                arguments,
-                offset: node.offset,
-                validate: true,
-                null_focus: false,
-            }))
-        }
-        Kind::Eval(call) => {
-            let target = crate::dynamic::Call::target(context);
-            let arguments = Arguments::evaluate(&call.args, context)?;
-            let target = crate::dynamic::Call::resolve(target, node.offset)?;
-            if let Some(function) = target {
-                Ok(Outcome::Call(Call {
-                    function,
-                    arguments,
-                    offset: node.offset,
-                    validate: true,
-                    null_focus: false,
-                }))
-            } else {
-                super::retained(call.values(arguments.as_slice(), caller, node.offset)?)
-                    .map(Outcome::Done)
-            }
-        }
-        Kind::Builtin(builtin, args) => {
-            super::retained(builtin.evaluate_in(args, context, caller, node.offset)?)
-                .map(Outcome::Done)
-        }
-        Kind::Formatted(call) => {
-            super::retained(call.evaluate_in(context, caller, node.offset)?).map(Outcome::Done)
-        }
-        _ => crate::retain::materialize(node, context).map(Outcome::Done),
-    }
-}
-fn block<'e, 'i>(
-    nodes: &'e [Node],
-    context: &Context<'e, 'i>,
-    caller: &Context<'e, 'i>,
-) -> Result<Outcome<'e, 'i>, Error> {
-    let scope = context.scope.as_ref().expect("lexical runtime");
-    let child = scope.child(scope.frame);
-    let context = Context {
-        scope: Some(child.clone()),
-        ..context.clone()
-    };
-    let result = (|| {
-        let Some((last, prefix)) = nodes.split_last() else {
-            return Ok(Outcome::Done(None));
-        };
-        if scope.controlled() {
-            for node in prefix {
-                scope.checkpoint(node.offset)?;
-                crate::retain::materialize(node, &context)?;
-            }
-        } else {
-            for node in prefix {
-                crate::retain::materialize(node, &context)?;
-            }
-        }
-        evaluate(last, &context, caller)
-    })();
-    child.release();
-    result
-}
+// Tail transitions reuse the common program backend and lexical retention rules.
 
 pub(super) fn invoke<'e, 'i>(
     initial: &Function<'e, 'i>,
@@ -130,6 +40,7 @@ pub(super) fn invoke<'e, 'i>(
     context: &Context<'e, 'i>,
     offset: usize,
     validate: bool,
+    input: Option<&crate::execution::input::Input<'_, 'i, '_>>,
 ) -> Result<Operand<'e, 'i>, Error> {
     let scope = context.scope.as_ref().expect("lexical runtime");
     let mut pending: Option<Call<'e, 'i>> = None;
@@ -158,6 +69,7 @@ pub(super) fn invoke<'e, 'i>(
             ),
             None => (initial, arguments, offset, validate),
         };
+
         if let FunctionKind::Partial {
             target,
             arguments: bound,
@@ -196,29 +108,43 @@ pub(super) fn invoke<'e, 'i>(
             });
             continue;
         }
-        let FunctionKind::Lambda {
-            definition,
-            focus,
-            wrapped,
-            frame,
-        } = &function.kind
-        else {
-            if let Some(child) = child.take() {
-                child.release();
+        let (params, signature, body_depth, tail, focus, wrapped, frame) = match &function.kind {
+            FunctionKind::Program {
+                definition,
+                focus,
+                wrapped,
+                frame,
+            } => (
+                &definition.params,
+                &definition.signature,
+                definition.body.call.depth,
+                definition.body.call.tail,
+                focus,
+                wrapped,
+                frame,
+            ),
+            _ => {
+                if let Some(child) = child.take() {
+                    child.release();
+                }
+                return super::invoke_checked(function, arguments, caller, offset, validate);
             }
-            return super::invoke_checked(function, arguments, caller, offset, validate);
         };
-        if steps == max_tail_calls {
-            return Err(crate::Error::new(
-                crate::ErrorKind::EvaluationLimit,
-                offset,
-                "tail-call execution exceeds one million iterations",
-            ));
+        // General compiled functions also enter this loop for the common call
+        // ABI. A non-tail initial call does not consume the tail-call budget.
+        if tail || pending.is_some() {
+            if steps == max_tail_calls {
+                return Err(crate::Error::new(
+                    crate::ErrorKind::EvaluationLimit,
+                    offset,
+                    "tail-call execution exceeds one million iterations",
+                ));
+            }
+            steps += 1;
         }
-        steps += 1;
-        let outcome = scope.call(offset, definition.body.depth, || {
+        let outcome = scope.call(offset, body_depth, || {
             let validated;
-            let arguments = if validate && let Some(signature) = &definition.signature {
+            let arguments = if validate && let Some(signature) = signature {
                 validated = signature.validate(arguments, &caller.value, offset)?;
                 validated.as_slice()
             } else {
@@ -231,16 +157,17 @@ pub(super) fn invoke<'e, 'i>(
                 child = Some(scope.child(*frame));
             }
             let child = child.as_ref().unwrap();
-            child.bind_arguments(&definition.params, arguments);
+            child.bind_arguments(params, arguments);
             let local = Context {
                 value: focus.clone(),
                 wrapped: *wrapped,
                 scope: Some(child.clone()),
             };
-            if definition.tail {
-                evaluate(&definition.body, &local, caller)
-            } else {
-                crate::retain::materialize(&definition.body, &local).map(Outcome::Done)
+            match &function.kind {
+                FunctionKind::Program { definition, .. } => {
+                    definition.body.run_function(&local, arguments, input)
+                }
+                _ => unreachable!("validated lambda definition"),
             }
         })?;
         match outcome {

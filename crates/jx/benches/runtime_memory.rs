@@ -4,6 +4,8 @@ use std::{
     alloc::{GlobalAlloc, Layout, System},
     sync::atomic::{AtomicI64, AtomicU64, Ordering::Relaxed},
 };
+#[path = "workloads/realistic_memory.rs"]
+mod realistic;
 struct Counter;
 static LIVE: AtomicI64 = AtomicI64::new(0);
 static PEAK: AtomicI64 = AtomicI64::new(0);
@@ -44,6 +46,10 @@ fn main() {
     println!(
         "workload,width,input_bytes,iteration,allocations,requested_bytes,peak_live_bytes,live_at_delivery_bytes,after_drop_bytes"
     );
+    if std::env::var_os("JX_BENCH_REALISTIC_ONLY").is_some() {
+        realistic::run();
+        return;
+    }
     for width in [8_u64, 128, 1024, 16384] {
         let input=serde_json::json!({"rows":(0..width).map(|i|serde_json::json!({"a":i%7,"b":width-i})).collect::<Vec<_>>(),"code":"function($r){$r.a+$r.b+$r.a}","objectCode":"function($r){{\"n\":$r.a+$r.b,\"label\":\"kept\"}}"}).to_string();
         for (name, source) in [

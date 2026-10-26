@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check repository documentation links and run its standalone Rust guide examples."""
 from pathlib import Path
+import os
 import re
 import shutil
 import subprocess
@@ -58,7 +59,7 @@ def run_examples():
         subprocess.run(cargo + ['generate-lockfile', '--manifest-path', str(package / 'Cargo.toml')], check=True)
         for name in names:
             subprocess.run(cargo + ['run', '--locked', '--manifest-path', str(package / 'Cargo.toml'),
-                                   '--target-dir', str(target), '--example', name], check=True)
+                                   '--target-dir', os.environ.get('CARGO_TARGET_DIR', str(target)), '--example', name], check=True)
         print(f'{len(names)} Rust guide examples passed', flush=True)
 
 
