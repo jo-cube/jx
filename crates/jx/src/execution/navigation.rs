@@ -172,7 +172,7 @@ impl Navigation {
         // no expression is replayed after a guard failure.
         if let Some(region) = &self.region
             && complete
-            && a.wrapped
+            && (a.wrapped || region.row.is_none())
             && a.scope.is_none_or(|s| !s.controlled())
             && a.focus.value(a.input).is_some_and(|v| !v.is_array())
         {
