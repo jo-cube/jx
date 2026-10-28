@@ -127,3 +127,123 @@ fn missing_matchers_and_host_exceptions_are_explicit() {
         );
     }
 }
+
+#[test]
+fn joins_preserve_encoding_and_utf16_boundaries() {
+    for source in [
+        "$join(items,sep)",
+        "$join([items[0],$substring(items[1],0)],sep)",
+    ] {
+        let expression = jx::compile(source).unwrap();
+        for (input, expected) in [
+            (r#"{"items":["a","b"],"sep":"|"}"#, r#""a|b""#),
+            (r#"{"items":["é","😀"],"sep":"中"}"#, r#""é中😀""#),
+            (r#"{"items":["\u0061","\/"],"sep":""}"#, r#""a/""#),
+            (r#"{"items":["a","b"],"sep":"\u002f"}"#, r#""a/b""#),
+            (r#"{"items":["\"","\\"],"sep":"\n"}"#, r#""\"\u000a\\""#),
+            (
+                r#"{"items":["\t","\u0000"],"sep":"\r"}"#,
+                r#""\u0009\u000d\u0000""#,
+            ),
+            (r#"{"items":["\ud83d","\ude00"],"sep":""}"#, r#""😀""#),
+            (r#"{"items":["\ud83d",""],"sep":"\ude00"}"#, r#""😀""#),
+            (r#"{"items":["","\ude00"],"sep":"\ud83d"}"#, r#""😀""#),
+            (r#"{"items":["\ud800","x"],"sep":""}"#, r#""\ud800x""#),
+            (
+                r#"{"items":["\udfff","\ud800"],"sep":""}"#,
+                r#""\udfff\ud800""#,
+            ),
+            (r#"{"items":["",""],"sep":""}"#, r#""""#),
+        ] {
+            let value = expression
+                .evaluate(input.as_bytes())
+                .unwrap()
+                .single()
+                .unwrap()
+                .unwrap();
+            let mut output = Vec::new();
+            value.write_compact(&mut output).unwrap();
+            assert_eq!(output, expected.as_bytes(), "{source}: {input}");
+        }
+    }
+}
+
+#[test]
+fn joins_preserve_cardinality_validation_and_argument_order() {
+    let expression = jx::compile("$join(items,sep)").unwrap();
+    for (input, expected) in [
+        (r#"{}"#, None),
+        (r#"{"items":[]}"#, Some("")),
+        (r#"{"items":"x","sep":"unused"}"#, Some("x")),
+        (r#"{"items":["x"]}"#, Some("x")),
+        (r#"{"items":"","sep":"unused"}"#, Some("")),
+        (r#"{"items":["","",""],"sep":"é"}"#, Some("éé")),
+        (r#"{"items":["a","b"]}"#, Some("ab")),
+    ] {
+        let value = expression
+            .evaluate(input.as_bytes())
+            .unwrap()
+            .single()
+            .unwrap();
+        assert_eq!(
+            value
+                .as_ref()
+                .map(|v| v.as_str().unwrap().unwrap().into_owned()),
+            expected.map(str::to_owned),
+            "{input}"
+        );
+    }
+    for input in [
+        r#"{"items":null}"#,
+        r#"{"items":["a",1]}"#,
+        r#"{"items":[[]]}"#,
+        r#"{"items":[],"sep":1}"#,
+        r#"{"sep":null}"#,
+    ] {
+        assert_eq!(
+            expression
+                .evaluate(input.as_bytes())
+                .and_then(|v| v.single())
+                .unwrap_err()
+                .kind,
+            jx::ErrorKind::TypeError,
+            "{input}"
+        );
+    }
+    for source in ["$join([1],$sqrt(-1))", "$join($sqrt(-1),1)"] {
+        assert_eq!(
+            jx::compile(source)
+                .unwrap()
+                .evaluate(b"null")
+                .and_then(|v| v.single())
+                .unwrap_err()
+                .kind,
+            jx::ErrorKind::NumericRange
+        );
+    }
+    let calls = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let seen = calls.clone();
+    let probe = jx::HostFunction::new(1, move |args, _| {
+        let n = args[0].as_ref().unwrap().as_number().unwrap() as u8;
+        seen.lock().unwrap().push(n);
+        Ok(Some(jx::Value::from_string(n.to_string())))
+    });
+    let expression = jx::CompileOptions::default()
+        .binding("probe")
+        .compile("$join([$probe(1),$probe(2)],$probe(3))")
+        .unwrap();
+    let value = expression
+        .evaluate_with(
+            Some(b"null"),
+            jx::EvaluationOptions {
+                bindings: vec![("probe", probe.value())],
+                ..Default::default()
+            },
+        )
+        .unwrap()
+        .single()
+        .unwrap()
+        .unwrap();
+    assert_eq!(value.as_str().unwrap().unwrap(), "132");
+    assert_eq!(*calls.lock().unwrap(), [1, 2, 3]);
+}

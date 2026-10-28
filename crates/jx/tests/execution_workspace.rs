@@ -400,3 +400,46 @@ fn workspace_heap_tracks_demands_and_never_record_size() {
     workspace.clear();
     assert_eq!(workspace.retained_bytes(), 0);
 }
+
+#[test]
+fn joined_strings_own_their_bytes_across_input_drop_and_workspace_reuse() {
+    let expression = jx::compile("$join([items[0],$lowercase(items[1]),'literal'],sep)").unwrap();
+    let mut workspace = Workspace::default();
+    for (input, expected) in [
+        (r#"{"items":["é","B"],"sep":"|"}"#, r#""é|b|literal""#),
+        (
+            r#"{"items":["\ud800","B"],"sep":"|"}"#,
+            r#""\ud800|b|literal""#,
+        ),
+    ] {
+        let (string, snapshot) = {
+            let input = input.as_bytes().to_vec();
+            let value = expression
+                .evaluate_with_workspace(Some(&input), Default::default(), &mut workspace)
+                .unwrap()
+                .single()
+                .unwrap()
+                .unwrap();
+            let snapshot = value.to_owned().unwrap();
+            let jx::Value::String(string) = value else {
+                panic!("join must produce an owned string")
+            };
+            (string.clone(), snapshot)
+        };
+        expression
+            .evaluate_with_workspace(
+                Some(br#"{"items":["X","Y"],"sep":""}"#),
+                Default::default(),
+                &mut workspace,
+            )
+            .unwrap()
+            .single()
+            .unwrap();
+        workspace.clear();
+        for value in [jx::Value::String(string), snapshot.as_value()] {
+            let mut output = Vec::new();
+            value.write_compact(&mut output).unwrap();
+            assert_eq!(output, expected.as_bytes());
+        }
+    }
+}

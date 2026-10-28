@@ -114,6 +114,10 @@ pub(super) fn call<'e, 'i>(
         return Ok(None);
     };
     if function == Library::Join {
+        let separator_body = args[1].as_ref().and_then(Value::string_body).unwrap_or("");
+        if let Some(result) = OwnedString::join_unescaped(value, separator_body) {
+            return Ok(Some(Value::String(result)));
+        }
         let separator = args[1].as_ref().map(units).unwrap_or_default();
         let mut result = Vec::new();
         let mut first = true;

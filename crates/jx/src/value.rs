@@ -198,6 +198,68 @@ impl OwnedString {
         json.push('"');
         Self { json: json.into() }
     }
+    // Called after $join's string-member validation. Escape-free JSON bodies
+    // contain complete Unicode scalars, so copying them preserves output bytes.
+    pub(crate) fn join_unescaped(value: &Value<'_, '_>, separator: &str) -> Option<Self> {
+        if separator.as_bytes().contains(&b'\\') {
+            return None;
+        }
+        let unescaped = if let Some(raw) = value.json() {
+            if raw.as_bytes().contains(&b'\\') {
+                return None;
+            }
+            true
+        } else {
+            false
+        };
+        let mut size = 2usize;
+        let mut count = 0usize;
+        let mut measure = |item: &Value<'_, '_>| {
+            let body = item.string_body().unwrap();
+            if !unescaped && body.as_bytes().contains(&b'\\') {
+                return false;
+            }
+            let Some(total) = size.checked_add(body.len()) else {
+                return false;
+            };
+            size = total;
+            count += 1;
+            true
+        };
+        let eligible = match value {
+            Value::Array(array) => array.as_slice().iter().all(measure),
+            _ if value.is_array() => value.elements().all(|item| measure(&item)),
+            _ => measure(value),
+        };
+        if !eligible {
+            return None;
+        }
+        let only_separator = size == 2;
+        let size = size.checked_add(count.saturating_sub(1).checked_mul(separator.len())?)?;
+        let mut json = String::with_capacity(size);
+        json.push('"');
+        if only_separator {
+            for _ in 1..count {
+                json.push_str(separator);
+            }
+        } else {
+            let mut first = true;
+            let mut append = |item: &Value<'_, '_>| {
+                if !first {
+                    json.push_str(separator);
+                }
+                first = false;
+                json.push_str(item.string_body().unwrap());
+            };
+            match value {
+                Value::Array(array) => array.as_slice().iter().for_each(append),
+                _ if value.is_array() => value.elements().for_each(|item| append(&item)),
+                _ => append(value),
+            }
+        }
+        json.push('"');
+        Some(Self { json: json.into() })
+    }
     pub(crate) fn text(mut text: String) -> Self {
         use std::fmt::Write;
         if !text.bytes().any(|b| b < b' ' || b == b'"' || b == b'\\') {
