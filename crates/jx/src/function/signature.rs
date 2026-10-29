@@ -183,7 +183,7 @@ impl Signature {
                     result.push(Some(if value.is_array() {
                         value
                     } else {
-                        Value::array(vec![value], false)
+                        Value::array(vec![value], false)?
                     }));
                 } else {
                     result.push(arg);

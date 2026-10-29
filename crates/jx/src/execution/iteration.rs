@@ -65,7 +65,7 @@ pub(super) fn execute<'e, 'i>(
             {
                 Cell::Value(values.pop().unwrap())
             } else {
-                Cell::Value(Value::kept(values))
+                Cell::Value(Value::kept(values)?)
             }
         }
         Operation::Correlate(_)
@@ -89,7 +89,7 @@ pub(super) fn execute<'e, 'i>(
                 crate::sequence::Halt::Evaluation(e) => e,
                 crate::sequence::Halt::Stop => unreachable!(),
             })?;
-            sequence(values)
+            sequence(values)?
         }
         Operation::Path(path) => {
             let mut values = Vec::new();
@@ -101,7 +101,7 @@ pub(super) fn execute<'e, 'i>(
                 crate::ConsumeError::Evaluation(e) => e,
                 crate::ConsumeError::Consumer(e) => match e {},
             })?;
-            sequence(values)
+            sequence(values)?
         }
         Operation::Each {
             source,
@@ -112,7 +112,7 @@ pub(super) fn execute<'e, 'i>(
             let mut child_frame = frame::Frame::repeated();
             let mut output = Vec::new();
             let mut invocation = call::Callback::new(scope, calls);
-            let mut arguments = Arguments::new(input, &frame[*source], body);
+            let mut arguments = Arguments::new(input, &frame[*source], body)?;
             input.each(
                 &frame[*source],
                 &body.row_schema,
@@ -148,9 +148,9 @@ pub(super) fn execute<'e, 'i>(
                 },
             )?;
             if *native && frame[*source].value(input).is_some() {
-                Cell::Value(Value::sequence(output))
+                Cell::Value(Value::sequence(output)?)
             } else {
-                sequence(output)
+                sequence(output)?
             }
         }
         Operation::Reduce(aggregate, producer, producer_offset) => {
@@ -209,7 +209,7 @@ pub(super) fn execute<'e, 'i>(
             let mut reduction = Reduction::new(*aggregate);
             let mut mapper_error = None;
             let mut invocation = call::Callback::new(scope, calls);
-            let mut arguments = Arguments::new(input, &frame[*source], body);
+            let mut arguments = Arguments::new(input, &frame[*source], body)?;
             let undefined = Cell::Value(Value::Undefined);
             let missing = frame[*source].value(input).is_none();
             let source = if missing && (predicate.is_some() || staged) {
@@ -323,15 +323,15 @@ pub(super) fn execute<'e, 'i>(
     };
     Ok(value)
 }
-fn sequence<'e, 'i>(mut values: Vec<Value<'e, 'i>>) -> Cell<'e, 'i> {
-    match values.len() {
+fn sequence<'e, 'i>(mut values: Vec<Value<'e, 'i>>) -> Result<Cell<'e, 'i>, Error> {
+    Ok(match values.len() {
         0 => Cell::Missing,
         1 => match values.pop().unwrap() {
             Value::Undefined => Cell::Missing,
             value => Cell::Value(value),
         },
-        _ => Cell::Value(Value::sequence(values)),
-    }
+        _ => Cell::Value(Value::sequence(values)?),
+    })
 }
 
 // Sequence normalization belongs to the complete consumer. A sole array is the

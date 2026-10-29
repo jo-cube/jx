@@ -58,7 +58,7 @@ pub(super) fn merge<'e, 'i>(
                 items.resize(n as usize, Value::Undefined);
             }
         }
-        return Ok(Value::array(items, false));
+        return Value::array(items, false);
     }
     if !target.is_object() {
         if update.members().next().is_none() {
@@ -82,7 +82,7 @@ pub(super) fn merge<'e, 'i>(
     }
     members
         .sort_by_key(|(k, _)| crate::members::index(k.string_body().unwrap()).unwrap_or(u32::MAX));
-    Ok(Value::object(members))
+    Value::object(members)
 }
 pub(super) fn remove<'e, 'i>(
     target: &Value<'e, 'i>,
@@ -102,7 +102,7 @@ pub(super) fn remove<'e, 'i>(
                 *slot = Value::Undefined;
             }
         }
-        Ok(Value::array(items, false))
+        Value::array(items, false)
     } else if target.is_object() {
         Ok(Value::object(
             crate::members::entries(target)
@@ -114,7 +114,7 @@ pub(super) fn remove<'e, 'i>(
                 })
                 .map(|(k, v)| (key_value(target, k), v))
                 .collect(),
-        ))
+        )?)
     } else {
         Ok(target.clone())
     }

@@ -90,7 +90,7 @@ pub(crate) fn write(
             if i != 0 {
                 output.write_all(b",")?;
             }
-            value.child(item).write_compact(&mut *output)?;
+            value.child(item).write_compact_inner(&mut *output)?;
         }
         output.write_all(b"]")
     } else {
@@ -106,7 +106,7 @@ pub(crate) fn write(
             output.write_all(b"\"")?;
             output.write_all(key.as_bytes())?;
             output.write_all(b"\":")?;
-            value.child(item).write_compact(&mut *output)?;
+            value.child(item).write_compact_inner(&mut *output)?;
         }
         output.write_all(b"}")
     }

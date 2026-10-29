@@ -326,7 +326,7 @@ fn primitive_membership(
             .all(|item| primitive_value(item, constants, bound)),
         _ => {
             primitive_value(node, constants, bound)
-                || matches!(constant_data(node, constants, bound), Some(crate::constant::Data::Array(items, _)) if items.iter().all(primitive_data))
+                || matches!(constant_data(node, constants, bound), Some(crate::constant::Data::Array(items, _, _)) if items.iter().all(primitive_data))
         }
     }
 }

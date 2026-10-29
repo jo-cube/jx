@@ -163,8 +163,10 @@ impl<'e, 'i> Retention<'e, 'i> {
             Value::Array(a) => Value::Array(Rc::new(Array {
                 items: a.items.iter().map(|v| self.value(v)).collect(),
                 shape: a.shape,
+                nesting: a.nesting,
             })),
             Value::Object(o) => Value::Object(Rc::new(Object {
+                nesting: o.nesting,
                 members: o
                     .members
                     .iter()
@@ -180,9 +182,10 @@ impl<'e, 'i> Retention<'e, 'i> {
                     Value::Array(Rc::new(Array {
                         items: v.elements().map(|v| self.value(&v)).collect(),
                         shape,
+                        nesting: c.data.nesting(),
                     }))
                 } else {
-                    Value::object(
+                    Value::object_storage(
                         v.members()
                             .map(|(k, v)| {
                                 (Value::String(crate::OwnedString::body(k)), self.value(&v))

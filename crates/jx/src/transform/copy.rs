@@ -64,6 +64,7 @@ pub(crate) fn clone<'e, 'i>(
     if !value.is_array() && !value.is_object() {
         return Err(crate::value::type_error(offset));
     }
+    value.check_nesting(offset)?;
     validate(&value, offset)?;
     Ok(Some(copy(value)))
 }
@@ -71,8 +72,11 @@ fn copy<'e, 'i>(value: Value<'e, 'i>) -> Value<'e, 'i> {
     // Runtime constructors can share the same object at different locations.
     // A JSON clone breaks those aliases; raw/compiled trees already have unique locations.
     match value {
-        Value::Array(array) => Value::array(array.items.iter().cloned().map(copy).collect(), false),
-        Value::Object(object) => Value::object(
+        Value::Array(array) => Value::array_storage(
+            array.items.iter().cloned().map(copy).collect(),
+            crate::container::Shape::Array,
+        ),
+        Value::Object(object) => Value::object_storage(
             object
                 .members
                 .iter()

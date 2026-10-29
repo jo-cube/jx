@@ -121,7 +121,8 @@ impl Selection {
         if singleton.is_some() {
             rows = rows::Rows::All;
         }
-        let mut arguments = Arguments::new(input, source, &self.body);
+        let mut arguments =
+            Arguments::new(input, source, &self.body).map_err(ConsumeError::Evaluation)?;
         let mut defined = false;
         let mut first_array = None;
         rows.each(

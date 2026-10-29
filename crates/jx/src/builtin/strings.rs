@@ -273,7 +273,7 @@ pub(super) fn call<'e, 'i>(
                             rest = &rest[at + pattern.len()..];
                         }
                     }
-                    Value::array(result, false)
+                    Value::array(result, false)?
                 }
                 _ => unreachable!(),
             }

@@ -145,6 +145,7 @@ pub(crate) fn validate_options(
 // would be unsound semantically even though Rust's bytes still live. Host values
 // have independent ownership and can be safely injected into any evaluation.
 fn external(value: &Value<'_, '_>) -> Result<bool, Error> {
+    value.check_nesting(0)?;
     match value {
         _ if value.as_raw().is_some() || matches!(value, Value::Constant(_)) => Ok(false),
         Value::Function(f) if !matches!(f.kind, crate::function::FunctionKind::Host(_)) => {
@@ -251,6 +252,12 @@ impl HostFunction {
         let call = HostContext { context, offset };
         let invoke = || {
             (self.implementation)(arguments, &call)
+                .and_then(|value| {
+                    if let Some(value) = &value {
+                        value.check_nesting(offset)?;
+                    }
+                    Ok(value)
+                })
                 .map(|v| {
                     v.map_or(
                         crate::evaluate::Operand::Missing,
@@ -295,6 +302,9 @@ impl<'e, 'i> HostContext<'_, 'e, 'i> {
         function: &Value<'e, 'i>,
         arguments: &[Option<Value<'e, 'i>>],
     ) -> Result<Option<Value<'e, 'i>>, Error> {
+        for value in arguments.iter().flatten() {
+            value.check_nesting(self.offset)?;
+        }
         let Value::Function(function) = function else {
             return Err(crate::value::type_error(self.offset));
         };

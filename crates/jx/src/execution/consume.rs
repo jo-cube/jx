@@ -70,9 +70,10 @@ pub(super) fn plan(p: &Program) -> Delivery {
         _ => Delivery::Value,
     }
 }
-// Total, read-only code can defer settings delivery without moving a possible
-// language failure or lexical write past evaluate(). Controls still require the
-// existing eager contract. Unknown operations deliberately make no such promise.
+// Language-total, read-only code can defer settings delivery without moving a
+// semantic failure or lexical write past evaluate(). Constructors enforce the
+// hard value-depth ceiling when executed, including during deferred delivery.
+// Optional controls retain their eager contract. Unknown operations are fallible.
 pub(super) fn total(p: &Program) -> bool {
     !p.writes_scope
         && p.code.iter().all(|i| match &i.kind {

@@ -11,7 +11,9 @@ pub(super) fn call<'e, 'i>(
     offset: usize,
 ) -> Result<Option<Value<'e, 'i>>, Error> {
     let Some(input) = &args[0] else {
-        return Ok((function == Library::Each).then(|| Value::sequence(Vec::new())));
+        return (function == Library::Each)
+            .then(|| Value::sequence(Vec::new()))
+            .transpose();
     };
     let Some(Value::Function(callback)) = &args[1] else {
         if function == Library::Sift && input.members().next().is_none() {
@@ -38,7 +40,7 @@ pub(super) fn call<'e, 'i>(
         }
         let mut result = args[2].clone();
         // Only callbacks requesting the original array need a scalar wrapper.
-        let whole = (arity >= 4).then(|| array(input));
+        let whole = (arity >= 4).then(|| array(input)).transpose()?;
         for (index, item) in items(input).enumerate() {
             if index == 0 && result.is_none() {
                 result = Some(item);
@@ -72,12 +74,14 @@ pub(super) fn call<'e, 'i>(
             }
         }
         return Ok(if function == Library::Sift {
-            (!members.is_empty()).then(|| Value::object(members))
+            (!members.is_empty())
+                .then(|| Value::object(members))
+                .transpose()?
         } else {
-            Some(Value::sequence(output))
+            Some(Value::sequence(output)?)
         });
     }
-    let whole = (arity >= 3).then(|| array(input));
+    let whole = (arity >= 3).then(|| array(input)).transpose()?;
     for (index, value) in items(input).enumerate() {
         let arguments = [
             Some(value.clone()),
@@ -95,11 +99,11 @@ pub(super) fn call<'e, 'i>(
             output.push(value);
         }
     }
-    Ok(Some(Value::sequence(output)))
+    Ok(Some(Value::sequence(output)?))
 }
-fn array<'e, 'i>(value: &Value<'e, 'i>) -> Value<'e, 'i> {
+fn array<'e, 'i>(value: &Value<'e, 'i>) -> Result<Value<'e, 'i>, Error> {
     if value.is_array() {
-        value.clone()
+        Ok(value.clone())
     } else {
         Value::array(vec![value.clone()], false)
     }

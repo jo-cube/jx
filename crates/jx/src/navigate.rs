@@ -33,7 +33,7 @@ pub(crate) fn wildcard<'e, 'i>(value: &Value<'e, 'i>, output: &mut Output<'_, 'e
                     Ok(())
                 })?;
             }
-            output(Value::array(values, false))
+            output(Value::array(values, false)?)
         } else {
             for item in items() {
                 output(item)?;

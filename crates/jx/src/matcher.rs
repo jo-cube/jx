@@ -177,6 +177,7 @@ fn groups<'e, 'i>(input: &Text<'e, 'i>, found: &regress::Match) -> Value<'e, 'i>
             .collect(),
         false,
     )
+    .expect("matcher groups contain only strings")
 }
 fn record<'e, 'i>(
     state: &Rc<State<'e>>,
@@ -198,6 +199,7 @@ fn record<'e, 'i>(
             })),
         ),
     ])
+    .expect("matcher records are shallow")
 }
 
 fn legacy_case_error(offset: usize) -> Error {

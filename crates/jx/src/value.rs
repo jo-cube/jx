@@ -38,7 +38,14 @@ impl<'i> Value<'_, 'i> {
 
     /// Preserve input tokens; encode computed binary64 values as compact JSON.
     /// Like JSONata's JSON serialization, non-finite results serialize as null.
-    pub fn write_compact(&self, mut output: impl Write) -> io::Result<()> {
+    pub fn write_compact(&self, output: impl Write) -> io::Result<()> {
+        self.check_nesting(0)
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
+        self.write_compact_inner(output)
+    }
+
+    // The root check covers every descendant; recursive writers must not repeat it.
+    pub(crate) fn write_compact_inner(&self, mut output: impl Write) -> io::Result<()> {
         match self {
             Self::Function(_) => Err(io::Error::new(
                 io::ErrorKind::InvalidInput,

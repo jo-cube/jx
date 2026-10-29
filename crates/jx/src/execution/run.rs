@@ -280,7 +280,7 @@ impl Program {
                     if values.is_empty() {
                         Cell::Missing
                     } else {
-                        Cell::Value(Value::kept(values))
+                        Cell::Value(Value::kept(values)?)
                     }
                 }
                 Operation::Field(base, path, contextual, _) => load(
@@ -361,7 +361,7 @@ impl Program {
                         input.restore(Some(crate::construct::group_value((
                             items.next(),
                             items.collect(),
-                        ))))
+                        ))?))
                     } else {
                         // A focus boundary does not discard an acquired port.
                         // Preserve its view/ownership; only grouping changes value.
@@ -390,19 +390,19 @@ impl Program {
                             values.push((Value::StringLiteral(RawJson(key)), value));
                         }
                     }
-                    Cell::Value(Value::object(values))
+                    Cell::Value(Value::object(values)?)
                 }
                 Operation::Keep(reg, force) => match frame[*reg].value(input) {
                     None => Cell::Missing,
                     Some(value) if *force && (!value.is_array() || value.preserves_array()) => {
-                        Cell::Value(Value::kept(vec![value]))
+                        Cell::Value(Value::kept(vec![value])?)
                     }
                     Some(value) if value.unpacks_sequence() => {
                         let items: Vec<_> = value.elements().collect();
                         if items.is_empty() {
                             Cell::Missing
                         } else {
-                            Cell::Value(Value::kept(items))
+                            Cell::Value(Value::kept(items)?)
                         }
                     }
                     Some(value) => Cell::Value(value),
@@ -421,7 +421,7 @@ impl Program {
                             }
                         }
                     }
-                    Cell::Value(Value::array(values, *preserve))
+                    Cell::Value(Value::array(values, *preserve)?)
                 }
                 Operation::JumpFalse(test, to) => {
                     if !frame[*test].truth(input, offset)? {
@@ -490,21 +490,25 @@ pub(super) struct Arguments<'e, 'i> {
     values: [Cell<'e, 'i>; 3],
 }
 impl<'e, 'i> Arguments<'e, 'i> {
-    pub(super) fn new(input: &Input<'_, 'i, '_>, source: &Cell<'e, 'i>, body: &Program) -> Self {
+    pub(super) fn new(
+        input: &Input<'_, 'i, '_>,
+        source: &Cell<'e, 'i>,
+        body: &Program,
+    ) -> Result<Self, Error> {
         let mask = body.argument_mask;
         let whole = if mask & 4 == 0 {
             Cell::Missing
         } else if let Some(value) = source.value(input)
             && !value.is_array()
         {
-            Cell::Value(Value::array(vec![value], false))
+            Cell::Value(Value::array(vec![value], false)?)
         } else {
             source.clone()
         };
-        Self {
+        Ok(Self {
             mask,
             values: [Cell::Missing, Cell::Missing, whole],
-        }
+        })
     }
     pub(super) fn at(&mut self, item: &Cell<'e, 'i>, index: usize) -> &[Cell<'e, 'i>] {
         if self.mask == 0 {

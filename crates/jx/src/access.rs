@@ -95,7 +95,7 @@ impl<'e, 'i> Value<'e, 'i> {
         Self::String(crate::OwnedString::text(text.into()))
     }
     pub fn from_array(items: Vec<Self>) -> Self {
-        Self::array(items, false)
+        Self::array_storage(items, crate::container::Shape::Array)
     }
     pub fn from_object(items: impl IntoIterator<Item = (String, Self)>) -> Self {
         // Field lookup and serialization share last-write-wins semantics.
@@ -110,9 +110,10 @@ impl<'e, 'i> Value<'e, 'i> {
                 members.push((Self::from_string(key), value));
             }
         }
-        Self::object(members)
+        Self::object_storage(members)
     }
     pub fn to_owned(&self) -> Result<OwnedValue, Error> {
+        self.check_nesting(0).map_err(Error::result)?;
         capture(self).map(|data| OwnedValue { data })
     }
 }
@@ -137,12 +138,17 @@ fn capture(value: &Value<'_, '_>) -> Result<Data, Error> {
         return Ok(value.data.clone());
     }
     if let Some(items) = value.array_items() {
+        let items = items
+            .map(|v| capture(&v))
+            .collect::<Result<Box<[_]>, _>>()?;
+        let nesting = 1 + items.iter().map(Data::nesting).max().unwrap_or(0);
         return Ok(Data::Array(
-            items.map(|v| capture(&v)).collect::<Result<_, _>>()?,
+            items,
             match value {
                 Value::Array(a) => a.shape,
                 _ => crate::container::Shape::Array,
             },
+            nesting,
         ));
     }
     if value.is_object() {
@@ -157,6 +163,7 @@ fn capture(value: &Value<'_, '_>) -> Result<Data, Error> {
             .collect::<Vec<_>>();
         index.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(b.1.cmp(&a.1)));
         return Ok(Data::Object {
+            nesting: 1 + members.iter().map(|(_, v)| v.nesting()).max().unwrap_or(0),
             members,
             index: index.into_boxed_slice(),
         });

@@ -24,12 +24,14 @@ pub(super) fn call<'e, 'i>(
             (Some(left), Some(right)) => Some(Value::array(
                 items(left).chain(items(right)).collect(),
                 false,
-            )),
+            )?),
             (left, right) => left.clone().or_else(|| right.clone()),
         });
     }
     let Some(value) = &args[0] else {
-        return Ok((function == Library::Keys).then(|| Value::sequence(Vec::new())));
+        return (function == Library::Keys)
+            .then(|| Value::sequence(Vec::new()))
+            .transpose();
     };
     Ok(match function {
         Library::Type => {
@@ -51,7 +53,7 @@ pub(super) fn call<'e, 'i>(
                 Some(value.clone())
             } else {
                 values.reverse();
-                Some(Value::array(values, false))
+                Some(Value::array(values, false)?)
             }
         }
         Library::Distinct if !value.is_array() => Some(value.clone()),
@@ -67,9 +69,9 @@ pub(super) fn call<'e, 'i>(
                 }
             }
             if value.is_sequence() {
-                Some(Value::sequence(values))
+                Some(Value::sequence(values)?)
             } else {
-                Some(Value::array(values, false))
+                Some(Value::array(values, false)?)
             }
         }
         Library::Keys => {
@@ -78,9 +80,9 @@ pub(super) fn call<'e, 'i>(
             keys.sort_by_key(|key| {
                 crate::members::index(key.string_body().unwrap()).unwrap_or(u32::MAX)
             });
-            Some(Value::sequence(keys))
+            Some(Value::sequence(keys)?)
         }
-        Library::Spread => spread(value),
+        Library::Spread => spread(value)?,
         Library::Merge => {
             let mut entries: Vec<(Value<'e, 'i>, Value<'e, 'i>)> = Vec::new();
             for object in items(value) {
@@ -97,7 +99,7 @@ pub(super) fn call<'e, 'i>(
             entries.sort_by_key(|(key, _)| {
                 crate::members::index(key.string_body().unwrap()).unwrap_or(u32::MAX)
             });
-            Some(Value::object(entries))
+            Some(Value::object(entries)?)
         }
         _ => unreachable!(),
     })
@@ -118,12 +120,12 @@ fn collect_keys<'e, 'i>(value: &Value<'e, 'i>, keys: &mut Vec<Value<'e, 'i>>) {
         }
     }
 }
-fn spread<'e, 'i>(value: &Value<'e, 'i>) -> Option<Value<'e, 'i>> {
-    if value.is_array() {
+fn spread<'e, 'i>(value: &Value<'e, 'i>) -> Result<Option<Value<'e, 'i>>, Error> {
+    Ok(if value.is_array() {
         let mut result = Vec::new();
         let mut appended = false;
         for item in value.elements() {
-            if let Some(value) = spread(&item) {
+            if let Some(value) = spread(&item)? {
                 appended = true;
                 result.extend(items(&value));
             }
@@ -131,18 +133,18 @@ fn spread<'e, 'i>(value: &Value<'e, 'i>) -> Option<Value<'e, 'i>> {
         // Appending a defined value loses the initial sequence marker, even if
         // it is an empty array. Missing values leave that marker intact.
         if !appended {
-            Some(Value::sequence(result))
+            Some(Value::sequence(result)?)
         } else {
-            Some(Value::array(result, false))
+            Some(Value::array(result, false)?)
         }
     } else if value.is_object() {
         Some(Value::sequence(
             crate::members::entries(value)
                 .into_iter()
                 .map(|(name, value)| Value::object(vec![(key(name), value)]))
-                .collect(),
-        ))
+                .collect::<Result<_, _>>()?,
+        )?)
     } else {
         (!matches!(value, Value::Undefined)).then(|| value.clone())
-    }
+    })
 }

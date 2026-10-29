@@ -250,6 +250,8 @@ impl Call {
                 offset,
             )
         });
+        drop(options);
+        drop(picture_value);
         Some(Self {
             function,
             args: std::mem::take(args),

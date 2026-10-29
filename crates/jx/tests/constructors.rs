@@ -194,8 +194,8 @@ fn implicit_string_iteration_after_constructor_collapse_is_explicitly_deferred()
 
 #[test]
 fn object_construction_does_not_mutate_empty_input_arrays() {
-    let mut values = Vec::new();
     let expression = jx::compile(r#"({"x":missing}.x) or $count($)"#).unwrap();
+    let mut values = Vec::new();
     expression
         .evaluate(b"[]")
         .unwrap()

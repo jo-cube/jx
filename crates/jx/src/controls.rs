@@ -120,7 +120,7 @@ impl Control {
     }
     fn inspect_at(&self, value: &Value<'_, '_>, offset: usize, depth: usize) -> Result<(), Error> {
         self.item(offset)?;
-        if depth > 512 {
+        if depth > usize::from(crate::container::MAX_NESTING) {
             return Err(limit(offset, "value nesting limit exceeded"));
         }
         if value.is_array() {

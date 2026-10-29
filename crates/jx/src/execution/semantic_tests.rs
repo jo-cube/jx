@@ -567,16 +567,19 @@ fn scalar_cse_does_not_elide_function_valued_pattern_effects() {
             Ok(None)
         });
         let settings = || crate::EvaluationOptions {
-            focus: Some(Value::object(vec![
-                (
-                    Value::StringLiteral(crate::RawJson("\"s\"")),
-                    Value::StringLiteral(crate::RawJson("\"abc\"")),
-                ),
-                (
-                    Value::StringLiteral(crate::RawJson("\"p\"")),
-                    pattern.value(),
-                ),
-            ])),
+            focus: Some(
+                Value::object(vec![
+                    (
+                        Value::StringLiteral(crate::RawJson("\"s\"")),
+                        Value::StringLiteral(crate::RawJson("\"abc\"")),
+                    ),
+                    (
+                        Value::StringLiteral(crate::RawJson("\"p\"")),
+                        pattern.value(),
+                    ),
+                ])
+                .unwrap(),
+            ),
             ..Default::default()
         };
         let old = crate::compile(source).unwrap_or_else(|e| panic!("{source}: {e}"));

@@ -16,10 +16,11 @@ pub(crate) enum Data {
     Boolean(bool),
     Number(f64),
     String(Box<str>),
-    Array(Box<[Data]>, Shape),
+    Array(Box<[Data]>, Shape, u16),
     Object {
         members: Box<[(Box<str>, Data)]>,
         index: Box<[(u64, usize)]>,
+        nesting: u16,
     },
 }
 
@@ -102,6 +103,7 @@ impl Storage {
 
 impl Data {
     pub(crate) fn capture(value: &Value<'_, '_>) -> Option<Self> {
+        value.check_nesting(0).ok()?;
         Some(match value {
             Value::Undefined => Self::Missing,
             Value::Null => Self::Null,
@@ -116,6 +118,7 @@ impl Data {
                     .map(Self::capture)
                     .collect::<Option<Box<[_]>>>()?,
                 a.shape,
+                a.nesting,
             ),
             Value::Object(o) => {
                 let members = o
@@ -132,6 +135,7 @@ impl Data {
                 Self::Object {
                     members,
                     index: index.into_boxed_slice(),
+                    nesting: o.nesting,
                 }
             }
             _ => return None,
@@ -158,7 +162,7 @@ impl Data {
         fingerprint: impl FnOnce() -> u64,
         mut equal: impl FnMut(&str) -> bool,
     ) -> Option<&Data> {
-        let Self::Object { members, index } = self else {
+        let Self::Object { members, index, .. } = self else {
             return None;
         };
         if members.len() <= 1 {
@@ -179,7 +183,7 @@ impl Data {
     }
     pub(crate) fn write(&self, output: &mut dyn Write) -> io::Result<()> {
         match self {
-            Self::Array(items, _) => {
+            Self::Array(items, _, _) => {
                 output.write_all(b"[")?;
                 for (i, v) in items.iter().enumerate() {
                     if i != 0 {
@@ -201,7 +205,7 @@ impl Data {
                 }
                 output.write_all(b"}")
             }
-            _ => self.value().write_compact(output),
+            _ => self.value().write_compact_inner(output),
         }
     }
 }
@@ -210,14 +214,14 @@ impl<'e> ConstantValue<'e> {
         std::ptr::eq(self.data, other.data) && Rc::ptr_eq(&self.identity, &other.identity)
     }
     pub(crate) fn shape(&self) -> Option<Shape> {
-        if let Data::Array(_, shape) = self.data {
+        if let Data::Array(_, shape, _) = self.data {
             Some(*shape)
         } else {
             None
         }
     }
     pub(crate) fn element<'i>(&self, index: usize) -> Option<Value<'e, 'i>> {
-        let Data::Array(items, _) = self.data else {
+        let Data::Array(items, _, _) = self.data else {
             return None;
         };
         items
@@ -259,6 +263,7 @@ mod tests {
             ]
             .into_boxed_slice(),
             index: vec![(hash, 0), (hash, 1)].into_boxed_slice(),
+            nesting: 1,
         };
         assert!(matches!(
             data.find(|| hash, |k| string::equal(k, "wanted")),
