@@ -22,27 +22,7 @@ impl<'a> RawJson<'a> {
 
     /// Remove only whitespace outside strings; preserve number and escape spelling.
     pub fn write_compact(self, mut output: impl std::io::Write) -> std::io::Result<()> {
-        let bytes = self.as_bytes();
-        let mut in_string = false;
-        let mut escaped = false;
-        let mut start = 0;
-        for (at, &byte) in bytes.iter().enumerate() {
-            if in_string {
-                if escaped {
-                    escaped = false;
-                } else if byte == b'\\' {
-                    escaped = true;
-                } else if byte == b'"' {
-                    in_string = false;
-                }
-            } else if byte == b'"' {
-                in_string = true;
-            } else if matches!(byte, b' ' | b'\n' | b'\r' | b'\t') {
-                output.write_all(&bytes[start..at])?;
-                start = at + 1;
-            }
-        }
-        output.write_all(&bytes[start..])
+        scan::write_compact(self, &mut output)
     }
 }
 

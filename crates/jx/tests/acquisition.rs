@@ -62,3 +62,52 @@ fn captured_arguments_borrow_input_and_validation_precedes_effects() {
         }
     }
 }
+
+#[test]
+fn escaped_demands_preserve_decoded_key_order_and_replacement() {
+    let source = "{'a':a,'b':b,'nested':x.y,'face':`😀`,'bmp':`\u{e000}`,'slash':`a/b`}";
+    let input = br#"{"\u0061":1,"a":2,"\u0061\ud800":99,"\u0062":3,"x":{"y":4},"\u0078":{},"\ud83d\ude00":5,"\ue000":6,"a\/b":7,"\ud800":99}"#;
+    for (source, input, expected) in [
+        (
+            source.to_owned(),
+            input.to_vec(),
+            br#"{"a":2,"b":3,"face":5,"bmp":6,"slash":7}"#.as_slice(),
+        ),
+        (
+            format!("[rows.{source}]"),
+            [b"{\"rows\":[".as_slice(), input, b",", input, b"]}"].concat(),
+            br#"[{"a":2,"b":3,"face":5,"bmp":6,"slash":7},{"a":2,"b":3,"face":5,"bmp":6,"slash":7}]"#,
+        ),
+        (
+            "{'a':a}".to_owned(),
+            br#"{"\ud800":99,"\u0061":1,"a":2}"#.to_vec(),
+            br#"{"a":2}"#,
+        ),
+    ] {
+        let expression = jx::compile(&source).unwrap();
+        let plan = jx::InputPlan::new([&expression]);
+        for validated in [false, true] {
+            let prepared = if validated {
+                plan.prepare_validated(jx::validate(&input).unwrap())
+            } else {
+                plan.prepare(&input).unwrap()
+            };
+            let mut out = Vec::new();
+            prepared
+                .evaluate(0)
+                .unwrap()
+                .single()
+                .unwrap()
+                .unwrap()
+                .write_compact(&mut out)
+                .unwrap();
+            assert_eq!(out, expected, "{source}");
+        }
+        let mut malformed = input;
+        malformed.extend_from_slice(b" false");
+        assert_eq!(
+            expression.evaluate(&malformed).unwrap_err().kind,
+            jx::ErrorKind::InvalidJson
+        );
+    }
+}

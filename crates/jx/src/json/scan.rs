@@ -168,8 +168,9 @@ impl<'a, const VALIDATED: bool> Scanner<'a, VALIDATED> {
         spans[id..schema.nodes[id].end].fill(Default::default());
         if self.byte() == Some(b'{') && !schema.nodes[id].children.is_empty() {
             self.open(depth)?;
+            let mut decoded = String::new();
             self.object_members(|scanner, name| {
-                if let Some(child) = schema.encoded_child(id, name) {
+                if let Some(child) = schema.encoded_child(id, name, &mut decoded) {
                     scanner.schema_value(depth + 1, child, schema, spans)?;
                 } else {
                     scanner.value(depth + 1, None)?;
@@ -679,6 +680,37 @@ impl<'a> RawJson<'a> {
             },
         }
     }
+}
+
+// Validated scalars contain no external whitespace; containers reuse the string cursor.
+pub(super) fn write_compact(
+    raw: RawJson<'_>,
+    mut output: impl std::io::Write,
+) -> std::io::Result<()> {
+    let bytes = raw.as_bytes();
+    if !matches!(bytes[0], b'{' | b'[') {
+        return output.write_all(bytes);
+    }
+    let mut scanner = Scanner::<true> {
+        text: raw.as_str(),
+        at: 0,
+    };
+    let mut start = 0;
+    while scanner.at < bytes.len() {
+        match bytes[scanner.at] {
+            b'"' => {
+                scanner.skip_string();
+                continue;
+            }
+            b' ' | b'\n' | b'\r' | b'\t' => {
+                output.write_all(&bytes[start..scanner.at])?;
+                start = scanner.at + 1;
+            }
+            _ => {}
+        }
+        scanner.at += 1;
+    }
+    output.write_all(&bytes[start..])
 }
 
 #[cfg(test)]

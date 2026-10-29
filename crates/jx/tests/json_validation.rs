@@ -1,4 +1,5 @@
 use jx::{ErrorKind, MAX_DEPTH, validate};
+use std::io::{self, Write};
 
 #[test]
 fn valid_json_syntax_and_utf8() {
@@ -253,6 +254,94 @@ fn string_errors_preserve_exact_offsets_after_ordinary_runs() {
             for expression in &expressions {
                 assert_eq!(expression.evaluate(&input).unwrap_err(), error);
             }
+        }
+    }
+}
+
+#[test]
+fn validated_tokens_preserve_exact_spelling() {
+    for (input, expected) in [
+        (
+            r#"  { "a" : " x ", "a": "\u0061\/\ud800", "n": -0.00e+02, "v" : [ true , null ] }  "#,
+            r#"{"a":" x ","a":"\u0061\/\ud800","n":-0.00e+02,"v":[true,null]}"#,
+        ),
+        (
+            r#" "\"\\\b\f\n\r\t\u0000😀" "#,
+            r#""\"\\\b\f\n\r\t\u0000😀""#,
+        ),
+        ("  -0.00e+02 \n", "-0.00e+02"),
+        (" true ", "true"),
+        (" false ", "false"),
+        (" null ", "null"),
+        (" 1e99999 ", "1e99999"),
+        (" [ ] ", "[]"),
+    ] {
+        let mut out = vec![];
+        jx::validate(input.as_bytes())
+            .unwrap()
+            .write_compact(&mut out)
+            .unwrap();
+        assert_eq!(out, expected.as_bytes());
+    }
+    for n in [0, 1, 6, 7, 8, 9, 31, 63, 64, 65, 127, 1024] {
+        for suffix in ["", r#"\""#, r#"\\"#, r#"\ud800\udc00"#, " 😀 "] {
+            let body = format!("{}{suffix}", "x".repeat(n));
+            let input = format!(" {{ \"v\" : \"{body}\", \"a\" : [ \"{body}\" ] }} ");
+            let expected = format!("{{\"v\":\"{body}\",\"a\":[\"{body}\"]}}");
+            let mut out = vec![];
+            jx::validate(input.as_bytes())
+                .unwrap()
+                .write_compact(&mut out)
+                .unwrap();
+            assert_eq!(out, expected.as_bytes());
+        }
+    }
+}
+
+struct FailAfter {
+    bytes: Vec<u8>,
+    remaining: usize,
+}
+impl Write for FailAfter {
+    fn write(&mut self, b: &[u8]) -> io::Result<usize> {
+        if self.remaining == 0 {
+            return Err(io::Error::other("stop"));
+        }
+        let n = b.len().min(self.remaining);
+        self.bytes.extend_from_slice(&b[..n]);
+        self.remaining -= n;
+        Ok(n)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+#[test]
+fn writer_errors_leave_only_the_correct_prefix() {
+    for (input, expected) in [
+        (
+            br#" { "a" : "a\"\\ long string with spaces", "b" : [ 1, 2 ] } "#.as_slice(),
+            br#"{"a":"a\"\\ long string with spaces","b":[1,2]}"#.as_slice(),
+        ),
+        (
+            br#" "a\"\\ scalar with spaces" "#,
+            br#""a\"\\ scalar with spaces""#,
+        ),
+        (b" -0.00e+02 ", b"-0.00e+02"),
+    ] {
+        for limit in 0..expected.len() {
+            let mut sink = FailAfter {
+                bytes: vec![],
+                remaining: limit,
+            };
+            assert!(
+                jx::validate(input)
+                    .unwrap()
+                    .write_compact(&mut sink)
+                    .is_err()
+            );
+            assert_eq!(sink.bytes, &expected[..limit]);
         }
     }
 }
