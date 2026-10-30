@@ -12,11 +12,7 @@ pub(crate) fn matches(body: &str, field: &str) -> bool {
 }
 
 pub(crate) fn equal(left: &str, right: &str) -> bool {
-    if !left.as_bytes().contains(&b'\\') && !right.as_bytes().contains(&b'\\') {
-        left == right
-    } else {
-        units(left).eq(units(right))
-    }
+    left == right || units(left).eq(units(right))
 }
 
 pub(crate) fn fingerprint(body: &str) -> u64 {

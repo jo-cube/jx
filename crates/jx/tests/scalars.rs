@@ -169,3 +169,30 @@ fn expression_whitespace_matches_the_language_tokenizer() {
     assert!(jx::compile("1\u{c} + 2").is_err());
     assert_eq!(rendered("1\u{b} + 2", b"null"), b"3");
 }
+
+#[test]
+fn encoded_string_equality_preserves_utf16_semantics() {
+    for (input, expected) in [
+        (r#"{"a":"same","b":"same"}"#, "true"),
+        (r#"{"a":"\n\ud800","b":"\n\ud800"}"#, "true"),
+        (r#"{"a":"é😀","b":"\u00e9\ud83d\ude00"}"#, "true"),
+        (r#"{"a":"\ud800","b":"\uD800"}"#, "true"),
+        (r#"{"a":"\ud800","b":"\udc00"}"#, "false"),
+        (r#"{"a":"é","b":"e\u0301"}"#, "false"),
+        (r#"{"a":"\n","b":"\\n"}"#, "false"),
+        (
+            r#"{"a":[{"é":1,"x":2,"x":3}],"b":[{"x":3,"\u00e9":1}]}"#,
+            "true",
+        ),
+        (r#"{"a":null,"b":null}"#, "true"),
+        (r#"{"a":"a","b":null}"#, "false"),
+        (r#"{"b":"a"}"#, "false"),
+        (r#"{"a":["a"],"b":"a"}"#, "false"),
+    ] {
+        assert_eq!(
+            rendered("a = b", input.as_bytes()),
+            expected.as_bytes(),
+            "{input}"
+        );
+    }
+}

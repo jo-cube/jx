@@ -80,7 +80,7 @@ pub(crate) fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
                 return objects(&left, &right);
             }
             match (left.string_body(), right.string_body()) {
-                (Some(left), Some(right)) => string::units(left).eq(string::units(right)),
+                (Some(left), Some(right)) => string::equal(left, right),
                 _ => false,
             }
         }
@@ -91,7 +91,7 @@ pub(crate) fn values(left: Value<'_, '_>, right: Value<'_, '_>) -> bool {
 pub(crate) struct Key<'a>(pub(crate) &'a str);
 impl PartialEq for Key<'_> {
     fn eq(&self, other: &Self) -> bool {
-        string::units(self.0).eq(string::units(other.0))
+        string::equal(self.0, other.0)
     }
 }
 impl Eq for Key<'_> {}
