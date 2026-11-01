@@ -211,19 +211,27 @@ fn transform_alias_boundaries_are_explicit() {
 
 #[test]
 fn resolved_parent_paths_count_toward_the_function_stack_budget() {
-    let path = std::iter::repeat_n("a", 24).collect::<Vec<_>>().join(".");
-    let source = format!("($f:=function($n){{$n=0?0:({path}).%.($f($n-1))}};$f(20))");
-    let mut input = serde_json::json!({});
-    for _ in 0..24 {
-        input = serde_json::json!({"a":input});
-    }
-    let expression = jx::compile(&source).unwrap();
-    assert_eq!(
-        expression
-            .evaluate(&serde_json::to_vec(&input).unwrap())
-            .and_then(|result| result.for_each(|_| {}))
-            .unwrap_err()
-            .kind,
-        jx::ErrorKind::DepthLimit
-    );
+    // Exercise the semantic depth limit independently of platform/debug stack usage.
+    std::thread::Builder::new()
+        .stack_size(8 * 1024 * 1024)
+        .spawn(|| {
+            let path = std::iter::repeat_n("a", 24).collect::<Vec<_>>().join(".");
+            let source = format!("($f:=function($n){{$n=0?0:({path}).%.($f($n-1))}};$f(20))");
+            let mut input = serde_json::json!({});
+            for _ in 0..24 {
+                input = serde_json::json!({"a":input});
+            }
+            let expression = jx::compile(&source).unwrap();
+            assert_eq!(
+                expression
+                    .evaluate(&serde_json::to_vec(&input).unwrap())
+                    .and_then(|result| result.for_each(|_| {}))
+                    .unwrap_err()
+                    .kind,
+                jx::ErrorKind::DepthLimit
+            );
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
