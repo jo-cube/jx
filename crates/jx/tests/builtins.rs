@@ -457,3 +457,89 @@ fn collection_indexes_do_not_escape_mixed_containers_or_workspace_reuse() {
     value.write_compact(&mut output).unwrap();
     assert_eq!(output, expected.replace("1.00e+0", "1").as_bytes());
 }
+
+#[test]
+fn distinct_compares_semantically_but_returns_original_values() {
+    for (source, input, expected) in [
+        ("$distinct($)", "[1.00e+0,1,-0,0]", "[1.00e+0,-0]"),
+        ("$distinct($)", "[1.00e+0]", "[1.00e+0]"),
+        ("$distinct($)", "-0", "-0"),
+        ("$distinct($)", "[]", "[]"),
+        (
+            "$distinct($)",
+            r#"["é","\u00e9","e\u0301","😀","\ud83d\ude00","\ud800","\uD800","\udc00"]"#,
+            r#"["é","e\u0301","😀","\ud800","\udc00"]"#,
+        ),
+        (
+            "$distinct($)",
+            r#"[{"b":2,"a":0,"\u0061":1},{"a":1,"b":2},[1.0],[1],null,null,true,true,1]"#,
+            r#"[{"b":2,"a":0,"\u0061":1},[1.0],null,true,1]"#,
+        ),
+        (
+            "{'v':$distinct(a.v)}",
+            r#"{"a":[{"v":1},{"v":1},{"v":2}]}"#,
+            r#"{"v":[1,2]}"#,
+        ),
+        (
+            "{'v':$distinct(a.v)}",
+            r#"{"a":[{"v":1},{"v":1}]}"#,
+            r#"{"v":1}"#,
+        ),
+        ("$distinct(missing)", "null", ""),
+        (
+            "($f:=function(){1};$g:=function(){1};$count($distinct([$f,$f,$g])))",
+            "null",
+            "2",
+        ),
+    ] {
+        let expression = jx::compile(source).unwrap();
+        let mut output = Vec::new();
+        expression
+            .evaluate(input.as_bytes())
+            .unwrap()
+            .for_each(|value| value.write_compact(&mut output).unwrap())
+            .unwrap();
+        assert_eq!(output, expected.as_bytes(), "{source}: {input}");
+    }
+}
+
+#[test]
+fn distinct_retains_borrowed_members_across_workspace_reuse() {
+    let expression = jx::compile("$distinct(a)").unwrap();
+    let input = br#"{"a":[1.00e+0,1,-0,0]}"#;
+    let mut workspace = jx::execution::Workspace::default();
+    let value = expression
+        .evaluate_with_workspace(Some(input), Default::default(), &mut workspace)
+        .unwrap()
+        .single()
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        value
+            .array_items()
+            .unwrap()
+            .next()
+            .unwrap()
+            .as_raw()
+            .unwrap()
+            .as_bytes()
+            .as_ptr(),
+        input[6..].as_ptr()
+    );
+    let owned = value.to_owned().unwrap();
+    expression
+        .evaluate_with_workspace(Some(br#"{"a":[2,2]}"#), Default::default(), &mut workspace)
+        .unwrap()
+        .for_each(|_| {})
+        .unwrap();
+    workspace.clear();
+    drop(workspace);
+    for (value, expected) in [
+        (value, b"[1.00e+0,-0]".as_slice()),
+        (owned.as_value(), b"[1,0]".as_slice()),
+    ] {
+        let mut output = Vec::new();
+        value.write_compact(&mut output).unwrap();
+        assert_eq!(output, expected);
+    }
+}

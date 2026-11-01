@@ -59,11 +59,14 @@ pub(super) fn call<'e, 'i>(
         Library::Distinct if !value.is_array() => Some(value.clone()),
         Library::Distinct if value.elements().nth(1).is_none() => Some(value.clone()),
         Library::Distinct => {
+            let mut elements = value.elements();
             let mut values = Vec::new();
-            for item in value.elements() {
+            values.extend(elements.next());
+            for item in elements {
+                let atom = item.atomic();
                 if !values
                     .iter()
-                    .any(|previous: &Value<'e, 'i>| compare::values(previous.clone(), item.clone()))
+                    .any(|previous: &Value<'e, 'i>| compare::values(previous.clone(), atom.clone()))
                 {
                     values.push(item);
                 }
