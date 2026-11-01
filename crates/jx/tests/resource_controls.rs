@@ -202,3 +202,68 @@ fn controls_and_external_bindings_compose() {
         vec![b"5".to_vec()]
     );
 }
+
+#[test]
+fn joins_preserve_output_byte_limits_and_rollback() {
+    let expression = jx::compile("$join(items,sep)").unwrap();
+    let program = expression.execution_program();
+    let mut acquisition = jx::execution::Acquisition::new([program]);
+    for input in [
+        br#"{"items":["a","b"]}"#.as_slice(),
+        br#"{"items":["\u0061","b"]}"#,
+    ] {
+        let prepared = acquisition.prepare(input).unwrap();
+        let mut output = b"prefix:".to_vec();
+        let error = program
+            .write_json_with(
+                &prepared,
+                EvaluationOptions {
+                    limits: Some(Limits {
+                        max_output_bytes: 3,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                &mut output,
+            )
+            .unwrap_err();
+        assert!(matches!(error, jx::ConsumeError::Evaluation(error)
+            if error.kind == ErrorKind::EvaluationLimit && error.phase == jx::Phase::Serialization));
+        assert_eq!(output, b"prefix:");
+        program
+            .write_json_with(
+                &prepared,
+                EvaluationOptions {
+                    limits: Some(Limits {
+                        max_output_bytes: 4,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                &mut output,
+            )
+            .unwrap();
+        assert_eq!(output, br#"prefix:"ab""#);
+    }
+    let cancellation = jx::Cancellation::default();
+    cancellation.cancel();
+    for (input, expected) in [
+        (br#"{"items":["a","b"]}"#.as_slice(), ErrorKind::Cancelled),
+        (b"[0,]", ErrorKind::InvalidJson),
+    ] {
+        assert_eq!(
+            expression
+                .evaluate_with(
+                    Some(input),
+                    EvaluationOptions {
+                        cancellation: Some(cancellation.clone()),
+                        ..Default::default()
+                    }
+                )
+                .and_then(|v| v.single())
+                .unwrap_err()
+                .kind,
+            expected
+        );
+    }
+}

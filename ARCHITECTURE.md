@@ -35,11 +35,13 @@ evaluation order and failures. Conservative live intervals assign reusable physi
 cells to logical values, including synchronous child captures and branch joins.
 
 General and scalar dispatch use those same instructions, identities and layouts.
-Compatible complete sequence consumers may use an IR-derived fused filter/map
-region, sharing row acquisition and scalar operations. Cardinality, effectful,
-controlled and cancellable boundaries retain the general semantic path. No guard
-replays previously executed language work. Physical strategy is chosen before
-execution, rather than by recognizing expression strings or aggregate names.
+Compatible complete sequence consumers share row acquisition through IR-derived
+regions. Pure unfiltered maps with a proven non-array result execute their existing
+mapper body while acquiring each row; eligible filtered regions compose scalar
+operations. Cardinality, effectful, controlled and cancellable boundaries retain
+the general semantic path. No guard replays previously executed language work.
+Physical strategy is chosen before execution, rather than by recognizing expression
+strings or aggregate names.
 
 ## Borrowing, contexts and calls
 

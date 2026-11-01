@@ -30,9 +30,9 @@ pub(super) fn evaluate<'e, 'i, B: Expression + 'e>(
         let first = first.unwrap();
         if first.object_context {
             let value = if rest.is_empty() {
-                first.object()
+                first.object()?
             } else {
-                append(std::iter::once(&first).chain(&rest).map(Row::object))
+                append(std::iter::once(&first).chain(&rest).map(Row::object))?
             };
             return materialize(
                 value_node,
@@ -47,7 +47,7 @@ pub(super) fn evaluate<'e, 'i, B: Expression + 'e>(
         let mut merged = first.clone();
         if !rest.is_empty() {
             let rows = || std::iter::once(&first).chain(&rest);
-            merged.value = append(rows().map(|r| r.value.clone()));
+            merged.value = append(rows().map(|r| Ok(r.value.clone())))?;
             let mut bindings = Vec::new();
             for row in rows() {
                 for (name, _) in row.bindings.iter() {
@@ -60,7 +60,7 @@ pub(super) fn evaluate<'e, 'i, B: Expression + 'e>(
                             .find(|(key, _)| key == name)
                             .map(|(_, value)| value.clone())
                     });
-                    bindings.push((*name, append(values)));
+                    bindings.push((*name, append(values.map(Ok))?));
                 }
             }
             merged.bindings = Rc::new(bindings);
@@ -68,9 +68,12 @@ pub(super) fn evaluate<'e, 'i, B: Expression + 'e>(
         merged.scoped(context, |local| materialize(value_node, local, evaluator))
     })
 }
-fn append<'e, 'i>(values: impl Iterator<Item = Value<'e, 'i>>) -> Value<'e, 'i> {
+fn append<'e, 'i>(
+    values: impl Iterator<Item = Result<Value<'e, 'i>, Error>>,
+) -> Result<Value<'e, 'i>, Error> {
     let mut output = Vec::new();
     for value in values {
+        let value = value?;
         if value.is_array() {
             output.extend(value.elements());
         } else if !matches!(value, Value::Undefined) {

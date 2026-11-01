@@ -33,8 +33,8 @@ pub(crate) fn call<'e, 'i>(
     if function != Library::Contains && (limit.is_nan() || limit <= 0.0) {
         return Ok(Some(match function {
             Library::Replace => value.clone(),
-            Library::Match => Value::sequence(Vec::new()),
-            Library::Split => Value::array(Vec::new(), false),
+            Library::Match => Value::sequence(Vec::new())?,
+            Library::Split => Value::array(Vec::new(), false)?,
             _ => unreachable!(),
         }));
     }
@@ -84,7 +84,7 @@ pub(crate) fn call<'e, 'i>(
                 (key("\"match\""), found.matched()),
                 (key("\"index\""), Value::Number(found.start() as f64)),
                 (key("\"groups\""), found.groups()),
-            ]));
+            ])?);
         } else {
             let start = found.start().min(input.len());
             items.push(input.slice(position.min(start)..start.max(position).min(input.len())));
@@ -98,8 +98,8 @@ pub(crate) fn call<'e, 'i>(
         items.push(input.slice(position..input.len()));
     }
     Ok(Some(if function == Library::Match {
-        Value::sequence(items)
+        Value::sequence(items)?
     } else {
-        Value::array(items, false)
+        Value::array(items, false)?
     }))
 }

@@ -1,6 +1,6 @@
-//! Complete pure iteration regions derived from navigation IR. Scalar execution
-//! and input acquisition remain the common kernels. Only the fused row program
-//! is retained; source/predicate/mapper bodies stay in their original IR owners.
+//! Complete pure iteration regions derived from navigation IR. Acquisition and
+//! execution use the common kernels; source and mapper bodies keep their IR owners.
+//! Only filtered regions retain a composed scalar row.
 use super::*;
 use crate::sequence::{Halt, Output, Walk};
 
@@ -8,7 +8,8 @@ use crate::sequence::{Halt, Output, Walk};
 pub(super) struct Region {
     source_depth: usize,
     eager: bool,
-    row: Program,
+    // Only filtered regions compose a row; plain maps use the navigation body.
+    pub(super) row: Option<Program>,
 }
 fn scalar(p: &Program) -> bool {
     scalar::supported(p)
@@ -61,12 +62,21 @@ pub(super) fn plan(n: &navigation::Navigation) -> Option<Box<Region>> {
     if mapper.effects
         || mapper.lookup
         || !mapper.predicates.is_empty()
-        || !scalar(&mapper.body)
         || !facts::non_array_result(&mapper.body)
     {
         return None;
     }
     let (source, source_depth, eager) = source(first)?;
+    if source.predicates.is_empty() && source_depth == 0 && !mapper.body.scoped {
+        return Some(Box::new(Region {
+            source_depth,
+            eager,
+            row: None,
+        }));
+    }
+    if !scalar(&mapper.body) {
+        return None;
+    }
     let [predicate] = source.predicates.as_ref() else {
         return None;
     };
@@ -84,7 +94,7 @@ pub(super) fn plan(n: &navigation::Navigation) -> Option<Box<Region>> {
     Some(Box::new(Region {
         source_depth,
         eager,
-        row,
+        row: Some(row),
     }))
 }
 impl Region {
@@ -103,10 +113,41 @@ impl Region {
         }
         let mut frame = frame::Frame::new();
         let value = source.body.run(a, &mut frame)?;
+        let Some(row) = &self.row else {
+            let mapper = &navigation.steps[1].body;
+            let mut child = frame::Frame::repeated();
+            // Finish upstream mapping before a downstream evaluation failure;
+            // consumer cancellation still stops immediately.
+            let mut downstream = None;
+            a.input
+                .each(&value, &mapper.row_schema, |input, focus, _| -> Walk {
+                    let result = mapper
+                        .run(
+                            run::Activation {
+                                input,
+                                focus: &focus,
+                                wrapped: false,
+                                ..a
+                            },
+                            &mut child,
+                        )?
+                        .into_value(input);
+                    if let Some(value) = result
+                        && downstream.is_none()
+                    {
+                        match out(value) {
+                            Err(Halt::Evaluation(error)) => downstream = Some(error),
+                            result => result?,
+                        }
+                    }
+                    Ok(())
+                })?;
+            return downstream.map_or(Ok(()), |error| Err(Halt::Evaluation(error)));
+        };
         self.rows(
             a,
             &value,
-            &self.row,
+            row,
             &source.predicates[0].body,
             &navigation.steps[1].body,
             out,
@@ -324,6 +365,196 @@ mod tests {
                     assert_eq!(actual, expected, "{source} {input}");
                 }
             }
+        }
+    }
+    #[test]
+    fn ordinary_maps_require_proven_non_array_results() {
+        fn has_region(p: &Program) -> bool {
+            p.code.iter().any(|i| {
+                let mut found =
+                    matches!(i.kind.producer(), Operation::Navigate(n) if n.region.is_some());
+                i.kind.children(&mut |p| found |= has_region(p));
+                found
+            })
+        }
+        for (source, eligible) in [
+            ("{'v':items.(n+1)}", true),
+            ("{'v':items.$lowercase(name)}", true),
+            ("{'v':items.{'v':n+1}}", true),
+            ("{'v':items.[n]}", false),
+            ("{'v':items.(flag ? n : name)}", false),
+            ("{'v':items.($x:=n;$x+1)}", false),
+            ("{'v':items.($error('stop');1)}", true),
+            ("{'v':items.($random();1)}", false),
+            ("{'v':items.{'f':$sum,'n':n+1}}", false),
+            ("{'v':items.(n+1)[true]}", false),
+        ] {
+            let p = crate::CompileOptions::default()
+                .compile_program(source)
+                .unwrap();
+            assert_eq!(has_region(&p), eligible, "{source}");
+        }
+    }
+    #[test]
+    fn unfiltered_regions_match_general_contracts() {
+        for source in [
+            "{'v':items.(nested.v+nested.v)}",
+            "items.(nested.v+nested.v)",
+            "items.{'f':$sum,'n':1/n}",
+            "{'v':items.{'f':$sum,'n':1/n}}",
+            "{'v':items.$lowercase(name)}",
+            "{'v':items.{'name':$lowercase(name),'v':nested.v+nested.v}}",
+            "{'v':items.(1/n)}",
+            "{'v':items.(n>1 ? $number(name) : 1)}",
+            "{'v':items.$substring(name,1,2)}",
+            "{'v':items.[nested.v]}",
+        ] {
+            let p = crate::CompileOptions::default()
+                .compile_program(source)
+                .unwrap();
+            let mut general = p.clone();
+            strip(&mut general);
+            for items in [
+                r#"[{"n":1},{"n":0}]"#,
+                "[]",
+                "[{}]",
+                "null",
+                "1",
+                "[null]",
+                "[[]]",
+                "[[{}]]",
+                "[[{\"name\":\"ΟΣ\",\"nested\":{\"v\":1}}]]",
+                "[{\"name\":\"Café\",\"nested\":{\"v\":2},\"n\":1}]",
+                "[{\"name\":\"A\",\"nested\":{\"v\":1},\"n\":0},{\"name\":null,\"nested\":{\"v\":2},\"n\":2}]",
+                "[{\"name\":\"A\",\"nested\":{\"v\":1},\"n\":1},{\"name\":null,\"nested\":{\"v\":false},\"n\":2}]",
+                "[{\"name\":\"\\ud800\\u039f\\u03a3\",\"nested\":{\"v\":1}}]",
+                "[{\"nested\":{\"v\":1},\"nested\":{}}]",
+                "[{\"nested\":{\"v\":1},\"nested\":{\"v\":3}}]",
+            ] {
+                for input in [
+                    format!("{{\"items\":{items}}}"),
+                    format!("[{{\"items\":{items}}}]"),
+                    "{}".to_owned(),
+                ] {
+                    let mut acquisition = Acquisition::new([&p]);
+                    let doc = acquisition.prepare(input.as_bytes()).unwrap();
+                    let mut actual = b"prefix".to_vec();
+                    let mut expected = actual.clone();
+                    assert_eq!(
+                        format!("{:?}", p.write_json(&doc, &mut actual)),
+                        format!("{:?}", general.write_json(&doc, &mut expected)),
+                        "{source} {input}"
+                    );
+                    assert_eq!(actual, expected, "{source} {input}");
+                    assert_eq!(
+                        format!(
+                            "{:?}",
+                            p.evaluate_bytes(input.as_bytes())
+                                .and_then(|e| e.collect_owned())
+                        ),
+                        format!(
+                            "{:?}",
+                            general
+                                .evaluate_bytes(input.as_bytes())
+                                .and_then(|e| e.collect_owned())
+                        ),
+                        "{source} {input}"
+                    );
+                    let cancel = |program: &Program| {
+                        let mut count = 0;
+                        let result = program.try_for_each(&doc, |_| {
+                            count += 1;
+                            Err("consumer")
+                        });
+                        (count, result)
+                    };
+                    assert_eq!(cancel(&p), cancel(&general), "{source} {input}");
+                }
+            }
+        }
+    }
+    #[test]
+    fn unfiltered_maps_preserve_cardinality_and_duplicate_fields() {
+        let p = crate::CompileOptions::default()
+            .compile_program("{'v':items.(nested.v+nested.v)}")
+            .unwrap();
+        let mut acquisition = Acquisition::new([&p]);
+        for (input, expected) in [
+            (r#"{}"#, r#"{}"#),
+            (r#"{"items":null}"#, r#"{}"#),
+            (r#"{"items":1}"#, r#"{}"#),
+            (r#"{"items":[]}"#, r#"{}"#),
+            (r#"{"items":[null,{}]}"#, r#"{}"#),
+            (r#"{"items":{"nested":{"v":2}}}"#, r#"{"v":4}"#),
+            (r#"{"items":[{"nested":{"v":2}}]}"#, r#"{"v":4}"#),
+            (r#"{"items":[[{"nested":{"v":2}}]]}"#, r#"{"v":4}"#),
+            (
+                r#"{"items":[{"nested":{"v":1}},{},{"nested":{"v":3}}]}"#,
+                r#"{"v":[2,6]}"#,
+            ),
+            (
+                r#"{"items":[{"nested":{"v":1},"nested":{}},{"nested":{"v":2},"nested":{"v":3}}]}"#,
+                r#"{"v":6}"#,
+            ),
+            (r#"[{"items":[{"nested":{"v":2}}]}]"#, r#"{"v":4}"#),
+        ] {
+            let doc = acquisition.prepare(input.as_bytes()).unwrap();
+            let mut output = b"prefix".to_vec();
+            assert!(p.write_json(&doc, &mut output).unwrap(), "{input}");
+            assert_eq!(&output[6..], expected.as_bytes(), "{input}");
+        }
+    }
+
+    #[test]
+    fn unfiltered_map_values_outlive_row_and_workspace_scratch() {
+        let p = crate::CompileOptions::default()
+            .compile_program("{'v':items.{'name':name,'nested':nested,'twice':nested.v+nested.v}}")
+            .unwrap();
+        let mut workspace = Workspace::default();
+        let first = p
+            .evaluate_with_workspace(
+                Some(br#"{"items":[{"name":"A","nested":{"v":1}},{"name":"B","nested":{"v":2}}]}"#),
+                Default::default(),
+                &mut workspace,
+            )
+            .unwrap()
+            .single()
+            .unwrap()
+            .unwrap();
+        for input in [br#"{"items":[{"name":"C"}]}"#.as_slice(), br#"{}"#] {
+            p.evaluate_with_workspace(Some(input), Default::default(), &mut workspace)
+                .unwrap()
+                .collect_owned()
+                .unwrap();
+        }
+        let mut output = Vec::new();
+        first.write_compact(&mut output).unwrap();
+        assert_eq!(output, br#"{"v":[{"name":"A","nested":{"v":1},"twice":2},{"name":"B","nested":{"v":2},"twice":4}]}"#);
+    }
+
+    #[test]
+    fn unfiltered_map_errors_preserve_precedence_and_output_prefix() {
+        for source in [
+            "{'v':items.(n+1)}",
+            // Upstream type failure wins over an earlier downstream range failure.
+            "(items.(n+1)).((1/($-2))+0)",
+            "items.{'f':$sum,'n':n+1}",
+            "{'v':items.{'f':$sum,'n':n+1}}",
+        ] {
+            let p = crate::CompileOptions::default()
+                .compile_program(source)
+                .unwrap();
+            let mut acquisition = Acquisition::new([&p]);
+            let doc = acquisition
+                .prepare(br#"{"items":[{"n":1},{"n":null}]}"#)
+                .unwrap();
+            let mut output = b"prefix".to_vec();
+            let error = p.write_json(&doc, &mut output).unwrap_err();
+            assert!(
+                matches!(error, crate::ConsumeError::Evaluation(e) if e.kind == crate::ErrorKind::TypeError),
+                "{source}"
+            );
+            assert_eq!(output, b"prefix", "{source}");
         }
     }
 }

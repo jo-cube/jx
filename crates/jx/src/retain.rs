@@ -19,7 +19,7 @@ pub(crate) fn collect<'e, 'i>(
         }
     })?;
     Ok(if !values.is_empty() {
-        Some(Value::sequence(values))
+        Some(Value::sequence(values)?)
     } else {
         first.filter(|value| !matches!(value, Value::Undefined))
     })

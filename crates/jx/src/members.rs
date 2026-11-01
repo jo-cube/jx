@@ -18,17 +18,37 @@ pub(crate) fn visit<'e, 'i>(value: &Value<'e, 'i>, output: &mut Output<'_, 'e, '
 pub(crate) fn entries<'a, 'e: 'a, 'i: 'a>(
     value: &'a Value<'e, 'i>,
 ) -> Vec<(&'a str, Value<'e, 'i>)> {
-    let mut positions = HashMap::new();
-    let mut entries = Vec::new();
+    let mut positions: Option<HashMap<Key<'a>, usize>> = None;
+    let mut entries: Vec<(&'a str, Value<'e, 'i>)> = Vec::new();
     for (key, value) in value.members() {
-        match positions.entry(Key(key)) {
-            std::collections::hash_map::Entry::Occupied(entry) => {
-                entries[*entry.get()] = (key, value)
+        if entries.len() == 4 && positions.is_none() {
+            positions = Some(
+                entries
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (key, _))| (Key(key), i))
+                    .collect(),
+            );
+        }
+        if let Some(index) = &mut positions {
+            match index.entry(Key(key)) {
+                std::collections::hash_map::Entry::Occupied(entry) => {
+                    entries[*entry.get()] = (key, value)
+                }
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert(entries.len());
+                    entries.push((key, value));
+                }
             }
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(entries.len());
-                entries.push((key, value));
-            }
+            continue;
+        }
+        if let Some(i) = entries
+            .iter()
+            .position(|(previous, _)| Key(previous) == Key(key))
+        {
+            entries[i] = (key, value);
+        } else {
+            entries.push((key, value));
         }
     }
     entries.sort_by_key(|(key, _)| index(key).unwrap_or(u32::MAX));

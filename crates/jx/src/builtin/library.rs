@@ -260,9 +260,9 @@ impl Library {
                     .iter()
                     .any(|v| v.as_ref().is_none_or(|v| !v.is_array()))
                 {
-                    Value::array(Vec::new(), false)
+                    Value::array(Vec::new(), false)?
                 } else {
-                    super::arrays::zip(args)
+                    super::arrays::zip(args)?
                 },
             ));
         }
@@ -385,7 +385,7 @@ impl Library {
             if let Some(scope) = &context.scope {
                 scope.arguments(args, offset)?;
             }
-            return Ok(Operand::One(super::arrays::zip(args)));
+            return Ok(Operand::One(super::arrays::zip(args)?));
         }
         if self == Self::Replace {
             self.validated::<4>(args, context, offset)

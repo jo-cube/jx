@@ -115,6 +115,6 @@ impl<'e, 'i, T: Clone> Groups<'e, 'i, T> {
                 members.push((group.key, value));
             }
         }
-        Ok(Value::object(members))
+        Value::object(members)
     }
 }

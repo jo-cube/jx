@@ -61,7 +61,7 @@ pub(super) fn execute<'e, 'i>(
             Ok(Cell::Value(groups.finish_with(|values, pair| {
                 run(
                     &pairs[pair].1,
-                    crate::construct::group_value(values),
+                    crate::construct::group_value(values)?,
                     &mut frame,
                 )
             })?))
@@ -101,7 +101,7 @@ pub(super) fn execute<'e, 'i>(
             Ok(Cell::Value(Value::array(
                 indices.into_iter().map(|i| items[i].clone()).collect(),
                 false,
-            )))
+            )?))
         }
         _ => unreachable!("retained candidate boundary"),
     }

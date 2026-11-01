@@ -112,7 +112,7 @@ mod tests {
     use super::*;
     #[test]
     fn repeated_region_workspace_releases_values_between_iterations() {
-        let value = crate::Value::array(vec![crate::Value::Number(1.0)], false);
+        let value = crate::Value::array(vec![crate::Value::Number(1.0)], false).unwrap();
         let crate::Value::Array(array) = &value else {
             unreachable!()
         };

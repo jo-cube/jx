@@ -46,7 +46,7 @@ impl<'e, 'i> Row<'e, 'i> {
             bindings.push((name, value));
         }
     }
-    fn object(&self) -> Value<'e, 'i> {
+    fn object(&self) -> Result<Value<'e, 'i>, Error> {
         let mut members = Vec::with_capacity(self.bindings.len() + 1);
         members.push((
             Value::StringLiteral(crate::RawJson("\"@\"")),
@@ -59,10 +59,14 @@ impl<'e, 'i> Row<'e, 'i> {
         );
         Value::object(members)
     }
-    fn stage<T>(&self, outer: &Context<'e, 'i>, run: impl FnOnce(&Context<'e, 'i>) -> T) -> T {
+    fn stage<T, E: From<Error>>(
+        &self,
+        outer: &Context<'e, 'i>,
+        run: impl FnOnce(&Context<'e, 'i>) -> Result<T, E>,
+    ) -> Result<T, E> {
         if self.object_context {
             run(&Context {
-                value: self.object(),
+                value: self.object()?,
                 wrapped: false,
                 scope: outer.scope.clone(),
             })

@@ -183,6 +183,13 @@ fn main() -> Result<(), jx::Error> {
 }
 ```
 
+Generated intermediate/results have an always-on container depth ceiling of 256;
+see the [resource policy](compatibility.md#resource-policy). Host container builders
+keep their infallible signatures, but oversized values cannot enter evaluation,
+serialize or become detached snapshots. Keep input/expression owners alive until
+all borrowed `Value` containers have been dropped; declare retained-value collections
+after their owners or drop the collections explicitly before the owners.
+
 Controls are optional; no control state allocates unless requested. Work units count
 engine checkpoints, with granularity dependent on lowering rather than stable
 CPU-instruction counts. Result counts and compact byte totals are checked

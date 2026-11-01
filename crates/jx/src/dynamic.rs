@@ -90,7 +90,7 @@ fn shuffle<'e, 'i>(
         return Ok(Operand::Missing);
     };
     if !value.is_array() {
-        return Ok(Operand::One(Value::array(vec![value], false)));
+        return Ok(Operand::One(Value::array(vec![value], false)?));
     }
     let mut items = value.elements();
     let Some(first) = items.next() else {
@@ -107,7 +107,7 @@ fn shuffle<'e, 'i>(
         result.push(item);
         result.swap(index, at);
     }
-    Ok(Operand::One(Value::array(result, false)))
+    Ok(Operand::One(Value::array(result, false)?))
 }
 
 #[derive(Clone, Debug)]

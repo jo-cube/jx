@@ -1,14 +1,18 @@
 use crate::{Value, json};
+
+mod depth;
+pub(crate) use depth::MAX_NESTING;
+use depth::nesting;
 use std::{
     io::{self, Write},
     rc::Rc,
 };
 
 /// Constructed array storage. Members may still borrow input or expression bytes.
-#[derive(Debug)]
 pub struct Array<'e, 'i> {
     pub(crate) items: Vec<Value<'e, 'i>>,
     pub(crate) shape: Shape,
+    pub(crate) nesting: u16,
 }
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum Shape {
@@ -28,16 +32,16 @@ impl<'e, 'i> Array<'e, 'i> {
             if index != 0 {
                 output.write_all(b",")?;
             }
-            value.write_compact(&mut *output)?;
+            value.write_compact_inner(&mut *output)?;
         }
         output.write_all(b"]")
     }
 }
 
 /// Constructed object storage. Keys retain their validated JSON string encoding.
-#[derive(Debug)]
 pub struct Object<'e, 'i> {
     pub(crate) members: Vec<(Value<'e, 'i>, Value<'e, 'i>)>,
+    pub(crate) nesting: u16,
 }
 impl<'e, 'i> Object<'e, 'i> {
     pub fn as_slice(&self) -> &[(Value<'e, 'i>, Value<'e, 'i>)] {
@@ -49,9 +53,9 @@ impl<'e, 'i> Object<'e, 'i> {
             if index != 0 {
                 output.write_all(b",")?;
             }
-            key.write_compact(&mut *output)?;
+            key.write_compact_inner(&mut *output)?;
             output.write_all(b":")?;
-            value.write_compact(&mut *output)?;
+            value.write_compact_inner(&mut *output)?;
         }
         output.write_all(b"}")
     }
@@ -96,27 +100,29 @@ impl<'e, 'i> Iterator for Elements<'_, 'e, 'i> {
     }
 }
 impl<'e, 'i> Value<'e, 'i> {
-    pub(crate) fn array(items: Vec<Self>, preserve: bool) -> Self {
-        Self::Array(Rc::new(Array {
+    pub(crate) fn array(items: Vec<Self>, preserve: bool) -> Result<Self, crate::Error> {
+        Self::array_storage(
             items,
-            shape: if preserve {
+            if preserve {
                 Shape::Preserved
             } else {
                 Shape::Array
             },
+        )
+        .checked_nesting()
+    }
+    pub(crate) fn array_storage(items: Vec<Self>, shape: Shape) -> Self {
+        Self::Array(Rc::new(Array {
+            nesting: nesting(items.iter()),
+            items,
+            shape,
         }))
     }
-    pub(crate) fn sequence(items: Vec<Self>) -> Self {
-        Self::Array(Rc::new(Array {
-            items,
-            shape: Shape::Sequence,
-        }))
+    pub(crate) fn sequence(items: Vec<Self>) -> Result<Self, crate::Error> {
+        Self::array_storage(items, Shape::Sequence).checked_nesting()
     }
-    pub(crate) fn kept(items: Vec<Self>) -> Self {
-        Self::Array(Rc::new(Array {
-            items,
-            shape: Shape::Kept,
-        }))
+    pub(crate) fn kept(items: Vec<Self>) -> Result<Self, crate::Error> {
+        Self::array_storage(items, Shape::Kept).checked_nesting()
     }
     pub(crate) fn unpacks_sequence(&self) -> bool {
         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence))
@@ -126,8 +132,14 @@ impl<'e, 'i> Value<'e, 'i> {
         matches!(self, Self::Array(array) if matches!(array.shape, Shape::Sequence | Shape::Kept))
             || matches!(self, Self::Constant(c) if matches!(c.shape(),Some(Shape::Sequence | Shape::Kept)))
     }
-    pub(crate) fn object(members: Vec<(Self, Self)>) -> Self {
-        Self::Object(Rc::new(Object { members }))
+    pub(crate) fn object(members: Vec<(Self, Self)>) -> Result<Self, crate::Error> {
+        Self::object_storage(members).checked_nesting()
+    }
+    pub(crate) fn object_storage(members: Vec<(Self, Self)>) -> Self {
+        Self::Object(Rc::new(Object {
+            nesting: nesting(members.iter().map(|(_, value)| value)),
+            members,
+        }))
     }
     pub(crate) fn is_array(&self) -> bool {
         let storage = match self {

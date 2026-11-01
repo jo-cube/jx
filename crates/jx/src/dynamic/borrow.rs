@@ -136,8 +136,10 @@ pub(crate) fn value<'d, 'e: 'd, 'i>(
         Value::Array(a) => Value::Array(Rc::new(Array {
             items: a.items.iter().map(|v| value(v, definitions)).collect(),
             shape: a.shape,
+            nesting: a.nesting,
         })),
         Value::Object(o) => Value::Object(Rc::new(Object {
+            nesting: o.nesting,
             members: o
                 .members
                 .iter()

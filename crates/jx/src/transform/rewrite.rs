@@ -59,46 +59,56 @@ impl<'e, 'i> Changes<'e, 'i> {
         }
         self.values.insert(identity, value);
     }
-    fn rewrite(&self, value: &Value<'e, 'i>) -> Option<Value<'e, 'i>> {
+    fn rewrite(&self, value: &Value<'e, 'i>) -> Result<Option<Value<'e, 'i>>, Error> {
         if self.values.is_empty() {
-            return None;
+            return Ok(None);
         }
-        let identity = id(value)?;
+        let Some(identity) = id(value) else {
+            return Ok(None);
+        };
         if let Some(replaced) = self.values.get(&identity) {
-            return Some(self.rewrite(replaced).unwrap_or_else(|| replaced.clone()));
+            return Ok(Some(
+                self.rewrite(replaced)?.unwrap_or_else(|| replaced.clone()),
+            ));
         }
         if let Value::Copied(c) = value
             && let Some(raw) = c.source.as_raw()
         {
             let end = identity.storage + raw.as_bytes().len();
-            self.raw
+            if self
+                .raw
                 .range((identity.owner, identity.storage)..(identity.owner, end))
-                .next()?;
+                .next()
+                .is_none()
+            {
+                return Ok(None);
+            }
         }
         if value.is_array() {
             let mut items = Vec::new();
             let mut changed = false;
             for item in value.elements() {
-                if let Some(updated) = self.rewrite(&item) {
+                if let Some(updated) = self.rewrite(&item)? {
                     changed = true;
                     items.push(updated);
                 } else {
                     items.push(item);
                 }
             }
-            changed.then(|| Value::array(items, false))
+            changed.then(|| Value::array(items, false)).transpose()
         } else {
             let mut members = Vec::new();
             let mut changed = false;
             for (key, item) in crate::members::entries(value) {
-                let updated = self.rewrite(&item);
+                let updated = self.rewrite(&item)?;
                 changed |= updated.is_some();
                 members.push((key_value(value, key), updated.unwrap_or(item)));
             }
-            changed.then(|| Value::object(members))
+            changed.then(|| Value::object(members)).transpose()
         }
     }
 }
+
 pub(super) fn apply<'e, 'i, B: Body>(
     definition: &'e Definition<B>,
     value: Value<'e, 'i>,
@@ -125,7 +135,7 @@ pub(super) fn apply<'e, 'i, B: Body>(
                 "transform locations outside the cloned argument are deferred",
             ));
         }
-        let mut current = changes.rewrite(&target).unwrap_or_else(|| target.clone());
+        let mut current = changes.rewrite(&target)?.unwrap_or_else(|| target.clone());
         let local = Context {
             value: current.clone(),
             wrapped: false,
@@ -177,7 +187,7 @@ pub(super) fn apply<'e, 'i, B: Body>(
             changes.insert(&target, current);
         }
     }
-    Ok(changes.rewrite(&value).unwrap_or(value))
+    Ok(changes.rewrite(&value)?.unwrap_or(value))
 }
 fn belongs(value: &Value<'_, '_>, target: &Value<'_, '_>) -> bool {
     if let (Value::Copied(root), Value::Copied(target)) = (value, target) {

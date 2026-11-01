@@ -28,13 +28,15 @@ pub(super) fn call<'e, 'i>(
     };
     if kind == Library::Single {
         let arity = callback.map_or(0, |f| function::arity(f));
-        let whole = (arity >= 3).then(|| {
-            if input.is_array() {
-                input.clone()
-            } else {
-                Value::array(vec![input.clone()], false)
-            }
-        });
+        let whole = (arity >= 3)
+            .then(|| {
+                if input.is_array() {
+                    Ok(input.clone())
+                } else {
+                    Value::array(vec![input.clone()], false)
+                }
+            })
+            .transpose()?;
         let mut found = None;
         for (index, value) in items(input).enumerate() {
             let arguments = [
@@ -69,7 +71,7 @@ pub(super) fn call<'e, 'i>(
         return Ok(Some(if input.is_array() {
             input.clone()
         } else {
-            Value::array(values, false)
+            Value::array(values, false)?
         }));
     }
     if callback.is_none() {
@@ -123,7 +125,7 @@ pub(super) fn call<'e, 'i>(
     Ok(Some(Value::array(
         indices.into_iter().map(|i| values[i].clone()).collect(),
         false,
-    )))
+    )?))
 }
 fn native_truth(value: &Value<'_, '_>) -> bool {
     match value.atomic() {
@@ -135,7 +137,7 @@ fn native_truth(value: &Value<'_, '_>) -> bool {
             .is_none_or(|s| string::units(s).next().is_some()),
     }
 }
-pub(super) fn zip<'e, 'i>(args: &[Option<Value<'e, 'i>>]) -> Value<'e, 'i> {
+pub(super) fn zip<'e, 'i>(args: &[Option<Value<'e, 'i>>]) -> Result<Value<'e, 'i>, Error> {
     let mut cursors: Vec<_> = args.iter().map(|v| v.as_ref().map(items)).collect();
     let mut rows = Vec::new();
     loop {
@@ -146,6 +148,6 @@ pub(super) fn zip<'e, 'i>(args: &[Option<Value<'e, 'i>>]) -> Value<'e, 'i> {
             };
             row.push(value);
         }
-        rows.push(Value::array(row, false));
+        rows.push(Value::array(row, false)?);
     }
 }

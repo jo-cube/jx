@@ -4,11 +4,11 @@ pub(crate) use groups::Groups;
 
 pub(crate) fn group_value<'e, 'i>(
     values: (Option<Value<'e, 'i>>, Vec<Value<'e, 'i>>),
-) -> Value<'e, 'i> {
+) -> Result<Value<'e, 'i>, crate::Error> {
     let (first, rest) = values;
     let first = first.unwrap_or(Value::Undefined);
     if rest.is_empty() {
-        first
+        Ok(first)
     } else {
         let mut items = Vec::with_capacity(1 + rest.len());
         for value in std::iter::once(first).chain(rest) {

@@ -1,4 +1,4 @@
-//! Schema-directed borrowed captures. Storage is proportional to compiled static
+//! Schema-directed borrowed captures. Captured spans are proportional to compiled static
 //! paths, never to input rows or unused object names. A schema is a hint: reads
 //! outside it navigate validated bytes rather than claiming a missing value.
 use super::{Arc, Operation, Program};
@@ -63,16 +63,19 @@ impl Schema {
             .ok()
             .map(|i| children[i].1)
     }
-    pub fn encoded_child(&self, id: usize, name: &str) -> Option<usize> {
-        if name.as_bytes().contains(&b'\\') {
-            self.nodes[id]
-                .children
-                .iter()
-                .find(|(key, _)| crate::json::string::matches(name, key))
-                .map(|(_, i)| *i)
-        } else {
-            self.child(id, name)
+    pub fn encoded_child(&self, id: usize, name: &str, decoded: &mut String) -> Option<usize> {
+        if !name.as_bytes().contains(&b'\\') {
+            return self.child(id, name);
         }
+        if let [(key, child)] = self.nodes[id].children.as_ref() {
+            return crate::json::string::matches(name, key).then_some(*child);
+        }
+        decoded.clear();
+        for ch in char::decode_utf16(crate::json::string::units(name)) {
+            // A lone surrogate cannot match a compiled UTF-8 field name.
+            decoded.push(ch.ok()?);
+        }
+        self.child(id, decoded)
     }
     pub(super) fn covers(&self, base: usize, wanted: &Schema) -> bool {
         fn visit(have: &Schema, at: usize, wanted: &Schema, node: usize) -> bool {

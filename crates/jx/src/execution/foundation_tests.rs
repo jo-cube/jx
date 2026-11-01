@@ -610,7 +610,7 @@ fn borrowed_navigation_metadata_survives_value_boundaries() {
     assert!(
         crate::compare::includes(
             crate::evaluate::Operand::One(x.clone()),
-            crate::evaluate::Operand::One(Value::kept(vec![x_raw]))
+            crate::evaluate::Operand::One(Value::kept(vec![x_raw]).unwrap())
         )
         .unwrap()
     );

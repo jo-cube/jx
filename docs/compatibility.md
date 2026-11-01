@@ -114,15 +114,33 @@ Always-on ceilings:
 | Resource | Ceiling |
 | --- | ---: |
 | JSON/expression nesting | 128 |
+| Constructed intermediate/result container nesting | 256 |
 | Active non-tail calls | 64 |
 | Accumulated function expression levels | 512 |
 | Iterations per tail chain | 1,000,000 |
 | Range width | 10,000,000, with finite safe-integer endpoints |
 | Transform array growth / added padding codepoints | 1,000,000 |
 
-Individual regex/picture/string helpers have additional local growth guards. Non-tail
-recursion is bounded rather than risking Rust stack overflow. The library has no input
-byte quota; callers must bound input/source sizes.
+Container nesting counts arrays (including retained sequences) and objects, with
+scalars at depth zero. Constructors reject depth 257 with `EvaluationLimit`, even
+without optional controls. Deferred evaluation reports this failure during
+consumption; consumer cancellation can stop before later constructors run.
+Borrowed input and immutable snapshots contribute their
+descendant depth. This also bounds recursive comparison, conversion and snapshot
+capture of values produced by evaluation.
+
+Host `Value::from_array` / `from_object` remain infallible. Oversized host values
+are rejected by evaluation ingress and `to_owned()`; `write_compact` returns
+`io::ErrorKind::InvalidInput` before writing them. Their constructed containers
+are released iteratively on drop; `Debug` omits oversized container contents.
+This ceiling bounds JSON container nesting,
+not arbitrary host code or function-capture graphs.
+
+Individual regex/picture/string helpers have additional local growth guards.
+These independent ceilings are not a total Rust stack budget. Embedders must allow
+stack space for active JSONata calls and recursive value traversal together;
+debug builds or small stacks can still exhaust it within these limits.
+The library has no input byte quota; callers must bound input/source sizes.
 
 Optional `EvaluationOptions` accepts `Limits`, `Cancellation` and a monotonic deadline.
 Default `Limits` permit one million work checkpoints, intermediate inspected/emitted
