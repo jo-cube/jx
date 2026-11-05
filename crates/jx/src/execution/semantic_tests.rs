@@ -1,5 +1,7 @@
+use super::tests::assert_semantics;
 use super::*;
 
+// API consistency only: Expression and Program execute the same compiled IR.
 fn compare(source: &str, input: &[u8]) {
     let old = crate::compile(source).unwrap_or_else(|e| panic!("{source}: {e}"));
     let p = Program::compile(&old).unwrap_or_else(|e| panic!("{source}: {e}"));
@@ -18,29 +20,57 @@ fn compare(source: &str, input: &[u8]) {
 
 #[test]
 fn functions_capture_live_lexical_frames_and_definition_focus() {
-    for source in [
-        "($f:=function($x){$x+n};$f(3))",
-        "($f:=function($x){$x+$v};$v:=n;$f(3))",
-        "($v:=n;$f:=function(){ $v };$v:=n+1;$f())",
-        "($make:=function($v){function($x){$v+$x}};$f:=$make(n);$f(3))",
-        "($twice:=function($f){function($x){$f($f($x))}};$f:=$twice(function($x){$x+n});$f(3))",
-        "($f:=function(){n};items.($f()))",
-        "($f:=function($a,$b,$c,$d,$e){[$a,$b,$c,$d,$e]};$f(n,2,3,4,5))",
-        "($f:=function($x)<n:n>{$x+1};$f(n))",
-        "($f:=function($x)<n:n>{$x+1};$f(s))",
-        "($f:=function($x)<n-:n>{$x+1};n.$f())",
-        "($f:=function($x){$x};[$f(),$f(n,3)])",
-        "($f:=function($x){$x};($x:=1);$x)",
-        "($f:=function($x){$x};($f:=2);$f(n))",
-        "($f:=function($x){$x};[missing,$f(n),null])",
-        "($f:=function($x){$x};$f(a) in [a])",
-        "($f:=function($x){$x};$f({'x':n}) in [{'x':n}])",
-        "($f:=flag?function($x){$x+n}:function($x){$x-n};$f(3))",
-        "($f:=function($x){$x+1};flag?($g:=$f;$g(n)):$f(n))",
+    use crate::ErrorKind::TypeError;
+    for (source, expected) in [
+        ("($f:=function($x){$x+n};$f(3))", Ok("[7]")),
+        ("($f:=function($x){$x+$v};$v:=n;$f(3))", Ok("[7]")),
+        ("($v:=n;$f:=function(){ $v };$v:=n+1;$f())", Ok("[5]")),
+        (
+            "($make:=function($v){function($x){$v+$x}};$f:=$make(n);$f(3))",
+            Ok("[7]"),
+        ),
+        (
+            "($twice:=function($f){function($x){$f($f($x))}};$f:=$twice(function($x){$x+n});$f(3))",
+            Ok("[11]"),
+        ),
+        ("($f:=function(){n};items.($f()))", Ok("[4,4]")),
+        (
+            "($f:=function($a,$b,$c,$d,$e){[$a,$b,$c,$d,$e]};$f(n,2,3,4,5))",
+            Ok("[[4,2,3,4,5]]"),
+        ),
+        ("($f:=function($x)<n:n>{$x+1};$f(n))", Ok("[5]")),
+        ("($f:=function($x)<n:n>{$x+1};$f(s))", Err(TypeError)),
+        ("($f:=function($x)<n-:n>{$x+1};n.$f())", Ok("[5]")),
+        ("($f:=function($x){$x};[$f(),$f(n,3)])", Ok("[[4]]")),
+        ("($f:=function($x){$x};($x:=1);$x)", Ok("[]")),
+        ("($f:=function($x){$x};($f:=2);$f(n))", Ok("[4]")),
+        (
+            "($f:=function($x){$x};[missing,$f(n),null])",
+            Ok("[[4,null]]"),
+        ),
+        ("($f:=function($x){$x};$f(a) in [a])", Ok("[true]")),
+        (
+            "($f:=function($x){$x};$f({'x':n}) in [{'x':n}])",
+            Ok("[false]"),
+        ),
+        (
+            "($f:=flag?function($x){$x+n}:function($x){$x-n};$f(3))",
+            Ok("[7]"),
+        ),
+        (
+            "($f:=function($x){$x+1};flag?($g:=$f;$g(n)):$f(n))",
+            Ok("[5]"),
+        ),
     ] {
-        compare(
+        let program = crate::CompileOptions::default()
+            .compile_program(source)
+            .unwrap();
+        assert_semantics(
             source,
-            br#"{"n":4,"s":"x","flag":true,"items":[{"n":8},{"n":9}],"a":{"x":1}}"#,
+            program.evaluate_bytes(
+                br#"{"n":4,"s":"x","flag":true,"items":[{"n":8},{"n":9}],"a":{"x":1}}"#,
+            ),
+            expected,
         );
     }
 }
@@ -70,18 +100,28 @@ fn general_callbacks_and_partial_calls_share_function_values() {
 
 #[test]
 fn recursive_functions_use_bounded_tail_execution() {
-    compare(
-        "($f:=function($x){$x<=1?1:$x*$f($x-1)};$f(n))",
-        br#"{"n":6}"#,
-    );
-    compare(
-        "($even:=function($x){$x=0?true:$odd($x-1)};$odd:=function($x){$x=0?false:$even($x-1)};$odd(n))",
-        br#"{"n":6555}"#,
-    );
-    compare(
-        "($make:=function($base){($f:=function($x){$x=0?$base:$f($x-1)};$f)};$make(n)(5000))",
-        br#"{"n":6}"#,
-    );
+    for (source, input, expected) in [
+        (
+            "($f:=function($x){$x<=1?1:$x*$f($x-1)};$f(n))",
+            br#"{"n":6}"#.as_slice(),
+            "[720]",
+        ),
+        (
+            "($even:=function($x){$x=0?true:$odd($x-1)};$odd:=function($x){$x=0?false:$even($x-1)};$odd(n))",
+            br#"{"n":6555}"#,
+            "[true]",
+        ),
+        (
+            "($make:=function($base){($f:=function($x){$x=0?$base:$f($x-1)};$f)};$make(n)(5000))",
+            br#"{"n":6}"#,
+            "[6]",
+        ),
+    ] {
+        let program = crate::CompileOptions::default()
+            .compile_program(source)
+            .unwrap();
+        assert_semantics(source, program.evaluate_bytes(input), Ok(expected));
+    }
 }
 
 #[test]
@@ -239,21 +279,22 @@ fn controlled_calls_and_deferred_results_stop_and_release() {
 
 #[test]
 fn closures_keep_missing_focus_and_lexical_root_rebinding() {
-    for source in [
-        "(function(){$})()",
-        "(function(){$$})()",
-        "($f:=function(){$};[$f(),1])",
-        "($$:=missing;$f:=function(){$$};[$f(),1])",
-        "($$:={'n':n+1};$f:=function(){$$.n};$f())",
+    for (source, absent, present) in [
+        ("(function(){$})()", "[]", r#"[{"n":4}]"#),
+        ("(function(){$$})()", "[]", r#"[{"n":4}]"#),
+        ("($f:=function(){$};[$f(),1])", "[[1]]", r#"[[{"n":4},1]]"#),
+        (
+            "($$:=missing;$f:=function(){$$};[$f(),1])",
+            "[[1]]",
+            "[[1]]",
+        ),
+        ("($$:={'n':n+1};$f:=function(){$$.n};$f())", "[]", "[5]"),
     ] {
-        let e = crate::compile(source).unwrap();
-        let p = Program::compile(&e).unwrap();
-        let expected = e
-            .evaluate_with(None, Default::default())
-            .and_then(|v| v.collect_owned());
-        let actual = p.evaluate_without_input().and_then(|v| v.collect_owned());
-        assert_eq!(format!("{actual:?}"), format!("{expected:?}"), "{source}");
-        compare(source, br#"{"n":4}"#);
+        let program = crate::CompileOptions::default()
+            .compile_program(source)
+            .unwrap();
+        assert_semantics(source, program.evaluate_without_input(), Ok(absent));
+        assert_semantics(source, program.evaluate_bytes(br#"{"n":4}"#), Ok(present));
     }
 }
 

@@ -1,9 +1,20 @@
 use super::*;
-fn compare(source: &str, input: &[u8]) {
+// Strategy equivalence is not an independent semantic oracle.
+fn compare_strategies(source: &str, input: &[u8]) {
+    fn disable_scalar(program: &mut Program) {
+        program.scalar = None;
+        for instruction in &mut program.code {
+            instruction.kind.children_mut(&mut disable_scalar);
+        }
+    }
     let expression = crate::compile(source).unwrap();
     let program =
         Program::compile(&expression).unwrap_or_else(|e| panic!("{source}: {e}: {:?}", expression));
-    let original = expression.evaluate(input).and_then(|v| v.collect_owned());
+    let mut general = program.clone();
+    disable_scalar(&mut general);
+    let original = general
+        .evaluate_bytes(input)
+        .and_then(|v| v.collect_owned());
     let raw = program
         .evaluate_bytes(input)
         .and_then(|v| v.collect_owned());
@@ -30,6 +41,30 @@ fn compare(source: &str, input: &[u8]) {
         "acquired {source}"
     );
 }
+// The expected JSON array lists result items: [] is missing; [[]] is one empty array.
+pub(super) fn assert_semantics(
+    source: &str,
+    evaluation: Result<crate::Evaluation<'_, '_>, crate::Error>,
+    expected: Result<&str, crate::ErrorKind>,
+) {
+    let actual = evaluation
+        .and_then(|values| values.collect_owned())
+        .map(|values| {
+            values
+                .iter()
+                .map(|value| {
+                    let mut bytes = Vec::new();
+                    value.as_value().write_compact(&mut bytes).unwrap();
+                    serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()
+                })
+                .collect::<Vec<_>>()
+        })
+        .map_err(|error| error.kind);
+    let expected =
+        expected.map(|json| serde_json::from_str::<Vec<serde_json::Value>>(json).unwrap());
+    assert_eq!(actual, expected, "{source}");
+}
+
 #[test]
 fn projections_bindings_strings_and_errors() {
     let sources = [
@@ -47,7 +82,7 @@ fn projections_bindings_strings_and_errors() {
             r#"{"a":{"x":2},"b":"3","s":"ada"}"#,
             r#"{"a":{"x":null},"b":false,"s":"é😀\ud800"}"#,
         ] {
-            compare(source, input.as_bytes());
+            compare_strategies(source, input.as_bytes());
         }
     }
 }
@@ -68,16 +103,23 @@ fn callbacks_lexical_focus_folds_and_duplicates() {
             r#"{"items":[{"a":{"x":2},"s":"abc"},{"a":{"x":3},"s":"def"}]}"#,
             r#"{"items":[{"a":{"x":2}},{"a":{"x":null}}]}"#,
         ] {
-            compare(source, input.as_bytes());
+            compare_strategies(source, input.as_bytes());
         }
     }
-    compare(
+    compare_strategies(
         "{'x':a.x,'s':s}",
         br#"{"a":{"x":1},"a":{},"s":"a","\u0073":"b"}"#,
     );
 }
 #[test]
 fn scalar_distribution_and_fusion_error_order() {
+    assert!(
+        crate::CompileOptions::default()
+            .compile_program("a*a+b*b+a*b")
+            .unwrap()
+            .scalar
+            .is_some()
+    );
     let values = [
         "null", "false", "0", "2", "-3.5", "1e308", "\"3\"", "\"x\"", "{}",
     ];
@@ -92,7 +134,7 @@ fn scalar_distribution_and_fusion_error_order() {
                 "a>0 and b>0",
                 "{'a':$string(a),'b':$number(b)}",
             ] {
-                compare(source, input.as_bytes());
+                compare_strategies(source, input.as_bytes());
             }
         }
     }
@@ -105,11 +147,11 @@ fn scalar_distribution_and_fusion_error_order() {
             "$sum($map(items,function($v){$v.v}))",
             "$sum($map(items,function($v){$number($v.v)}))",
         ] {
-            compare(source, input.as_bytes());
+            compare_strategies(source, input.as_bytes());
         }
     }
-    compare("($x:=2;($x:=3;$x)+$x)", b"{}");
-    compare("($x:=2;a=1 ? ($x:=3;$x) : $x)", br#"{"a":1}"#);
+    compare_strategies("($x:=2;($x:=3;$x)+$x)", b"{}");
+    compare_strategies("($x:=2;a=1 ? ($x:=3;$x) : $x)", br#"{"a":1}"#);
 }
 #[test]
 fn scalar_cse_preserves_dominance_focus_and_failures() {
@@ -126,13 +168,13 @@ fn scalar_cse_preserves_dominance_focus_and_failures() {
             br#"{"a":0,"s":"x"}"#,
             b"{}",
         ] {
-            compare(source, input);
+            compare_strategies(source, input);
         }
     }
     {
         let source = "a>0 ? $x:=2 : $x:=3";
         for input in [br#"{"a":1}"#.as_slice(), br#"{"a":0}"#] {
-            compare(source, input);
+            compare_strategies(source, input);
         }
     }
 }
@@ -145,7 +187,7 @@ fn callbacks_retain_captured_wrapped_focus() {
             "$map($,function($v){$})",
             "$map($,function($v){$count($)})",
         ] {
-            compare(source, input);
+            compare_strategies(source, input);
         }
     }
 }
@@ -162,7 +204,7 @@ fn nested_native_sequences_survive_callback_returns() {
             "$map(items,function($v){{'values':$map($v.children,function($w){$w.a})}})",
             "$map(items,function($v){[$v.children]})",
         ] {
-            compare(source, input);
+            compare_strategies(source, input);
         }
     }
 }
@@ -201,7 +243,7 @@ fn grouped_pipeline_cardinality_errors_and_shapes() {
                     format!("{{\"items\":{rows}}}"),
                     format!("[{{\"items\":{rows}}}]"),
                 ] {
-                    compare(source, input.as_bytes());
+                    compare_strategies(source, input.as_bytes());
                 }
             }
         }
@@ -210,7 +252,7 @@ fn grouped_pipeline_cardinality_errors_and_shapes() {
 
 #[test]
 fn sequence_boundaries_keep_empty_candidate_parent() {
-    compare(
+    compare_strategies(
         "(items[true]).{'value':v,'parent':%.name}",
         br#"{"name":"root","items":[[],[{"v":2,"w":3}]]}"#,
     );

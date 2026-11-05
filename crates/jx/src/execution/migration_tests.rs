@@ -1,14 +1,16 @@
+use super::tests::assert_semantics;
 use super::*;
 
+// API consistency only; the expression wrapper is not a separate evaluator.
 fn compare(source: &str, input: &[u8]) {
     compare_with(&crate::CompileOptions::default(), source, input);
 }
 fn compare_with(options: &crate::CompileOptions, source: &str, input: &[u8]) {
-    let old = options
+    let expression = options
         .compile(source)
         .unwrap_or_else(|e| panic!("{source}: {e:?}"));
     let p = options.compile_program(source).unwrap();
-    let expected = old.evaluate(input).and_then(|v| v.collect_owned());
+    let expected = expression.evaluate(input).and_then(|v| v.collect_owned());
     let raw = p.evaluate_bytes(input).and_then(|v| v.collect_owned());
     assert_eq!(format!("{raw:?}"), format!("{expected:?}"), "{source}");
     let mut a = Acquisition::new([&p]);
@@ -83,15 +85,7 @@ fn array_navigation_keeps_complete_path_cardinality() {
 
 #[test]
 fn fallbacks_and_membership_keep_values_identity_and_errors() {
-    for source in [
-        "a ?: b",
-        "a ?? b",
-        "(a ?? b).x",
-        "a in [a]",
-        "a in [b]",
-        "($x:={'v':a};$x in [$x])",
-        "{'x':a ?? b,'y':a ?: b}",
-    ] {
+    for source in ["a in [a]", "a in [b]", "($x:={'v':a};$x in [$x])"] {
         for input in [
             br#"{}"#.as_slice(),
             br#"{"a":0,"b":2}"#,
@@ -102,8 +96,57 @@ fn fallbacks_and_membership_keep_values_identity_and_errors() {
             compare(source, input);
         }
     }
-    compare("a ?: $number(b)", br#"{"a":1,"b":false}"#);
-    compare("a ?? $number(b)", br#"{"a":null,"b":false}"#);
+    let source = "{'x':a ?? b,'y':a ?: b,'field':(a ?? b).x}";
+    let program = crate::CompileOptions::default()
+        .compile_program(source)
+        .unwrap();
+    for (input, expected) in [
+        (br#"{}"#.as_slice(), "[{}]"),
+        (br#"{"a":0,"b":2}"#, r#"[{"x":0,"y":2}]"#),
+        (br#"{"a":null,"b":3}"#, r#"[{"x":null,"y":3}]"#),
+        (br#"{"a":[],"b":[1]}"#, r#"[{"x":[],"y":[1]}]"#),
+        (
+            br#"{"a":{"x":1},"b":{"x":1}}"#,
+            r#"[{"x":{"x":1},"y":{"x":1},"field":1}]"#,
+        ),
+    ] {
+        assert_semantics(source, program.evaluate_bytes(input), Ok(expected));
+    }
+    use crate::ErrorKind::TypeError;
+    for (source, input, expected) in [
+        (
+            "a ?: $number(b)",
+            br#"{"a":1,"b":"bad"}"#.as_slice(),
+            Ok("[1]"),
+        ),
+        ("a ?? $number(b)", br#"{"a":null,"b":"bad"}"#, Ok("[null]")),
+        ("a ?? $number(b)", br#"{"b":"bad"}"#, Err(TypeError)),
+        (
+            "flag ? a : $number(b)",
+            br#"{"flag":true,"a":1,"b":"bad"}"#,
+            Ok("[1]"),
+        ),
+        (
+            "flag ? a : $number(b)",
+            br#"{"flag":false,"a":1,"b":"bad"}"#,
+            Err(TypeError),
+        ),
+        (
+            "flag ? $number(b) : a",
+            br#"{"flag":false,"a":1,"b":"bad"}"#,
+            Ok("[1]"),
+        ),
+        (
+            "flag ? $number(b) : a",
+            br#"{"flag":true,"a":1,"b":"bad"}"#,
+            Err(TypeError),
+        ),
+    ] {
+        let program = crate::CompileOptions::default()
+            .compile_program(source)
+            .unwrap();
+        assert_semantics(source, program.evaluate_bytes(input), expected);
+    }
 }
 
 #[test]
@@ -268,14 +311,34 @@ fn array_result_prefixes_and_eager_errors_match_the_reference() {
 #[test]
 fn selected_fragments_keep_gaps_stages_and_prefixes() {
     let input=br#"{"items":[{"v":1,"keep":true},{"v":2,"keep":false},{"v":3,"keep":true},{"v":4,"keep":false},{"v":5,"keep":true}]}"#;
-    for source in [
-        "(items[keep=true]).(v)",
-        "(items[keep=true][v>1]).(v)",
-        "(items[keep=true]).([v])",
-        "($x:=$map(items,function($v){$v});($x[keep=true]).(v))",
-        "([{'v':1},{'v':2},{'v':3}][v!=2]).(v)",
+    for (source, expected) in [
+        ("(items[keep=true]).(v)", "[1,3,5]"),
+        ("(items[keep=true][v>1]).(v)", "[3,5]"),
+        ("(items[keep=true]).([v])", "[1,3,5]"),
+        (
+            "($x:=$map(items,function($v){$v});($x[keep=true]).(v))",
+            "[1,3,5]",
+        ),
+        ("([{'v':1},{'v':2},{'v':3}][v!=2]).(v)", "[1,3]"),
     ] {
-        compare(source, input);
+        let program = crate::CompileOptions::default()
+            .compile_program(source)
+            .unwrap();
+        assert_semantics(source, program.evaluate_bytes(input), Ok(expected));
+    }
+    let source = "(items[keep=true]).(v)";
+    let program = crate::CompileOptions::default()
+        .compile_program(source)
+        .unwrap();
+    for (input, expected) in [
+        (br#"{"items":[]}"#.as_slice(), "[]"),
+        (br#"{"items":[{"keep":true,"v":3}]}"#, "[3]"),
+        (
+            br#"{"items":[{"keep":true},{"keep":true,"v":null}]}"#,
+            "[null]",
+        ),
+    ] {
+        assert_semantics(source, program.evaluate_bytes(input), Ok(expected));
     }
 }
 
