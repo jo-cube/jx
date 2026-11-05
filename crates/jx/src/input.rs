@@ -1,5 +1,5 @@
 use crate::{
-    Error, Evaluation, EvaluationOptions, Expression, RawJson,
+    ConsumeError, Error, Evaluation, EvaluationOptions, Expression, RawJson,
     execution::{InputTemplate, Workspace},
 };
 /// Immutable, demand-driven input acquisition for independently compiled expressions.
@@ -68,6 +68,20 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
         self.plan.expressions[index]
             .execution
             .evaluate(&self.plan.template.document(self.text, &self.workspace))
+    }
+    /// Append one compact JSON value, wrapping multiple results in an array.
+    /// Missing returns false. On evaluation or encoding failure, restore the
+    /// original buffer length; evaluation errors take precedence over encoding
+    /// failures. Panics if the index is outside this plan.
+    pub fn write_json(
+        &self,
+        index: usize,
+        output: &mut Vec<u8>,
+    ) -> Result<bool, ConsumeError<std::io::Error>> {
+        self.plan.expressions[index].execution.write_json(
+            &self.plan.template.document(self.text, &self.workspace),
+            output,
+        )
     }
     /// Evaluate with lexical/focus/control settings. Panics for an invalid index.
     pub fn evaluate_with(

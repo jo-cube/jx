@@ -584,3 +584,64 @@ fn shared_fold_and_constructor_demands_preserve_fallback_and_controls() {
         }
     }
 }
+
+#[test]
+fn complete_json_delivery_uses_shared_indices_and_preserves_result_shape() {
+    let cases: [(&str, &[u8]); 7] = [
+        ("id = 1", b"true"),
+        ("missing", b""),
+        ("null", b"null"),
+        ("[]", b"[]"),
+        ("items", br#"[{"v":2},{"v":3}]"#),
+        ("items.v", b"[2,3]"),
+        ("value", br#"{"n":1.00e+2,"s":"\u0061","k":1,"k":2}"#),
+    ];
+    let expressions = cases.map(|(source, _)| jx::compile(source).unwrap());
+    let plan = InputPlan::new(&expressions);
+    let prepared = plan.prepare(br#"{"id":1,"items":[{"v":2},{"v":3}],"value":{ "n": 1.00e+2, "s": "\u0061", "k": 1, "k": 2 }}"#).unwrap();
+    assert_eq!(
+        prepared
+            .evaluate(0)
+            .unwrap()
+            .single()
+            .unwrap()
+            .unwrap()
+            .as_bool(),
+        Some(true)
+    );
+    let mut output = b"prefix".to_vec();
+    for (index, (_, expected)) in cases.iter().enumerate() {
+        output.truncate(6);
+        assert_eq!(
+            prepared.write_json(index, &mut output).unwrap(),
+            !expected.is_empty()
+        );
+        assert_eq!(&output[..6], b"prefix");
+        assert_eq!(&output[6..], *expected);
+    }
+}
+
+#[test]
+fn complete_json_delivery_rolls_back_mixed_failures_and_reuses_output() {
+    let expressions = ["items.v", "items.(v=1?$sum:v+1)"].map(|s| jx::compile(s).unwrap());
+    let plan = InputPlan::new(&expressions);
+    let prepared = plan
+        .prepare(br#"{"items":[{"v":1},{"v":2},{"v":null}]}"#)
+        .unwrap();
+    let mut output = b"prefix".to_vec();
+    assert!(
+        matches!(prepared.write_json(1, &mut output), Err(ConsumeError::Evaluation(error)) if error.kind == jx::ErrorKind::TypeError)
+    );
+    assert_eq!(output, b"prefix");
+    assert!(prepared.write_json(0, &mut output).unwrap());
+    assert_eq!(output, b"prefix[1,2,null]");
+    output.truncate(6);
+    let prepared = plan.prepare(br#"{"items":[{"v":1},{"v":2}]}"#).unwrap();
+    assert!(
+        matches!(prepared.write_json(1, &mut output), Err(ConsumeError::Consumer(error)) if error.kind() == std::io::ErrorKind::InvalidInput)
+    );
+    assert_eq!(output, b"prefix");
+    let prepared = plan.prepare(br#"{"items":[{"v":2},{"v":3}]}"#).unwrap();
+    assert!(prepared.write_json(1, &mut output).unwrap());
+    assert_eq!(output, b"prefix[3,4]");
+}
