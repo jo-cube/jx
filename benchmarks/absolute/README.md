@@ -18,7 +18,13 @@ ABS_CASE='scalar/500|project/1024/40/direct' ABS_PHASE=compile \
 
 `default.rs` uses ordinary `CompileOptions::compile` and `Expression::evaluate`.
 The `worker/*` controls copy the actual sibling transformation worker and use its
-public `InputPlan`. Both now compile the common semantic IR. There is no engine
+public `InputPlan`. Default-only preparation copies this worker unchanged and does
+not build the lower-level comparison adapter. `default-build.json` records the
+selected mode, tooling checkout revision/dirty state, worker source identity, and
+binary hash. Its `cargo` record identifies the engine actually resolved by Cargo,
+including external path overrides, source hashes, features and artifact paths.
+`generated_sha256` covers the final generated sources, manifest and lockfile.
+Cargo artifact paths are used even with an external `CARGO_TARGET_DIR`. Both entry points compile the common semantic IR. There is no engine
 selection in this build. Compare retained binaries from distinct source revisions
 with identical harness sources, lockfile dependency versions and compiler settings.
 Run reversed independent-process orders; preserve raw CSV and binary/source hashes.
@@ -66,6 +72,12 @@ ABS_CHECK=1 target/absolute-reference/harness/target/release/jx-absolute
 ABS_MODE=simd-copy ABS_CASE=worker/project/1024/40 \
   target/absolute-reference/harness/target/release/simd-reference
 ```
+
+The full build retains an adapter to compare reusable lower-level acquisition with
+the current worker's per-input preparation. It requires the complete-result
+`PreparedInput::write_json` worker; older serializer implementations are not rewritten.
+SIMD-only preparation (`--simd-only`) needs no jkq checkout and builds only the
+SIMD reference. Build metadata distinguishes these modes.
 
 Historical `legacy`, `foundation` and `facade` labels in diagnostic output name
 public entry points, all of which now use the same engine. They cannot compare
