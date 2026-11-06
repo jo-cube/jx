@@ -10,8 +10,12 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+from benchmark_identity import cargo_artifact, hashes
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--copy-only', action='store_true',
+                    help='copy the unmodified worker and source identity without building an adapter')
 parser.add_argument('jkq', type=Path)
 parser.add_argument('destination', type=Path)
 args = parser.parse_args()
@@ -24,10 +28,18 @@ identity = {}
 for name in files:
     data = (source/name).read_bytes()
     identity[name] = hashlib.sha256(data).hexdigest()
-    for version in ['reference', 'foundation']:
+    for version in (['reference'] if args.copy_only else ['reference', 'foundation']):
         target = out/version/name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
+metadata = dict(jkq=str(args.jkq.resolve()),
+    revision=subprocess.check_output(['git','-C',str(args.jkq),'rev-parse','HEAD'],text=True).strip(),
+    dirty=bool(subprocess.check_output(['git','--no-optional-locks','-C',str(args.jkq),'status','--porcelain'])),
+    source_sha256=identity, worker_modes=['reference'] if args.copy_only else ['reference','foundation'])
+if args.copy_only:
+    (out/'identity.json').write_text(json.dumps(metadata,indent=2)+'\n')
+    print(out/'reference')
+    sys.exit(0)
 p = out/'foundation/mod.rs'
 s = p.read_text().replace('use jx::{CompileOptions, Expression, InputPlan, OwnedValue, ValueType};',
     'use jx::{CompileOptions, OwnedValue, ValueType};\nuse jx::execution::{Program as Expression, Acquisition as InputPlan};')
@@ -43,13 +55,16 @@ s = s.replace('            acquisition: plan.input_plan(),', '            acquis
 s = s.replace('self.input_plan.prepare(payload)', 'self.acquisition.prepare(payload)')
 s = s.replace('self.evaluate_predicates(&input)', 'Self::evaluate_predicates(self.plan, &input)')
 s = s.replace('self.tombstone_action()', 'Self::tombstone_action(self.plan)')
-s = s.replace('''                input
-                    .evaluate(self.plan.drops.len() + self.plan.tombstones.len())
-                    .map_err(|error| error.to_string())
-                    .and_then(|evaluation| serialize_projection(evaluation, &mut self.output)),''', '''                self.plan.projection.as_ref().expect("projection")
-                    .write_json(&input, &mut self.output)
-                    .map_err(|error| error.to_string())
-                    .and_then(|present| if present { Ok(()) } else { Err("projection emitted no results".to_owned()) }),''')
+projection = """                input
+                    .write_json(
+                        self.plan.drops.len() + self.plan.tombstones.len(),
+                        &mut self.output,
+                    )"""
+if projection not in s:
+    parser.error('comparison adapter requires the current PreparedInput.write_json worker; '
+                 'use --copy-only to copy other worker versions unchanged')
+s = s.replace(projection, """                self.plan.projection.as_ref().expect("projection")
+                    .write_json(&input, &mut self.output)""")
 s = s.replace('''        &self,
         input: &PreparedInput<'_, 'a, '_>,''', '''        plan: &TransformPlan,
         input: &Prepared<'_, '_>,''')
@@ -68,14 +83,17 @@ s = s.replace('''        let value = input
             .nth(expression_index).expect("expression index").evaluate(input)''')
 s = s.replace('fn tombstone_action(&self) -> Action {\n        if self.plan.drop_tombstones', 'fn tombstone_action(plan: &TransformPlan) -> Action {\n        if plan.drop_tombstones')
 
-# Keep the reference serializer for review, but no unused duplicate in adapter.
-a=s.index('fn serialize_projection(');b=s.index('fn evaluation_result(',a);s=s[:a]+s[b:]
 p.write_text(s)
 shutil.copy2(root/'crates/jx/benches/architecture/jkq.rs',out/'main.rs')
-subprocess.run(['cargo','build','-p','jx','--release','--locked'],cwd=root,check=True)
-subprocess.run(['rustc','-O','-C','lto=thin','-C','codegen-units=1','--edition=2024','-A','dead_code',
-    str(out/'main.rs'),'--extern',f'jx={root}/target/release/libjx.rlib','-L',f'dependency={root}/target/release/deps','-o',str(out/'worker')],check=True)
-metadata = dict(jkq=str(args.jkq.resolve()),revision=subprocess.check_output(['git','-C',str(args.jkq),'rev-parse','HEAD'],text=True).strip(),
-    source_sha256=identity,binary_sha256=hashlib.sha256((out/'worker').read_bytes()).hexdigest())
+artifact, cargo = cargo_artifact(['cargo','build','-p','jx','--release','--locked'],root,'jx')
+library = next(Path(path) for path in artifact['filenames'] if path.endswith('.rlib'))
+dependencies = next(Path(path).parent for path in artifact['filenames'] if path.endswith('.rmeta'))
+command = ['rustc','-O','-C','lto=thin','-C','codegen-units=1','--edition=2024','-A','dead_code',
+    str(out/'main.rs'),'--extern',f'jx={library}','-L',f'dependency={dependencies}','-o',str(out/'worker')]
+subprocess.run(command,check=True)
+metadata.update(binary=str(out/'worker'),binary_sha256=hashlib.sha256((out/'worker').read_bytes()).hexdigest(),
+    command=command,cargo=cargo,library_sha256=hashlib.sha256(library.read_bytes()).hexdigest(),
+    generated_sha256=hashes(out,[out/'main.rs',*(out/'reference').rglob('*'),*(out/'foundation').rglob('*')]),
+    adapter_sha256={name:hashlib.sha256((out/'foundation'/name).read_bytes()).hexdigest() for name in files})
 (out/'identity.json').write_text(json.dumps(metadata,indent=2)+'\n')
 print(out/'worker')

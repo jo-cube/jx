@@ -225,6 +225,7 @@ fn check(vars: &str) {
         (vec![], vec![], Some("$sum((items[true]).(2))")),
         (vec![], vec![], Some("items[($x:=v;$x>0)].{'v':v*2}")),
         (vec![], vec![], Some("items.(flag?v:$number(s))")),
+        (vec![], vec![], Some("items.(v=1?$sum:v+1)")),
         (
             vec![],
             vec![],
@@ -246,6 +247,7 @@ fn check(vars: &str) {
         Some("[1,2]"),
         Some("{\"id\":\"k1\",\"items\":[{\"v\":1},{\"v\":2}]}"),
         Some("{\"items\":[{\"v\":1},{\"v\":null}]}"),
+        Some("{\"items\":[{\"v\":1},{\"v\":2},{\"v\":null}]}"),
         Some("{\"items\":[{\"v\":2,\"flag\":true},{\"s\":\"bad\"}]}"),
         Some("{\"flag\":true,\"a\":{\"x\":1,\"x\":2}}"),
     ];
