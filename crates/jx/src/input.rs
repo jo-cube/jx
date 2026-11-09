@@ -2,6 +2,15 @@ use crate::{
     ConsumeError, Error, Evaluation, EvaluationOptions, Expression, RawJson,
     execution::{InputTemplate, Workspace},
 };
+/// Conservative dependence on the original input's focus or root.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum InputDependency {
+    /// Evaluation does not semantically observe the original focus or root.
+    Independent,
+    /// Independence has not been proved; the expression may need the input.
+    MayRequireInput,
+}
+
 /// Immutable, demand-driven input acquisition for independently compiled expressions.
 /// Expressions keep their order and evaluation state; only static input paths share
 /// captures. Array navigation retains its sequence semantics.

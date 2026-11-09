@@ -83,6 +83,21 @@ evaluation error takes precedence. The caller owns and may reuse the output buff
 Use `prepared.write_json_with(index, options, &mut output)` for the same per-evaluation
 settings as `evaluate_with`.
 
+`expression.input_dependency()` returns `InputDependency::Independent` only when
+compiled code has no semantic dependence on the original input's focus or root.
+The proof uses existing IR context boundaries and builtin signatures, with the same
+external values/settings. It is conservative about closures, dynamic/unknown calls,
+correlated contexts and optional contextual arguments. `MayRequireInput` is not proof
+that input is used. This classification changes no evaluation or validation behavior.
+
+For an independent expression, `expression.evaluate_with(None, options)` avoids
+payload validation and acquisition. Consume the returned evaluation with
+`evaluation.write_json(&mut output)` to use the same complete-result cardinality,
+encoding, rollback and error precedence without preparing a JSON document. Explicit
+JSON `null` remains a present value; absent input makes the original focus/root missing.
+External bindings may still borrow their own bytes, and lexical state stays local to
+each evaluation. Independence does not imply purity or JSON-encodable results.
+
 Ordinary results may borrow both the input and compiled expression. Do not recycle the
 input buffer while results remain borrowed. New containers own their structure but can
 retain borrowed leaves. `OwnedValue` is independent of both lifetimes and `Send + Sync`;

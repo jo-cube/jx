@@ -186,12 +186,7 @@ impl Program {
         let evaluation = self
             .evaluate_prepared_with(document, options)
             .map_err(ConsumeError::Evaluation)?;
-        serialize(output, |emit| {
-            evaluation.try_for_each(emit).map_err(|error| match error {
-                ConsumeError::Evaluation(e) => ConsumeError::Evaluation(e),
-                ConsumeError::Consumer(e) => e,
-            })
-        })
+        evaluation.write_json(output)
     }
     pub(super) fn with_view<'e, 'i>(
         &'e self,
@@ -524,4 +519,20 @@ fn serialize<'e, 'i>(
         output.truncate(start);
     }
     result
+}
+
+impl crate::Evaluation<'_, '_> {
+    /// Append one complete compact JSON value, wrapping multiple results in an array.
+    /// Missing returns false. Failures restore the original buffer length.
+    /// Evaluation continues after an encoding failure, and a later evaluation
+    /// error takes precedence. Consumes the evaluation without detaching values;
+    /// no prepared input is required and the caller may reuse the output buffer.
+    pub fn write_json(self, output: &mut Vec<u8>) -> Result<bool, ConsumeError<std::io::Error>> {
+        serialize(output, |emit| {
+            self.try_for_each(emit).map_err(|error| match error {
+                ConsumeError::Evaluation(e) => ConsumeError::Evaluation(e),
+                ConsumeError::Consumer(e) => e,
+            })
+        })
+    }
 }
