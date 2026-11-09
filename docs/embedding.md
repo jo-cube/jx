@@ -80,6 +80,8 @@ per-expression execution. Preparation never runs expressions or effects.
 wrapping multiple results in an array; missing returns `false`. Failures restore the
 original buffer length. Evaluation continues after an encoding failure, and a later
 evaluation error takes precedence. The caller owns and may reuse the output buffer.
+Use `prepared.write_json_with(index, options, &mut output)` for the same per-evaluation
+settings as `evaluate_with`.
 
 Ordinary results may borrow both the input and compiled expression. Do not recycle the
 input buffer while results remain borrowed. New containers own their structure but can

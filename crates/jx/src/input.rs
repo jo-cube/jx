@@ -83,6 +83,21 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
             output,
         )
     }
+    /// Append complete compact JSON with lexical/focus/control settings.
+    /// Uses the same cardinality, encoding and rollback rules as [`Self::write_json`].
+    /// Panics if the index is outside this plan.
+    pub fn write_json_with(
+        &self,
+        index: usize,
+        options: EvaluationOptions<'e, 'i>,
+        output: &mut Vec<u8>,
+    ) -> Result<bool, ConsumeError<std::io::Error>> {
+        self.plan.expressions[index].execution.write_json_with(
+            &self.plan.template.document(self.text, &self.workspace),
+            options,
+            output,
+        )
+    }
     /// Evaluate with lexical/focus/control settings. Panics for an invalid index.
     pub fn evaluate_with(
         &self,
