@@ -7,14 +7,14 @@ repeated evaluation; JSON values borrow their source bytes where possible.
 
 ## Install
 
-No GitHub Release is published yet; [build from source](docs/releases.md#source-builds)
-for now. Once releases are available, the verified Unix installer installs to `~/.local/bin`:
+To install a published release on Linux or macOS into `~/.local/bin`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh
 ```
 
-See [installation and releases](docs/releases.md) for Linux/macOS requirements, explicit
+If the requested release is unavailable, [build from source](docs/releases.md#source-builds).
+See [installation and releases](docs/releases.md) for platform requirements, explicit
 versions, custom destinations and Windows ZIP downloads. MIT licensed.
 
 ## Use the CLI
@@ -47,17 +47,17 @@ The [CLI guide](docs/cli.md) covers quoting, result shape, limits and errors.
 
 ## Embed in Rust
 
-Use a published Git tag, replacing `vX.Y.Z` with the chosen release:
+Use the `v0.2.0` Git tag once it is published:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx.git", tag = "vX.Y.Z" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
 ```
 
 The library requires Rust **1.98.1** or newer; its API is pre-1.0. Compiled expressions
 can be shared across evaluations. The [embedding guide](docs/embedding.md) covers borrowed
 values, shared input preparation, runtime bindings and complete-result JSON serialization,
-with runnable Rust examples and a Git-revision option before the first release.
+with runnable Rust examples and guidance for unreleased source.
 
 ## Documentation
 

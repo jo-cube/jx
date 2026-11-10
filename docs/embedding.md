@@ -6,12 +6,12 @@ and ordinary runtime values stay local to the caller; the engine does not spawn 
 
 ## Add the dependency
 
-Library releases use the same `vX.Y.Z` Git tag as the CLI. Replace the placeholder
-with a published tag; there are no published tags yet:
+Library releases use the same Git tag as the CLI. To depend on `v0.2.0` once its
+tag is published:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx.git", tag = "vX.Y.Z" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
 ```
 
 Cargo finds `crates/jx` inside the repository. Commit the consuming application's
@@ -19,7 +19,7 @@ Cargo finds `crates/jx` inside the repository. Commit the consuming application'
 versions. The downstream lockfile governs those versions; jx's own lockfile governs
 its workspace builds. Release tags must not move; see the [release policy](releases.md#preparing-and-publishing-releases).
 
-Before a release, or to test a particular change, use a reviewed commit available
+For unreleased source, or to test a particular change, use a reviewed commit available
 upstream instead of the tag:
 
 ```toml

@@ -4,11 +4,11 @@ Compile a JSONata expression once and stream independent NDJSON records from std
 or files. The executable is `jx`; binaries need no Rust toolchain. Source builds
 require Rust 1.98.1 or newer. MIT licensed.
 
-No GitHub Release is published yet. See the
-[installation guide](https://github.com/jo-cube/jx/blob/main/docs/releases.md) for source
-builds now and the verified Unix installer, Windows ZIPs and platform requirements
-when releases are available. Archive names use `jx-vVERSION-TARGET.tar.gz` on Unix
-and `.zip` on Windows, with adjacent `.sha256` checksums.
+See the [installation guide](https://github.com/jo-cube/jx/blob/main/docs/releases.md)
+for the verified Unix installer, Windows ZIPs and platform requirements. Downloads
+require a published GitHub Release; use a source build if the requested release is
+unavailable. Archive names use `jx-vVERSION-TARGET.tar.gz` on Unix and `.zip` on
+Windows, with adjacent `.sha256` checksums.
 
 ```sh
 printf '%s\n' '{"customer":{"id":42}}' | jx 'customer.id'

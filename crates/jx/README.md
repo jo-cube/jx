@@ -1,16 +1,16 @@
 # jx
 
 A Rust JSONata engine for compiling once and evaluating independent borrowed JSON
-records. Rust 1.98.1; MIT licensed; APIs are pre-release.
+records. Rust 1.98.1; MIT licensed; APIs are pre-1.0.
 
-Use a versioned Git dependency, replacing `vX.Y.Z` with a published tag:
+Use the `v0.2.0` Git tag once it is published:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx.git", tag = "vX.Y.Z" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
 ```
 
-No release tag is published yet. Until then, use a reviewed upstream commit with
+For unreleased source, use a reviewed upstream commit with
 `rev = "REVIEWED_COMMIT"`, or a local checkout. See the
 [dependency guide](https://github.com/jo-cube/jx/blob/main/docs/embedding.md#add-the-dependency)
 for versioning and lockfile behavior. The library import is `jx`.

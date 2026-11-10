@@ -3,7 +3,7 @@
 `jx` compiles one expression, then processes independent NDJSON records in order.
 Diagnostics go to stderr; compact JSON results go to stdout.
 See [installation and releases](https://github.com/jo-cube/jx/blob/main/docs/releases.md)
-for the verified Unix installer, Windows downloads and source builds before the first release.
+for the verified Unix installer, Windows downloads and source builds.
 
 ```sh
 printf '%s\n' '{"customer":{"id":42}}' | jx 'customer.id'
