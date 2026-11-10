@@ -71,6 +71,18 @@ boundary testing. Keep failing discoveries as small ordinary regression tests.
 
 ## Release checks
 
+Unix installer tests run offline as part of `just all` and CI's script tests. They
+use controlled release archives and replace only network/platform discovery and one
+rename-failure case; normal checksum and archive tools are exercised. Focused checks:
+
+```sh
+python3 -m unittest discover -s scripts/tests -p test_install.py
+sh -n scripts/install.sh
+shellcheck -s sh scripts/install.sh
+```
+
+ShellCheck is a contributor tool, not an installer requirement.
+
 Run `just all`, `just build`, `just package`, documentation/examples and the relevant
 platform checks. Packaging a working tree for review uses
 `cargo package --workspace --locked --allow-dirty`. Inspect extracted archives rather

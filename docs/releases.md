@@ -25,6 +25,43 @@ no release archive here.
 
 ## Download and install
 
+The Unix installer supports the four Linux/macOS targets above and uses `~/.local/bin`
+by default. It needs `curl`, `tar` with gzip support, `awk`, standard Unix utilities,
+and either `sha256sum` or `shasum`. Rust and Python are not required to install binaries.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh
+```
+
+Override the destination with one argument, or select an exact published tag with
+`VERSION` (default: `latest`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh -s -- "$HOME/bin"
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=v0.2.0 sh
+```
+
+`latest` is resolved once to a `vX.Y.Z` tag. Both the versioned archive and its checksum
+are then downloaded from that exact release over HTTPS. Unknown tags, missing releases,
+unsupported OS/CPU combinations and download errors fail without replacing an existing
+executable. Only stable `vX.Y.Z` tags are accepted, matching the release workflow.
+
+Before extraction, the installer checks the SHA-256 digest and requires exactly the
+seven expected regular files under `jx-vVERSION-TARGET/`. Unexpected paths, duplicates,
+links and other member types are rejected. It extracts only executable bytes into a
+private directory on the destination filesystem, sets mode `0755`, then renames the file
+into place. Failed verification or replacement keeps the previous executable intact;
+temporary files are removed on exit and handled termination signals. The destination
+should be a directory controlled by the installing user. No sudo, shell-profile changes
+or package-manager integration is used; add the destination to PATH yourself.
+
+The installer selects OS and CPU; it does not check the minimum glibc/macOS version.
+Observe the runtime baselines in the table. Linux archives require glibc, and macOS
+archives remain unsigned. Windows uses the manual ZIP instructions below. Checksums
+verify downloaded bytes against the selected release; the release repository is trusted.
+
+### Manual downloads
+
 Use the common-IR release binary. Choose a published version and target from the
 table. Linux example:
 

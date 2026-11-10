@@ -6,28 +6,22 @@ input is validated; values stay borrowed where possible without an input DOM.
 
 ## Install the CLI
 
-Use the normal binary from [GitHub Releases](https://github.com/jo-cube/jx/releases).
-Release assets are prepared but **no release is published yet**. The download flow below
-applies when assets are available; source builds are available now.
-
-Example for Linux x86-64; choose your target from the [platform table](docs/releases.md#platforms):
+Install a published release on Linux or macOS:
 
 ```sh
-version=0.1.0
-target=x86_64-unknown-linux-gnu
-archive="jx-v${version}-${target}.tar.gz"
-url="https://github.com/jo-cube/jx/releases/download/v${version}"
-curl -fLO "$url/$archive" &&
-  curl -fLO "$url/$archive.sha256" &&
-  sha256sum -c "$archive.sha256" &&
-  tar -xzf "$archive" &&
-  mkdir -p "$HOME/.local/bin" &&
-  install -m 755 "jx-v${version}-${target}/jx" "$HOME/.local/bin/jx"
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh
 ```
 
-On macOS use `shasum -a 256 -c`; Windows uses `.zip` archives. Ensure the install directory
-is on PATH. [Installation and builds](docs/releases.md) covers all platforms, checksum
-verification and source installation with Rust **1.98.1** or newer. License: MIT.
+Select a specific published version:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=v0.2.0 sh
+```
+
+The default destination is `~/.local/bin`. See [installation and builds](docs/releases.md)
+for a custom directory, supported platforms, Windows downloads and source installation
+with Rust **1.98.1** or newer. Use a source build when the requested release is unavailable.
+License: MIT.
 
 ## Use it
 
