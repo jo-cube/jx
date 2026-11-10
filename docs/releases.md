@@ -95,21 +95,62 @@ Default features are empty. `cargo build --release --locked` builds the engine
 and CLI. Library users should follow the [pinned dependency guide](embedding.md).
 APIs are pre-release and can change.
 
-## Preparing release archives
+## Preparing and publishing releases
 
-The manually dispatched **Release artifacts** workflow reuses **CI** at an existing
-ref, resolved once to a commit. Repository checks run on Linux; five platform jobs each
-test/build the common-IR executable. Archives are
-checksummed, inspected, extracted and executed on the matching host, including Windows.
-Each run artifact named `jx-TARGET` contains the verified archive and their checksums.
+One immutable `vX.Y.Z` tag identifies both workspace packages and their source commit.
+A new tag push runs the **Release** workflow; tag-update and deletion events are ignored.
+Before any builds, it checks the tag against
+`workspace.package.version`, every workspace package, their `Cargo.lock` entries and
+jx-cli's exact internal jx dependency. All builders use the resolved commit, reusing
+**CI** and the existing five native build/archive/smoke jobs. Ordinary branch/PR CI
+does not duplicate tag builds. Tagged releases always run pinned-upstream differential
+checks; manual preparation keeps its existing differential checkbox.
 
-Release preparation enables pinned-upstream differential checks in both modes by default;
-the dispatch option can disable them. Ordinary push/PR CI uses the vendored language
-corpus without fetching upstream JavaScript. Maintainers can attach validated run files
-to a GitHub Release separately. The workflows have read-only repository permissions
-and never create tags, publish releases/crates or change visibility.
+After all jobs succeed, one publisher downloads exactly the five archives and five
+checksums. It rechecks their layout, checksums, version and source revision, pins their
+expected hashes, then creates a draft release. Changed local files are rejected before
+upload. Every uploaded asset must have the expected name, size, completed state
+and server SHA-256 digest before the draft can become public. Only this job has repository
+write permission. It requires an existing tag and refuses any pre-existing release or
+draft; assets are never overwritten. A failed upload leaves an unpublished draft for inspection.
+A timeout during the final publish request can leave a complete published release;
+inspect its state before retrying.
 
-The packager uses Python 3.9+ and Cargo. On a matching host with a clean tree:
+Latest-release selection uses GitHub's automatic version-based policy, so a release
+finishing later does not force itself to become Latest.
+
+Release procedure:
+
+1. Update the workspace version and jx-cli's exact jx dependency together; regenerate
+   `Cargo.lock`, review licenses and run the checks below. Commit the reviewed candidate.
+2. Optionally dispatch **Release** with that candidate ref to test preparation without
+   publishing. The ref is resolved once; verified Actions artifacts are retained for 14 days.
+3. After the candidate is available upstream, create an annotated `vX.Y.Z` tag at that
+   exact commit and push only that tag, for example `git push origin refs/tags/v0.2.0`.
+4. Inspect the **Release** run and resulting ten assets. Do not move or recreate release
+   tags. Configure repository tag rules to prevent updates/deletion of `v*` tags.
+
+If publication failed, inspect the release first. An incomplete draft must be deleted
+explicitly, keeping its tag, before rerunning the failed publication job. Published
+releases are never replaced. If a tag identifies bad source, use a new version. Remote tag identity is checked
+before draft creation and immediately before publication, but preventing concurrent tag
+mutation depends on repository rules. The tag lookup and release API do not form an atomic
+transaction; avoid concurrent manual edits to tags, drafts or assets during publication.
+Both lightweight and annotated tags are accepted.
+Manual dispatch can only prepare/test and never publishes, even when its ref is a tag.
+No workflow publishes crates or changes repository visibility.
+
+The source tag is also a native Cargo library dependency, without registry publication:
+
+```toml
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
+```
+
+Use an actually published version. Downstream `Cargo.lock` records the exact resolved
+commit; its dependency versions are governed by the downstream lockfile, not jx's.
+
+Release validation uses Python 3.11+; CI uses 3.12. The packager also needs Cargo.
+On a matching host with a clean tree:
 
 ```sh
 SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
