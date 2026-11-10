@@ -1,9 +1,9 @@
 # Installation and releases
 
-The CLI executable and Rust library import are both `jx`. CLI binaries are distributed
-through [GitHub Releases](https://github.com/jo-cube/jx/releases); registry publication
-is deferred. Use [source installation](#source-builds) when the requested version
-has not yet been published.
+The CLI executable and Rust library import are both `jx`. CLI binaries use
+[GitHub Releases](https://github.com/jo-cube/jx/releases); library users depend on
+[versioned Git tags](embedding.md#add-the-dependency). No release is published yet.
+Use [source builds](#source-builds) until the first release is available.
 
 ## Platforms
 
@@ -17,11 +17,9 @@ Use the target name matching your operating system and architecture:
 | macOS Apple Silicon | `aarch64-apple-darwin` | macOS 11+ |
 | Windows x86-64 | `x86_64-pc-windows-msvc` | MSVC runtime |
 
-CI is configured to run workspace tests and extracted CLI archives on all five
-hosts. Verify successful jobs at the candidate revision before distributing their
-assets; Windows runtime validation remains pending until its job passes. macOS binaries
-are unsigned and unnotarized. Other Rust targets may support the normal engine but have
-no release archive here.
+Publication requires passing workspace tests and extracted-archive smoke checks on
+all five hosts. macOS binaries are unsigned and unnotarized. Other targets can be
+built from source but have no release archive here.
 
 ## Download and install
 
@@ -34,11 +32,11 @@ curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh 
 ```
 
 Override the destination with one argument, or select an exact published tag with
-`VERSION` (default: `latest`):
+`VERSION` (default: `latest`). Replace `vX.Y.Z` with an actual published tag:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh -s -- "$HOME/bin"
-curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=v0.2.0 sh
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=vX.Y.Z sh
 ```
 
 `latest` is resolved once to a `vX.Y.Z` tag. Both the versioned archive and its checksum
@@ -62,15 +60,15 @@ verify downloaded bytes against the selected release; the release repository is 
 
 ### Manual downloads
 
-Use the common-IR release binary. Choose a published version and target from the
-table. Linux example:
+Choose a published tag and a target from the platform table. In the examples below,
+replace `vX.Y.Z` with that tag. Linux example:
 
 ```sh
-version=0.2.0
+tag=vX.Y.Z
 target=x86_64-unknown-linux-gnu
-name="jx-v${version}-${target}"
+name="jx-${tag}-${target}"
 archive="$name.tar.gz"
-url="https://github.com/jo-cube/jx/releases/download/v${version}"
+url="https://github.com/jo-cube/jx/releases/download/${tag}"
 curl -fLO "$url/$archive" &&
   curl -fLO "$url/$archive.sha256" &&
   sha256sum -c "$archive.sha256" &&
@@ -86,10 +84,10 @@ The checksum verifies downloaded bytes; obtain both files from the intended rele
 Windows PowerShell example; add the extracted directory to your user PATH:
 
 ```powershell
-$version = '0.2.0'
-$name = "jx-v$version-x86_64-pc-windows-msvc"
+$tag = 'vX.Y.Z'
+$name = "jx-${tag}-x86_64-pc-windows-msvc"
 $archive = "$name.zip"
-$url = "https://github.com/jo-cube/jx/releases/download/v$version"
+$url = "https://github.com/jo-cube/jx/releases/download/$tag"
 curl.exe -fLO "$url/$archive"
 if ($LASTEXITCODE -ne 0) { throw 'Archive download failed' }
 curl.exe -fLO "$url/$archive.sha256"
@@ -102,20 +100,11 @@ Expand-Archive $archive -DestinationPath .
 & ".\$name\jx.exe" --version
 ```
 
-Archives contain the executable, usage/compatibility guides, licenses and `BUILD.txt`
-with version, revision, target, variant, features and source timestamp. Names are:
-
-| Variant | Linux/macOS | Windows |
-| --- | --- | --- |
-| Normal | `jx-vVERSION-TARGET.tar.gz` | `jx-vVERSION-TARGET.zip` |
-
-Each has an adjacent `.sha256` file and an equally named top-level directory.
-The executable name is `jx` (or `jx.exe`).
-
-## Execution features
-
-Releases contain one common-IR interpreter. There is no native archive variant
-or engine-selection feature.
+Archives are named `jx-vVERSION-TARGET.tar.gz` on Linux/macOS and
+`jx-vVERSION-TARGET.zip` on Windows. Each has an adjacent `.sha256` file and an
+equally named top-level directory containing the executable (`jx` or `jx.exe`),
+usage/compatibility guides, licenses and `BUILD.txt`. Build metadata records the
+version, source revision, target, variant, features and source timestamp.
 
 ## Source builds
 
@@ -128,9 +117,9 @@ git checkout REVIEWED_COMMIT
 cargo install --path crates/jx-cli --locked
 ```
 
-Default features are empty. `cargo build --release --locked` builds the engine
-and CLI. Library users should follow the [pinned dependency guide](embedding.md).
-APIs are pre-release and can change.
+`cargo build --release --locked` builds the engine and CLI. For released source,
+check out the selected `vX.Y.Z` tag instead of a commit. Library users should follow
+the [dependency guide](embedding.md#add-the-dependency).
 
 ## Preparing and publishing releases
 
@@ -163,7 +152,7 @@ Release procedure:
 2. Optionally dispatch **Release** with that candidate ref to test preparation without
    publishing. The ref is resolved once; verified Actions artifacts are retained for 14 days.
 3. After the candidate is available upstream, create an annotated `vX.Y.Z` tag at that
-   exact commit and push only that tag, for example `git push origin refs/tags/v0.2.0`.
+   exact commit and push only that tag, for example `git push origin refs/tags/vX.Y.Z`.
 4. Inspect the **Release** run and resulting ten assets. Do not move or recreate release
    tags. Configure repository tag rules to prevent updates/deletion of `v*` tags.
 
@@ -177,14 +166,8 @@ Both lightweight and annotated tags are accepted.
 Manual dispatch can only prepare/test and never publishes, even when its ref is a tag.
 No workflow publishes crates or changes repository visibility.
 
-The source tag is also a native Cargo library dependency, without registry publication:
-
-```toml
-jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
-```
-
-Use an actually published version. Downstream `Cargo.lock` records the exact resolved
-commit; its dependency versions are governed by the downstream lockfile, not jx's.
+The same source tag is the library release identity; the [embedding guide](embedding.md#add-the-dependency)
+explains Cargo Git-tag dependencies and downstream lockfiles.
 
 Release validation uses Python 3.11+; CI uses 3.12. The packager also needs Cargo.
 On a matching host with a clean tree:
@@ -210,12 +193,12 @@ with `just release-smoke ARCHIVE`: version/help, stdin/files, expression files, 
 limits, failure exit codes, line atomicity and compatibility-feature behavior. The checker
 verifies the adjacent checksum and exact archive layout before running extracted bytes.
 Review `THIRD_PARTY_LICENSES` after dependency or toolchain changes; it includes
-the Rust standard library notice. Native-only dependencies and notices are absent.
+the Rust standard library notice.
 
-## Future registry publication
+## Source package checks
 
-Crates have independent metadata, READMEs and MIT licenses. `just package` verifies extracted
-source packages without publishing; local review can use
-`cargo package --workspace --locked --allow-dirty`. Registry publication will come later.
-The existing crates.io package `jx` is a different project, so a future package-name decision
-is still needed. That does not require changing the Rust library import or CLI name.
+`just package` assembles and verifies extracted Cargo source packages without
+publishing. Local review of uncommitted changes can use
+`cargo package --workspace --locked --allow-dirty`. There is no registry publication
+step or `.crate` release asset; distribution uses CLI archives and Git source tags.
+Source packages retain their READMEs, examples and MIT licenses.

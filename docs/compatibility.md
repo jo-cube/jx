@@ -8,7 +8,7 @@ helpers, `$eval` and randomness.
 
 The complete pinned language corpus has **1,679 asserted outcomes**: 1,390 results,
 288 mapped errors, one non-tail recursion limit and zero blockers. This does not establish
-compatibility with every JavaScript host behavior. [Conformance](https://github.com/jo-cube/jx/blob/dev/CONFORMANCE.md)
+compatibility with every JavaScript host behavior. [Conformance](https://github.com/jo-cube/jx/blob/main/CONFORMANCE.md)
 describes the inventory and regression checks; the boundaries below also cover behavior
 outside that corpus.
 
@@ -27,7 +27,7 @@ outside that corpus.
 - Missing emits no item; null is one item; an explicit array is one value. Paths apply
   JSONata sequence flattening, not recursive flattening of every array. Retention (`[]`)
   keeps sequence shape, but cannot restore an already-normalized singleton. Small cases
-  in the [sequence corpus](https://github.com/jo-cube/jx/blob/dev/tests/semantics/sequences.json)
+  in the [sequence corpus](https://github.com/jo-cube/jx/blob/main/tests/semantics/sequences.json)
   specify the less obvious array/empty boundaries.
 
 Prototype-related names such as `__proto__` are ordinary JSON keys. Construction does
@@ -58,7 +58,7 @@ with another engine's PRNG.
 Host functions are synchronous and effectful. JSONata closures cannot transfer between
 evaluations or detach into owned snapshots; independently owned host functions can.
 There is no async integration, parser recovery or exact upstream diagnostic-text contract.
-See the [embedding guide](https://github.com/jo-cube/jx/blob/dev/docs/embedding.md).
+See the [embedding guide](https://github.com/jo-cube/jx/blob/main/docs/embedding.md).
 
 ## Parent navigation and transforms
 

@@ -1,94 +1,67 @@
 # jx
 
-`jx` is a Rust [JSONata](https://docs.jsonata.org/overview.html) engine and a streaming
-CLI. Compile an expression once, then evaluate independent JSON records. The complete
-input is validated; values stay borrowed where possible without an input DOM.
+`jx` is a Rust [JSONata](https://docs.jsonata.org/overview.html) engine with a standalone
+CLI for newline-delimited JSON (NDJSON). Select fields, filter records and compute
+summaries in shell pipelines or Rust applications. Expressions compile once for
+repeated evaluation; JSON values borrow their source bytes where possible.
 
-## Install the CLI
+## Install
 
-Install a published release on Linux or macOS:
+No GitHub Release is published yet; [build from source](docs/releases.md#source-builds)
+for now. Once releases are available, the verified Unix installer installs to `~/.local/bin`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh
 ```
 
-Select a specific published version:
+See [installation and releases](docs/releases.md) for Linux/macOS requirements, explicit
+versions, custom destinations and Windows ZIP downloads. MIT licensed.
+
+## Use the CLI
+
+Project fields and compute an order total:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=v0.2.0 sh
+printf '%s\n' '{"id":42,"items":[{"price":2.5,"quantity":3}]}' |
+  jx '{"id":id,"total":$sum(items.(price * quantity))}'
+# {"id":42,"total":7.5}
 ```
 
-The default destination is `~/.local/bin`. See [installation and builds](docs/releases.md)
-for a custom directory, supported platforms, Windows downloads and source installation
-with Rust **1.98.1** or newer. Use a source build when the requested release is unavailable.
-License: MIT.
-
-## Use it
+Keep matching records:
 
 ```sh
-printf '%s\n' '{"items":[{"price":2.5,"quantity":3}]}' |
-  jx '{"total":$sum(items.(price * quantity))}'
-# {"total":7.5}
-jx 'customer.id' records.ndjson
+printf '%s\n' '{"id":1,"status":"paid"}' '{"id":2,"status":"pending"}' |
+  jx '$[status = "paid"]'
+# {"id":1,"status":"paid"}
+```
+
+Read an expression from `transform.jsonata` and process files and stdin in order:
+
+```sh
 jx -f transform.jsonata first.ndjson - second.ndjson > results.ndjson
 ```
 
-The CLI streams NDJSON from stdin/files in order with bounded reusable buffers.
-Missing emits no line; sequences emit one line per item; arrays remain one value.
-Each result finishes serialization before writing its line. See [CLI usage](docs/cli.md)
-for quoting, result shape, resource limits and exit behavior.
+Each input line is evaluated independently. Missing produces no line; sequences produce
+one line per item; arrays remain one JSON value. `[items.id]` builds one array from a path.
+The [CLI guide](docs/cli.md) covers quoting, result shape, limits and errors.
 
-## Rust library
+## Embed in Rust
 
-Depend on a reviewed Git revision today:
+Use a published Git tag, replacing `vX.Y.Z` with the chosen release:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx", rev = "REVIEWED_COMMIT" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "vX.Y.Z" }
 ```
 
-Registry publication is deferred; the API is pre-release and can change. The library
-import and CLI remain `jx`. The crates.io package currently named `jx` is a different project.
+The library requires Rust **1.98.1** or newer; its API is pre-1.0. Compiled expressions
+can be shared across evaluations. The [embedding guide](docs/embedding.md) covers borrowed
+values, shared input preparation, runtime bindings and complete-result JSON serialization,
+with runnable Rust examples and a Git-revision option before the first release.
 
-```rust
-fn main() -> Result<(), jx::Error> {
-    let expression = jx::compile("price * quantity")?;
-    for record in [br#"{"price":2.5,"quantity":3}"#.as_slice(),
-                   br#"{"price":4,"quantity":2}"#.as_slice()] {
-        expression.evaluate(record)?.for_each(|value| {
-            println!("{}", value.as_number().unwrap());
-        })?;
-    }
-    Ok(())
-}
-```
+## Documentation
 
-Compiled expressions are `Send + Sync`. Results can borrow input/expression storage;
-owned snapshots detach them explicitly. [Embedding](docs/embedding.md) covers external
-bindings, focus, synchronous host functions, cancellation and ownership.
-
-## Language and execution
-
-Paths/sequences, filters, operators, constructors, lexical functions/closures, partials,
-sorting/grouping, parent navigation, transforms, regex, numeric/date pictures, `$eval`,
-randomness and higher-order helpers are supported. The pinned JSONata 2.2.0 corpus has
-1,679 asserted outcomes, including one documented non-tail recursion limit. See
-[compatibility and limits](docs/compatibility.md) and [conformance](CONFORMANCE.md).
-
-All public evaluation APIs and the CLI use one common semantic IR, with automatic
-input acquisition, borrowed results and streaming where semantics allow. There is
-no engine-selection flag, native feature or Cranelift dependency.
-
-## Performance
-
-Measure the actual expression, input distribution and output obligations. Compilation,
-validation, acquisition, transformation and serialization have separate costs.
-[Performance guide](docs/performance.md) describes reproducible controls;
-[architecture](ARCHITECTURE.md) explains execution and ownership.
-
-## Development
-
-`just all` checks formatting, strict Clippy, workspace tests, conformance, archive
-tooling, guide examples and allocation budgets. `just build`, `just bench` and
-`just robustness` offer focused workflows. Start with [contributing/testing](docs/development.md);
-[AGENTS.md](AGENTS.md) contains the durable implementation rules.
+- [Language compatibility and resource limits](docs/compatibility.md)
+- [Performance and measurement](docs/performance.md)
+- [Architecture and ownership](ARCHITECTURE.md)
+- [Development and validation](docs/development.md)

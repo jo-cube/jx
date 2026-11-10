@@ -3,15 +3,17 @@
 A Rust JSONata engine for compiling once and evaluating independent borrowed JSON
 records. Rust 1.98.1; MIT licensed; APIs are pre-release.
 
-Use a reviewed Git revision; crates.io publication will come later:
+Use a versioned Git dependency, replacing `vX.Y.Z` with a published tag:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx", rev = "REVIEWED_COMMIT" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "vX.Y.Z" }
 ```
 
-The library target/import is `jx`. The crates.io package currently named `jx` is a
-different project; APIs here can change before a stable release.
+No release tag is published yet. Until then, use a reviewed upstream commit with
+`rev = "REVIEWED_COMMIT"`, or a local checkout. See the
+[dependency guide](https://github.com/jo-cube/jx/blob/main/docs/embedding.md#add-the-dependency)
+for versioning and lockfile behavior. The library import is `jx`.
 
 ```rust
 fn main() -> Result<(), jx::Error> {
@@ -26,15 +28,8 @@ fn main() -> Result<(), jx::Error> {
 borrowing where possible. `for_each`/`try_for_each` stream, `single` checks cardinality,
 and `collect_owned` detaches snapshots. The complete input is validated before effects.
 
-Paths, sequences, operators, functions/closures, standard helpers, grouping/sorting,
-regex, pictures, transforms and dynamic evaluation are supported. See
-[compatibility](https://github.com/jo-cube/jx/blob/dev/docs/compatibility.md) for precise boundaries.
-
-External bindings, synchronous effectful host callbacks and cooperative resource
-controls are described in the [embedding guide](https://github.com/jo-cube/jx/blob/dev/docs/embedding.md).
-All public compilation uses the common semantic IR and automatic acquisition.
-There are no engine-selection features or Cranelift dependencies.
-
-[Performance](https://github.com/jo-cube/jx/blob/dev/docs/performance.md) describes allocation,
-traversal and benchmark trade-offs. Public `stream`/`embedding` examples are included;
-repository-only corpus tests and benchmarks stay outside source packages.
+See [embedding](https://github.com/jo-cube/jx/blob/main/docs/embedding.md) for shared
+input preparation, runtime bindings, complete-result serialization and resource controls;
+[compatibility](https://github.com/jo-cube/jx/blob/main/docs/compatibility.md) for language
+boundaries; and [performance](https://github.com/jo-cube/jx/blob/main/docs/performance.md)
+for measurement guidance. Runnable `stream` and `embedding` examples are included.
