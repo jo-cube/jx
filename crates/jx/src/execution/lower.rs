@@ -93,6 +93,7 @@ impl<'e> Lower<'e> {
             result,
             registers: self.registers,
             input_template: None,
+            input_dependency: crate::InputDependency::MayRequireInput,
             row_schema: Arc::new(acquisition::Schema::default()),
             row_reads: Box::new([]),
             key: Arc::new(()),

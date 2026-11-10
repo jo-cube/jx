@@ -1,9 +1,9 @@
 # Installation and releases
 
-The CLI executable and Rust library import are both `jx`. CLI binaries are distributed
-through [GitHub Releases](https://github.com/jo-cube/jx/releases); registry publication
-is deferred. Use [source installation](#source-builds) when the requested version
-has not yet been published.
+The CLI executable and Rust library import are both `jx`. CLI binaries use
+[GitHub Releases](https://github.com/jo-cube/jx/releases); library users depend on
+[versioned Git tags](embedding.md#add-the-dependency). Download commands require a
+published release; use [source builds](#source-builds) if the requested version is unavailable.
 
 ## Platforms
 
@@ -17,23 +17,57 @@ Use the target name matching your operating system and architecture:
 | macOS Apple Silicon | `aarch64-apple-darwin` | macOS 11+ |
 | Windows x86-64 | `x86_64-pc-windows-msvc` | MSVC runtime |
 
-CI is configured to run workspace tests and extracted CLI archives on all five
-hosts. Verify successful jobs at the candidate revision before distributing their
-assets; Windows runtime validation remains pending until its job passes. macOS binaries
-are unsigned and unnotarized. Other Rust targets may support the normal engine but have
-no release archive here.
+Publication requires passing workspace tests and extracted-archive smoke checks on
+all five hosts. macOS binaries are unsigned and unnotarized. Other targets can be
+built from source but have no release archive here.
 
 ## Download and install
 
-Use the common-IR release binary. Choose a published version and target from the
-table. Linux example:
+The Unix installer supports the four Linux/macOS targets above and uses `~/.local/bin`
+by default. It needs `curl`, `tar` with gzip support, `awk`, standard Unix utilities,
+and either `sha256sum` or `shasum`. Rust and Python are not required to install binaries.
 
 ```sh
-version=0.2.0
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh
+```
+
+Override the destination with one argument, or select `v0.2.0` explicitly with
+`VERSION` (default: `latest`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh -s -- "$HOME/bin"
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=v0.2.0 sh
+```
+
+`latest` is resolved once to a `vX.Y.Z` tag. Both the versioned archive and its checksum
+are then downloaded from that exact release over HTTPS. Unknown tags, missing releases,
+unsupported OS/CPU combinations and download errors fail without replacing an existing
+executable. Only stable `vX.Y.Z` tags are accepted, matching the release workflow.
+
+Before extraction, the installer checks the SHA-256 digest and requires exactly the
+seven expected regular files under `jx-vVERSION-TARGET/`. Unexpected paths, duplicates,
+links and other member types are rejected. It extracts only executable bytes into a
+private directory on the destination filesystem, sets mode `0755`, then renames the file
+into place. Failed verification or replacement keeps the previous executable intact;
+temporary files are removed on exit and handled termination signals. The destination
+should be a directory controlled by the installing user. No sudo, shell-profile changes
+or package-manager integration is used; add the destination to PATH yourself.
+
+The installer selects OS and CPU; it does not check the minimum glibc/macOS version.
+Observe the runtime baselines in the table. Linux archives require glibc, and macOS
+archives remain unsigned. Windows uses the manual ZIP instructions below. Checksums
+verify downloaded bytes against the selected release; the release repository is trusted.
+
+### Manual downloads
+
+Choose a target from the platform table. Linux example:
+
+```sh
+tag=v0.2.0
 target=x86_64-unknown-linux-gnu
-name="jx-v${version}-${target}"
+name="jx-${tag}-${target}"
 archive="$name.tar.gz"
-url="https://github.com/jo-cube/jx/releases/download/v${version}"
+url="https://github.com/jo-cube/jx/releases/download/${tag}"
 curl -fLO "$url/$archive" &&
   curl -fLO "$url/$archive.sha256" &&
   sha256sum -c "$archive.sha256" &&
@@ -49,10 +83,10 @@ The checksum verifies downloaded bytes; obtain both files from the intended rele
 Windows PowerShell example; add the extracted directory to your user PATH:
 
 ```powershell
-$version = '0.2.0'
-$name = "jx-v$version-x86_64-pc-windows-msvc"
+$tag = 'v0.2.0'
+$name = "jx-${tag}-x86_64-pc-windows-msvc"
 $archive = "$name.zip"
-$url = "https://github.com/jo-cube/jx/releases/download/v$version"
+$url = "https://github.com/jo-cube/jx/releases/download/$tag"
 curl.exe -fLO "$url/$archive"
 if ($LASTEXITCODE -ne 0) { throw 'Archive download failed' }
 curl.exe -fLO "$url/$archive.sha256"
@@ -65,20 +99,11 @@ Expand-Archive $archive -DestinationPath .
 & ".\$name\jx.exe" --version
 ```
 
-Archives contain the executable, usage/compatibility guides, licenses and `BUILD.txt`
-with version, revision, target, variant, features and source timestamp. Names are:
-
-| Variant | Linux/macOS | Windows |
-| --- | --- | --- |
-| Normal | `jx-vVERSION-TARGET.tar.gz` | `jx-vVERSION-TARGET.zip` |
-
-Each has an adjacent `.sha256` file and an equally named top-level directory.
-The executable name is `jx` (or `jx.exe`).
-
-## Execution features
-
-Releases contain one common-IR interpreter. There is no native archive variant
-or engine-selection feature.
+Archives are named `jx-vVERSION-TARGET.tar.gz` on Linux/macOS and
+`jx-vVERSION-TARGET.zip` on Windows. Each has an adjacent `.sha256` file and an
+equally named top-level directory containing the executable (`jx` or `jx.exe`),
+usage/compatibility guides, licenses and `BUILD.txt`. Build metadata records the
+version, source revision, target, variant, features and source timestamp.
 
 ## Source builds
 
@@ -91,25 +116,61 @@ git checkout REVIEWED_COMMIT
 cargo install --path crates/jx-cli --locked
 ```
 
-Default features are empty. `cargo build --release --locked` builds the engine
-and CLI. Library users should follow the [pinned dependency guide](embedding.md).
-APIs are pre-release and can change.
+`cargo build --release --locked` builds the engine and CLI. For released source,
+check out `v0.2.0` once its tag is published. Library users should follow
+the [dependency guide](embedding.md#add-the-dependency).
 
-## Preparing release archives
+## Preparing and publishing releases
 
-The manually dispatched **Release artifacts** workflow reuses **CI** at an existing
-ref, resolved once to a commit. Repository checks run on Linux; five platform jobs each
-test/build the common-IR executable. Archives are
-checksummed, inspected, extracted and executed on the matching host, including Windows.
-Each run artifact named `jx-TARGET` contains the verified archive and their checksums.
+One immutable `vX.Y.Z` tag identifies both workspace packages and their source commit.
+A new tag push runs the **Release** workflow; tag-update and deletion events are ignored.
+Before any builds, it checks the tag against
+`workspace.package.version`, every workspace package, their `Cargo.lock` entries and
+jx-cli's exact internal jx dependency. All builders use the resolved commit, reusing
+**CI** and the existing five native build/archive/smoke jobs. Ordinary branch/PR CI
+does not duplicate tag builds. Tagged releases always run pinned-upstream differential
+checks; manual preparation keeps its existing differential checkbox.
 
-Release preparation enables pinned-upstream differential checks in both modes by default;
-the dispatch option can disable them. Ordinary push/PR CI uses the vendored language
-corpus without fetching upstream JavaScript. Maintainers can attach validated run files
-to a GitHub Release separately. The workflows have read-only repository permissions
-and never create tags, publish releases/crates or change visibility.
+After all jobs succeed, one publisher downloads exactly the five archives and five
+checksums. It rechecks their layout, checksums, version and source revision, pins their
+expected hashes, then creates a draft release. Changed local files are rejected before
+upload. Every uploaded asset must have the expected name, size, completed state
+and server SHA-256 digest before the draft can become public. Only this job has repository
+write permission. It requires an existing tag and refuses any pre-existing release or
+draft; assets are never overwritten. A failed upload leaves an unpublished draft for inspection.
+A timeout during the final publish request can leave a complete published release;
+inspect its state before retrying.
 
-The packager uses Python 3.9+ and Cargo. On a matching host with a clean tree:
+Latest-release selection uses GitHub's automatic version-based policy, so a release
+finishing later does not force itself to become Latest.
+
+Release procedure:
+
+1. Ensure the workspace version, jx-cli's exact jx dependency and both package entries
+   in `Cargo.lock` match the release (`0.2.0` for `v0.2.0`). Review licenses and run the
+   checks below. Commit the reviewed candidate.
+2. Optionally dispatch **Release** with that candidate ref to test preparation without
+   publishing. The ref is resolved once; verified Actions artifacts are retained for 14 days.
+3. After the candidate is available upstream, create an annotated release tag at that
+   exact commit and push only that tag, for example `git push origin refs/tags/v0.2.0`.
+4. Inspect the **Release** run and resulting ten assets. Do not move or recreate release
+   tags. Configure repository tag rules to prevent updates/deletion of `v*` tags.
+
+If publication failed, inspect the release first. An incomplete draft must be deleted
+explicitly, keeping its tag, before rerunning the failed publication job. Published
+releases are never replaced. If a tag identifies bad source, use a new version. Remote tag identity is checked
+before draft creation and immediately before publication, but preventing concurrent tag
+mutation depends on repository rules. The tag lookup and release API do not form an atomic
+transaction; avoid concurrent manual edits to tags, drafts or assets during publication.
+Both lightweight and annotated tags are accepted.
+Manual dispatch can only prepare/test and never publishes, even when its ref is a tag.
+No workflow publishes crates or changes repository visibility.
+
+The same source tag is the library release identity; the [embedding guide](embedding.md#add-the-dependency)
+explains Cargo Git-tag dependencies and downstream lockfiles.
+
+Release validation uses Python 3.11+; CI uses 3.12. The packager also needs Cargo.
+On a matching host with a clean tree:
 
 ```sh
 SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
@@ -132,12 +193,12 @@ with `just release-smoke ARCHIVE`: version/help, stdin/files, expression files, 
 limits, failure exit codes, line atomicity and compatibility-feature behavior. The checker
 verifies the adjacent checksum and exact archive layout before running extracted bytes.
 Review `THIRD_PARTY_LICENSES` after dependency or toolchain changes; it includes
-the Rust standard library notice. Native-only dependencies and notices are absent.
+the Rust standard library notice.
 
-## Future registry publication
+## Source package checks
 
-Crates have independent metadata, READMEs and MIT licenses. `just package` verifies extracted
-source packages without publishing; local review can use
-`cargo package --workspace --locked --allow-dirty`. Registry publication will come later.
-The existing crates.io package `jx` is a different project, so a future package-name decision
-is still needed. That does not require changing the Rust library import or CLI name.
+`just package` assembles and verifies extracted Cargo source packages without
+publishing. Local review of uncommitted changes can use
+`cargo package --workspace --locked --allow-dirty`. There is no registry publication
+step or `.crate` release asset; distribution uses CLI archives and Git source tags.
+Source packages retain their READMEs, examples and MIT licenses.

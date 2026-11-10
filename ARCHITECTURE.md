@@ -26,6 +26,11 @@ There is no fixed capture limit. `execution::Workspace` is optional caller-owned
 reusable offset storage. Its exclusive mutable borrow ends before result delivery;
 results can outlive the scratch while still borrowing the input and program.
 
+Input dependence is classified once over the lowered IR. The proof follows child
+focus boundaries and conservatively retains unknown root/context dependencies.
+It changes no execution strategy; absent-input evaluation uses the ordinary engine
+and complete-result serializer.
+
 ## Semantic and physical execution
 
 The common IR represents focus, root, lexical reads/writes, branches, calls,

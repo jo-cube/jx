@@ -1,8 +1,8 @@
 # Contributing and testing
 
 Use Rust **1.98.1** (edition 2024), Cargo and [just](https://just.systems).
-Python 3.9+ runs archive tests/tooling. Keep `Cargo.lock`; ordinary checks require no
-JavaScript implementation or external corpus once dependencies are cached.
+Python 3.11+ runs release and archive tests/tooling. Keep `Cargo.lock`; ordinary checks
+require no JavaScript implementation or external corpus once dependencies are cached.
 
 ## Repository map
 
@@ -43,10 +43,14 @@ in one Linux job. Five host jobs run workspace tests and release-archive smoke; 
 1,679 conformance outcomes and robustness checks.
 Windows executes the extracted `.exe`, not a cross-built placeholder.
 
-The same workflow serves manual **Release artifacts** preparation. Its candidate ref
-is resolved once; platform jobs use that exact commit. Only release preparation uploads
-verified archives. Actions are commit-pinned and Rust caches are keyed per host target.
-Platform jobs are configured coverage, not evidence of a completed run.
+The same workflow serves tagged **Release** publication and manual preparation.
+Its candidate ref is resolved once; platform jobs use that exact commit. Only release
+preparation uploads verified Actions artifacts. A single tag-only publisher verifies all
+five archives before completing a draft release; only that job has write permission.
+Manual dispatch never publishes. Actions are commit-pinned and Rust caches are keyed per
+host target. [Release procedure](releases.md#preparing-and-publishing-releases) covers
+version checks, immutable tags and failed-draft recovery. Platform jobs are configured
+coverage, not evidence of a completed run.
 
 Optional differential checks are available through the CI dispatch checkbox and enabled
 by default for release preparation. They fetch the pinned JSONata revision and compare
@@ -66,6 +70,18 @@ refresh and optional differential checks, and [fuzzing](../fuzz/README.md) for a
 boundary testing. Keep failing discoveries as small ordinary regression tests.
 
 ## Release checks
+
+Unix installer tests run offline as part of `just all` and CI's script tests. They
+use controlled release archives and replace only network/platform discovery and one
+rename-failure case; normal checksum and archive tools are exercised. Focused checks:
+
+```sh
+python3 -m unittest discover -s scripts/tests -p test_install.py
+sh -n scripts/install.sh
+shellcheck -s sh scripts/install.sh
+```
+
+ShellCheck is a contributor tool, not an installer requirement.
 
 Run `just all`, `just build`, `just package`, documentation/examples and the relevant
 platform checks. Packaging a working tree for review uses

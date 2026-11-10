@@ -4,28 +4,46 @@ Compile once and evaluate independent borrowed byte records. `Expression` is clo
 and `Send + Sync`, so callers can share it directly or through `Arc`. Evaluation state
 and ordinary runtime values stay local to the caller; the engine does not spawn workers.
 
-Use a Git dependency pinned to a reviewed revision:
+## Add the dependency
+
+Library releases use the same Git tag as the CLI. To depend on `v0.2.0` once its
+tag is published:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx", rev = "REVIEWED_COMMIT" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
 ```
 
-Registry publication will come later; the crates.io package named `jx` is a different
-project. The library target/import remains `jx`, and APIs are pre-release and can change.
-For checkout development, use `jx = { path = "/path/to/jx/crates/jx" }` instead.
-All entry points compile the common IR. `Expression::execution_program()` returns
-a reference to the immutable program; workspaces remain caller-owned.
+Cargo finds `crates/jx` inside the repository. Commit the consuming application's
+`Cargo.lock` and build with `--locked` to retain the resolved commit and dependency
+versions. The downstream lockfile governs those versions; jx's own lockfile governs
+its workspace builds. Release tags must not move; see the [release policy](releases.md#preparing-and-publishing-releases).
+
+For unreleased source, or to test a particular change, use a reviewed commit available
+upstream instead of the tag:
+
+```toml
+jx = { git = "https://github.com/jo-cube/jx.git", rev = "REVIEWED_COMMIT" }
+```
+
+Checkout development can use `jx = { path = "/path/to/jx/crates/jx" }` instead.
+Git is the supported library source; the crates.io package named `jx` is a different
+project. The library import remains `jx`. Rust **1.98.1** or newer is required;
+APIs are pre-1.0 and may change.
 
 ## Compile and consume
 
 ```rust
 fn main() -> Result<(), jx::Error> {
     let expression = jx::compile("items[price>10].price")?;
-    let input = br#"{"items":[{"price":5},{"price":12},{"price":20}]}"#;
-    expression.evaluate(input)?.for_each(|value| {
-        println!("{}", value.as_number().unwrap());
-    })?;
+    for input in [
+        br#"{"items":[{"price":5},{"price":12},{"price":20}]}"#.as_slice(),
+        br#"{"items":[{"price":30}]}"#.as_slice(),
+    ] {
+        expression.evaluate(input)?.for_each(|value| {
+            println!("{}", value.as_number().unwrap());
+        })?;
+    }
     Ok(())
 }
 ```
@@ -36,6 +54,10 @@ failure and distinguishes `ConsumeError::Evaluation` from your original consumer
 `collect_owned()` deliberately collects detached snapshots. Scalar computation and
 lexical retention can happen before consumption; lazy navigation can fail during it.
 Earlier delivered values remain visible after a later failure.
+
+All entry points use the common IR. `Expression::execution_program()` returns a
+reference to the immutable program; optional workspaces remain caller-owned. See
+[execution contracts](execution.md) for lower-level integration.
 
 ## Borrowed access and owned snapshots
 
@@ -60,6 +82,18 @@ fn main() -> Result<(), jx::Error> {
 }
 ```
 
+Ordinary results may borrow both the input and compiled expression. Do not recycle the
+input buffer while results remain borrowed. New containers own their structure but can
+retain borrowed leaves. `OwnedValue` is independent of both lifetimes and `Send + Sync`;
+`to_owned()` preserves missing/null, sequence shape and UTF-16 units without a serialization
+round-trip. `OwnedValue::from_json` validates and detaches an input value.
+
+Snapshots reject functions anywhere inside them. JSONata closures carry evaluation-local
+frame indices; they can be returned/used inside that evaluation but cannot be injected
+into another. Independently owned host functions can cross evaluations.
+
+## Shared input preparation
+
 When several expressions share one input, call `jx::validate` once and pass its
 `RawJson` to `Expression::evaluate_validated`. `evaluate_validated_with` accepts
 `Option<RawJson>` and the same `EvaluationOptions` as `evaluate_with`. These methods
@@ -76,20 +110,34 @@ have no fixed capture-count limit. Dynamic navigation and intermediate arrays
 keep their ordinary IR sequence semantics. Bindings, focus, randomness and controls retain their existing
 per-expression execution. Preparation never runs expressions or effects.
 
-`prepared.write_json(index, &mut output)` appends one complete compact JSON value,
-wrapping multiple results in an array; missing returns `false`. Failures restore the
-original buffer length. Evaluation continues after an encoding failure, and a later
-evaluation error takes precedence. The caller owns and may reuse the output buffer.
+## Complete-result JSON serialization
 
-Ordinary results may borrow both the input and compiled expression. Do not recycle the
-input buffer while results remain borrowed. New containers own their structure but can
-retain borrowed leaves. `OwnedValue` is independent of both lifetimes and `Send + Sync`;
-`to_owned()` preserves missing/null, sequence shape and UTF-16 units without a serialization
-round-trip. `OwnedValue::from_json` validates and detaches an input value.
+`evaluation.write_json(&mut output)` appends one complete compact JSON value,
+wrapping multiple results in an array; missing returns `false` and appends nothing.
+`prepared.write_json(index, &mut output)` applies the same contract to an indexed
+expression. Use `prepared.write_json_with(index, options, &mut output)` for the
+per-evaluation settings accepted by `evaluate_with`.
 
-Snapshots reject functions anywhere inside them. JSONata closures carry evaluation-local
-frame indices; they can be returned/used inside that evaluation but cannot be injected
-into another. Independently owned host functions can cross evaluations.
+Failures restore the original buffer length. Evaluation continues after an encoding
+failure, and a later evaluation error takes precedence. The caller owns and may reuse
+the output buffer.
+
+## Evaluating without input
+
+`expression.input_dependency()` returns `InputDependency::Independent` only when
+compiled code has no semantic dependence on the original input's focus or root.
+The proof uses existing IR context boundaries and builtin signatures, with the same
+external values/settings. It is conservative about closures, dynamic/unknown calls,
+correlated contexts and optional contextual arguments. `MayRequireInput` is not proof
+that input is used. This classification changes no evaluation or validation behavior.
+
+For an independent expression, `expression.evaluate_with(None, options)` avoids
+payload validation and acquisition. Consume the returned evaluation with
+`evaluation.write_json(&mut output)` to use the same complete-result cardinality,
+encoding, rollback and error precedence without preparing a JSON document. Explicit
+JSON `null` remains a present value; absent input makes the original focus/root missing.
+External bindings may still borrow their own bytes, and lexical state stays local to
+each evaluation. Independence does not imply purity or JSON-encodable results.
 
 ## External bindings and host callbacks
 

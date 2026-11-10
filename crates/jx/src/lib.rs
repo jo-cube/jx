@@ -55,7 +55,7 @@ pub use embedding::{CompileOptions, EvaluationOptions, HostContext, HostFunction
 pub use error::{Error, ErrorKind, Phase, Source, Span};
 pub use evaluate::{ConsumeError, Evaluation};
 pub use function::Function;
-pub use input::{InputPlan, PreparedInput};
+pub use input::{InputDependency, InputPlan, PreparedInput};
 pub use json::{MAX_DEPTH, RawJson, validate};
 pub use random::Random;
 pub use transform::CopiedValue;

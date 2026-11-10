@@ -5,6 +5,7 @@ mod bindings;
 pub(crate) mod call;
 mod consume;
 mod context;
+mod dependency;
 pub(crate) use consume::Deferred;
 mod embedding;
 mod facade;
@@ -60,6 +61,7 @@ pub struct Program {
     result: usize,
     pub(crate) registers: usize,
     input_template: Option<Arc<InputTemplate>>,
+    input_dependency: crate::InputDependency,
     row_schema: Arc<acquisition::Schema>,
     row_reads: Box<[Option<bindings::Binding>]>,
     key: Arc<()>,
@@ -207,6 +209,7 @@ impl Program {
             !expression.constants.is_empty() || !expression.bindings.is_empty(),
             Some(true),
         )?;
+        program.input_dependency = dependency::classify(&program);
         program.constants = expression.constants.clone();
         program.bindings = expression.bindings.clone();
         program.input_template = Some(Arc::new(InputTemplate::new([&program])));

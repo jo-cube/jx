@@ -611,13 +611,18 @@ fn complete_json_delivery_uses_shared_indices_and_preserves_result_shape() {
     );
     let mut output = b"prefix".to_vec();
     for (index, (_, expected)) in cases.iter().enumerate() {
-        output.truncate(6);
-        assert_eq!(
-            prepared.write_json(index, &mut output).unwrap(),
-            !expected.is_empty()
-        );
-        assert_eq!(&output[..6], b"prefix");
-        assert_eq!(&output[6..], *expected);
+        for with_options in [false, true] {
+            output.truncate(6);
+            let present = if with_options {
+                prepared.write_json_with(index, EvaluationOptions::default(), &mut output)
+            } else {
+                prepared.write_json(index, &mut output)
+            }
+            .unwrap();
+            assert_eq!(present, !expected.is_empty());
+            assert_eq!(&output[..6], b"prefix");
+            assert_eq!(&output[6..], *expected);
+        }
     }
 }
 
@@ -643,5 +648,136 @@ fn complete_json_delivery_rolls_back_mixed_failures_and_reuses_output() {
     assert_eq!(output, b"prefix");
     let prepared = plan.prepare(br#"{"items":[{"v":2},{"v":3}]}"#).unwrap();
     assert!(prepared.write_json(1, &mut output).unwrap());
+    assert_eq!(output, b"prefix[3,4]");
+}
+
+#[test]
+fn complete_json_delivery_with_options_matches_program_bindings_and_scope() {
+    let options = jx::CompileOptions::default()
+        .binding("bound")
+        .constant_binding(
+            "config",
+            jx::OwnedValue::from_json(br#"{"add":2}"#).unwrap(),
+        );
+    let cases: [(&str, &[u8]); 7] = [
+        ("$bound.value", br#"{"n":9007199254740993,"s":"\u0061"}"#),
+        ("$bound.n + $config.add", b"5"),
+        ("($f:=function(){$bound.n}; $bound:={'n':9}; $f())", b"9"),
+        ("$eval('$bound.n + $config.add')", b"5"),
+        ("($config:={'add':99}; $config.add)", b"99"),
+        ("$bound.absent", b""),
+        ("[$.id,$$.id]", br#"["focus","root"]"#),
+    ];
+    let expressions = cases.map(|(source, _)| options.compile(source).unwrap());
+    let plan = InputPlan::new(&expressions);
+    let mut acquisition = jx::execution::Acquisition::new(
+        expressions
+            .iter()
+            .map(|expression| expression.execution_program()),
+    );
+    let input = br#"{"id":"root"}"#;
+    let prepared = plan.prepare(input).unwrap();
+    let document = acquisition.prepare(input).unwrap();
+    let bound =
+        Value::from_json(br#"{"n":3,"value":{ "n":9007199254740993, "s":"\u0061" }}"#).unwrap();
+    let settings = || EvaluationOptions {
+        bindings: vec![("bound", bound.clone())],
+        focus: Some(Value::from_json(br#"{"id":"focus"}"#).unwrap()),
+        ..Default::default()
+    };
+    let mut output = b"prefix".to_vec();
+    for _ in 0..2 {
+        for (index, (_, expected)) in cases.iter().enumerate() {
+            output.truncate(6);
+            let mut reference = b"prefix".to_vec();
+            let present = prepared
+                .write_json_with(index, settings(), &mut output)
+                .unwrap();
+            assert_eq!(
+                present,
+                expressions[index]
+                    .execution_program()
+                    .write_json_with(&document, settings(), &mut reference)
+                    .unwrap()
+            );
+            assert_eq!(output, reference);
+            assert_eq!(present, !expected.is_empty());
+            assert_eq!(&output[..6], b"prefix");
+            assert_eq!(&output[6..], *expected);
+        }
+    }
+    output.truncate(6);
+    assert!(
+        prepared
+            .write_json_with(6, EvaluationOptions::default(), &mut output)
+            .unwrap()
+    );
+    assert_eq!(output, br#"prefix["root","root"]"#);
+}
+
+#[test]
+fn complete_json_delivery_with_options_matches_program_failure_precedence() {
+    let expression = jx::CompileOptions::default()
+        .binding("bound")
+        .constant_binding(
+            "config",
+            jx::OwnedValue::from_json(br#"{"add":1}"#).unwrap(),
+        )
+        .compile("items.(v=$bound?$sum:v+$config.add)")
+        .unwrap();
+    let program = expression.execution_program();
+    let plan = InputPlan::new([&expression]);
+    let mut acquisition = jx::execution::Acquisition::new([program]);
+    let settings = || EvaluationOptions {
+        bindings: vec![("bound", Value::Number(1.))],
+        ..Default::default()
+    };
+    let mut output = b"prefix".to_vec();
+    for (input, evaluation_error) in [
+        (br#"{"items":[{"v":1},{"v":2}]}"#.as_slice(), false),
+        (br#"{"items":[{"v":1},{"v":2},{"v":null}]}"#, true),
+        (br#"{"items":[{"v":2},{"v":3},{"v":null}]}"#, true),
+    ] {
+        let prepared = plan.prepare(input).unwrap();
+        let document = acquisition.prepare(input).unwrap();
+        let mut reference = b"prefix".to_vec();
+        let actual = prepared
+            .write_json_with(0, settings(), &mut output)
+            .unwrap_err();
+        let expected = program
+            .write_json_with(&document, settings(), &mut reference)
+            .unwrap_err();
+        match (actual, expected) {
+            (ConsumeError::Evaluation(actual), ConsumeError::Evaluation(expected)) => {
+                assert!(evaluation_error);
+                assert_eq!(actual, expected);
+                assert_eq!(actual.kind, jx::ErrorKind::TypeError);
+            }
+            (ConsumeError::Consumer(actual), ConsumeError::Consumer(expected)) => {
+                assert!(!evaluation_error);
+                assert_eq!(actual.kind(), std::io::ErrorKind::InvalidInput);
+                assert_eq!(actual.kind(), expected.kind());
+                assert_eq!(actual.to_string(), expected.to_string());
+            }
+            errors => panic!("failure mismatch: {errors:?}"),
+        }
+        assert_eq!(output, b"prefix");
+        assert_eq!(output, reference);
+    }
+    let input = br#"{"items":[{"v":2},{"v":3}]}"#;
+    let prepared = plan.prepare(input).unwrap();
+    let document = acquisition.prepare(input).unwrap();
+    let mut reference = b"prefix".to_vec();
+    assert!(
+        prepared
+            .write_json_with(0, settings(), &mut output)
+            .unwrap()
+    );
+    assert!(
+        program
+            .write_json_with(&document, settings(), &mut reference)
+            .unwrap()
+    );
+    assert_eq!(output, reference);
     assert_eq!(output, b"prefix[3,4]");
 }

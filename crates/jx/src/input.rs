@@ -2,6 +2,15 @@ use crate::{
     ConsumeError, Error, Evaluation, EvaluationOptions, Expression, RawJson,
     execution::{InputTemplate, Workspace},
 };
+/// Conservative dependence on the original input's focus or root.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum InputDependency {
+    /// Evaluation does not semantically observe the original focus or root.
+    Independent,
+    /// Independence has not been proved; the expression may need the input.
+    MayRequireInput,
+}
+
 /// Immutable, demand-driven input acquisition for independently compiled expressions.
 /// Expressions keep their order and evaluation state; only static input paths share
 /// captures. Array navigation retains its sequence semantics.
@@ -80,6 +89,21 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
     ) -> Result<bool, ConsumeError<std::io::Error>> {
         self.plan.expressions[index].execution.write_json(
             &self.plan.template.document(self.text, &self.workspace),
+            output,
+        )
+    }
+    /// Append complete compact JSON with lexical/focus/control settings.
+    /// Uses the same cardinality, encoding and rollback rules as [`Self::write_json`].
+    /// Panics if the index is outside this plan.
+    pub fn write_json_with(
+        &self,
+        index: usize,
+        options: EvaluationOptions<'e, 'i>,
+        output: &mut Vec<u8>,
+    ) -> Result<bool, ConsumeError<std::io::Error>> {
+        self.plan.expressions[index].execution.write_json_with(
+            &self.plan.template.document(self.text, &self.workspace),
+            options,
             output,
         )
     }

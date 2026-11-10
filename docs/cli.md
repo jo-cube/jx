@@ -2,8 +2,8 @@
 
 `jx` compiles one expression, then processes independent NDJSON records in order.
 Diagnostics go to stderr; compact JSON results go to stdout.
-Install the recommended normal [release binary](https://github.com/jo-cube/jx/blob/dev/docs/releases.md#download-and-install),
-or use a source build while releases are being prepared.
+See [installation and releases](https://github.com/jo-cube/jx/blob/main/docs/releases.md)
+for the verified Unix installer, Windows downloads and source builds.
 
 ```sh
 printf '%s\n' '{"customer":{"id":42}}' | jx 'customer.id'
@@ -86,10 +86,7 @@ jx --max-work 100000 '$sum(items.price)' records.ndjson
 
 Work units are semantic checkpoints, not CPU instructions. Controls are cooperative;
 validation finishes first and regex/host calls cannot be interrupted mid-call.
-See [compatibility and resource limits](https://github.com/jo-cube/jx/blob/dev/docs/compatibility.md).
-
-All builds use the common IR. Releases contain one executable variant; there is
-no native backend or engine-selection option.
+See [compatibility and resource limits](https://github.com/jo-cube/jx/blob/main/docs/compatibility.md).
 
 ## Errors and exit status
 
