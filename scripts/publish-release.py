@@ -107,28 +107,36 @@ def publish(root, tag, revision, directory, repository):
     check_remote_tag(repository, tag, revision)
     base = f'https://api.github.com/repos/{repository}/releases'
     # Listing with the publisher's token includes drafts, unlike the published-tag endpoint.
+    existing = []
     page = 1
     while True:
         releases = api('GET', f'{base}?per_page=100&page={page}')
-        require(not any(release['tag_name'] == tag for release in releases),
-                f'release {tag} already exists; inspect it before retrying')
+        existing.extend(release for release in releases if release['tag_name'] == tag)
         if len(releases) < 100:
             break
         page += 1
-    draft = api('POST', base, {'tag_name': tag, 'target_commitish': revision, 'name': tag,
-                              'body': f'Source revision: `{revision}`.', 'draft': True})
-    require(draft['draft'] and draft['tag_name'] == tag, 'unexpected draft release identity')
-    release_url = f"{base}/{draft['id']}"
+    require(len(existing) <= 1, f'multiple releases exist for {tag}; inspect them before retrying')
+    if existing:
+        release = existing[0]
+        require(not release.get('assets'),
+                f'release {tag} already has assets; inspect it before retrying')
+        was_draft = bool(release.get('draft'))
+    else:
+        release = api('POST', base, {'tag_name': tag, 'target_commitish': revision, 'name': tag,
+                                     'body': f'Source revision: `{revision}`.', 'draft': True})
+        require(release['draft'] and release['tag_name'] == tag, 'unexpected draft release identity')
+        was_draft = True
+    release_url = f"{base}/{release['id']}"
     for path in files:
-        upload = f"https://uploads.github.com/repos/{repository}/releases/{draft['id']}/assets?"
+        upload = f"https://uploads.github.com/repos/{repository}/releases/{release['id']}/assets?"
         data = path.read_bytes()
         require((len(data), 'sha256:' + hashlib.sha256(data).hexdigest()) == expected[path.name],
                 f'validated artifact changed: {path.name}')
         api('POST', upload + urlencode({'name': path.name}), data, 'application/octet-stream')
-    draft = api('GET', release_url)
-    require(draft['draft'] and draft['tag_name'] == tag,
-            'draft release identity changed')
-    assets = draft['assets']
+    release = api('GET', release_url)
+    require(bool(release.get('draft')) == was_draft and release['tag_name'] == tag,
+            'release identity changed')
+    assets = release['assets']
     require(len(assets) == len(files) and {asset['name'] for asset in assets} == {path.name for path in files},
             'uploaded release artifacts are incomplete or unexpected')
     for asset in assets:
@@ -136,8 +144,9 @@ def publish(root, tag, revision, directory, repository):
                 and (asset['size'], asset.get('digest')) == expected[asset['name']],
                 f'uploaded asset verification failed: {asset["name"]}')
     check_remote_tag(repository, tag, revision)
-    result = api('PATCH', release_url, {'draft': False, 'make_latest': 'legacy'})
-    require(not result['draft'] and result['tag_name'] == tag, 'release publication was not confirmed')
+    if was_draft:
+        result = api('PATCH', release_url, {'draft': False, 'make_latest': 'legacy'})
+        require(not result['draft'] and result['tag_name'] == tag, 'release publication was not confirmed')
     return f'https://github.com/{repository}/releases/tag/{tag}'
 
 

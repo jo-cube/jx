@@ -133,13 +133,15 @@ checks; manual preparation keeps its existing differential checkbox.
 
 After all jobs succeed, one publisher downloads exactly the five archives and five
 checksums. It rechecks their layout, checksums, version and source revision, pins their
-expected hashes, then creates a draft release. Changed local files are rejected before
-upload. Every uploaded asset must have the expected name, size, completed state
-and server SHA-256 digest before the draft can become public. Only this job has repository
-write permission. It requires an existing tag and refuses any pre-existing release or
-draft; assets are never overwritten. A failed upload leaves an unpublished draft for inspection.
-A timeout during the final publish request can leave a complete published release;
-inspect its state before retrying.
+expected hashes, then either attaches them to an existing asset-free release for that tag
+(such as one created via the GitHub Releases UI) or creates a new draft release. Changed
+local files are rejected before upload. Every uploaded asset must have the expected name,
+size, completed state and server SHA-256 digest before publication completes (or before a
+draft becomes public). Only this job has repository write permission. It requires an
+existing tag and refuses any release that already has assets; assets are never
+overwritten. A failed upload leaves partial assets for inspection. A timeout during the
+final publish request can leave a complete published release; inspect its state before
+retrying.
 
 Latest-release selection uses GitHub's automatic version-based policy, so a release
 finishing later does not force itself to become Latest.
@@ -151,8 +153,9 @@ Release procedure:
    checks below. Commit the reviewed candidate.
 2. Optionally dispatch **Release** with that candidate ref to test preparation without
    publishing. The ref is resolved once; verified Actions artifacts are retained for 14 days.
-3. After the candidate is available upstream, create an annotated release tag at that
-   exact commit and push only that tag, for example `git push origin refs/tags/v0.3.0`.
+3. After the candidate is available upstream, create the `v0.3.0` release in the GitHub
+   Releases UI (targeting that exact commit) or push an annotated tag
+   (`git push origin refs/tags/v0.3.0`).
 4. Inspect the **Release** run and resulting ten assets. Do not move or recreate release
    tags. Configure repository tag rules to prevent updates/deletion of `v*` tags.
 
