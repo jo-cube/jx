@@ -11,6 +11,18 @@ impl Expression {
         self.execution.input_dependency
     }
 
+    /// Conservative top-level demand on a declared external lexical binding.
+    /// Undeclared bindings return [`crate::BindingDemand::Unused`].
+    pub fn binding_demand(&self, name: &str) -> crate::BindingDemand<'_> {
+        self.execution
+            .binding_demands
+            .iter()
+            .find(|(binding, _)| binding.as_ref() == name)
+            .map_or(crate::BindingDemand::Unused, |(_, demand)| {
+                demand.as_demand()
+            })
+    }
+
     /// Immutable executable code shared by every evaluation entry point.
     pub fn execution_program(&self) -> &Program {
         &self.execution

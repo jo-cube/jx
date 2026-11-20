@@ -11,6 +11,17 @@ pub enum InputDependency {
     MayRequireInput,
 }
 
+/// Conservative demand on a declared external lexical binding.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BindingDemand<'a> {
+    /// The binding is not observed by this expression.
+    Unused,
+    /// Only these top-level object fields of the binding may be observed.
+    Fields(&'a [Box<str>]),
+    /// The whole binding or arbitrary fields may be observed.
+    All,
+}
+
 /// Immutable, demand-driven input acquisition for independently compiled expressions.
 /// Expressions keep their order and evaluation state; only static input paths share
 /// captures. Array navigation retains its sequence semantics.
@@ -45,7 +56,23 @@ impl<'e> InputPlan<'e> {
         let text = document.text;
         Ok(PreparedInput {
             text,
-            workspace,
+            workspace: WorkspaceRef::Owned(workspace),
+            plan: self,
+            raw,
+        })
+    }
+    /// Validate once and acquire query-sized spans using caller-owned reusable scratch.
+    pub fn prepare_with_workspace<'p, 'i>(
+        &'p self,
+        input: &'i [u8],
+        workspace: &'p mut Workspace,
+    ) -> Result<PreparedInput<'p, 'e, 'i>, Error> {
+        let document = self.template.prepare(input, workspace)?;
+        let raw = document.raw();
+        let text = document.text;
+        Ok(PreparedInput {
+            text,
+            workspace: WorkspaceRef::Borrowed(workspace),
             plan: self,
             raw,
         })
@@ -55,16 +82,42 @@ impl<'e> InputPlan<'e> {
         self.template.prepare_validated(raw, &mut workspace);
         PreparedInput {
             text: raw.as_str(),
-            workspace,
+            workspace: WorkspaceRef::Owned(workspace),
             plan: self,
             raw,
+        }
+    }
+    /// Acquire spans for validated input using caller-owned reusable scratch.
+    pub fn prepare_validated_with_workspace<'p, 'i>(
+        &'p self,
+        raw: RawJson<'i>,
+        workspace: &'p mut Workspace,
+    ) -> PreparedInput<'p, 'e, 'i> {
+        self.template.prepare_validated(raw, workspace);
+        PreparedInput {
+            text: raw.as_str(),
+            workspace: WorkspaceRef::Borrowed(workspace),
+            plan: self,
+            raw,
+        }
+    }
+}
+enum WorkspaceRef<'p> {
+    Owned(Workspace),
+    Borrowed(&'p Workspace),
+}
+impl WorkspaceRef<'_> {
+    fn as_ref(&self) -> &Workspace {
+        match self {
+            Self::Owned(workspace) => workspace,
+            Self::Borrowed(workspace) => workspace,
         }
     }
 }
 /// Borrowed input and query-sized offsets. Results borrow code/input, never scratch.
 pub struct PreparedInput<'p, 'e, 'i> {
     text: &'i str,
-    workspace: Workspace,
+    workspace: WorkspaceRef<'p>,
     plan: &'p InputPlan<'e>,
     raw: RawJson<'i>,
 }
@@ -74,9 +127,12 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
     }
     /// Evaluate independently. Panics if the index is outside this plan.
     pub fn evaluate(&self, index: usize) -> Result<Evaluation<'e, 'i>, Error> {
-        self.plan.expressions[index]
-            .execution
-            .evaluate(&self.plan.template.document(self.text, &self.workspace))
+        self.plan.expressions[index].execution.evaluate(
+            &self
+                .plan
+                .template
+                .document(self.text, self.workspace.as_ref()),
+        )
     }
     /// Append one compact JSON value, wrapping multiple results in an array.
     /// Missing returns false. On evaluation or encoding failure, restore the
@@ -88,7 +144,10 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
         output: &mut Vec<u8>,
     ) -> Result<bool, ConsumeError<std::io::Error>> {
         self.plan.expressions[index].execution.write_json(
-            &self.plan.template.document(self.text, &self.workspace),
+            &self
+                .plan
+                .template
+                .document(self.text, self.workspace.as_ref()),
             output,
         )
     }
@@ -102,7 +161,10 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
         output: &mut Vec<u8>,
     ) -> Result<bool, ConsumeError<std::io::Error>> {
         self.plan.expressions[index].execution.write_json_with(
-            &self.plan.template.document(self.text, &self.workspace),
+            &self
+                .plan
+                .template
+                .document(self.text, self.workspace.as_ref()),
             options,
             output,
         )
@@ -116,7 +178,10 @@ impl<'e, 'i> PreparedInput<'_, 'e, 'i> {
         self.plan.expressions[index]
             .execution
             .evaluate_prepared_with(
-                &self.plan.template.document(self.text, &self.workspace),
+                &self
+                    .plan
+                    .template
+                    .document(self.text, self.workspace.as_ref()),
                 options,
             )
     }

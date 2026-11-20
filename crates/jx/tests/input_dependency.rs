@@ -260,3 +260,68 @@ fn optimized_callbacks_inherit_the_enclosing_focus() {
         assert_eq!(output, expected);
     }
 }
+
+#[test]
+fn binding_demand_reports_unused_static_fields_and_conservative_escapes() {
+    let options = CompileOptions::default().binding("meta");
+    for source in [
+        "id = 1",
+        r#""$meta.key""#,
+        "/* $meta.key */ id",
+        "($meta := {'key': 1}; $meta.key)",
+        "($f := function($meta){ $meta.key }; $f({'key': 1}))",
+    ] {
+        let expression = options.compile(source).unwrap();
+        assert_eq!(
+            expression.binding_demand("meta"),
+            jx::BindingDemand::Unused,
+            "{source}"
+        );
+        assert_eq!(
+            expression.binding_demand("undeclared"),
+            jx::BindingDemand::Unused,
+            "{source}"
+        );
+    }
+    for (source, expected) in [
+        ("$meta.key = 'a'", &["key"][..]),
+        (
+            "$meta.partition = 0 and $meta.offset != '1'",
+            &["offset", "partition"],
+        ),
+        ("$meta.headers[name = 'x'].value", &["headers"]),
+        (
+            "$meta.headers[name = $meta.topic].value",
+            &["headers", "topic"],
+        ),
+        ("$lookup($meta, 'key')", &["key"]),
+        ("($f := function(){ $meta.offset }; $f())", &["offset"]),
+        ("($meta := $meta.key; $meta)", &["key"]),
+    ] {
+        let expression = options.compile(source).unwrap();
+        let expected: Vec<Box<str>> = expected.iter().map(|&s| s.into()).collect();
+        assert_eq!(
+            expression.binding_demand("meta"),
+            jx::BindingDemand::Fields(expected.as_slice()),
+            "{source}"
+        );
+    }
+    for source in [
+        "$meta",
+        "$meta.*",
+        "$meta.**",
+        "$meta.headers.%",
+        "$keys($meta)",
+        "$lookup($meta, field)",
+        "($m := $meta; $m.key)",
+        "$eval('$meta.key')",
+        "$meta[partition = 0].key",
+    ] {
+        let expression = options.compile(source).unwrap();
+        assert_eq!(
+            expression.binding_demand("meta"),
+            jx::BindingDemand::All,
+            "{source}"
+        );
+    }
+}
