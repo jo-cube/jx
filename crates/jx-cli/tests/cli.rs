@@ -41,15 +41,15 @@ fn errors_have_distinct_exit_codes_and_record_context() {
 }
 
 #[test]
-fn exact_record_limit_including_cr_but_excluding_lf() {
-    for input in [&b"1234\n"[..], &b"1234"[..]] {
+fn exact_record_limit_applies_to_json_value_bytes() {
+    for input in [&b"1234\n"[..], &b"1234"[..], &b"1234\r\n"[..]] {
         assert!(
             run(&["--max-record-bytes", "4", "$"], input)
                 .status
                 .success()
         );
     }
-    for input in [&b"12345\n"[..], &b"12345"[..], &b"1234\r\n"[..]] {
+    for input in [&b"12345\n"[..], &b"12345"[..], &b"[1, 2]\n"[..]] {
         let output = run(&["--max-record-bytes", "4", "$"], input);
         assert_eq!(output.status.code(), Some(1));
         assert!(output.stdout.is_empty());
@@ -530,4 +530,150 @@ fn help_describes_limits_exit_policy_and_rejects_retired_options() {
     }
     assert!(!help.contains("--jit"));
     assert_eq!(run(&["--jit", "$"], b"null\n").status.code(), Some(2));
+}
+
+#[test]
+fn expression_file_accepts_trailing_options_before_files() {
+    let root = std::env::temp_dir().join(format!("jx-trailing-opts-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let expr = root.join("expr.jsonata");
+    let data = root.join("data.json");
+    std::fs::write(&expr, "name").unwrap();
+    std::fs::write(&data, "{\n  \"name\": \"alice\"\n}\n").unwrap();
+
+    let output = run(
+        &[
+            "-f",
+            expr.to_str().unwrap(),
+            "--max-work",
+            "10000",
+            "-r",
+            data.to_str().unwrap(),
+        ],
+        b"",
+    );
+    std::fs::remove_dir_all(root).unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout, b"alice\n");
+}
+
+#[test]
+fn multiline_and_concatenated_json_stream_with_line_numbers() {
+    let input = br#"{
+  "host": "db-1",
+  "note": "has } and \"braces\" inside"
+}
+{
+  "host": "db-2"
+}{"host":"db-3"}
+"#;
+    let output = run(&["-r", "host"], input);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout, b"db-1\ndb-2\ndb-3\n");
+
+    let bad = b"{\n  \"ok\": 1\n}\n{\n  \"bad\": [1,]\n}\n";
+    let output = run(&["$"], bad);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.stdout, b"{\"ok\":1}\n");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("line 4:")
+    );
+}
+
+#[test]
+fn slurp_null_input_raw_and_pretty_output() {
+    let output = run(
+        &["-s", "$sum($.amount)"],
+        b"{\n  \"amount\": 10\n}\n{\"amount\": 25}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"35\n");
+
+    let empty_slurp = run(&["-s", "$"], b"   \n\t\n");
+    assert!(empty_slurp.status.success());
+    assert_eq!(empty_slurp.stdout, b"[]\n");
+
+    let null_in = run(
+        &["-n", r#"{"focus": $exists($), "sum": 2 + 3}"#],
+        b"ignored",
+    );
+    assert!(null_in.status.success());
+    assert_eq!(null_in.stdout, b"{\"focus\":false,\"sum\":5}\n");
+    assert_eq!(run(&["-n", "-s", "$"], b"").status.code(), Some(2));
+    assert_eq!(run(&["-n", "$", "file.json"], b"").status.code(), Some(2));
+
+    let raw = run(&["-r", "$"], b"\"hello\\nworld\"\n42\n");
+    assert!(raw.status.success());
+    assert_eq!(raw.stdout, b"hello\nworld\n42\n");
+
+    let pretty = run(&["-p", "$"], br#"{"a":[1,{}],"empty":[]}"#);
+    assert!(pretty.status.success());
+    assert_eq!(
+        pretty.stdout,
+        b"{\n  \"a\": [\n    1,\n    {}\n  ],\n  \"empty\": []\n}\n"
+    );
+}
+
+#[test]
+fn vars_vars_file_check_and_on_error_skip() {
+    let output = run(
+        &["--vars", r#"{"scale":3}"#, "n * $vars.scale"],
+        b"{\"n\":4}\n",
+    );
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"12\n");
+
+    let vars_path = std::env::temp_dir().join(format!("jx-vars-{}.json", std::process::id()));
+    std::fs::write(&vars_path, r#"{"tag":"prod"}"#).unwrap();
+    let from_file = run(
+        &[
+            "--vars-file",
+            vars_path.to_str().unwrap(),
+            "-rn",
+            "$vars.tag",
+        ],
+        b"",
+    );
+    let check_ok = run(
+        &[
+            "--check",
+            "--vars-file",
+            vars_path.to_str().unwrap(),
+            "$vars.tag",
+        ],
+        b"{bad json is never read}",
+    );
+    std::fs::remove_file(&vars_path).unwrap();
+    assert!(from_file.status.success());
+    assert_eq!(from_file.stdout, b"prod\n");
+    assert!(check_ok.status.success());
+    assert!(check_ok.stdout.is_empty());
+
+    assert_eq!(run(&["--vars", "[]", "$"], b"{}").status.code(), Some(2));
+    assert_eq!(
+        run(&["--vars", "{}", "--vars-file", "x", "$"], b"{}")
+            .status
+            .code(),
+        Some(2)
+    );
+    assert_eq!(run(&["--check", "a["], b"").status.code(), Some(2));
+
+    let skipped = run(
+        &["--on-error", "skip", "a + 1"],
+        b"{\"a\":1}\n[0,]\n{\"a\":null}\n{\"a\":2}\n",
+    );
+    assert!(skipped.status.success());
+    assert_eq!(skipped.stdout, b"2\n3\n");
+    let stderr = String::from_utf8(skipped.stderr).unwrap();
+    assert!(stderr.contains("line 2:") && stderr.contains("line 3:"));
 }
