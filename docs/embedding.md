@@ -6,12 +6,12 @@ and ordinary runtime values stay local to the caller; the engine does not spawn 
 
 ## Add the dependency
 
-Library releases use the same Git tag as the CLI. To depend on `v0.2.0` once its
+Library releases use the same Git tag as the CLI. To depend on `v0.3.0` once its
 tag is published:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.3.0" }
 ```
 
 Cargo finds `crates/jx` inside the repository. Commit the consuming application's

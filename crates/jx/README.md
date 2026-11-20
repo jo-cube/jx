@@ -3,11 +3,11 @@
 A Rust JSONata engine for compiling once and evaluating independent borrowed JSON
 records. Rust 1.98.1; MIT licensed; APIs are pre-1.0.
 
-Use the `v0.2.0` Git tag once it is published:
+Use the `v0.3.0` Git tag once it is published:
 
 ```toml
 [dependencies]
-jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.2.0" }
+jx = { git = "https://github.com/jo-cube/jx.git", tag = "v0.3.0" }
 ```
 
 For unreleased source, use a reviewed upstream commit with
