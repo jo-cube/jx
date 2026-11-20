@@ -97,15 +97,53 @@ class Publication(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'revision'):
             publication.check_artifacts(self.artifacts, '0.2.0', REVISION)
 
-    def test_existing_release_or_draft_is_never_changed(self):
-        for draft in [False, True]:
-            existing = [{'tag_name': TAG, 'draft': draft}]
-            with (patch.object(publication, 'check_tag', return_value=('0.2.0', REVISION)),
+    def test_existing_release_with_assets_or_duplicates_is_never_changed(self):
+        for existing, pattern in [
+            ([{'id': 7, 'tag_name': TAG, 'draft': False, 'assets': [{'name': 'a'}]}], 'already has assets'),
+            ([{'id': 7, 'tag_name': TAG, 'draft': True, 'assets': [{'name': 'a'}]}], 'already has assets'),
+            ([{'id': 7, 'tag_name': TAG, 'draft': True, 'assets': []},
+              {'id': 8, 'tag_name': TAG, 'draft': False, 'assets': []}], 'multiple releases'),
+        ]:
+            with (self.subTest(pattern=pattern),
+                  patch.object(publication, 'check_tag', return_value=('0.2.0', REVISION)),
                   patch.object(publication, 'check_remote_tag'),
                   patch.object(publication, 'api', return_value=existing) as api):
-                with self.assertRaisesRegex(ValueError, 'already exists'):
+                with self.assertRaisesRegex(ValueError, pattern):
                     publication.publish(self.root, TAG, REVISION, self.artifacts, 'owner/repo')
                 self.assertEqual([call.args[0] for call in api.call_args_list], ['GET'])
+
+    def test_existing_empty_release_receives_verified_assets(self):
+        for draft in [False, True]:
+            with self.subTest(draft=draft):
+                release = {'id': 9, 'draft': draft, 'tag_name': TAG,
+                           'target_commitish': REVISION, 'assets': []}
+                methods = []
+
+                def api(method, url, data=None, content_type='application/json'):
+                    methods.append(method)
+                    if method == 'GET' and '/releases?' in url:
+                        return [copy.deepcopy(release)]
+                    if method == 'POST':
+                        self.assertIn('/releases/9/assets?', url)
+                        name = parse_qs(urlparse(url).query)['name'][0]
+                        release['assets'].append({
+                            'name': name, 'size': len(data), 'state': 'uploaded',
+                            'digest': 'sha256:' + hashlib.sha256(data).hexdigest(),
+                        })
+                    elif method == 'PATCH':
+                        self.assertTrue(draft)
+                        self.assertEqual(data, {'draft': False, 'make_latest': 'legacy'})
+                        release['draft'] = False
+                    return copy.deepcopy(release)
+
+                with (patch.object(publication, 'check_tag', return_value=('0.2.0', REVISION)),
+                      patch.object(publication, 'check_remote_tag'),
+                      patch.object(publication, 'api', side_effect=api)):
+                    publication.publish(self.root, TAG, REVISION, self.artifacts, 'owner/repo')
+                self.assertEqual(len(release['assets']), 10)
+                self.assertFalse(release['draft'])
+                self.assertEqual(methods.count('POST'), 10)
+                self.assertEqual(methods.count('PATCH'), 1 if draft else 0)
 
     def test_changed_local_artifact_cannot_replace_a_validated_upload(self):
         def api(method, url, data=None):
