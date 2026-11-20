@@ -62,6 +62,7 @@ pub struct Program {
     pub(crate) registers: usize,
     input_template: Option<Arc<InputTemplate>>,
     input_dependency: crate::InputDependency,
+    binding_demands: Box<[(Box<str>, dependency::StoredBindingDemand)]>,
     row_schema: Arc<acquisition::Schema>,
     row_reads: Box<[Option<bindings::Binding>]>,
     key: Arc<()>,
@@ -210,6 +211,8 @@ impl Program {
             Some(true),
         )?;
         program.input_dependency = dependency::classify(&program);
+        program.binding_demands =
+            dependency::classify_bindings(&expression.root, &expression.bindings);
         program.constants = expression.constants.clone();
         program.bindings = expression.bindings.clone();
         program.input_template = Some(Arc::new(InputTemplate::new([&program])));

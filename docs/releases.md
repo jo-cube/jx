@@ -31,12 +31,12 @@ and either `sha256sum` or `shasum`. Rust and Python are not required to install 
 curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh
 ```
 
-Override the destination with one argument, or select `v0.2.0` explicitly with
+Override the destination with one argument, or select `v0.3.0` explicitly with
 `VERSION` (default: `latest`):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | sh -s -- "$HOME/bin"
-curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=v0.2.0 sh
+curl -fsSL https://raw.githubusercontent.com/jo-cube/jx/main/scripts/install.sh | VERSION=v0.3.0 sh
 ```
 
 `latest` is resolved once to a `vX.Y.Z` tag. Both the versioned archive and its checksum
@@ -63,7 +63,7 @@ verify downloaded bytes against the selected release; the release repository is 
 Choose a target from the platform table. Linux example:
 
 ```sh
-tag=v0.2.0
+tag=v0.3.0
 target=x86_64-unknown-linux-gnu
 name="jx-${tag}-${target}"
 archive="$name.tar.gz"
@@ -83,7 +83,7 @@ The checksum verifies downloaded bytes; obtain both files from the intended rele
 Windows PowerShell example; add the extracted directory to your user PATH:
 
 ```powershell
-$tag = 'v0.2.0'
+$tag = 'v0.3.0'
 $name = "jx-${tag}-x86_64-pc-windows-msvc"
 $archive = "$name.zip"
 $url = "https://github.com/jo-cube/jx/releases/download/$tag"
@@ -117,7 +117,7 @@ cargo install --path crates/jx-cli --locked
 ```
 
 `cargo build --release --locked` builds the engine and CLI. For released source,
-check out `v0.2.0` once its tag is published. Library users should follow
+check out `v0.3.0` once its tag is published. Library users should follow
 the [dependency guide](embedding.md#add-the-dependency).
 
 ## Preparing and publishing releases
@@ -147,12 +147,12 @@ finishing later does not force itself to become Latest.
 Release procedure:
 
 1. Ensure the workspace version, jx-cli's exact jx dependency and both package entries
-   in `Cargo.lock` match the release (`0.2.0` for `v0.2.0`). Review licenses and run the
+   in `Cargo.lock` match the release (`0.3.0` for `v0.3.0`). Review licenses and run the
    checks below. Commit the reviewed candidate.
 2. Optionally dispatch **Release** with that candidate ref to test preparation without
    publishing. The ref is resolved once; verified Actions artifacts are retained for 14 days.
 3. After the candidate is available upstream, create an annotated release tag at that
-   exact commit and push only that tag, for example `git push origin refs/tags/v0.2.0`.
+   exact commit and push only that tag, for example `git push origin refs/tags/v0.3.0`.
 4. Inspect the **Release** run and resulting ten assets. Do not move or recreate release
    tags. Configure repository tag rules to prevent updates/deletion of `v*` tags.
 

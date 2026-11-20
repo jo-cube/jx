@@ -443,3 +443,66 @@ fn joined_strings_own_their_bytes_across_input_drop_and_workspace_reuse() {
         }
     }
 }
+
+#[test]
+fn input_plan_reuses_workspace_across_records_and_validated_inputs() {
+    let query = format!(
+        "{{{}}}",
+        (0..20)
+            .map(|i| format!("'f{i}':payload.f{i}"))
+            .collect::<Vec<_>>()
+            .join(",")
+    );
+    let expressions = [
+        jx::compile("payload.f0 > 0").unwrap(),
+        jx::compile(&query).unwrap(),
+    ];
+    let plan = jx::InputPlan::new(&expressions);
+    let mut workspace = Workspace::default();
+    assert_eq!(workspace.retained_bytes(), 0);
+
+    let first = br#"{"payload":{"f0":1,"f19":9}}"#;
+    let prepared = plan.prepare_with_workspace(first, &mut workspace).unwrap();
+    assert_eq!(
+        prepared
+            .evaluate(0)
+            .unwrap()
+            .single()
+            .unwrap()
+            .unwrap()
+            .as_bool(),
+        Some(true)
+    );
+    let mut out = Vec::new();
+    assert!(prepared.write_json(1, &mut out).unwrap());
+    assert_eq!(out, br#"{"f0":1,"f19":9}"#);
+    drop(prepared);
+
+    let capacity = workspace.retained_bytes();
+    assert!(capacity > 0);
+
+    let second = br#"{"payload":{"f0":0,"f19":42}}"#;
+    let raw = jx::validate(second).unwrap();
+    let prepared = plan.prepare_validated_with_workspace(raw, &mut workspace);
+    assert_eq!(
+        prepared
+            .evaluate(0)
+            .unwrap()
+            .single()
+            .unwrap()
+            .unwrap()
+            .as_bool(),
+        Some(false)
+    );
+    out.clear();
+    assert!(prepared.write_json(1, &mut out).unwrap());
+    assert_eq!(out, br#"{"f0":0,"f19":42}"#);
+    drop(prepared);
+
+    assert_eq!(workspace.retained_bytes(), capacity);
+    assert!(
+        plan.prepare_with_workspace(b"{bad", &mut workspace)
+            .is_err()
+    );
+    assert_eq!(workspace.retained_bytes(), capacity);
+}

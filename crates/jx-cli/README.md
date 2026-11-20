@@ -1,7 +1,8 @@
 # jx CLI
 
-Compile a JSONata expression once and stream independent NDJSON records from stdin
-or files. The executable is `jx`; binaries need no Rust toolchain. Source builds
+Compile a JSONata expression once and stream independent JSON values (NDJSON,
+pretty-printed multi-line JSON, or concatenated values) from stdin or files.
+The executable is `jx`; binaries need no Rust toolchain. Source builds
 require Rust 1.98.1 or newer. MIT licensed.
 
 See the [installation guide](https://github.com/jo-cube/jx/blob/main/docs/releases.md)
